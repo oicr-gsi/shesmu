@@ -22,6 +22,7 @@ import {
   button,
   buttonAccessory,
   dialog,
+  dragOrder,
   dropdown,
   hr,
   inputCheckbox,
@@ -40,18 +41,19 @@ import {
   tabs,
   temporaryState,
 } from "./html.js";
-import { fetchAsPromise, refreshable, saveFile } from "./io.js";
+import { fetchAsPromise, loadFile, refreshable, saveFile } from "./io.js";
 import { actionStats } from "./stats.js";
 import {
+  FakeConstant,
   FakeRefillerParameters,
   SimulationResponse,
   renderResponse,
-  FakeConstant,
 } from "./simulation.js";
 import {
   FilenameFormatter,
   combineModels,
   commonPathPrefix,
+  individualPropertyModel,
   mapModel,
 } from "./util.js";
 import { setNew } from "./runtime.js";
@@ -122,10 +124,21 @@ type Parameters<T> = {
             values: string[];
           }
         : never)
+    | (T[P] extends { [name: string]: string }[]
+        ? {
+            label: DisplayElement;
+            type: "upload-table";
+            columns: string[];
+          }
+        : never)
     | {
         items: [DisplayElement, T[P]][];
         label: DisplayElement;
         type: "select";
+      }
+    | {
+        label: DisplayElement;
+        type: "upload-json";
       }
     | {
         label: DisplayElement;
@@ -294,7 +307,7 @@ function inputProperty<T, K extends keyof T>(
       },
       ui: dropdown(
         ([label]) => label,
-        (d) => d == definition.items?.[0],
+        (d) => d == definition.items[0],
         value,
         null,
         ...definition.items
@@ -362,6 +375,168 @@ function inputProperty<T, K extends keyof T>(
       ],
       get value(): T[K] {
         return (Array.from(selected.values()) as unknown) as T[K];
+      },
+    };
+  } else if (definition.type == "upload-json") {
+    let value: any = null;
+    field = {
+      set enabled(_: boolean) {
+        // Do nothing.
+      },
+      ui: button(
+        { type: "icon", icon: "file-earmark-arrow-up" },
+        "Upload JSON data",
+        () =>
+          loadFile((_, data) => {
+            try {
+              value = JSON.parse(data);
+            } catch (e) {
+              dialog((c) => ["Failed to parse JSON:", br(), e.toString()]);
+            }
+          })
+      ),
+      get value(): T[K] {
+        return (value as unknown) as T[K];
+      },
+    };
+  } else if (definition.type == "upload-table") {
+    const value: { [name: string]: string }[] = [];
+    const columns = definition.columns;
+    const tsvDisplay = singleState(
+      (input: {
+        columns: string[];
+        data: string;
+        delimiter: string;
+        header: boolean;
+      }) => {
+        const raw = input.data.split(/\r?\n/).filter((x) => !x.match(/^\s*$/));
+        value.length = 0;
+        for (let i = input.header ? 1 : 0; i < raw.length; i++) {
+          const row = Object.fromEntries(input.columns.map((c) => [c, ""]));
+          let state = 0;
+          let index = 0;
+          let last = 0;
+          while (index < raw[i].length && last < input.columns.length) {
+            switch (state) {
+              case 0: // Try to detect space-padded start of data
+                if (raw[i].charAt(index).match(/\s/)) {
+                  // Keep eating spaces
+                } else if (raw[i].charAt(index) == input.delimiter) {
+                  last++;
+                } else if (raw[i].charAt(index) == '"') {
+                  state = 2;
+                } else {
+                  state = 1;
+                  row[input.columns[last]] += raw[i].charAt(index);
+                }
+                break;
+              case 1: // Copy unquoted data
+                if (raw[i].charAt(index) == input.delimiter) {
+                  last++;
+                  state = 0;
+                } else {
+                  row[input.columns[last]] += raw[i].charAt(index);
+                }
+                break;
+
+              case 2: // Copy quoted data
+                if (raw[i].charAt(index) == '"') {
+                  state = 3;
+                } else {
+                  row[input.columns[last]] += raw[i].charAt(index);
+                }
+                break;
+              case 3: // Absorb lead out
+                if (raw[i].charAt(index) == input.delimiter) {
+                  last++;
+                  state = 0;
+                } else if (raw[i].charAt(index).match(/\s/)) {
+                  // Eat spaces
+                } else {
+                  return `Invalid data detected in ${
+                    input.columns[last]
+                  } on line ${i + 1}`;
+                }
+            }
+            index++;
+          }
+          value.push(row);
+        }
+
+        return value.length == 0
+          ? "No rows provided."
+          : [
+              "Preview:",
+              br(),
+              table(
+                value,
+                ...columns.map(
+                  (k) =>
+                    [k, (r: { [name: string]: string }) => r[k]] as [
+                      string,
+                      (row: object) => string
+                    ]
+                )
+              ),
+            ];
+      }
+    );
+    const tsvKnobs = individualPropertyModel(tsvDisplay.model, {
+      columns,
+      data: "",
+      delimiter: ",",
+      header: true,
+    });
+    type Delimiter = { delimiter: string; name: string; description: string };
+    field = {
+      set enabled(_: boolean) {
+        // Do nothing.
+      },
+      ui: [
+        button(
+          { type: "icon", icon: "file-earmark-arrow-up" },
+          "Upload tabular data",
+          () => loadFile((_, data) => tsvKnobs.data.statusChanged(data))
+        ),
+        dropdown(
+          (input, selected) => (selected ? input.name : input.description),
+          null,
+          mapModel(tsvKnobs.delimiter, (input: Delimiter) => input.delimiter),
+          null,
+          { delimiter: ",", name: "CSV", description: "Comma-delimited (,)" },
+          { delimiter: "\t", name: "TSV", description: "Tab-delimited (\\t)" },
+          {
+            delimiter: ";",
+            name: "SSV",
+            description: "Semicolon-delimited (;)",
+          }
+        ),
+
+        dropdown(
+          (input, selected) => {
+            if (selected) {
+              return input
+                ? { type: "icon", icon: "grid-3x2" }
+                : { type: "icon", icon: "grid-3x3" };
+            } else {
+              return input
+                ? [{ type: "icon", icon: "grid-3x2" }, "First Row is Header"]
+                : [{ type: "icon", icon: "grid-3x3" }, "First Row is Data"];
+            }
+          },
+          null,
+          tsvKnobs.header,
+          null,
+          true,
+          false
+        ),
+        br(),
+        dragOrder(tsvKnobs.columns, (x) => x, ...columns),
+        br(),
+        tsvDisplay.ui,
+      ],
+      get value(): T[K] {
+        return (value as unknown) as T[K];
       },
     };
   } else {

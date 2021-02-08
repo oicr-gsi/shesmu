@@ -238,6 +238,19 @@ _values_ and the ones selected by the user will be assigned to _names_, also as
 a list of strings.  _labelexpr_ is text display elements to show to the left of
 the input widget.
 
+- _name_ `= Upload Json Label` _labelexpr_
+Allows uploading JSON data into the meditation as _name_. If the user fails to
+upload any data, it will be `null`.  _labelexpr_ is text display elements to
+show to the left of the input widget.
+
+- _name_ `= Upload Table(` _field1_`,` _field2_`,` ... `) Label` _labelexpr_
+Allows uploading tabular data into the meditation as _name_. Each row will be
+converted to an object with fields as listed; the type of every field will be
+`string`. If the user fails to upload any data, it will be an empty list. The
+user will be provided tools to massage the data into the correct format.
+_labelexpr_ is text display elements to show to the left of the input widget.
+
+
 ### Automatic Flow Control
 If there is information provided that can be used to determine what decision to
 make next, the `Flow By Switch` and `Flow By Match` steps allow selecting it.
