@@ -1,5 +1,20 @@
 # Unreleased
 
+# [1.7.1] - 2021-02-08T18:48+00:00
+
+Changes:
+
+* Split Niassa and Pinery plugins apart
+* Allow space in action filter intervals (_e.g._ `last 20 days`.
+
+UI changes:
+
+* Improve clarity of switch query dialog when the query will be lost
+
+Niassa plugin changes:
+
+* Add a concurrency limiter to analysis provenance
+
 # [1.7.0] - 2021-02-03T14:42+00:00
 
 Changes:
