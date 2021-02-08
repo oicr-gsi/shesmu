@@ -43,6 +43,7 @@ public abstract class FormNode implements Target {
   }
 
   private static final Parser.ParseDispatch<FormConstructor> FORM_TYPE = new ParseDispatch<>();
+  private static final Parser.ParseDispatch<FormConstructor> UPLOAD_TYPE = new ParseDispatch<>();
 
   static {
     for (final FormType type : FormType.values()) {
@@ -115,6 +116,27 @@ public abstract class FormNode implements Target {
               p.whitespace().then(ExpressionNode::parse, values::set).whitespace();
           if (result.isGood()) {
             o.accept((label, name) -> new FormNodeSubset(label, name, values.get()));
+          }
+          return result;
+        });
+    FORM_TYPE.addKeyword("Upload", (p, o) -> p.whitespace().dispatch(UPLOAD_TYPE, o));
+
+    UPLOAD_TYPE.addKeyword("Json", Parser.justWhiteSpace(FormNodeJsonUpload::new));
+    UPLOAD_TYPE.addKeyword(
+        "Table",
+        (p, o) -> {
+          final AtomicReference<List<String>> columns = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .symbol("(")
+                  .whitespace()
+                  .list(columns::set, (pc, oc) -> pc.whitespace().identifier(oc).whitespace(), ',')
+                  .symbol(")")
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(
+                (label, name) ->
+                    new FormNodeTableUpload(p.line(), p.column(), label, name, columns.get()));
           }
           return result;
         });

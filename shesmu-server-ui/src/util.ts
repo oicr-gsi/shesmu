@@ -14,6 +14,8 @@ export interface MutableStore<K, V> {
   set(key: K, value: V): void;
 }
 
+export type PropertyModels<T> = { [name in keyof T]: StatefulModel<T[name]> };
+
 /**
  * A stateful model which is can be subscriber to a publishable model.
  */
@@ -304,6 +306,45 @@ export function filterModel<T>(
     statusFailed: model.statusFailed,
     statusWaiting: model.statusWaiting,
   };
+}
+
+/**
+ * Takes a model over an object and allows addressing each property as an individual model
+ * @param model the model to break apart
+ * @param initial the initial state for the model
+ */
+export function individualPropertyModel<T>(
+  model: StatefulModel<T>,
+  initial: T
+): PropertyModels<T> {
+  const current: T = { ...initial };
+  let busyKeys = new Set<string>();
+  return (Object.fromEntries(
+    Object.keys(initial).map(
+      (key) =>
+        [
+          key,
+          {
+            reload: model.reload,
+            statusFailed: (message, retry) => {
+              busyKeys.add(key);
+              model.statusFailed(message, retry);
+            },
+            statusWaiting: () => {
+              busyKeys.add(key);
+              model.statusWaiting();
+            },
+            statusChanged: (input) => {
+              current[key as keyof T] = input;
+              busyKeys.delete(key);
+              if (busyKeys.size == 0) {
+                model.statusChanged({ ...current });
+              }
+            },
+          },
+        ] as [keyof T, StatefulModel<T[keyof T]>]
+    )
+  ) as unknown) as PropertyModels<T>;
 }
 
 /**
