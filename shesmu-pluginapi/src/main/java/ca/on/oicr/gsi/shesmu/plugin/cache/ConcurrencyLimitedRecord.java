@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.cache;
 
 import java.time.Instant;
-import java.util.ConcurrentModificationException;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -52,7 +51,7 @@ public class ConcurrencyLimitedRecord<V> implements Record<V> {
   @Override
   public V refresh(String context) {
     if (!lock.tryAcquire()) {
-      throw new ConcurrentModificationException("Too many updates in progress.");
+      return inner.readStale();
     }
     try {
       return inner.refresh(context);
