@@ -58,10 +58,7 @@ public abstract class WizardMatchAlternativeNode {
   }
 
   public abstract String render(
-      EcmaScriptRenderer renderer,
-      EcmaLoadableConstructor name,
-      EcmaScriptRenderer localRenderer,
-      String original);
+      EcmaScriptRenderer renderer, EcmaLoadableConstructor name, String original);
 
   public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 

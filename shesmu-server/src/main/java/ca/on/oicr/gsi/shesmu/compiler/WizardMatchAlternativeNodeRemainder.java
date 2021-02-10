@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
@@ -48,11 +47,7 @@ public class WizardMatchAlternativeNodeRemainder extends WizardMatchAlternativeN
   }
 
   @Override
-  public String render(
-      EcmaScriptRenderer renderer,
-      EcmaLoadableConstructor name,
-      EcmaScriptRenderer localRenderer,
-      String original) {
+  public String render(EcmaScriptRenderer renderer, EcmaLoadableConstructor name, String original) {
     return String.format(
         "$state => %s({...$state, %s: %s})",
         step.renderEcma(
@@ -95,9 +90,9 @@ public class WizardMatchAlternativeNodeRemainder extends WizardMatchAlternativeN
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices,
-      DefinitionRepository nativeDefintions,
+      DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    return step.resolveDefinitions(expressionCompilerServices, nativeDefintions, errorHandler);
+    return step.resolveDefinitions(expressionCompilerServices, nativeDefinitions, errorHandler);
   }
 
   @Override
@@ -110,9 +105,7 @@ public class WizardMatchAlternativeNodeRemainder extends WizardMatchAlternativeN
       return false;
     }
     type =
-        remainingBranches
-            .entrySet()
-            .stream()
+        remainingBranches.entrySet().stream()
             .map(
                 e ->
                     e.getValue()

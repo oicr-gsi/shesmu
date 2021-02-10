@@ -8,11 +8,7 @@ import java.util.function.Consumer;
 public class WizardMatchAlternativeNodeEmpty extends WizardMatchAlternativeNode {
 
   @Override
-  public String render(
-      EcmaScriptRenderer renderer,
-      EcmaLoadableConstructor name,
-      EcmaScriptRenderer localRenderer,
-      String original) {
+  public String render(EcmaScriptRenderer renderer, EcmaLoadableConstructor name, String original) {
     renderer.statement(
         "throw new Error(\"Unsupported algebraic value in “Match” with no alternative.\")");
     return "null";
@@ -32,7 +28,7 @@ public class WizardMatchAlternativeNodeEmpty extends WizardMatchAlternativeNode 
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices,
-      DefinitionRepository nativeDefininitions,
+      DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
     return true;
   }

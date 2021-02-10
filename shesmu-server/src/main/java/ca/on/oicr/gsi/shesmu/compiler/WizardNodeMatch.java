@@ -60,8 +60,7 @@ public class WizardNodeMatch extends WizardNode {
                   rr ->
                       rr.statement(
                           String.format(
-                              "%s = %s",
-                              result, alternative.render(renderer, name, rr, testValue))));
+                              "%s = %s", result, alternative.render(rr, name, testValue))));
               return String.format("%s(%s)", result, a.apply(0));
             }));
   }
@@ -88,8 +87,7 @@ public class WizardNodeMatch extends WizardNode {
       Consumer<String> errorHandler) {
     boolean ok = true;
     final Map<String, Long> caseCounts =
-        cases
-            .stream()
+        cases.stream()
             .collect(Collectors.groupingBy(WizardMatchBranchNode::name, Collectors.counting()));
     for (final Entry<String, Long> entry : caseCounts.entrySet()) {
       if (entry.getValue() > 1) {
@@ -102,8 +100,7 @@ public class WizardNodeMatch extends WizardNode {
     }
     return ok
         & test.resolveDefinitions(expressionCompilerServices, errorHandler)
-        & cases
-                .stream()
+        & cases.stream()
                 .filter(
                     c ->
                         c.resolveDefinitions(
@@ -224,8 +221,7 @@ public class WizardNodeMatch extends WizardNode {
       if (requiredBranches == null) {
         return false;
       }
-      return cases
-                  .stream()
+      return cases.stream()
                   .filter(
                       c -> {
                         final Imyhat branchType = requiredBranches.get(c.name());
