@@ -69,7 +69,10 @@ public class GuidedMeditation implements WatchedFileListener {
                         String.format("%d:%d: %s", line, column, errorMessage)))))
         .whitespace()
         .list(definitions::set, WizardDefineNode::parse)
+        .keyword("Start")
         .then(WizardNode::parse, wizard::set)
+        .symbol(";")
+        .whitespace()
         .finished()) {
       final List<String> errors = new ArrayList<>();
       final Map<String, WizardDefineNode> crossReferences = new TreeMap<>();
@@ -99,14 +102,10 @@ public class GuidedMeditation implements WatchedFileListener {
               return formats.get(format);
             }
           };
-      if (definitions
-              .get()
-              .stream()
+      if (definitions.get().stream()
               .allMatch(def -> def.resolveCrossReferences(crossReferences, errors::add))
           && wizard.get().resolveCrossReferences(crossReferences, errors::add)
-          && definitions
-                  .get()
-                  .stream()
+          && definitions.get().stream()
                   .filter(
                       def ->
                           def.check(expressionCompilerServices, definitionRepository, errors::add))
