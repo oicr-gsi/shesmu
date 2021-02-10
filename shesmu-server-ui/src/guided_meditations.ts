@@ -20,24 +20,25 @@ import {
   blank,
   br,
   button,
+  buttonAccessory,
+  dialog,
   dropdown,
+  hr,
   inputCheckbox,
   inputNumber,
   inputText,
+  link,
+  pane,
+  pickFromSet,
   radioSelector,
   setRootDashboard,
   sharedPane,
   singleState,
+  table,
   tableFromRows,
   tableRow,
   tabs,
   temporaryState,
-  pane,
-  link,
-  hr,
-  table,
-  buttonAccessory,
-  pickFromSet,
 } from "./html.js";
 import { fetchAsPromise, refreshable, saveFile } from "./io.js";
 import { actionStats } from "./stats.js";
@@ -531,7 +532,12 @@ export function renderWizard<T>(
             return null;
           } else {
             const newState = { ...state };
-            return { state: newState, next: step(newState) };
+            try {
+              return { state: newState, next: step(newState) };
+            } catch (e) {
+              dialog((_) => e.toString());
+              return null;
+            }
           }
         }),
         ...Object.values(wizard.choices)
