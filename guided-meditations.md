@@ -313,8 +313,8 @@ may not appreciate that. There are three important things to do:
 - Remove duplicate rows. Normally, Shesmu handles duplicates gracefully, but implementation details here make duplicate rows more of a problem. If selecting a small number of variables that will be mostly duplicated, use a `Group By` to ensure that duplicates are collapsed.
 
      "Peer in the file system!"
-		 Form
-			 Entry text owner Label "What user are you interested in?"
+     Form
+       Entry text owner Label "What user are you interested in?"
      Then
        Fetch
          Olive
