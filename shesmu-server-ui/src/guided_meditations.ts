@@ -96,21 +96,39 @@ type Information =
   | { type: "display"; contents: DisplayElement };
 
 type Parameters<T> = {
-  [P in keyof T]?: {
-    label: DisplayElement;
-    type: T[P] extends string
-      ? "text" | "select"
-      : T[P] extends number
-      ? "number" | "offset" | "select"
-      : T[P] extends boolean
-      ? "boolean" | "select"
-      : T[P] extends string[]
-      ? "subset" | "select"
-      : "select";
-    items?: [DisplayElement, T[P]][];
-    values?: string[];
-  };
+  [P in keyof T]?:
+    | (T[P] extends string
+        ? {
+            label: DisplayElement;
+            type: "text";
+          }
+        : never)
+    | (T[P] extends number
+        ? {
+            label: DisplayElement;
+            type: "number" | "offset";
+          }
+        : never)
+    | (T[P] extends boolean
+        ? {
+            label: DisplayElement;
+            type: "boolean";
+          }
+        : never)
+    | (T[P] extends string[]
+        ? {
+            label: DisplayElement;
+            type: "subset";
+            values: string[];
+          }
+        : never)
+    | {
+        items: [DisplayElement, T[P]][];
+        label: DisplayElement;
+        type: "select";
+      };
 };
+
 type FetchOperation<T> = {
   [P in keyof T]?:
     | { type: "count"; filter: ActionFilter }
@@ -262,7 +280,7 @@ function inputProperty<T, K extends keyof T>(
     };
   } else if (definition.type == "boolean") {
     field = (inputCheckbox("", false) as unknown) as InputField<T[K]>;
-  } else if (definition.type == "select" && definition.items !== undefined) {
+  } else if (definition.type == "select") {
     const value = temporaryState<[DisplayElement, T[K]]>(definition.items[0]);
     field = {
       set enabled(_: boolean) {
@@ -279,7 +297,7 @@ function inputProperty<T, K extends keyof T>(
         return value.get()[1];
       },
     };
-  } else if (definition.type == "subset" && definition.values !== undefined) {
+  } else if (definition.type == "subset") {
     const selected = new Set<string>();
     const selectedDisplay = singleState((input: string[]) =>
       input.length == 0
