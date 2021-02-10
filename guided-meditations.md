@@ -198,7 +198,7 @@ Ends the meditation. No further steps follow
 - `Choice` `When "` _description_ `" Then`  _step_, ...
 Allows the user to choose between several options. _step_ is a list of displays followed by another step.
 
-- `Form` _entries_ `Then` _step_
+- `Form` _entry1_[`,` _entry2_ ...] `Then` _step_
 Allows collecting information from the user and then proceed to the next step
 with that information available. _step_ is a list of displays followed by
 another step. For details on the form entires, see the next section.
@@ -206,26 +206,26 @@ another step. For details on the form entires, see the next section.
 #### Form Entires
 To collect data from the user, a form entry will display a prompt that is stored in a variable.
 
-- `Entry` _type_ _name_ `Label` _labelexpr_
+- _name_ `=` _type_ `Label` _labelexpr_
 Creates an input box of some kind. The _type_ will determine both the UI input
 widget and the output type. The output will be assigned to _name_ in subsequent
 steps. _labelexpr_ is text display elements to show to the left of the input
 widget.
 
-| Type      | Display                           | Variable Type             |
-|-----------|-----------------------------------|---------------------------|
-| `text`    | a free-form text input box        | `string`                  |
-| `number`  | a number spinner box              | `integer`                 |
-| `offset`  | a number box + time unit selector | `integer` as milliseconds |
-| `boolean` | a check box                       | `boolean`                 |
+| Type       | Display                           | Variable Type             |
+|------------|-----------------------------------|---------------------------|
+| `Text`     | a free-form text input box        | `string`                  |
+| `Number`   | a number spinner box              | `integer`                 |
+| `Offset`   | a number box + time unit selector | `integer` as milliseconds |
+| `Checkbox` | a check box                       | `boolean`                 |
 
-- `Entry Select` _optionvalue_ `As` _optionlabel_ ... _name_ `Label` _labelexpr_
+- _name_ `= Select` _optionvalue_ `As` _optionlabel_ ... `Label` _labelexpr_
 Creates a drop down list. The _optionlabel_ is display text that will be shown.
 There is no restriction on the type of _optionvalue_, though they all must be
 the same. The selected value will be assigned to _name_ in subsequent steps.
 _labelexpr_ is text display elements to show to the left of the input widget.
 
-- `Entry Subset` _values_ _name_ `Label` _labelexpr_
+- _name_ `= Subset` _values_ `Label` _labelexpr_
 Allows selecting a subset of items. A list of strings must be provided in
 _values_ and the ones selected by the user will be assigned to _names_, also as
 a list of strings.  _labelexpr_ is text display elements to show to the left of
@@ -248,8 +248,6 @@ Computes the algebraic value returned by _refexpr_ and access its contents.  A
 `When` branch can be provided for every possible algebraic type returned by
 _refexpr_. If all possible types are matched, the matching is _exhaustive_. If
 the matching is not exhaustive, the remaining cases can be
-handled via `Else` or `Remainder`. `Else` allows an expression to be used in
-all other cases, much like the `Else` in a `Switch`. `Remainder` provides
 access to the case being handled.
 
 For details on algebraic type matching, see [Algebraic Values without
@@ -265,7 +263,7 @@ The information blocks can display information from the server, but this
 information isn't available to make decision. The `Fetch` element allows
 gathering data from the server to make decisions.
 
-- `Fetch` _data_ `Then` _step_
+- `Fetch` _data1_[`,` _data2_ ...] `Then` _step_
 
 Each of the items described in _data_ is fetched from the server and then is
 available for decision making.
@@ -273,25 +271,25 @@ available for decision making.
 #### Server Data Collection Methods
 The following sources of data can be collected from the server:
 
-- `ActionCount` _query_ `To` _name_
+- _name_ `= ActionCount` _query_
 
 Counts the number of actions that match the provided query (see [Actions
 Searches](#actiondisp) for details on the query format). The resulting count
 will be available as an integer stored in _name_ .
 
-- `ActionIdentifiers` _query_ `To` _name_
+- _name_ `= ActionIdentifiers` _query_
 
 Copies all the identifiers of actions that match the provided query (see
 [Actions Searches](#actiondisp) for details on the query format). The resulting
 identifiers will be available as a list of strings stored in _name_ .
 
-- `ActionTags` _query_ `To` _name_
+- _name_ `= ActionTags` _query_
 
 Copies all the tags of actions that match the provided query (see [Actions
 Searches](#actiondisp) for details on the query format). The resulting tags
 will be available as a list of strings stored in _name_ .
 
-- `Olive Input`  _format_ _clauses_ `To` _name_
+- _name_ `= Olive Input`  _format_ _clauses_
 
 This runs an olive and collects the output of that olive into a list. This uses
 the _Olive Simulator_ and so has access to all functions and constants on the
@@ -314,14 +312,12 @@ may not appreciate that. There are three important things to do:
 
      "Peer in the file system!"
      Form
-       Entry text owner Label "What user are you interested in?"
+       owner = Text Label "What user are you interested in?"
      Then
        Fetch
-         Olive
-           Let owner = owner
-           unix_file
-             Where user == shesmu::simulated::owner Let file, size
-           To files
+         files = Olive
+           Input unix_file
+             Where user == owner Let file, size
        Then
          Repeat {; file,  size} In files:
            Begin Bold "{file}" " ({size}) " End

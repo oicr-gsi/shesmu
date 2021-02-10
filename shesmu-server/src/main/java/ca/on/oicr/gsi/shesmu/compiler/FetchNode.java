@@ -13,8 +13,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public abstract class FetchNode implements Target {
+  private interface FetchNodeConstructor {
+    FetchNode create(String name);
+  }
 
-  private static final ParseDispatch<FetchNode> DISPATCH = new ParseDispatch<>();
+  private static final ParseDispatch<FetchNodeConstructor> DISPATCH = new ParseDispatch<>();
 
   static {
     DISPATCH.addKeyword("ActionCount", actions("count", Imyhat.INTEGER));
@@ -23,36 +26,29 @@ public abstract class FetchNode implements Target {
     DISPATCH.addKeyword(
         "Olive",
         (p, o) -> {
-          final AtomicReference<String> name = new AtomicReference<>();
           final AtomicReference<String> format = new AtomicReference<>();
           final AtomicReference<List<OliveClauseNode>> clauses = new AtomicReference<>();
           final Parser start =
               p.whitespace().keyword("Input").whitespace().identifier(format::set).whitespace();
           final Parser clausesResult = start.list(clauses::set, OliveClauseNode::parse);
-          final Parser result =
-              clausesResult
-                  .whitespace()
-                  .keyword("To")
-                  .whitespace()
-                  .identifier(name::set)
-                  .whitespace();
+          final Parser result = clausesResult.whitespace();
           if (result.isGood()) {
             o.accept(
-                new FetchNodeOlive(
-                    p.line(),
-                    p.column(),
-                    name.get(),
-                    format.get(),
-                    clauses.get(),
-                    start.slice(clausesResult)));
+                name ->
+                    new FetchNodeOlive(
+                        p.line(),
+                        p.column(),
+                        name,
+                        format.get(),
+                        clauses.get(),
+                        start.slice(clausesResult)));
           }
           return result;
         });
   }
 
-  private static Rule<FetchNode> actions(String fetchType, Imyhat type) {
+  private static Rule<FetchNodeConstructor> actions(String fetchType, Imyhat type) {
     return (parser, output) -> {
-      final AtomicReference<String> name = new AtomicReference<>();
       final AtomicReference<
               ActionFilter.ActionFilterNode<
                   InformationParameterNode<ActionState>,
@@ -68,20 +64,24 @@ public abstract class FetchNode implements Target {
                   InformationParameterNode.INSTANT,
                   InformationParameterNode.OFFSET,
                   filter::set)
-              .whitespace()
-              .keyword("To")
-              .whitespace()
-              .identifier(name::set)
               .whitespace();
       if (result.isGood()) {
-        output.accept(new FetchNodeActions(fetchType, type, name.get(), filter.get()));
+        output.accept(name -> new FetchNodeActions(fetchType, type, name, filter.get()));
       }
       return result;
     };
   }
 
   public static Parser parse(Parser parser, Consumer<FetchNode> output) {
-    return parser.whitespace().dispatch(DISPATCH, output).whitespace();
+    final AtomicReference<String> name = new AtomicReference<>();
+    return parser
+        .whitespace()
+        .identifier(name::set)
+        .whitespace()
+        .symbol("=")
+        .whitespace()
+        .dispatch(DISPATCH, ctor -> output.accept(ctor.create(name.get())))
+        .whitespace();
   }
 
   private final String name;
