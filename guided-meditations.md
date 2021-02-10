@@ -23,7 +23,6 @@ standard functions and constants (_i.e._, `std::`...) are available.
 ## Displays
 There are several displays supported.
 
-
 ### Text
 Text can be displayed to the user. _expr_ is an expression that provides a
 string containing text. There are additional formatting options.
@@ -292,13 +291,15 @@ Copies all the tags of actions that match the provided query (see [Actions
 Searches](#actiondisp) for details on the query format). The resulting tags
 will be available as a list of strings stored in _name_ .
 
-- `Olive` [`Let` _name1_ `=` _expr1_`,` ...] _format_ _clauses_ `To` _name_
+- `Olive Input`  _format_ _clauses_ `To` _name_
 
 This runs an olive and collects the output of that olive into a list. This uses
 the _Olive Simulator_ and so has access to all functions and constants on the
-server. The `Let` at the start makes values available in the simulation in the
-`shesmu::simulated::` namespace, same as the [`Simulate`](#simulations)
-information display. _format_ specifies the input format that should be used
+server. The values defined are passed in to the simulation in the
+`shesmu::simulated::` namespace and the this namespace is imported, same as the
+[`Simulate`](#simulations) information display (_i.e._, if you have previous
+set `Entry ... To foo`, then you can use `foo` and/or `shesmu::simulated::foo`
+in this olive). _format_ specifies the input format that should be used
 (normally in the `Input` line of an olive script). A list of clauses can be
 specified. The data from the last clause will be converted into a list of
 objects and stored in the variable _name_.

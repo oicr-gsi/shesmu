@@ -8,7 +8,6 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -16,7 +15,6 @@ import java.util.function.Consumer;
 public abstract class FetchNode implements Target {
 
   private static final ParseDispatch<FetchNode> DISPATCH = new ParseDispatch<>();
-  private static final ParseDispatch<List<ObjectElementNode>> CONSTANTS = new ParseDispatch<>();
 
   static {
     DISPATCH.addKeyword("ActionCount", actions("count", Imyhat.INTEGER));
@@ -27,13 +25,9 @@ public abstract class FetchNode implements Target {
         (p, o) -> {
           final AtomicReference<String> name = new AtomicReference<>();
           final AtomicReference<String> format = new AtomicReference<>();
-          final AtomicReference<List<ObjectElementNode>> constants = new AtomicReference<>();
           final AtomicReference<List<OliveClauseNode>> clauses = new AtomicReference<>();
           final Parser start =
-              p.whitespace()
-                  .dispatch(CONSTANTS, constants::set)
-                  .identifier(format::set)
-                  .whitespace();
+              p.whitespace().keyword("Input").whitespace().identifier(format::set).whitespace();
           final Parser clausesResult = start.list(clauses::set, OliveClauseNode::parse);
           final Parser result =
               clausesResult
@@ -48,15 +42,12 @@ public abstract class FetchNode implements Target {
                     p.line(),
                     p.column(),
                     name.get(),
-                    constants.get(),
                     format.get(),
                     clauses.get(),
                     start.slice(clausesResult)));
           }
           return result;
         });
-    CONSTANTS.addKeyword("Let", (p, o) -> p.whitespace().list(o, ObjectElementNode::parse));
-    CONSTANTS.addRaw("nothing", Parser.just(Collections.emptyList()));
   }
 
   private static Rule<FetchNode> actions(String fetchType, Imyhat type) {

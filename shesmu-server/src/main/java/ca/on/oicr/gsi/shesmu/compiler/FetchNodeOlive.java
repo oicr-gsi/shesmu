@@ -24,11 +24,49 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FetchNodeOlive extends FetchNode {
+  private static final class InjectedTarget implements Target {
+    private final Target inner;
+    private final String name;
+    private final String unaliasedName;
+
+    private InjectedTarget(Target inner, boolean prefixed) {
+      this.inner = inner;
+      this.unaliasedName =
+          String.join(Parser.NAMESPACE_SEPARATOR, "shesmu", "simulated", inner.name());
+      name = prefixed ? unaliasedName : inner.name();
+    }
+
+    @Override
+    public Flavour flavour() {
+      return Flavour.CONSTANT;
+    }
+
+    @Override
+    public String name() {
+      return name;
+    }
+
+    @Override
+    public void read() {
+      inner.read();
+    }
+
+    @Override
+    public Imyhat type() {
+      return inner.type();
+    }
+
+    @Override
+    public String unaliasedName() {
+      return unaliasedName;
+    }
+  }
+
   private final List<OliveClauseNode> clauses;
   private final int column;
-  private final List<ObjectElementNode> constants;
   private final String format;
   private InputFormatDefinition formatDefinition = InputFormatDefinition.DUMMY;
+  private List<InjectedTarget> injections;
   private final int line;
   private OliveCompilerServices oliveCompilerServices;
   private List<Target> refillerTypes;
@@ -39,14 +77,12 @@ public class FetchNodeOlive extends FetchNode {
       int line,
       int column,
       String name,
-      List<ObjectElementNode> constants,
       String format,
       List<OliveClauseNode> clauses,
       String script) {
     super(name);
     this.clauses = clauses;
     this.column = column;
-    this.constants = constants;
     this.format = format;
     this.line = line;
     this.script = script;
@@ -68,7 +104,7 @@ public class FetchNodeOlive extends FetchNode {
     fullScript
         .append("Version 1; Input ")
         .append(format)
-        .append(";Olive ")
+        .append("; Import shesmu::simulated::*; Olive ")
         .append(script)
         .append("\nRefill export_to_meditation With ");
     boolean first = true;
@@ -87,13 +123,22 @@ public class FetchNodeOlive extends FetchNode {
           "{type: \"refiller\", compare: (a, b) => %s, script: %s, fakeRefiller: {export_to_meditation: %s}, fakeConstants: %s}",
           type.apply(EcmaScriptRenderer.COMPARATOR),
           RuntimeSupport.MAPPER.writeValueAsString(fullScript.toString()),
-          refillerTypes
-              .stream()
+          refillerTypes.stream()
               .map(t -> t.name() + ": \"" + t.type().descriptor() + "\"")
               .collect(Collectors.joining(", ", "{", "}")),
-          constants
-              .stream()
-              .flatMap(c -> c.renderConstant(r))
+          injections.stream()
+              .map(
+                  c -> {
+                    try {
+                      return String.format(
+                          "%s: { type: \"%s\", value: %s}",
+                          RuntimeSupport.MAPPER.writeValueAsString(c.inner.name()),
+                          c.type().descriptor(),
+                          r.load(c.inner));
+                    } catch (JsonProcessingException e) {
+                      throw new RuntimeException(e);
+                    }
+                  })
               .collect(Collectors.joining(", ", "{", "}")));
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
@@ -102,9 +147,11 @@ public class FetchNodeOlive extends FetchNode {
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    if (constants.stream().filter(c -> c.resolve(defs, errorHandler)).count() != constants.size()) {
-      return false;
-    }
+    injections =
+        defs.stream()
+            .filter(t -> t.flavour() == Flavour.LAMBDA)
+            .flatMap(t -> Stream.of(new InjectedTarget(t, true), new InjectedTarget(t, false)))
+            .collect(Collectors.toList());
     ClauseStreamOrder state = ClauseStreamOrder.PURE;
     final Set<String> signableNames = new TreeSet<>();
     for (final OliveClauseNode clause : clauses) {
@@ -114,8 +161,7 @@ public class FetchNodeOlive extends FetchNode {
       return false;
     }
     final NameDefinitions clauseDefs =
-        clauses
-            .stream()
+        clauses.stream()
             .reduce(
                 NameDefinitions.root(
                     formatDefinition,
@@ -127,8 +173,7 @@ public class FetchNodeOlive extends FetchNode {
                 });
     if (clauseDefs.isGood()) {
       refillerTypes =
-          clauseDefs
-              .stream()
+          clauseDefs.stream()
               .filter(v -> v.flavour().isStream() && Parser.IDENTIFIER.matcher(v.name()).matches())
               .collect(Collectors.toList());
       return true;
@@ -142,13 +187,7 @@ public class FetchNodeOlive extends FetchNode {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    if (constants
-            .stream()
-            .filter(c -> c.resolveDefinitions(expressionCompilerServices, errorHandler))
-            .count()
-        != constants.size()) {
-      return false;
-    }
+
     formatDefinition = expressionCompilerServices.inputFormat(format);
     if (formatDefinition == null) {
       errorHandler.accept(String.format("%d:%d: Unknown input format %s.", line, column, format));
@@ -156,6 +195,8 @@ public class FetchNodeOlive extends FetchNode {
     }
     oliveCompilerServices =
         new OliveCompilerServices() {
+          private final NameLoader<CallableDefinition> callables =
+              new NameLoader<>(nativeDefinitions.oliveDefinitions(), CallableDefinition::name);
           final Map<String, DumperDefinition> dumpers = new HashMap<>();
           private final NameLoader<FunctionDefinition> functions =
               new NameLoader<>(nativeDefinitions.functions(), FunctionDefinition::name);
@@ -177,39 +218,7 @@ public class FetchNodeOlive extends FetchNode {
 
           @Override
           public Stream<? extends Target> constants(boolean allowUserDefined) {
-            return Stream.concat(
-                nativeDefinitions.constants(),
-                constants
-                    .stream()
-                    .flatMap(ObjectElementNode::names)
-                    .map(
-                        p ->
-                            new Target() {
-                              private final String name =
-                                  String.join(
-                                      Parser.NAMESPACE_SEPARATOR, "shesmu", "simulated", p.first());
-                              private final Imyhat type = p.second();
-
-                              @Override
-                              public Flavour flavour() {
-                                return Flavour.CONSTANT;
-                              }
-
-                              @Override
-                              public String name() {
-                                return name;
-                              }
-
-                              @Override
-                              public void read() {
-                                // Do nothing.
-                              }
-
-                              @Override
-                              public Imyhat type() {
-                                return type;
-                              }
-                            }));
+            return Stream.concat(nativeDefinitions.constants(), injections.stream());
           }
 
           @Override
@@ -234,7 +243,7 @@ public class FetchNodeOlive extends FetchNode {
 
           @Override
           public CallableDefinition olive(String name) {
-            return null;
+            return callables.get(name);
           }
 
           @Override
@@ -252,8 +261,7 @@ public class FetchNodeOlive extends FetchNode {
             return dumpers.computeIfAbsent(dumper, DumperDefinition::new);
           }
         };
-    return clauses
-            .stream()
+    return clauses.stream()
             .filter(c -> c.resolveDefinitions(oliveCompilerServices, errorHandler))
             .count()
         == clauses.size();
@@ -267,8 +275,7 @@ public class FetchNodeOlive extends FetchNode {
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
     final boolean result =
-        constants.stream().filter(c -> c.typeCheck(errorHandler)).count() == constants.size()
-            && clauses.stream().filter(c -> c.typeCheck(errorHandler)).count() == clauses.size();
+        clauses.stream().filter(c -> c.typeCheck(errorHandler)).count() == clauses.size();
     if (result) {
       type = new ObjectImyhat(refillerTypes.stream().map(t -> new Pair<>(t.name(), t.type())));
     }
