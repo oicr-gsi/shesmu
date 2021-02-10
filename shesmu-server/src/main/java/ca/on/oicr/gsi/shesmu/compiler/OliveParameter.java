@@ -12,7 +12,12 @@ public class OliveParameter implements Target {
     final AtomicReference<ImyhatNode> type = new AtomicReference<>();
     final AtomicReference<String> name = new AtomicReference<>();
     final Parser result =
-        parser.then(ImyhatNode::parse, type::set).whitespace().identifier(name::set).whitespace();
+        parser
+            .whitespace()
+            .then(ImyhatNode::parse, type::set)
+            .whitespace()
+            .identifier(name::set)
+            .whitespace();
     if (result.isGood()) {
       output.accept(new OliveParameter(name.get(), type.get()));
     }
