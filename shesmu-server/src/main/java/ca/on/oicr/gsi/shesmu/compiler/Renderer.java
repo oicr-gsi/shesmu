@@ -142,7 +142,7 @@ public abstract class Renderer {
                 new Method(target.name(), target.type().apply(TypeUtils.TO_ASM), new Type[] {}));
       }
     } else {
-      emitNamed(target.name());
+      emitNamed(target.unaliasedName());
     }
   }
 

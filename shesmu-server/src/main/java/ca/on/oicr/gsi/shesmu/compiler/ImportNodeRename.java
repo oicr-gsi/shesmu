@@ -13,7 +13,20 @@ public final class ImportNodeRename extends ImportNode {
 
   @Override
   public ImportRewriter prepare(String prefix) {
-    return candidate ->
-        candidate.equals(alias) ? String.join(Parser.NAMESPACE_SEPARATOR, prefix, original) : null;
+    return new ImportRewriter() {
+      @Override
+      public String rewrite(String candidate) {
+        return candidate.equals(alias)
+            ? String.join(Parser.NAMESPACE_SEPARATOR, prefix, original)
+            : null;
+      }
+
+      @Override
+      public String strip(String candidate) {
+        return candidate.equals(String.join(Parser.NAMESPACE_SEPARATOR, prefix, original))
+            ? alias
+            : null;
+      }
+    };
   }
 }

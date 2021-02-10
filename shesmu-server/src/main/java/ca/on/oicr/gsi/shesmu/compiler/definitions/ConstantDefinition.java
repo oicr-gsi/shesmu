@@ -64,6 +64,11 @@ public abstract class ConstantDefinition implements Target {
     public String load() {
       return original.load();
     }
+
+    @Override
+    public String unaliasedName() {
+      return original.unaliasedName();
+    }
   }
 
   private class ConstantCompiler extends BaseHotloadingCompiler {

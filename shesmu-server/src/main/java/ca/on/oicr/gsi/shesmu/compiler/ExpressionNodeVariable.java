@@ -51,7 +51,7 @@ public class ExpressionNodeVariable extends ExpressionNode {
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     if (predicate.test(target.flavour())) {
-      names.add(name);
+      names.add(target.unaliasedName());
     }
     // We also need to get an accessor when in a Define olive and we need to lift the accessor
     // along the way; in a other olives, this will just get ignored.

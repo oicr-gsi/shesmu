@@ -229,20 +229,27 @@ public class ProgramNode {
 
           @Override
           public Stream<? extends Target> constants(boolean allowUserDefined) {
-            return allowUserDefined
-                ? Stream.concat(
-                    duplicateImport(constants.get(), AliasedConstantDefinition::new),
-                    userDefinedConstants.values().stream())
-                : constants.get();
+            return Stream.concat(
+                stripImport(constants.get(), AliasedConstantDefinition::new),
+                allowUserDefined ? userDefinedConstants.values().stream() : Stream.empty());
           }
 
           private <T extends Target> Stream<T> duplicateImport(
               Stream<T> input, BiFunction<T, String, T> alias) {
             return input.flatMap(
                 item ->
-                    importRewriters
-                        .stream()
+                    importRewriters.stream()
                         .map(importRewriter -> importRewriter.rewrite(item.name()))
+                        .filter(Objects::nonNull)
+                        .map(name -> alias.apply(item, name)));
+          }
+
+          private <T extends Target> Stream<T> stripImport(
+              Stream<T> input, BiFunction<T, String, T> alias) {
+            return input.flatMap(
+                item ->
+                    importRewriters.stream()
+                        .map(importRewriter -> importRewriter.strip(item.name()))
                         .filter(Objects::nonNull)
                         .map(name -> alias.apply(item, name)));
           }
@@ -281,7 +288,7 @@ public class ProgramNode {
 
           @Override
           public Stream<SignatureDefinition> signatures() {
-            return duplicateImport(signatures.get(), AliasedSignatureDefintion::new);
+            return stripImport(signatures.get(), AliasedSignatureDefintion::new);
           }
 
           @Override
@@ -301,8 +308,7 @@ public class ProgramNode {
     boolean ok =
         pragmas.stream().filter(pragma -> pragma.check(compilerServices, errorHandler)).count()
                 == pragmas.size()
-            & olives
-                    .stream()
+            & olives.stream()
                     .filter(
                         olive ->
                             olive.collectDefinitions(
@@ -313,8 +319,7 @@ public class ProgramNode {
         ok && olives.stream().allMatch(olive -> olive.resolveTypes(compilerServices, errorHandler));
     ok =
         ok
-            && olives
-                .stream()
+            && olives.stream()
                 .allMatch(
                     olive ->
                         olive.collectFunctions(
@@ -325,8 +330,7 @@ public class ProgramNode {
                             errorHandler));
     ok =
         ok
-            && olives
-                    .stream()
+            && olives.stream()
                     .filter(olive -> olive.resolveDefinitions(compilerServices, errorHandler))
                     .count()
                 == olives.size();
@@ -334,8 +338,7 @@ public class ProgramNode {
     // Resolve variables
     ok =
         ok
-            && olives
-                    .stream()
+            && olives.stream()
                     .filter(olive -> olive.resolve(compilerServices, errorHandler))
                     .count()
                 == olives.size();
