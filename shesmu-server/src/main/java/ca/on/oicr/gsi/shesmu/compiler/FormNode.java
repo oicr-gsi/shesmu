@@ -11,20 +11,26 @@ import java.util.function.Consumer;
 
 public abstract class FormNode implements Target {
   public enum FormType implements FormConstructor {
-    TEXT(Imyhat.STRING),
-    NUMBER(Imyhat.INTEGER),
-    OFFSET(Imyhat.INTEGER),
-    BOOLEAN(Imyhat.BOOLEAN);
+    TEXT("Text", Imyhat.STRING),
+    NUMBER("Number", Imyhat.INTEGER),
+    OFFSET("Offset", Imyhat.INTEGER),
+    BOOLEAN("Checkbox", Imyhat.BOOLEAN);
 
+    private final String keyword;
     private final Imyhat type;
 
-    FormType(Imyhat type) {
+    FormType(String keyword, Imyhat type) {
+      this.keyword = keyword;
       this.type = type;
     }
 
     @Override
     public FormNode create(List<DisplayNode> label, String name) {
       return new FormNodeSimple(label, name, this);
+    }
+
+    public String keyword() {
+      return keyword;
     }
 
     public Imyhat type() {
@@ -40,7 +46,7 @@ public abstract class FormNode implements Target {
 
   static {
     for (final FormType type : FormType.values()) {
-      FORM_TYPE.addKeyword(type.name().toLowerCase(), Parser.just(type));
+      FORM_TYPE.addKeyword(type.keyword(), Parser.just(type));
     }
     FORM_TYPE.addKeyword(
         "Select",
@@ -93,11 +99,11 @@ public abstract class FormNode implements Target {
     final Parser result =
         parser
             .whitespace()
-            .keyword("Entry")
+            .identifier(name::set)
+            .whitespace()
+            .symbol("=")
             .whitespace()
             .dispatch(FORM_TYPE, type::set)
-            .whitespace()
-            .identifier(name::set)
             .whitespace()
             .keyword("Label")
             .whitespace()

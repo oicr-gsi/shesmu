@@ -28,7 +28,8 @@ public abstract class WizardNode {
           final AtomicReference<List<FormNode>> entries = new AtomicReference<>();
           final AtomicReference<WizardNode> next = new AtomicReference<>();
           final Parser result =
-              p.list(entries::set, FormNode::parse)
+              p.whitespace()
+                  .list(entries::set, FormNode::parse, ',')
                   .whitespace()
                   .keyword("Then")
                   .whitespace()
@@ -188,7 +189,7 @@ public abstract class WizardNode {
           final AtomicReference<WizardNode> next = new AtomicReference<>();
           final Parser result =
               p.whitespace()
-                  .list(entries::set, FetchNode::parse)
+                  .list(entries::set, FetchNode::parse, ',')
                   .whitespace()
                   .symbol("Then")
                   .whitespace()
