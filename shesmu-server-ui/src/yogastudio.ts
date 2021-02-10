@@ -6,6 +6,7 @@ import {
   buttonAccessory,
   checkKey,
   group,
+  preformatted,
   setRootDashboard,
   singleState,
   table,
@@ -44,22 +45,30 @@ export function renderResponse<T>(
     const wizard = new Function("$runtime", response?.functionBody)(
       runtime
     ) as WizardStep<T>;
-    const { information, then } = wizard({});
-    return [
-      {
-        name: "Meditation",
-        contents: [
-          information
-            .flat(Number.MAX_VALUE)
-            .map((i) =>
-              renderInformation(i, filenameFormatter, exportSearches)
-            ),
-          then == null
-            ? "Well, that was fast."
-            : renderWizard({}, then, filenameFormatter, exportSearches),
-        ],
-      },
-    ];
+    try {
+      const { information, then } = wizard({});
+      return [
+        {
+          name: "Meditation",
+          contents: [
+            information
+              .flat(Number.MAX_VALUE)
+              .map((i) =>
+                renderInformation(i, filenameFormatter, exportSearches)
+              ),
+            then == null
+              ? "Well, that was fast."
+              : renderWizard({}, then, filenameFormatter, exportSearches),
+          ],
+        },
+        {
+          name: "JavaScript Code",
+          contents: preformatted(response?.functionBody),
+        },
+      ];
+    } catch (e) {
+      return [{ name: "Implementation Error", contents: e.toString() }];
+    }
   } else {
     return [];
   }
