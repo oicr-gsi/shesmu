@@ -5,6 +5,8 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -65,8 +67,7 @@ public class WizardDefineNode {
       Consumer<String> errorHandler) {
     boolean ok = true;
     for (final Map.Entry<String, Long> duplicate :
-        parameters
-            .stream()
+        parameters.stream()
             .collect(Collectors.groupingBy(OliveParameter::name, Collectors.counting()))
             .entrySet()) {
       if (duplicate.getValue() > 1) {
@@ -78,8 +79,7 @@ public class WizardDefineNode {
       }
     }
     return ok
-        && parameters
-                .stream()
+        && parameters.stream()
                 .filter(p -> p.resolveTypes(expressionCompilerServices, errorHandler))
                 .count()
             == parameters.size()
@@ -124,33 +124,55 @@ public class WizardDefineNode {
         renderer.newConst(
             renderer.lambda(
                 parameters.size(),
-                (r, a) ->
-                    step.renderEcma(
-                        r,
-                        rr ->
-                            parameters
-                                .stream()
-                                .map(
-                                    new Function<OliveParameter, EcmaLoadableValue>() {
-                                      private int counter;
+                (r, a) -> {
+                  final String child =
+                      step.renderEcma(
+                          r,
+                          rr ->
+                              parameters.stream()
+                                  .map(
+                                      new Function<OliveParameter, EcmaLoadableValue>() {
+                                        private int counter;
 
-                                      @Override
-                                      public EcmaLoadableValue apply(OliveParameter parameter) {
-                                        return new EcmaLoadableValue() {
-                                          private final int index = counter++;
+                                        @Override
+                                        public EcmaLoadableValue apply(OliveParameter parameter) {
+                                          return new EcmaLoadableValue() {
+                                            private final int index = counter++;
 
-                                          @Override
-                                          public String apply(EcmaScriptRenderer renderer) {
-                                            return a.apply(index);
-                                          }
+                                            @Override
+                                            public String apply(EcmaScriptRenderer renderer) {
+                                              return a.apply(index);
+                                            }
 
-                                          @Override
-                                          public String name() {
-                                            return parameter.name();
-                                          }
-                                        };
-                                      }
-                                    }))));
+                                            @Override
+                                            public String name() {
+                                              return parameter.name();
+                                            }
+                                          };
+                                        }
+                                      }));
+                  return String.format(
+                      "%s(%s)",
+                      child,
+                      parameters.stream()
+                          .map(
+                              new Function<OliveParameter, String>() {
+                                private int index;
+
+                                @Override
+                                public String apply(OliveParameter parameter) {
+                                  try {
+                                    return RuntimeSupport.MAPPER.writeValueAsString(
+                                            parameter.name())
+                                        + ": "
+                                        + a.apply(index++);
+                                  } catch (JsonProcessingException e) {
+                                    throw new RuntimeException(e);
+                                  }
+                                }
+                              })
+                          .collect(Collectors.joining(", ", "{", "}")));
+                }));
   }
 
   public boolean resolveCrossReferences(
