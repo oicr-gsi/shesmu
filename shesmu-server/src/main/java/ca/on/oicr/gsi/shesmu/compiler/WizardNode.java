@@ -173,7 +173,7 @@ public abstract class WizardNode {
                   .identifier(name::set)
                   .whitespace()
                   .symbol("(")
-                  .list(arguments::set, ExpressionNode::parse)
+                  .list(arguments::set, ExpressionNode::parse, ',')
                   .symbol(")")
                   .whitespace();
           if (result.isGood()) {
