@@ -155,4 +155,8 @@ public interface Target {
 
   /** The Shesmu type for this variable */
   Imyhat type();
+
+  default String unaliasedName() {
+    return name();
+  }
 }

@@ -19,7 +19,19 @@ public abstract class ImportNode {
                 new ImportNode() {
                   @Override
                   public ImportRewriter prepare(String prefix) {
-                    return name -> String.join(Parser.NAMESPACE_SEPARATOR, prefix, name);
+                    return new ImportRewriter() {
+                      @Override
+                      public String rewrite(String name) {
+                        return String.join(Parser.NAMESPACE_SEPARATOR, prefix, name);
+                      }
+
+                      @Override
+                      public String strip(String name) {
+                        return name.startsWith(prefix + Parser.NAMESPACE_SEPARATOR)
+                            ? name.substring(prefix.length() + Parser.NAMESPACE_SEPARATOR.length())
+                            : null;
+                      }
+                    };
                   }
                 })));
     DISPATCH.addSymbol(
