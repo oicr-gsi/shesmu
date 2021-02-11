@@ -59,7 +59,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       super(
           "niassa-analysis " + fileName.toString(),
           120,
-          TimeoutRecord.limit(45, ConcurrencyLimitedRecord.limit(4, ReplacingRecord::new)));
+          TimeoutRecord.limit(45, ReplacingRecord::new));
     }
 
     @Override
