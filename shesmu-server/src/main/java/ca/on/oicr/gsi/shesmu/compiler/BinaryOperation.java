@@ -279,12 +279,12 @@ public abstract class BinaryOperation {
                     renderer.root(),
                     String.format("Coalesce %d:%d", line, column),
                     LambdaBuilder.supplier(resultType),
+                    renderer.streamType(),
                     renderer
                         .allValues()
                         .filter(v -> captures.contains(v.name()))
                         .toArray(LoadableValue[]::new));
-            final Renderer orElseMethod =
-                supplier.renderer(renderer.streamType(), renderer.signerEmitter());
+            final Renderer orElseMethod = supplier.renderer(renderer.signerEmitter());
             orElseMethod.methodGen().visitCode();
             rightValue.render(orElseMethod);
             orElseMethod.methodGen().returnValue();

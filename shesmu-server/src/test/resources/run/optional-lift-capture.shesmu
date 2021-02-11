@@ -1,0 +1,5 @@
+Version 1;
+Input test;
+
+Olive
+ Run ok With ok = (If True Then `` Else `False`) Default project == "the_foo_study";
