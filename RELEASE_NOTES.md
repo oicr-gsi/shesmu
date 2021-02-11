@@ -1,5 +1,19 @@
 # Unreleased
 
+# [1.7.2] - 2021-02-11T18:35+00:00
+
+
+Changes:
+
+* Read stale data instead of throwing `ConcurrentModificationException` in cache limiter
+* Fix bad bytecode when using input variables in `Default`
+
+UI changes:
+* Redesign the permutation puzzle
+
+Niassa plugin changes:
+* Remove concurrency restratint on Niassa and just let Niassa be overloaded
+
 # [1.7.1] - 2021-02-08T18:48+00:00
 
 Changes:
