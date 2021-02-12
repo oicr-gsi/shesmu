@@ -67,7 +67,12 @@ export function renderResponse<T>(
         },
       ];
     } catch (e) {
-      return [{ name: "Implementation Error", contents: e.toString() }];
+      return [
+        {
+          name: "Implementation Error",
+          contents: [e.toString(), br(), preformatted(response?.functionBody)],
+        },
+      ];
     }
   } else {
     return [];
