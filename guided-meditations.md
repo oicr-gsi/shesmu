@@ -219,6 +219,13 @@ widget.
 | `Offset`   | a number box + time unit selector | `integer` as milliseconds |
 | `Checkbox` | a check box                       | `boolean`                 |
 
+- _name_ `= Dropdown` _item_ `As` _itemlabel_ `In` _values_ `Label` _labelexpr_
+Creates a drop down list from the items in  _values_, which must be a list.
+Each item will be displayed as _itemlabel_, with the selected values as _item_.
+The selected value will be assigned to _name_ in subsequent steps.  _labelexpr_
+is text display elements to show to the left of the input widget. If _values_
+is an empty list, the meditation will be stopped.
+
 - _name_ `= Select` _optionvalue_ `As` _optionlabel_ ... `Label` _labelexpr_
 Creates a drop down list. The _optionlabel_ is display text that will be shown.
 There is no restriction on the type of _optionvalue_, though they all must be
