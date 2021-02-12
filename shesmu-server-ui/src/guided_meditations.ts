@@ -126,6 +126,12 @@ type Parameters<T> = {
         items: [DisplayElement, T[P]][];
         label: DisplayElement;
         type: "select";
+      }
+    | {
+        label: DisplayElement;
+        labelMaker: (input: T[P]) => DisplayElement;
+        type: "select-dynamic";
+        values: T[P][];
       };
 };
 
@@ -295,6 +301,26 @@ function inputProperty<T, K extends keyof T>(
       ),
       get value(): T[K] {
         return value.get()[1];
+      },
+    };
+  } else if (definition.type == "select-dynamic") {
+    if (definition.values.length == 0) {
+      throw new Error("Drop down with no items to select.");
+    }
+    const value = temporaryState<T[K]>(definition.values[0]);
+    field = {
+      set enabled(_: boolean) {
+        // Do nothing.
+      },
+      ui: dropdown(
+        definition.labelMaker,
+        null,
+        value,
+        null,
+        ...definition.values
+      ),
+      get value(): T[K] {
+        return value.get();
       },
     };
   } else if (definition.type == "subset") {
@@ -568,33 +594,37 @@ export function renderWizard<T>(
       break;
     case "form":
       const output: Partial<T> = { ...state };
-      const fields = Object.keys(wizard.parameters).map((key) => {
-        const k = key as keyof T;
-        return inputProperty(k, wizard.parameters[k], output);
-      });
+      try {
+        const fields = Object.keys(wizard.parameters).map((key) => {
+          const k = key as keyof T;
+          return inputProperty(k, wizard.parameters[k], output);
+        });
 
-      inner = [
-        tableFromRows(
-          fields.map((f) =>
-            tableRow(null, { contents: f.label }, { contents: f.field.ui })
-          )
-        ),
-        button(
-          { type: "icon", icon: "arrow-right-circle" },
-          "Continue to next step",
-          () => {
-            for (const field of fields) {
-              field.update();
+        inner = [
+          tableFromRows(
+            fields.map((f) =>
+              tableRow(null, { contents: f.label }, { contents: f.field.ui })
+            )
+          ),
+          button(
+            { type: "icon", icon: "arrow-right-circle" },
+            "Continue to next step",
+            () => {
+              for (const field of fields) {
+                field.update();
+              }
+
+              childDisplay.model.statusChanged({
+                state: output,
+                next: wizard.processor(output),
+              });
             }
-
-            childDisplay.model.statusChanged({
-              state: output,
-              next: wizard.processor(output),
-            });
-          }
-        ),
-        br(),
-      ];
+          ),
+          br(),
+        ];
+      } catch (e) {
+        inner = e.toString();
+      }
       break;
     case "fetch":
       const { ui: fetchUi, model: fetchModel } = pane("medium");

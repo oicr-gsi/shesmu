@@ -80,6 +80,34 @@ public abstract class FormNode implements Target {
           return result;
         });
     FORM_TYPE.addKeyword(
+        "Dropdown",
+        (p, o) -> {
+          final AtomicReference<DestructuredArgumentNode> itemName = new AtomicReference<>();
+          final AtomicReference<DisplayNode> itemLabel = new AtomicReference<>();
+          final AtomicReference<ExpressionNode> values = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .keyword("Show")
+                  .whitespace()
+                  .then(DestructuredArgumentNode::parse, itemName::set)
+                  .whitespace()
+                  .keyword("With")
+                  .whitespace()
+                  .then(DisplayNode::parse, itemLabel::set)
+                  .whitespace()
+                  .keyword("From")
+                  .whitespace()
+                  .then(ExpressionNode::parse, values::set)
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(
+                (label, name) ->
+                    new FormNodeDropdown(
+                        label, name, values.get(), itemName.get(), itemLabel.get()));
+          }
+          return result;
+        });
+    FORM_TYPE.addKeyword(
         "Subset",
         (p, o) -> {
           final AtomicReference<ExpressionNode> values = new AtomicReference<>();
