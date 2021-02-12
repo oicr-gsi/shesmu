@@ -219,7 +219,7 @@ widget.
 | `Offset`   | a number box + time unit selector | `integer` as milliseconds |
 | `Checkbox` | a check box                       | `boolean`                 |
 
-- _name_ `= Dropdown` _item_ `As` _itemlabel_ `In` _values_ `Label` _labelexpr_
+- _name_ `= Dropdown Show` _item_ `With` _itemlabel_ `From` _values_ `Label` _labelexpr_
 Creates a drop down list from the items in  _values_, which must be a list.
 Each item will be displayed as _itemlabel_, with the selected values as _item_.
 The selected value will be assigned to _name_ in subsequent steps.  _labelexpr_

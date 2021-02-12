@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ListImyhat;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -50,10 +51,19 @@ public class ExpressionNodeList extends ExpressionNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    return items
-        .stream()
+    if (items.isEmpty()) {
+      return "[]";
+    }
+
+    return items.stream()
         .map(e -> e.renderEcma(renderer))
-        .collect(Collectors.joining(", ", "$runtime.setNew([", "])"));
+        .collect(
+            Collectors.joining(
+                ", ",
+                "$runtime.setNew([",
+                "], (a, b) => "
+                    + ((ListImyhat) type).inner().apply(EcmaScriptRenderer.COMPARATOR)
+                    + ")"));
   }
 
   @Override
@@ -84,8 +94,7 @@ public class ExpressionNodeList extends ExpressionNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return items
-            .stream()
+    return items.stream()
             .filter(item -> item.resolveDefinitions(expressionCompilerServices, errorHandler))
             .count()
         == items.size();
@@ -107,8 +116,7 @@ public class ExpressionNodeList extends ExpressionNode {
     if (ok) {
       final AtomicReference<Imyhat> resultType = new AtomicReference<>(items.get(0).type());
       ok =
-          items
-                  .stream()
+          items.stream()
                   .skip(1)
                   .filter(
                       item -> {
