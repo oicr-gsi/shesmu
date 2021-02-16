@@ -283,7 +283,15 @@ public abstract class BaseTicketAction extends Action {
                       .max(Comparator.naturalOrder());
               final List<FieldInput> fields = new ArrayList<>();
               for (final Field field : t.getFields()) {
-                if (field.isRequired()) {
+                if (field.getId().equals(IssueFieldId.LABELS_FIELD.id)) {
+                  fields.add(
+                      new FieldInput(
+                          IssueFieldId.LABELS_FIELD,
+                          Stream.of(issue.getLabels(), STANDARD_LABELS, labels)
+                              .flatMap(Collection::stream)
+                              .distinct()
+                              .collect(Collectors.toList())));
+                } else if (field.isRequired()) {
                   final String value = connection.get().defaultFieldValues(field.getId());
                   fields.add(
                       new FieldInput(
@@ -296,20 +304,6 @@ public abstract class BaseTicketAction extends Action {
                   .client()
                   .getIssueClient()
                   .transition(issue, new TransitionInput(t.getId(), fields, comment))
-                  .claim();
-              connection
-                  .get()
-                  .client()
-                  .getIssueClient()
-                  .updateIssue(
-                      issue.getKey(),
-                      IssueInput.createWithFields(
-                          new FieldInput(
-                              IssueFieldId.LABELS_FIELD,
-                              Stream.of(issue.getLabels(), STANDARD_LABELS, labels)
-                                  .flatMap(Collection::stream)
-                                  .distinct()
-                                  .collect(Collectors.toList()))))
                   .claim();
               connection.get().invalidate();
               issues.add(issue.getKey());
