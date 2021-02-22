@@ -1,5 +1,11 @@
 # Unreleased
 
+# [1.8.2] - 2021-02-22T20:21+00:00
+
+Vidarr plugin changes:
+
+* Fix `vidarr::sign` method
+
 # [1.8.1] - 2021-02-22T20:04+00:00
 
 * Fix release problems
