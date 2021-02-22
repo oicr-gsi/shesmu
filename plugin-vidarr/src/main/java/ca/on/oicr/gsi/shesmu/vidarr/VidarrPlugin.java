@@ -134,11 +134,11 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
       url = Optional.of(URI.create(value.getUrl()));
       final var workflowsResult =
           CLIENT.send(
-              HttpRequest.newBuilder(url.get().resolve("api/workflows")).GET().build(),
+              HttpRequest.newBuilder(url.get().resolve("/api/workflows")).GET().build(),
               new JsonBodyHandler<>(MAPPER, WorkflowDeclaration[].class));
       final var targetsResult =
           CLIENT.send(
-              HttpRequest.newBuilder(url.get().resolve("api/targets")).GET().build(),
+              HttpRequest.newBuilder(url.get().resolve("/api/targets")).GET().build(),
               new JsonBodyHandler<>(
                   MAPPER, new TypeReference<Map<String, TargetDeclaration>>() {}));
       if (workflowsResult.statusCode() == 200 && targetsResult.statusCode() == 200) {
@@ -180,7 +180,6 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                   });
             }
           }
-
           for (final var workflow : workflows) {
             if (target.getValue().getLanguage().contains(workflow.getLanguage())) {
               InputParameterConverter.create(workflow.getParameters(), target.getValue())
@@ -192,7 +191,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                   metadataParameters ->
                                       definer.defineAction(
                                           sanitise(target.getKey())
-                                              + Parser.QUALIFIED_IDENTIFIER
+                                              + Parser.NAMESPACE_SEPARATOR
                                               + sanitise(
                                                   workflow.getName()
                                                       + "_ "
@@ -223,33 +222,39 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                           Stream.of(
                                                   targetParameters.stream(),
                                                   Stream.of(inputParameters, metadataParameters),
-                                                  workflow.getLabels().entrySet().stream()
-                                                      .map(
-                                                          entry ->
-                                                              new CustomActionParameter<
-                                                                  SubmitAction>(
-                                                                  sanitise(
-                                                                      "label_" + entry.getKey()),
-                                                                  true,
-                                                                  entry
-                                                                      .getValue()
-                                                                      .apply(SIMPLE_TO_IMYHAT)) {
-                                                                private final String label =
-                                                                    entry.getKey();
+                                                  workflow.getLabels() == null
+                                                      ? Stream
+                                                          .<CustomActionParameter<SubmitAction>>
+                                                              empty()
+                                                      : workflow.getLabels().entrySet().stream()
+                                                          .map(
+                                                              entry ->
+                                                                  new CustomActionParameter<
+                                                                      SubmitAction>(
+                                                                      sanitise(
+                                                                          "label_"
+                                                                              + entry.getKey()),
+                                                                      true,
+                                                                      entry
+                                                                          .getValue()
+                                                                          .apply(
+                                                                              SIMPLE_TO_IMYHAT)) {
+                                                                    private final String label =
+                                                                        entry.getKey();
 
-                                                                @Override
-                                                                public void store(
-                                                                    SubmitAction action,
-                                                                    Object value) {
-                                                                  type()
-                                                                      .accept(
-                                                                          new PackJsonObject(
-                                                                              action.request
-                                                                                  .getLabels(),
-                                                                              label),
-                                                                          value);
-                                                                }
-                                                              }))
+                                                                    @Override
+                                                                    public void store(
+                                                                        SubmitAction action,
+                                                                        Object value) {
+                                                                      type()
+                                                                          .accept(
+                                                                              new PackJsonObject(
+                                                                                  action.request
+                                                                                      .getLabels(),
+                                                                                  label),
+                                                                              value);
+                                                                    }
+                                                                  }))
                                               .flatMap(Function.identity()))));
             }
           }
