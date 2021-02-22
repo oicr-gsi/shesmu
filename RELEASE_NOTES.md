@@ -1,5 +1,9 @@
 # Unreleased
 
+# [1.8.3] - 2021-02-22T20:46+00:00
+
+* Fix annotations for `external_key` on `pinery_ius` and `cerberus_fp`
+
 # [1.8.2] - 2021-02-22T20:21+00:00
 
 Vidarr plugin changes:
