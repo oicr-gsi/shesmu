@@ -17,7 +17,6 @@
     <dependency>
       <groupId>ca.on.oicr.gsi</groupId>
       <artifactId>shesmu-pluginapi</artifactId>
-      <version>1.7.3-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
