@@ -3,10 +3,7 @@ package ca.on.oicr.gsi.shesmu.vidarr;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
-import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
-import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
-import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.AsJsonNode;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
@@ -29,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -114,21 +110,6 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   static String sanitise(String raw) {
     final var clean = INVALID.matcher(raw).replaceAll("_");
     return Character.isLowerCase(clean.charAt(0)) ? clean : ("v" + clean);
-  }
-
-  @ShesmuMethod(
-      type = "ao4id$sprovider$sstale$bversions$mss",
-      description = "Adds signature information to a file provenance LIMS key.")
-  public static Tuple sign(
-      @ShesmuParameter(
-              type = "ao4id$sprovider$sstale$bversions$mss",
-              description = "The external key from file provenance or Pinery provenance.")
-          Tuple externalKey,
-      @ShesmuParameter(description = "The signature from std::signature::sha1") String signature) {
-    @SuppressWarnings("unchecked")
-    final var versions = new TreeMap<>((Map<String, String>) externalKey.get(3));
-    versions.put("shesmu-sha1", signature);
-    return new Tuple(externalKey.get(0), externalKey.get(1), externalKey.get(2), versions);
   }
 
   private final Definer<VidarrPlugin> definer;
