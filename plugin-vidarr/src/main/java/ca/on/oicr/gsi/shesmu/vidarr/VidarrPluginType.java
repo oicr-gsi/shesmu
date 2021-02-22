@@ -18,11 +18,11 @@ import org.kohsuke.MetaInfServices;
 public final class VidarrPluginType extends PluginFileType<VidarrPlugin> {
 
   @ShesmuMethod(
-      type = "ao4id$sprovider$sstale$bversions$mss",
+      type = "o4id$sprovider$sstale$bversions$mss",
       description = "Adds signature information to a file provenance LIMS key.")
   public static Tuple sign(
       @ShesmuParameter(
-              type = "ao4id$sprovider$sstale$bversions$mss",
+              type = "o4id$sprovider$sstale$bversions$mss",
               description = "The external key from file provenance or Pinery provenance.")
           Tuple externalKey,
       @ShesmuParameter(description = "The signature from std::signature::sha1") String signature) {
