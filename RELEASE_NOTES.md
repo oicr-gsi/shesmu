@@ -1,7 +1,36 @@
 # Unreleased
 
-# [1.7.2] - 2021-02-11T18:35+00:00
+# [1.8.0] - 2021-02-22T16:57+00:00
 
+Changes:
+
+* Add new Cerberus plugin
+* Add new Vidarr plugin
+* Fix import rules for constants and signatures where import did not work
+* Allow action commands to decide if action state should reset to `UNKNOWN`
+
+Guided meditations changes:
+
+* Create file upload for guided meditations
+* Fix JavaScript code for literal list
+* Dump JavaScript guided meditation on failure
+* Add a dynamic drop down selector to guided meditations
+* Wrap main guided meditation in `Start` and `;`
+* Change `Fetch` and `Form` syntax to be clearer
+* Consume leading whitespace in `Define` meditation parameters
+* Fix incorrect JavaScript generation in `Define` meditations
+* Fix bad JavaScript generation in `Flow By Match`
+* Update `Fetch Olive` syntax
+    1. It eliminates a bug where callable olives aren't available.
+    2. It removes the `Let` syntax and copies all the local variables in the
+       meditation into the simulation.
+    3. It add the keyword `Input` before the format name.
+
+JIRA plugin changes:
+
+* Only update JIRA ticket labels if available on the JIRA "screen"
+
+# [1.7.2] - 2021-02-11T18:35+00:00
 
 Changes:
 
