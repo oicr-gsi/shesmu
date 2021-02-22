@@ -19,7 +19,7 @@ final class InputParameterConverter implements InputType.Visitor<Imyhat> {
   private static final Pair<String, Imyhat> EXTERNAL_IDS_FIELD =
       new Pair<>("externalIds", SubmitAction.EXTERNAL_IDS);
   public static final Imyhat INTERNAL_ALGEBRAIC_TYPE =
-      Imyhat.algebraicTuple("INTERNAL", Imyhat.STRING.asList());
+      Imyhat.algebraicTuple("INTERNAL", Imyhat.STRING);
 
   static Optional<CustomActionParameter<SubmitAction>> create(
       Map<String, InputType> parameters, TargetDeclaration target) {
