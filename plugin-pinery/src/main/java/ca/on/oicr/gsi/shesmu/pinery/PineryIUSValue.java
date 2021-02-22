@@ -255,7 +255,7 @@ public final class PineryIUSValue {
     return external_donor_id;
   }
 
-  @ShesmuVariable(type = "ao4id$sprovider$sstale$bversions$mss")
+  @ShesmuVariable(type = "o4id$sprovider$sstale$bversions$mss")
   public Tuple external_key() {
     return external_key;
   }

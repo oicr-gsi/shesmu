@@ -34,7 +34,7 @@ public interface CerberusFileProvenanceValue {
   @ShesmuVariable(signable = true)
   String external_donor_id();
 
-  @ShesmuVariable(type = "ao4id$sprovider$sstale$bversions$mss")
+  @ShesmuVariable(type = "o4id$sprovider$sstale$bversions$mss")
   Tuple external_key();
 
   @ShesmuVariable(signable = true)
