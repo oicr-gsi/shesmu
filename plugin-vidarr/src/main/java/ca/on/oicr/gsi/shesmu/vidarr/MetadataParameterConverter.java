@@ -1,16 +1,17 @@
 package ca.on.oicr.gsi.shesmu.vidarr;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.vidarr.OutputProvisionFormat;
 import ca.on.oicr.gsi.vidarr.OutputType;
 import ca.on.oicr.gsi.vidarr.OutputType.IdentifierKey;
-import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
 import ca.on.oicr.gsi.vidarr.api.TargetDeclaration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
@@ -28,9 +29,55 @@ final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
 
   static Optional<CustomActionParameter<SubmitAction>> create(
       Map<String, OutputType> parameters, TargetDeclaration target) {
-    final var visitor = new MetadataParameterConverter(target);
-    return ParameterGroup.create(
-        "metadata", SubmitWorkflowRequest::setMetadata, parameters, p -> p.apply(visitor));
+    final var handlers =
+        parameters.entrySet().stream()
+            .map(
+                entry ->
+                    new ParameterGroup(
+                        entry.getKey(),
+                        entry.getValue().apply(new MetadataParameterConverter(target))))
+            .sorted()
+            .collect(Collectors.toList());
+
+    if (handlers.stream().anyMatch(h -> h.type.isBad())) {
+      return Optional.empty();
+    }
+
+    var type =
+        Imyhat.algebraicObject("INDIVIDUAL", handlers.stream().map(ParameterGroup::objectField));
+
+    var canHaveGlobal = true;
+    for (var index = 1; index < handlers.size(); index++) {
+      if (!handlers.get(index - 1).type.isSame(handlers.get(index).type)) {
+        canHaveGlobal = false;
+        break;
+      }
+    }
+    if (canHaveGlobal && !handlers.isEmpty()) {
+      type = type.unify(Imyhat.algebraicTuple("GLOBAL", handlers.get(0).type));
+    }
+
+    return Optional.of(
+        new CustomActionParameter<>("metadata", true, type) {
+          @Override
+          public void store(SubmitAction action, Object value) {
+            final var tuple = (AlgebraicValue) value;
+            final var object = VidarrPlugin.MAPPER.createObjectNode();
+            action.request.setMetadata(object);
+            switch (tuple.name()) {
+              case "INDIVIDUAL":
+                for (var index = 0; index < handlers.size(); index++) {
+                  handlers.get(index).store(object, tuple.get(index));
+                }
+                break;
+              case "GLOBAL":
+                for (final var handler : handlers) {
+                  handler.store(object, tuple.get(0));
+                }
+                break;
+            }
+          }
+        });
   }
 
   private final TargetDeclaration target;

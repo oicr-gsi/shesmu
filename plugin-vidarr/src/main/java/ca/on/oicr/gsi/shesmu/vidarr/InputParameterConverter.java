@@ -1,17 +1,18 @@
 package ca.on.oicr.gsi.shesmu.vidarr;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.vidarr.InputProvisionFormat;
 import ca.on.oicr.gsi.vidarr.InputType;
 import ca.on.oicr.gsi.vidarr.InputType.Visitor;
-import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
 import ca.on.oicr.gsi.vidarr.api.TargetDeclaration;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 final class InputParameterConverter implements InputType.Visitor<Imyhat> {
@@ -23,9 +24,34 @@ final class InputParameterConverter implements InputType.Visitor<Imyhat> {
 
   static Optional<CustomActionParameter<SubmitAction>> create(
       Map<String, InputType> parameters, TargetDeclaration target) {
-    final var visitor = new InputParameterConverter(target);
-    return ParameterGroup.create(
-        "arguments", SubmitWorkflowRequest::setArguments, parameters, p -> p.apply(visitor));
+    final var handlers =
+        parameters.entrySet().stream()
+            .map(
+                entry ->
+                    new ParameterGroup(
+                        entry.getKey(),
+                        entry.getValue().apply(new InputParameterConverter(target))))
+            .sorted()
+            .collect(Collectors.toList());
+
+    if (handlers.stream().anyMatch(h -> h.type.isBad())) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        new CustomActionParameter<>(
+            "arguments",
+            true,
+            new ObjectImyhat(handlers.stream().map(ParameterGroup::objectField))) {
+          @Override
+          public void store(SubmitAction action, Object value) {
+            final var tuple = (Tuple) value;
+            final var object = VidarrPlugin.MAPPER.createObjectNode();
+            action.request.setArguments(object);
+            for (var index = 0; index < handlers.size(); index++) {
+              handlers.get(index).store(object, tuple.get(index));
+            }
+          }
+        });
   }
 
   private final TargetDeclaration target;
