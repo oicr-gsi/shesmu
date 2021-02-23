@@ -1,5 +1,13 @@
 # Unreleased
 
+# [1.8.4] - 2021-02-23T16:06+00:00
+
+* Update to latest Cerberus
+* Fix incorrect JSON serialisation of algebraic data types
+* Fix Vidarr submit and status URL
+* Fix Vidarr INTERNAL type
+* Fix defining actions for Vidarr workflows
+
 # [1.8.3] - 2021-02-22T20:46+00:00
 
 * Fix annotations for `external_key` on `pinery_ius` and `cerberus_fp`
