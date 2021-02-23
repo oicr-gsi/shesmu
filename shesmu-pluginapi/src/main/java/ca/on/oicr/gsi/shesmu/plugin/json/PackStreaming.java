@@ -144,7 +144,7 @@ public class PackStreaming implements ImyhatConsumer {
     try {
       generator.writeStartObject();
       generator.writeStringField("type", name);
-      generator.writeObjectFieldStart("contents");
+      generator.writeFieldName("contents");
       accessor.accept(this);
       generator.writeEndObject();
     } catch (IOException e) {
