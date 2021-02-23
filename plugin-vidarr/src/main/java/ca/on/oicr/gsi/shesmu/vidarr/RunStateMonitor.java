@@ -41,7 +41,7 @@ public class RunStateMonitor extends RunState {
       throws IOException, InterruptedException {
     final var response =
         VidarrPlugin.CLIENT.send(
-            HttpRequest.newBuilder(vidarrUrl.resolve("api/status/" + id)).GET().build(),
+            HttpRequest.newBuilder(vidarrUrl.resolve("/api/status/" + id)).GET().build(),
             new JsonBodyHandler<>(VidarrPlugin.MAPPER, WorkflowRunStatusResponse.class));
     if (response.statusCode() == 200) {
       final var result = response.body().get();
@@ -82,7 +82,7 @@ public class RunStateMonitor extends RunState {
       try {
         final var response =
             VidarrPlugin.CLIENT.send(
-                HttpRequest.newBuilder(vidarrUrl.resolve("api/status/" + status.getId()))
+                HttpRequest.newBuilder(vidarrUrl.resolve("/api/status/" + status.getId()))
                     .DELETE()
                     .build(),
                 BodyHandlers.discarding());
