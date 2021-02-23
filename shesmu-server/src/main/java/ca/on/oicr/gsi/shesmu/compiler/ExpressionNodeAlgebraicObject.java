@@ -55,8 +55,7 @@ public class ExpressionNodeAlgebraicObject extends ExpressionNode {
     return String.format(
         "{\"type\": \"%s\", \"contents\": %s}",
         name,
-        fields
-            .stream()
+        fields.stream()
             .flatMap(f -> f.render(renderer))
             .sorted()
             .collect(Collectors.joining(", ", "{", "}")));
@@ -66,12 +65,12 @@ public class ExpressionNodeAlgebraicObject extends ExpressionNode {
   public void render(Renderer renderer) {
     renderer.mark(line());
     final Map<String, Integer> indices =
-        fields
-            .stream()
+        fields.stream()
             .flatMap(ObjectElementNode::names)
+            .map(Pair::first)
             .sorted()
             .map(Pair.number())
-            .collect(Collectors.toMap(p -> p.second().first(), Pair::first));
+            .collect(Collectors.toMap(Pair::second, Pair::first));
 
     renderer.methodGen().newInstance(A_ALGEBRAIC_TYPE);
     renderer.methodGen().dup();
@@ -96,8 +95,7 @@ public class ExpressionNodeAlgebraicObject extends ExpressionNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return fields
-            .stream()
+    return fields.stream()
             .filter(field -> field.resolveDefinitions(expressionCompilerServices, errorHandler))
             .count()
         == fields.size();
@@ -113,14 +111,11 @@ public class ExpressionNodeAlgebraicObject extends ExpressionNode {
     boolean ok =
         fields.stream().filter(field -> field.typeCheck(errorHandler)).count() == fields.size();
     final Map<String, Long> fieldCounts =
-        fields
-            .stream()
+        fields.stream()
             .flatMap(ObjectElementNode::names)
             .map(Pair::first)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-    if (fieldCounts
-            .entrySet()
-            .stream()
+    if (fieldCounts.entrySet().stream()
             .filter(e -> e.getValue() > 1)
             .peek(
                 e ->
