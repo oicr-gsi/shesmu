@@ -71,7 +71,7 @@ final class RunStateMissing extends RunState {
 
   @Override
   public void writeJson(ObjectMapper mapper, ObjectNode node) {
-    node.put("state", "missingKeys");
+    node.put("runState", "missingKeys");
     node.put("missingVersion", id);
     node.putPOJO("corruptExternalIds", keys);
   }

@@ -3521,14 +3521,14 @@ function recursiveDifferencesHelper(
           let i;
           for (i = 0; i < Math.min(left.length, right.length); i++) {
             rows = rows.concat(
-              recursiveDifferencesHelper(`{path}[{i}]`, left[i], right[i])
+              recursiveDifferencesHelper(`${path}[${i}]`, left[i], right[i])
             );
           }
           for (; i < left.length; i++) {
             rows.push(
               tableRow(
                 null,
-                { contents: `{path}[{i}]` },
+                { contents: `${path}[${i}]` },
                 { contents: preformatted(JSON.stringify(left[i], null, 2)) },
                 { contents: "Missing" }
               )
@@ -3538,7 +3538,7 @@ function recursiveDifferencesHelper(
             rows.push(
               tableRow(
                 null,
-                { contents: `{path}[{i}]` },
+                { contents: `${path}[${i}]` },
                 { contents: "Missing" },
                 { contents: preformatted(JSON.stringify(right[i], null, 2)) }
               )
@@ -3552,7 +3552,7 @@ function recursiveDifferencesHelper(
             if (left.hasOwnProperty(key) && right.hasOwnProperty(key)) {
               rows = rows.concat(
                 recursiveDifferencesHelper(
-                  `{path}.{key}`,
+                  `${path}.${key}`,
                   left[key],
                   right[key]
                 )
@@ -3561,7 +3561,7 @@ function recursiveDifferencesHelper(
               rows.push(
                 tableRow(
                   null,
-                  { contents: `{path}.{key}` },
+                  { contents: `${path}.${key}` },
                   {
                     contents: preformatted(JSON.stringify(left[key], null, 2)),
                   },
@@ -3572,7 +3572,7 @@ function recursiveDifferencesHelper(
               rows.push(
                 tableRow(
                   null,
-                  { contents: `{path}.{key}` },
+                  { contents: `${path}.${key}` },
                   { contents: "Missing" },
                   {
                     contents: preformatted(JSON.stringify(right[key], null, 2)),
@@ -4255,10 +4255,10 @@ export function tile(classes: string[], ...contents: UIElement[]): UIElement {
 /**
  * Display an absolute time in a nice way.
  */
-export function timespan(title: string, time: number): UIElement {
-  if (!time) return [];
+export function timespan(time: number | undefined | null): UIElement {
+  if (!time) return "N/A";
   const { ago, absolute } = computeDuration(time);
-  return text(`${title}: ${absolute} (${ago})`);
+  return text(`${absolute} (${ago})`);
 }
 /**
  * Create a nested tree navigator

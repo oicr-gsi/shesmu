@@ -39,9 +39,10 @@ public class RunStateMonitor extends RunState {
 
   public static PerformResult create(URI vidarrUrl, String id)
       throws IOException, InterruptedException {
+    final var workflowRunUrl = vidarrUrl.resolve("/api/status/" + id);
     final var response =
         VidarrPlugin.CLIENT.send(
-            HttpRequest.newBuilder(vidarrUrl.resolve("/api/status/" + id)).GET().build(),
+            HttpRequest.newBuilder(workflowRunUrl).GET().build(),
             new JsonBodyHandler<>(VidarrPlugin.MAPPER, WorkflowRunStatusResponse.class));
     if (response.statusCode() == 200) {
       final var result = response.body().get();
@@ -52,7 +53,7 @@ public class RunStateMonitor extends RunState {
                   "Workflow run has failed while executing. See workflow run logs for details.")
               : List.of(),
           status,
-          new RunStateMonitor(result));
+          new RunStateMonitor(workflowRunUrl.toASCIIString(), result));
     } else if (response.statusCode() == 404) {
       return new PerformResult(
           List.of("Workflow run was deleted."), ActionState.WAITING, new RunStateAttemptSubmit(0));
@@ -65,9 +66,11 @@ public class RunStateMonitor extends RunState {
   }
 
   private final WorkflowRunStatusResponse status;
+  private final String workflowRunUrl;
 
-  public RunStateMonitor(WorkflowRunStatusResponse status) {
+  public RunStateMonitor(String workflowRunUrl, WorkflowRunStatusResponse status) {
     super();
+    this.workflowRunUrl = workflowRunUrl;
     this.status = status;
   }
 
@@ -126,7 +129,8 @@ public class RunStateMonitor extends RunState {
 
   @Override
   public void writeJson(ObjectMapper mapper, ObjectNode node) {
-    node.put("state", "monitor");
+    node.put("runState", "monitor");
     node.putPOJO("info", status);
+    node.put("workflowRunUrl", workflowRunUrl);
   }
 }
