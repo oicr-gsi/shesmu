@@ -153,6 +153,8 @@ type FetchOperation<T> = {
     | { type: "count"; filter: ActionFilter }
     | { type: "action-ids"; filter: ActionFilter }
     | { type: "action-tags"; filter: ActionFilter }
+    | { type: "constant"; name: string }
+    | { type: "function"; name: string; args: any[] }
     | {
         type: "refiller";
         script: string;
@@ -839,10 +841,33 @@ export function renderWizard<T>(
                 })
               );
               break;
+            case "constant":
+              promises.push(
+                fetchAsPromise("constant", parameter.name).then((constant) => {
+                  if (constant.error) {
+                    throw new Error(constant.error);
+                  }
+                  fetchOutput[k] = (constant.value as unknown) as T[keyof T];
+                })
+              );
+              break;
             case "count":
               promises.push(
                 fetchAsPromise("count", [parameter.filter]).then((count) => {
                   fetchOutput[k] = (count as unknown) as T[keyof T];
+                })
+              );
+              break;
+            case "function":
+              promises.push(
+                fetchAsPromise("function", {
+                  name: parameter.name,
+                  args: parameter.args,
+                }).then((value) => {
+                  if (value.error) {
+                    throw new Error(value.error);
+                  }
+                  fetchOutput[k] = (value.value as unknown) as T[keyof T];
                 })
               );
               break;

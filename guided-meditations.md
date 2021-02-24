@@ -350,6 +350,18 @@ may not appreciate that. There are three important things to do:
            Begin Bold "{file}" " ({size}) " End
        Stop
 
+- _name_ `=` _constant_
+
+Access a constant on the server. The constants and functions available to
+guided meditations are limited since they must run in the browser, but this
+allows fetching the value of a constant, just like the _Definitions_ page.
+
+- _name_ `=` _func_`(`_arg1_`,` ...`)`
+
+Running a function on the server. The constants and functions available to
+guided meditations are limited since they must run in the browser, but this
+allows executing a function, just like the _Definitions_ page.
+
 ### Define and Go-to
 It can be useful to reuse steps in different contents. At the beginning of a
 file, a reuable step can be defined:

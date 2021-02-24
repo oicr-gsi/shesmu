@@ -45,6 +45,35 @@ public abstract class FetchNode implements Target {
           }
           return result;
         });
+    DISPATCH.addRaw(
+        "Constant or Function",
+        (p, o) -> {
+          final AtomicReference<String> constantName = new AtomicReference<>();
+          final Parser results = p.qualifiedIdentifier(constantName::set).whitespace();
+          if (results.lookAhead('(')) {
+            // assume this is a function call
+            final AtomicReference<List<ExpressionNode>> arguments = new AtomicReference<>();
+            final Parser funcResults =
+                results
+                    .symbol("(")
+                    .list(arguments::set, ExpressionNode::parse, ',')
+                    .symbol(")")
+                    .whitespace();
+            if (funcResults.isGood()) {
+              o.accept(
+                  name ->
+                      new FetchNodeFunction(
+                          name, p.line(), p.column(), constantName.get(), arguments.get()));
+            }
+            return funcResults;
+          }
+          if (results.isGood()) {
+            o.accept(name -> new FetchNodeConstant(p.line(), p.column(), name, constantName.get()));
+          }
+          ;
+
+          return results;
+        });
   }
 
   private static Rule<FetchNodeConstructor> actions(String fetchType, Imyhat type) {
