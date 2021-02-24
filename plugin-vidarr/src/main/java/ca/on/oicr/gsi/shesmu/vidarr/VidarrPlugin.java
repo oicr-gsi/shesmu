@@ -17,6 +17,7 @@ import ca.on.oicr.gsi.vidarr.api.TargetDeclaration;
 import ca.on.oicr.gsi.vidarr.api.WorkflowDeclaration;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -106,6 +107,10 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
           return Imyhat.tuple(elements.map(e -> e.apply(this)).toArray(Imyhat[]::new));
         }
       };
+
+  static {
+    MAPPER.registerModule(new JavaTimeModule());
+  }
 
   static String sanitise(String raw) {
     final var clean = INVALID.matcher(raw).replaceAll("_");
