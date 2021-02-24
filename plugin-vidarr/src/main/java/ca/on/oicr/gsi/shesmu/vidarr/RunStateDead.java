@@ -50,6 +50,6 @@ public class RunStateDead extends RunState {
 
   @Override
   public void writeJson(ObjectMapper mapper, ObjectNode node) {
-    node.put("state", "dead");
+    node.put("runState", "dead");
   }
 }

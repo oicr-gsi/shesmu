@@ -65,7 +65,7 @@ final class RunStateConflicted extends RunState {
 
   @Override
   public void writeJson(ObjectMapper mapper, ObjectNode node) {
-    node.put("state", "conflict");
+    node.put("runState", "conflict");
     ids.forEach(node.putArray("possibleMatches")::add);
   }
 }

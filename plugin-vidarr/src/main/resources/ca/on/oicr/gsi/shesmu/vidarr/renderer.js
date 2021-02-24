@@ -13,16 +13,16 @@ const vidarrDebugInfo = {
         [
           ["Cromwell Identifier", di.cromwellId],
           ["Cromwell Workflow Status", di.cromwellStatus],
-          ["Cromwell Workflow Root", di.workflowRoot],
+          ["Cromwell Workflow Root", di.cromwellRoot],
         ],
         ["Information", (i) => i[0]],
         ["Value", (i) => i[1]]
       ),
-      collapsible("Failures", x.failures.map(cromwellFailure)),
+      collapsible("Failures", cromwellFailure(di.cromwellFailures)),
       collapsible(
         "Cromwell Calls",
         table(
-          a.cromwellCalls || [],
+          di.cromwellCalls || [],
           ["Task", (x) => x.task],
           ["Attempt", (x) => x.attempt.toString()],
           [
@@ -63,15 +63,22 @@ const vidarrStateRenderer = {
   monitor: (a) => [
     table(
       [
-        ["Vidarr ID", link(a.info.workflowRunUrl, a.info.id)],
-        ["modified", a.modified],
-        ["Created", a.info.created],
-        ["Started", a.info.started],
+        ["Vidarr ID", link(a.workflowRunUrl, a.info.id)],
+        ["Modified", timespan(a.modified)],
+        ["Created", timespan(a.info.created)],
+        ["Started", timespan(a.info.started)],
         ["Phase", a.info.enginePhase],
         ["Operation Status", a.info.operationStatus || "N/A"],
-        ["Completed", a.info.completed || "N/A"],
+        ["Completed", timespan(a.info.completed)],
         ["Running", a.info.running ? "Yes" : "No"],
-        ["Pre-flight Okay", a.info.preflightOk?.toString() || "N/A"],
+        [
+          "Pre-flight Okay",
+          a.info.preflightOk === undefined
+            ? "N/A"
+            : a.info.preflightOk
+            ? "Yes"
+            : "No",
+        ],
         ["Attempt", a.info.attempt.toString()],
         ["Target", a.info.target || "N/A"],
       ]
@@ -80,7 +87,7 @@ const vidarrStateRenderer = {
       ["Existing Workflow Information", (x) => x[0]],
       ["Value", (x) => x[1]]
     ),
-    objectTable(a.info.arguments, "Arguments", (v) =>
+    objectTable(a.info.arguments, "Arguments from Vidarr", (v) =>
       preformatted(JSON.stringify(v, null, 2))
     ),
     typeof a.info.engineParameters == "object"
@@ -88,16 +95,13 @@ const vidarrStateRenderer = {
           preformatted(JSON.stringify(v, null, 2))
         )
       : "",
-    objectTable(a.info.metadata, "Metadata", (v) =>
+    objectTable(a.info.metadata, "Metadata from Vidarr", (v) =>
       preformatted(JSON.stringify(v, null, 2))
-    ),
-    objectTable(a.requestinfo, "Labels", (v) =>
-      preformatted(revealWhitespace(v))
     ),
     collapsible(
       "Operations",
       table(
-        a.info.operations,
+        a.info.operations || [],
         ["Status", (o) => o.status],
         ["Type", (o) => o.type || "N/A"],
         [
@@ -116,13 +120,17 @@ const vidarrStateRenderer = {
                 ? o.debugInformation
                 : [o.debugInformation],
             ]
+              .flat(Number.MAX_VALUE)
               .filter(
-                (di) => typeof di == "object" && di.hasOwnProperty("type")
+                (di) =>
+                  di != null &&
+                  typeof di == "object" &&
+                  di.hasOwnProperty("type")
               )
               .map((di) =>
                 (
-                  vidarrDebugInfo[o.type] ||
-                  ((x) => "Unknown debug information type")
+                  vidarrDebugInfo[di.type] ||
+                  ((x) => `Unknown debug information type: ${di.type}`)
                 )(di)
               ),
         ]
@@ -162,7 +170,7 @@ actionRender.set("vidarr-run", (a) => [
     ["Workflow Information", (x) => x[0]],
     ["Value", (x) => x[1]]
   ),
-  objectTable(a.request.arguments, "Arguments", (v) =>
+  objectTable(a.request.arguments, "Arguments from Olive", (v) =>
     preformatted(JSON.stringify(v, null, 2))
   ),
   typeof a.request.engineParameters == "object"
@@ -170,7 +178,7 @@ actionRender.set("vidarr-run", (a) => [
         preformatted(JSON.stringify(v, null, 2))
       )
     : "",
-  objectTable(a.request.metadata, "Metadata", (v) =>
+  objectTable(a.request.metadata, "Metadata from Olive", (v) =>
     preformatted(JSON.stringify(v, null, 2))
   ),
   objectTable(a.request.labels, "Labels", (v) =>
@@ -184,13 +192,14 @@ actionRender.set("vidarr-run", (a) => [
         ["Provider", (k) => k.provider],
         ["ID", (k) => k.id],
       ].concat(
-        a.externalKeys.length == 0
+        a.request.externalKeys.length == 0
           ? []
-          : a.externalKeys[0].versions
-              .keys()
-              .map((key) => [k, (lims) => lims.versions[k] || "Missing!"])
+          : Object.keys(a.request.externalKeys[0].versions).map((key) => [
+              key,
+              (lims) => lims.versions[key] || "Missing!",
+            ])
       )
     )
   ),
-  vidarrStateRenderer[a.state](a),
+  vidarrStateRenderer[a.runState](a),
 ]);

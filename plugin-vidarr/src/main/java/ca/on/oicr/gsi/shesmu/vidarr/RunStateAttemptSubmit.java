@@ -123,7 +123,7 @@ final class RunStateAttemptSubmit extends RunState {
 
   @Override
   public void writeJson(ObjectMapper mapper, ObjectNode node) {
-    node.put("state", "attempt");
+    node.put("runState", "attempt");
     node.put("attempt", attempt);
   }
 }
