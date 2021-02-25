@@ -3512,7 +3512,11 @@ function recursiveDifferencesHelper(
         break;
 
       case "object":
-        if (Array.isArray(left) && Array.isArray(right)) {
+        if (left == null && right == null) {
+          return [];
+        } else if (left == null || right == null) {
+          break;
+        } else if (Array.isArray(left) && Array.isArray(right)) {
           let rows: ComplexElement<HTMLTableRowElement>[] = [];
           let i;
           for (i = 0; i < Math.min(left.length, right.length); i++) {
@@ -3577,6 +3581,7 @@ function recursiveDifferencesHelper(
               );
             }
           }
+          return rows;
         }
         break;
       default:
