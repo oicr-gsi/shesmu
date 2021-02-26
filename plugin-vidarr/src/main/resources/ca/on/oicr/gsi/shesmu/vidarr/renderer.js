@@ -103,6 +103,7 @@ const vidarrStateRenderer = {
       table(
         a.info.operations || [],
         ["Status", (o) => o.status],
+        ["Engine Phase", (o) => o.enginePhase],
         ["Type", (o) => o.type || "N/A"],
         [
           "Recovery State",
