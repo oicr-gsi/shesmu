@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -155,7 +154,7 @@ public final class SubmitAction extends Action {
       return false;
     }
     SubmitAction that = (SubmitAction) o;
-    return stale == that.stale && request.equals(that.request);
+    return stale == that.stale && request.equalsIgnoreAttempt(that.request);
   }
 
   @SuppressWarnings("unchecked")
@@ -183,6 +182,7 @@ public final class SubmitAction extends Action {
   @Override
   public void generateUUID(Consumer<byte[]> digest) {
     try {
+      digest.accept(new byte[] {(byte) (stale ? 1 : 0)});
       digest.accept(VidarrPlugin.MAPPER.writeValueAsBytes(request));
     } catch (JsonProcessingException e) {
       e.printStackTrace();
@@ -191,7 +191,7 @@ public final class SubmitAction extends Action {
 
   @Override
   public int hashCode() {
-    return Objects.hash(request, stale);
+    return request.hashCodeIgnoreAttempt() * 31 + Boolean.hashCode(stale);
   }
 
   @Override
