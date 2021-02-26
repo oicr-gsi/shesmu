@@ -4253,11 +4253,11 @@ export function tile(classes: string[], ...contents: UIElement[]): UIElement {
   return element;
 }
 /**
- * Display an absolute time in a nice way.
+ * Display an absolute UNIX epoch time in a nice way.
  */
 export function timespan(time: number | undefined | null): UIElement {
   if (!time) return "N/A";
-  const { ago, absolute } = computeDuration(time);
+  const { ago, absolute } = computeDuration(time * 1000);
   return text(`${absolute} (${ago})`);
 }
 /**
