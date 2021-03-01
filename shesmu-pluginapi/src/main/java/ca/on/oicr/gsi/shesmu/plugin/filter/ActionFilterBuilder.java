@@ -59,7 +59,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
           final ActionFilterExternal result = new ActionFilterExternal();
           result.setStart(start.map(Instant::getEpochSecond).orElse(null));
           result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
-          return null;
+          return result;
         }
 
         @Override
@@ -254,8 +254,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
             return new Pair<>(String.format("%s = %s", name, quote(items.get(0))), 0);
           } else {
             return new Pair<>(
-                items
-                    .stream()
+                items.stream()
                     .map(this::quote)
                     .collect(Collectors.joining(", ", name + " in (", ")")),
                 0);
@@ -279,8 +278,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
             return new Pair<>("source = " + locationList.get(0), 0);
           }
           return new Pair<>(
-              locationList
-                  .stream()
+              locationList.stream()
                   .map(Object::toString)
                   .collect(Collectors.joining(", ", "source in (", ")")),
               0);
