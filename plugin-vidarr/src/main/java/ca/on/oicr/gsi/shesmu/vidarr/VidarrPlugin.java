@@ -232,10 +232,9 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                           .<CustomActionParameter<SubmitAction>>
                                                               empty()
                                                       : workflow.getLabels().entrySet().stream()
-                                                          .map(
+                                                          .<CustomActionParameter<SubmitAction>>map(
                                                               entry ->
-                                                                  new CustomActionParameter<
-                                                                      SubmitAction>(
+                                                                  new CustomActionParameter<>(
                                                                       sanitise(
                                                                           "label_"
                                                                               + entry.getKey()),
