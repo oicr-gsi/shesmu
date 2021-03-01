@@ -395,28 +395,23 @@ public final class PluginManager
 
         // Now expose all our plugins to the olive compiler
         constantsFromAnnotations =
-            constantTemplates
-                .stream()
+            constantTemplates.stream()
                 .map(t -> t.bind(instanceName, path))
                 .collect(Collectors.toList());
         functionsFromAnnotations =
-            functionTemplates
-                .stream()
+            functionTemplates.stream()
                 .map(t -> t.bind(instanceName, path))
                 .collect(Collectors.toList());
         actionsFromAnnotations =
-            actionTemplates
-                .stream()
+            actionTemplates.stream()
                 .map(t -> t.bind(instanceName, path))
                 .collect(Collectors.toList());
         signaturesFromAnnotations =
-            signatureTemplates
-                .stream()
+            signatureTemplates.stream()
                 .map(t -> t.bind(instanceName, path))
                 .collect(Collectors.toList());
         refillersFromAnnotations =
-            refillTemplates
-                .stream()
+            refillTemplates.stream()
                 .map(t -> t.bind(instanceName, path))
                 .collect(Collectors.toList());
       }
@@ -852,7 +847,12 @@ public final class PluginManager
 
       public <F> Stream<Pair<String, F>> searches(
           ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
-        return instance.searches(builder);
+        try {
+          return instance.searches(builder);
+        } catch (Exception e) {
+          e.printStackTrace();
+          return Stream.empty();
+        }
       }
 
       public Stream<SignatureDefinition> signatures() {
@@ -1624,8 +1624,14 @@ public final class PluginManager
 
     public <F> Stream<Pair<String, F>> searches(
         ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
-      return Stream.concat(
-          fileFormat.searches(builder), configuration.stream().flatMap(f -> f.searches(builder)));
+      Stream<Pair<String, F>> searches;
+      try {
+        searches = fileFormat.searches(builder);
+      } catch (Exception e) {
+        e.printStackTrace();
+        searches = Stream.empty();
+      }
+      return Stream.concat(searches, configuration.stream().flatMap(f -> f.searches(builder)));
     }
 
     public Stream<SignatureDefinition> signatures() {
@@ -1915,8 +1921,7 @@ public final class PluginManager
           type.staticFunctions.stream(),
           type.staticSources.keySet().stream(),
           type.staticSignatures.stream());
-      type.configuration
-          .stream()
+      type.configuration.stream()
           .forEach(
               c ->
                   dumpConfig(
