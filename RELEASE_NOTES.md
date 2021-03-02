@@ -1,5 +1,11 @@
 # Unreleased
 
+# [1.8.6] - 2021-03-02T22:07+00:00
+
+Cerberus plugin:
+
+* Update version to match Vidarr plugin and deal with schema changes
+
 # [1.8.5] - 2021-03-02T14:00+00:00
 
 Changes:
