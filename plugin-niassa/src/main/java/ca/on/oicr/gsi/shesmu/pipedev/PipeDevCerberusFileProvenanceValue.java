@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.gsicommon.CerberusFileProvenanceValue;
 import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
@@ -506,6 +507,11 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
   @Override
   public Map<String, Set<String>> workflow_run_attributes() {
     return workflow_run_attributes;
+  }
+
+  @Override
+  public Map<String, JsonNode> workflow_run_labels() {
+    return Collections.emptyMap();
   }
 
   @Override
