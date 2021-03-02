@@ -1,5 +1,34 @@
 # Unreleased
 
+# [1.8.5] - 2021-03-02T14:00+00:00
+
+Changes:
+
+* Fix bug where external timestamp checks would result in NPE
+* Prevent plugin exceptions from breaking the _Actions_ page
+* Update Docker build to use JDK16 (JDK14+ is required for Vidarr plugin)
+* Fix compiler error causing exception with generating algebraic object literal
+
+UI changes:
+
+* Make number of blocks log-scaled in ordering puzzle just like sequence puzzle
+* Fix recursive diff operation in UI to handle nulls correctly, return differences found between objects
+
+Guided Meditations changes:
+
+* Fetch for constants and functions
+* Create a fork meditation step to allow "parallel" journeys
+
+Vidarr plugin changes:
+
+* Exclude attempt from action equality (resulted in duplicate actions) and include staleness in ID (resulted in missing actions)
+* Show engine phase per operation
+* Allow reattemping unstarted workflow runs
+* Upgrade Vidarr library
+* Correct Vidarr action tile rendering
+* Add `java.time` support to Vidarr JSON object mapper
+* Allow setting metadata parameters globally for Vidarr
+
 # [1.8.4] - 2021-02-23T16:06+00:00
 
 * Update to latest Cerberus
