@@ -2,7 +2,7 @@ FROM debian:bullseye
 
 USER root
 RUN apt-get update -m && \
-    apt-get install -y maven openjdk-16-jdk nodejs npm
+    apt-get install -y maven openjdk-17-jdk nodejs npm
 RUN npm install -g typescript
 RUN mkdir /build
 COPY . /build/
