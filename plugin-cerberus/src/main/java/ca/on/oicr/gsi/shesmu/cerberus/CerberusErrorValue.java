@@ -1,14 +1,16 @@
 package ca.on.oicr.gsi.shesmu.cerberus;
 
+import static ca.on.oicr.gsi.shesmu.cerberus.BaseCerberusFileProvenanceRecord.labelsToMap;
+
 import ca.on.oicr.gsi.cerberus.pinery.LimsProvenanceInfo;
 import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import ca.on.oicr.gsi.vidarr.api.ExternalKey;
 import ca.on.oicr.gsi.vidarr.api.ProvenanceWorkflowRun;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -18,6 +20,7 @@ public final class CerberusErrorValue {
 
   private final Set<Tuple> availableLimsInfo;
   private final ProvenanceWorkflowRun<ExternalKey> workflow;
+  private final Map<String, JsonNode> workflowRunLabels;
 
   public CerberusErrorValue(
       ProvenanceWorkflowRun<ExternalKey> workflow, Stream<LimsProvenanceInfo> limsInfo) {
@@ -33,6 +36,7 @@ public final class CerberusErrorValue {
                         info.provider(),
                         info.lims().getVersion()))
             .collect(Collectors.toSet());
+    workflowRunLabels = labelsToMap(workflow);
   }
 
   @ShesmuVariable(type = "ao5format_revision$iid$slast_modified$sprovider$sversion$s")
@@ -83,9 +87,8 @@ public final class CerberusErrorValue {
   }
 
   @ShesmuVariable
-  public final Map<String, Set<String>> workflow_run_attributes() {
-    return workflow.getLabels().entrySet().stream()
-        .collect(Collectors.toMap(Entry::getKey, e -> Set.of(e.getValue())));
+  public final Map<String, JsonNode> workflow_run_labels() {
+    return workflowRunLabels;
   }
 
   @ShesmuVariable(type = "t3iii")
