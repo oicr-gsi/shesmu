@@ -6,11 +6,14 @@ import ca.on.oicr.gsi.shesmu.gsicommon.CerberusFileProvenanceValue;
 import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -18,10 +21,16 @@ abstract class BaseCerberusFileProvenanceRecord<T extends LimsProvenance>
     implements CerberusFileProvenanceValue {
   protected final ProvenanceRecord<T> provenanceRecord;
   private final boolean stale;
+  private final Map<String, JsonNode> workflowRunLabels = new TreeMap<>();
 
   protected BaseCerberusFileProvenanceRecord(boolean stale, ProvenanceRecord<T> provenanceRecord) {
     this.stale = stale;
     this.provenanceRecord = provenanceRecord;
+    final var labels = provenanceRecord.workflow().getLabels().fields();
+    while (labels.hasNext()) {
+      final var label = labels.next();
+      workflowRunLabels.put(label.getKey(), label.getValue());
+    }
   }
 
   @Override
@@ -125,8 +134,12 @@ abstract class BaseCerberusFileProvenanceRecord<T extends LimsProvenance>
 
   @Override
   public final Map<String, Set<String>> workflow_run_attributes() {
-    return provenanceRecord.workflow().getLabels().entrySet().stream()
-        .collect(Collectors.toMap(Entry::getKey, e -> Set.of(e.getValue())));
+    return Collections.emptyMap();
+  }
+
+  @Override
+  public final Map<String, JsonNode> workflow_run_labels() {
+    return workflowRunLabels;
   }
 
   @Override

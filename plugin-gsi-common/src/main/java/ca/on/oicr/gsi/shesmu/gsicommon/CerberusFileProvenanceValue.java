@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.Gang;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
@@ -182,6 +183,9 @@ public interface CerberusFileProvenanceValue {
 
   @ShesmuVariable
   Map<String, Set<String>> workflow_run_attributes();
+
+  @ShesmuVariable
+  Map<String, JsonNode> workflow_run_labels();
 
   @ShesmuVariable(type = "t3iii")
   Tuple workflow_version();
