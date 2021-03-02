@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.shesmu.gsicommon.CerberusFileProvenanceValue;
 import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.vidarr.api.ProvenanceWorkflowRun;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -19,18 +20,24 @@ import java.util.stream.Collectors;
 
 abstract class BaseCerberusFileProvenanceRecord<T extends LimsProvenance>
     implements CerberusFileProvenanceValue {
-  protected final ProvenanceRecord<T> provenanceRecord;
-  private final boolean stale;
-  private final Map<String, JsonNode> workflowRunLabels = new TreeMap<>();
-
-  protected BaseCerberusFileProvenanceRecord(boolean stale, ProvenanceRecord<T> provenanceRecord) {
-    this.stale = stale;
-    this.provenanceRecord = provenanceRecord;
-    final var labels = provenanceRecord.workflow().getLabels().fields();
+  static Map<String, JsonNode> labelsToMap(ProvenanceWorkflowRun<?> workflow) {
+    final var workflowRunLabels = new TreeMap<String, JsonNode>();
+    final var labels = workflow.getLabels().fields();
     while (labels.hasNext()) {
       final var label = labels.next();
       workflowRunLabels.put(label.getKey(), label.getValue());
     }
+    return workflowRunLabels;
+  }
+
+  protected final ProvenanceRecord<T> provenanceRecord;
+  private final boolean stale;
+  private final Map<String, JsonNode> workflowRunLabels;
+
+  protected BaseCerberusFileProvenanceRecord(boolean stale, ProvenanceRecord<T> provenanceRecord) {
+    this.stale = stale;
+    this.provenanceRecord = provenanceRecord;
+    workflowRunLabels = labelsToMap(provenanceRecord.workflow());
   }
 
   @Override
