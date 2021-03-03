@@ -35,7 +35,12 @@ import java.util.stream.Stream;
 public final class SubmitAction extends Action {
   private static final ActionCommand<SubmitAction> DELETE =
       new ActionCommand<>(
-          SubmitAction.class, "VIDARR-DELETE", FrontEndIcon.PLUG, "Delete and Purge") {
+          SubmitAction.class,
+          "VIDARR-DELETE",
+          FrontEndIcon.PLUG,
+          "Delete and Purge",
+          Preference.ALLOW_BULK,
+          Preference.PROMPT) {
         @Override
         protected Response execute(SubmitAction action, Optional<String> user) {
           return action.owner.get().url().map(action.state::delete).orElse(false)
@@ -54,7 +59,6 @@ public final class SubmitAction extends Action {
           FrontEndIcon.ARROW_REPEAT,
           "Reattempt Failed Workflow",
           Preference.PROMPT,
-          Preference.ANNOY_USER,
           Preference.ALLOW_BULK) {
         @Override
         protected Response execute(SubmitAction action, Optional<String> user) {
@@ -65,7 +69,11 @@ public final class SubmitAction extends Action {
       };
   private static final ActionCommand<SubmitAction> RESET =
       new ActionCommand<>(
-          SubmitAction.class, "VIDARR-RESET", FrontEndIcon.PLUG, "Search Vidarr Again") {
+          SubmitAction.class,
+          "VIDARR-RESET",
+          FrontEndIcon.PLUG,
+          "Search Vidarr Again",
+          Preference.ALLOW_BULK) {
         @Override
         protected Response execute(SubmitAction action, Optional<String> user) {
           action.state = new RunStateAttemptSubmit();
