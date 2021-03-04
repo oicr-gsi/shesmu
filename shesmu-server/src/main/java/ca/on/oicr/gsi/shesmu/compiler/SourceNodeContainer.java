@@ -40,7 +40,8 @@ public class SourceNodeContainer extends SourceNode {
 
       @Override
       public String render(EcmaScriptRenderer renderer, ExpressionNode expression) {
-        return String.format("$runtime.mapNullOrDefault(%s, $v => $v, [])", expression);
+        return String.format(
+            "$runtime.mapNullOrDefault(%s, $v => $v, [])", expression.renderEcma(renderer));
       }
     },
     MAP {
@@ -67,7 +68,8 @@ public class SourceNodeContainer extends SourceNode {
       @Override
       public String render(EcmaScriptRenderer renderer, ExpressionNode expression) {
         return String.format(
-            "$runtime.mapNullOrDefault(%s, $v => $runtime.dictIterator($v), [])", expression);
+            "$runtime.mapNullOrDefault(%s, $v => $runtime.dictIterator($v), [])",
+            expression.renderEcma(renderer));
       }
     },
     OPTIONAL {
@@ -80,7 +82,8 @@ public class SourceNodeContainer extends SourceNode {
 
       @Override
       public String render(EcmaScriptRenderer renderer, ExpressionNode expression) {
-        return String.format("$runtime.mapNullOrDefault(%s, $v => [$v], [])", expression);
+        return String.format(
+            "$runtime.mapNullOrDefault(%s, $v => [$v], [])", expression.renderEcma(renderer));
       }
     },
     JSON {
@@ -93,7 +96,7 @@ public class SourceNodeContainer extends SourceNode {
 
       @Override
       public String render(EcmaScriptRenderer renderer, ExpressionNode expression) {
-        return String.format("$runtime.arrayFromJson(%s)", expression);
+        return String.format("$runtime.arrayFromJson(%s)", expression.renderEcma(renderer));
       }
     },
     LIFTED_JSON {
@@ -107,7 +110,8 @@ public class SourceNodeContainer extends SourceNode {
       @Override
       public String render(EcmaScriptRenderer renderer, ExpressionNode expression) {
         return String.format(
-            "$runtime.mapNullOrDefault(%s, $v => $runtime.arrayFromJson($v), [])", expression);
+            "$runtime.mapNullOrDefault(%s, $v => $runtime.arrayFromJson($v), [])",
+            expression.renderEcma(renderer));
       }
     };
 
