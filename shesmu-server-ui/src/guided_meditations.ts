@@ -715,6 +715,7 @@ export function renderInformation(
       );
       search.model.statusChanged([info.filter]);
       return [
+        br(),
         search.buttons,
         bulkCommands,
         br(),
@@ -746,6 +747,7 @@ export function renderInformation(
       );
       alertRefresh.statusChanged(info.filter);
       return [
+        br(),
         button(
           [{ type: "icon", icon: "arrow-repeat" }, "Refresh"],
           "Reload alerts.",
@@ -793,6 +795,7 @@ export function renderInformation(
         script: info.script,
       });
       return [
+        br(),
         button(
           [{ type: "icon", icon: "arrow-repeat" }, "Refresh"],
           "Rerun simulation.",
@@ -818,6 +821,7 @@ export function renderInformation(
         readStale: false,
       });
       return [
+        br(),
         button(
           [{ type: "icon", icon: "arrow-repeat" }, "Refresh"],
           "Rerun simulation.",
