@@ -156,13 +156,6 @@ public class FetchNodeOlive extends FetchNode {
             .flatMap(t -> Stream.of(new InjectedTarget(t, true), new InjectedTarget(t, false)))
             .collect(Collectors.toList());
     ClauseStreamOrder state = ClauseStreamOrder.PURE;
-    final Set<String> signableNames = new TreeSet<>();
-    for (final OliveClauseNode clause : clauses) {
-      state = clause.ensureRoot(state, signableNames, v -> {}, errorHandler);
-    }
-    if (state == ClauseStreamOrder.BAD) {
-      return false;
-    }
     final NameDefinitions clauseDefs =
         clauses.stream()
             .reduce(
@@ -179,6 +172,13 @@ public class FetchNodeOlive extends FetchNode {
           clauseDefs.stream()
               .filter(v -> v.flavour().isStream() && Parser.IDENTIFIER.matcher(v.name()).matches())
               .collect(Collectors.toList());
+      final Set<String> signableNames = new TreeSet<>();
+      for (final OliveClauseNode clause : clauses) {
+        state = clause.ensureRoot(state, signableNames, v -> {}, errorHandler);
+      }
+      if (state == ClauseStreamOrder.BAD) {
+        return false;
+      }
       return true;
     } else {
       return false;
