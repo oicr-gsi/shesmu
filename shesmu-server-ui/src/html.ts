@@ -3944,61 +3944,7 @@ export function tableRow(
  * @param tabs each tab to display; each tabe has a name, contents, and an optional Ctrl-F handler. One tab may be marked as selected to be active by default
  */
 export function tabs(...tabs: Tab[]): UIElement {
-  let findHandler: FindHandler = null;
-  const panes = tabs.map(({ contents }) => createUiFromTag("div", contents));
-  const buttons = tabs.map(({ name }, index) => {
-    const button = createUiFromTag("span", name);
-    button.element.addEventListener("click", (e) => {
-      panes.forEach((pane, i) => {
-        pane.element.style.display = i == index ? "block" : "none";
-      });
-      buttons.forEach((button, i) => {
-        button.element.className = i == index ? "tab selected" : "tab";
-      });
-      const reveal = panes[index].reveal;
-      if (reveal) {
-        reveal();
-      }
-      findHandler = panes[index].find;
-    });
-    return button;
-  });
-
-  const container = document.createElement("div");
-  const buttonBar = document.createElement("div");
-  container.appendChild(buttonBar);
-  for (const button of buttons) {
-    buttonBar.appendChild(button.element);
-  }
-  for (const pane of panes) {
-    container.appendChild(pane.element);
-  }
-  let selectedTab = Math.max(
-    0,
-    tabs.findIndex((t) => t.selected || false)
-  );
-  for (let i = 0; i < tabs.length; i++) {
-    buttons[i].element.className = i == selectedTab ? "tab selected" : "tab";
-    panes[i].element.style.display = i == selectedTab ? "block" : "none";
-  }
-
-  const reveal = panes[selectedTab].reveal;
-  if (reveal) {
-    reveal();
-  }
-  findHandler = panes[selectedTab].find;
-  return {
-    element: container,
-    find: () => {
-      if (findHandler) {
-        return findHandler();
-      } else {
-        return false;
-      }
-    },
-    reveal: null,
-    type: "ui",
-  };
+  return tabsModel(0, ...tabs).ui;
 }
 
 /**
@@ -4047,8 +3993,107 @@ export function tabsModel(
   });
   const container = document.createElement("div");
   const paneHolder = document.createElement("div");
+  const topBar = document.createElement("div");
+  topBar.classList.add("tabs");
+  container.appendChild(topBar);
   const buttonBar = document.createElement("div");
-  container.appendChild(buttonBar);
+
+  let lastCanGoLeft = false;
+  let lastCanGoRight = false;
+  let leftInterval: number | null = null;
+  const leftButton = createUiFromTag("span", {
+    type: "icon",
+    icon: "caret-left",
+  });
+  leftButton.element.className = "iconbutton";
+  let rightInterval: number | null = null;
+  const rightButton = createUiFromTag("span", {
+    type: "icon",
+    icon: "caret-right",
+  });
+  rightButton.element.className = "iconbutton";
+  function updateIcons() {
+    const canScroll = buttonBar.scrollWidth > buttonBar.clientWidth;
+    const canGoLeft = canScroll && buttonBar.scrollLeft > 0;
+    const canGoRight =
+      canScroll &&
+      buttonBar.scrollLeft < buttonBar.scrollWidth - buttonBar.clientWidth;
+    if (canGoLeft != lastCanGoLeft) {
+      clearChildren(leftButton.element);
+      addElements(leftButton.element, {
+        type: "icon",
+        icon: canGoLeft ? "caret-left-fill" : "caret-left",
+      });
+      lastCanGoLeft = canGoLeft;
+    }
+    if (canGoRight != lastCanGoRight) {
+      clearChildren(rightButton.element);
+      addElements(rightButton.element, {
+        type: "icon",
+        icon: canGoRight ? "caret-right-fill" : "caret-right",
+      });
+      lastCanGoRight = canGoRight;
+    }
+    return { canGoLeft, canGoRight };
+  }
+
+  leftButton.element.addEventListener("mousedown", (e) => {
+    e.stopPropagation();
+    if (leftInterval != null) {
+      window.clearInterval(leftInterval);
+    }
+    if (updateIcons().canGoLeft) {
+      function move() {
+        buttonBar.scrollLeft = Math.max(buttonBar.scrollLeft - 50, 0);
+        if (!updateIcons().canGoLeft && leftInterval != null) {
+          window.clearInterval(leftInterval);
+          leftInterval = null;
+        }
+      }
+      leftInterval = window.setInterval(move, 100);
+      move();
+    }
+  });
+  leftButton.element.addEventListener("mouseup", (e) => {
+    e.stopPropagation();
+    if (leftInterval != null) {
+      window.clearInterval(leftInterval);
+    }
+  });
+
+  rightButton.element.addEventListener("mousedown", (e) => {
+    e.stopPropagation();
+    if (rightInterval != null) {
+      window.clearInterval(rightInterval);
+    }
+    if (updateIcons().canGoRight) {
+      function move() {
+        buttonBar.scrollLeft = Math.min(
+          buttonBar.scrollLeft + 50,
+          buttonBar.scrollWidth - buttonBar.clientWidth
+        );
+        if (!updateIcons().canGoRight && rightInterval != null) {
+          window.clearInterval(rightInterval);
+          rightInterval = null;
+        }
+      }
+      rightInterval = window.setInterval(move, 100);
+      move();
+    }
+  });
+  rightButton.element.addEventListener("mouseup", (e) => {
+    e.stopPropagation();
+    if (rightInterval != null) {
+      window.clearInterval(rightInterval);
+    }
+  });
+
+  new ResizeObserver(() => updateIcons()).observe(buttonBar);
+
+  topBar.appendChild(leftButton.element);
+  topBar.appendChild(buttonBar);
+  topBar.appendChild(rightButton.element);
+
   container.appendChild(paneHolder);
 
   const update = (group: number, activate: boolean) => {
@@ -4059,7 +4104,7 @@ export function tabsModel(
       .forEach((button) => buttonBar.appendChild(button.element));
     tabGroups
       .flatMap((tg) => tg.panes)
-      .forEach((pane) => buttonBar.appendChild(pane.element));
+      .forEach((pane) => paneHolder.appendChild(pane.element));
     if (current[0] == group || activate) {
       if (tabGroups[group].panes.length) {
         current = [group, 0];
