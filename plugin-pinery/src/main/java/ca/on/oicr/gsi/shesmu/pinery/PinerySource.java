@@ -57,11 +57,6 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         // If duplicate run names occur, pick one at random, because the universe is
                         // spiteful, so we spite it back.
                         (a, b) -> a));
-        final Set<String> completeRuns =
-            allRuns.values().stream()
-                .filter(run -> run.getState().equals("Completed") && run.getCreatedDate() != null)
-                .map(RunDto::getName)
-                .collect(Collectors.toSet());
         final Set<Pair<String, String>> validLanes = new HashSet<>();
         return Stream.concat(
                 lanes(
@@ -371,12 +366,15 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         .get()
         .filter(SampleProjectDto::isActive)
         .map(SampleProjectDto::getName)
-        .collect(Collectors.toSet());
+        .collect(Collectors.toCollection(TreeSet::new));
   }
 
   @ShesmuMethod(name = "projects", description = "All projects from in Pinery defined in {file}.")
   public Set<String> allProjects() {
-    return projects.get().map(SampleProjectDto::getName).collect(Collectors.toSet());
+    return projects
+        .get()
+        .map(SampleProjectDto::getName)
+        .collect(Collectors.toCollection(TreeSet::new));
   }
 
   @ShesmuMethod(
@@ -387,7 +385,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         .get()
         .filter(SampleProjectDto::isClinical)
         .map(SampleProjectDto::getName)
-        .collect(Collectors.toSet());
+        .collect(Collectors.toCollection(TreeSet::new));
   }
 
   @Override
@@ -432,7 +430,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         .get()
         .filter(SampleProjectDto::isSecondaryNamingSCheme)
         .map(SampleProjectDto::getName)
-        .collect(Collectors.toSet());
+        .collect(Collectors.toCollection(TreeSet::new));
   }
 
   @Override
