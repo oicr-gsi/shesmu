@@ -59,7 +59,7 @@ public class ExpressionNodeBlock extends ExpressionNode {
     final EcmaScriptRenderer inner = renderer.duplicate();
     for (final Pair<DestructuredArgumentNode, ExpressionNode> definition : definitions) {
       final String value = renderer.newConst(definition.second().renderEcma(inner));
-      definition.first().renderEcma(rr -> value).forEach(inner::define);
+      definition.first().renderEcma(value).forEach(inner::define);
     }
     return result.renderEcma(inner);
   }
@@ -97,8 +97,7 @@ public class ExpressionNodeBlock extends ExpressionNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return definitions
-                .stream()
+    return definitions.stream()
                 .filter(
                     d ->
                         !d.first().resolve(expressionCompilerServices, errorHandler)

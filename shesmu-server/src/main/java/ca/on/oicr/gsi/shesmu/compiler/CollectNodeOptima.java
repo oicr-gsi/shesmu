@@ -36,7 +36,7 @@ public final class CollectNodeOptima extends CollectNodeOptional {
             .lambda(
                 1,
                 (r, arg) -> {
-                  name.create(rr -> arg.apply(0)).forEach(r::define);
+                  name.create(arg.apply(0)).forEach(r::define);
                   return selector.renderEcma(r);
                 }),
         builder

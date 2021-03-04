@@ -41,7 +41,7 @@ public class ListNodeMap extends ListNodeWithExpression {
   @Override
   public EcmaLoadableConstructor render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
     builder.map(name, expression.type(), expression::renderEcma);
-    return nextName::renderEcma;
+    return loader -> nextName.renderEcma(loader);
   }
 
   @Override

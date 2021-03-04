@@ -9,7 +9,6 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.objectweb.asm.Label;
@@ -167,8 +166,7 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
     private final Iterator<List<UnboxableExpression>> iterator;
     private final String output;
 
-    LayerUnNester(
-        Iterator<List<UnboxableExpression>> iterator, String output) {
+    LayerUnNester(Iterator<List<UnboxableExpression>> iterator, String output) {
       this.iterator = iterator;
       this.output = output;
     }
@@ -177,35 +175,40 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
     public void accept(EcmaScriptRenderer renderer) {
       if (iterator.hasNext()) {
         renderer.conditional(
-         iterator.next().stream().map(capture -> {
-           final String capturedValue = renderer.newConst(capture.expression.renderEcma(renderer));
-           renderer.define(new EcmaLoadableValue() {
-             @Override
-             public String name() {
-               return capture.name;
-             }
+            iterator.next().stream()
+                .map(
+                    capture -> {
+                      final String capturedValue =
+                          renderer.newConst(capture.expression.renderEcma(renderer));
+                      renderer.define(
+                          new EcmaLoadableValue() {
+                            @Override
+                            public String name() {
+                              return capture.name;
+                            }
 
-             @Override
-             public String apply(EcmaScriptRenderer renderer) {
-               return capturedValue;
-             }
-           });
-           return capturedValue + " !== null";
-         }).collect(Collectors.joining(" && ")),
-            this
-            );
+                            @Override
+                            public String get() {
+                              return capturedValue;
+                            }
+                          });
+                      return capturedValue + " !== null";
+                    })
+                .collect(Collectors.joining(" && ")),
+            this);
       } else {
         renderer.statement(String.format("%s = %s", output, item.renderEcma(renderer)));
       }
     }
   }
+
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
     if (captures.isEmpty()) {
-      return  item.renderEcma(renderer);
+      return item.renderEcma(renderer);
     } else {
-     final String result = renderer.newLet("null");
-     new LayerUnNester(captures.values().iterator(), result).accept(renderer);
+      final String result = renderer.newLet("null");
+      new LayerUnNester(captures.values().iterator(), result).accept(renderer);
       return result;
     }
   }
@@ -288,13 +291,10 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
     // capture tries to use a variable which is in scope at the point of capture but not in scope in
     // the current scope where the evaluation actually happens. See TargetWithContext for examples.
     return item.resolve(defs, errorHandler)
-        && captures
-            .values()
-            .stream()
+        && captures.values().stream()
             .allMatch(
                 layer ->
-                    layer
-                            .stream()
+                    layer.stream()
                             .filter(
                                 capture ->
                                     capture.expression.resolve(
@@ -329,13 +329,10 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
       return ok;
     } else {
       boolean ok =
-          captures
-                  .values()
-                  .stream()
+          captures.values().stream()
                   .allMatch(
                       layer ->
-                          layer
-                                  .stream()
+                          layer.stream()
                                   .filter(
                                       capture -> {
                                         boolean captureOk =

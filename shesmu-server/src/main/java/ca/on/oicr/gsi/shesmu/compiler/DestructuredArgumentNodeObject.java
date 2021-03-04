@@ -45,8 +45,7 @@ public class DestructuredArgumentNodeObject extends DestructuredArgumentNode {
   @Override
   public WildcardCheck checkWildcard(Consumer<String> errorHandler) {
     final WildcardCheck result =
-        fields
-            .stream()
+        fields.stream()
             .map(p -> p.second().checkWildcard(errorHandler))
             .reduce(WildcardCheck.NONE, WildcardCheck::combine);
     if (result == WildcardCheck.BAD) {
@@ -80,17 +79,14 @@ public class DestructuredArgumentNodeObject extends DestructuredArgumentNode {
   }
 
   @Override
-  public Stream<EcmaLoadableValue> renderEcma(Function<EcmaScriptRenderer, String> loader) {
-    return fields
-        .stream()
-        .flatMap(f -> f.second().renderEcma(r -> loader.apply(r) + "." + f.first()));
+  public Stream<EcmaLoadableValue> renderEcma(String loader) {
+    return fields.stream().flatMap(f -> f.second().renderEcma(loader + "." + f.first()));
   }
 
   @Override
   public boolean resolve(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return fields
-            .stream()
+    return fields.stream()
             .filter(f -> f.second().resolve(expressionCompilerServices, errorHandler))
             .count()
         == fields.size();
@@ -111,13 +107,10 @@ public class DestructuredArgumentNodeObject extends DestructuredArgumentNode {
   @Override
   public boolean typeCheck(Imyhat type, Consumer<String> errorHandler) {
     final Map<String, Long> elementCounts =
-        fields
-            .stream()
+        fields.stream()
             .map(Pair::first)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-    if (elementCounts
-            .entrySet()
-            .stream()
+    if (elementCounts.entrySet().stream()
             .filter(e -> e.getValue() > 1)
             .peek(
                 e ->

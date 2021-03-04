@@ -51,7 +51,7 @@ public final class EcmaStreamBuilder {
             renderer.lambda(
                 1,
                 (r, arg) -> {
-                  name.create(rr -> arg.apply(0)).forEach(r::define);
+                  name.create(arg.apply(0)).forEach(r::define);
                   return render.apply(r);
                 }))
         .append(")");
@@ -80,7 +80,7 @@ public final class EcmaStreamBuilder {
             renderer.lambda(
                 1,
                 (r, arg) -> {
-                  name.create(rr -> arg.apply(0)).forEach(r::define);
+                  name.create(arg.apply(0)).forEach(r::define);
                   return render.apply(r);
                 }))
         .append(")");
@@ -108,7 +108,7 @@ public final class EcmaStreamBuilder {
             renderer.lambda(
                 1,
                 (r, arg) -> {
-                  name.create(rr -> arg.apply(0)).forEach(r::define);
+                  name.create(arg.apply(0)).forEach(r::define);
                   return render.apply(r);
                 }))
         .append("))");

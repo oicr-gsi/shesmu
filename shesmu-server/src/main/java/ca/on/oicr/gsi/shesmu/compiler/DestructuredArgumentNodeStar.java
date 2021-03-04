@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
@@ -67,7 +66,7 @@ public class DestructuredArgumentNodeStar extends DestructuredArgumentNode {
       return name;
     }
 
-    public EcmaLoadableValue prepareEcma(Function<EcmaScriptRenderer, String> loader) {
+    public EcmaLoadableValue prepareEcma(String loader) {
       return new EcmaLoadableValue() {
         @Override
         public String name() {
@@ -75,8 +74,8 @@ public class DestructuredArgumentNodeStar extends DestructuredArgumentNode {
         }
 
         @Override
-        public String apply(EcmaScriptRenderer renderer) {
-          return loader.apply(renderer) + "." + name;
+        public String get() {
+          return loader + "." + name;
         }
       };
     }
@@ -140,7 +139,7 @@ public class DestructuredArgumentNodeStar extends DestructuredArgumentNode {
   }
 
   @Override
-  public Stream<EcmaLoadableValue> renderEcma(Function<EcmaScriptRenderer, String> loader) {
+  public Stream<EcmaLoadableValue> renderEcma(String loader) {
     return fields.values().stream().map(f -> f.prepareEcma(loader));
   }
 
@@ -164,9 +163,7 @@ public class DestructuredArgumentNodeStar extends DestructuredArgumentNode {
   public boolean typeCheck(Imyhat type, Consumer<String> errorHandler) {
     if (type instanceof Imyhat.ObjectImyhat) {
       objectType = (Imyhat.ObjectImyhat) type;
-      return fields
-              .values()
-              .stream()
+      return fields.values().stream()
               .filter(
                   target -> {
                     target.type = objectType.get(target.name);

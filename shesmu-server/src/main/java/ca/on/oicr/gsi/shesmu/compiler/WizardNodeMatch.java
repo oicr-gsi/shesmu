@@ -36,33 +36,22 @@ public class WizardNodeMatch extends WizardNode {
   }
 
   @Override
-  public String renderEcma(EcmaScriptRenderer renderer, EcmaLoadableConstructor name) {
-    return renderer.newConst(
-        renderer.lambda(
-            1,
-            (r, a) -> {
-              name.create(rr -> a.apply(0)).forEach(r::define);
-              final String testValue = r.newConst(test.renderEcma(r));
-              final String result = r.newLet();
-              r.mapIf(
-                  cases.stream(),
-                  m -> {
-                    try {
-                      return String.format(
-                          "%s.type == %s",
-                          testValue, RuntimeSupport.MAPPER.writeValueAsString(m.name()));
-                    } catch (JsonProcessingException e) {
-                      throw new RuntimeException(e);
-                    }
-                  },
-                  (rr, m) ->
-                      rr.statement(String.format("%s = %s", result, m.renderEcma(renderer, name))),
-                  rr ->
-                      rr.statement(
-                          String.format(
-                              "%s = %s", result, alternative.render(rr, name, testValue))));
-              return String.format("%s(%s)", result, a.apply(0));
-            }));
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    final String testValue = renderer.newConst(test.renderEcma(renderer));
+    final String result = renderer.newLet();
+    renderer.mapIf(
+        cases.stream(),
+        m -> {
+          try {
+            return String.format(
+                "%s.type == %s", testValue, RuntimeSupport.MAPPER.writeValueAsString(m.name()));
+          } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+          }
+        },
+        (r, m) -> r.statement(String.format("%s = %s", result, m.renderEcma(r, testValue))),
+        r -> r.statement(String.format("%s = %s", result, alternative.render(r, testValue))));
+    return result;
   }
 
   @Override

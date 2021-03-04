@@ -81,7 +81,7 @@ public final class CollectNodeMatches extends CollectNode {
             .lambda(
                 1,
                 (r, args) -> {
-                  name.create(rr -> args.apply(0)).forEach(r::define);
+                  name.create(args.apply(0)).forEach(r::define);
                   return (matchType == Match.NONE ? "!" : "") + "(" + selector.renderEcma(r) + ")";
                 }));
   }

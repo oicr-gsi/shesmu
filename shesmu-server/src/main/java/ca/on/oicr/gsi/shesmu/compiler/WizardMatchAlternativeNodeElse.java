@@ -14,8 +14,8 @@ public class WizardMatchAlternativeNodeElse extends WizardMatchAlternativeNode {
   }
 
   @Override
-  public String render(EcmaScriptRenderer renderer, EcmaLoadableConstructor name, String original) {
-    return expression.renderEcma(renderer, name);
+  public String render(EcmaScriptRenderer renderer, String original) {
+    return expression.renderEcma(renderer);
   }
 
   @Override

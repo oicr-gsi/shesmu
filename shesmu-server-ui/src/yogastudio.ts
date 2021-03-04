@@ -36,7 +36,7 @@ export interface MeditationCompilationResponse {
   functionBody?: string;
 }
 
-export function renderResponse<T>(
+export function renderResponse(
   response: MeditationCompilationResponse | null,
   filenameFormatter: FilenameFormatter,
   exportSearches: ExportSearchCommand[]
@@ -44,9 +44,9 @@ export function renderResponse<T>(
   if (response?.functionBody) {
     const wizard = new Function("$runtime", response?.functionBody)(
       runtime
-    ) as WizardStep<T>;
+    ) as WizardStep;
     try {
-      const { information, then } = wizard({});
+      const { information, then } = wizard();
       return [
         {
           name: "Meditation",
@@ -58,7 +58,7 @@ export function renderResponse<T>(
               ),
             then == null
               ? "Well, that was fast."
-              : renderWizard({}, then, filenameFormatter, exportSearches),
+              : renderWizard(then, filenameFormatter, exportSearches),
           ],
         },
         {

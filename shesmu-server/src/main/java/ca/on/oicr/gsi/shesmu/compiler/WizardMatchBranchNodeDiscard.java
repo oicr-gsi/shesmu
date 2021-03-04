@@ -21,6 +21,11 @@ public class WizardMatchBranchNodeDiscard extends WizardMatchBranchNode {
   }
 
   @Override
+  protected Stream<EcmaLoadableValue> loadBoundNames(String base) {
+    return Stream.empty();
+  }
+
+  @Override
   protected boolean typeCheckBindings(Imyhat argumentType, Consumer<String> errorHandler) {
     return true;
   }

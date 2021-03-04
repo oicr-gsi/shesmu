@@ -27,7 +27,7 @@ public abstract class InformationNodeBaseRepeat extends InformationNode {
   @Override
   public final String renderEcma(EcmaScriptRenderer renderer) {
     final EcmaStreamBuilder builder = source.render(renderer);
-    EcmaLoadableConstructor currentName = name::renderEcma;
+    EcmaLoadableConstructor currentName = loader -> name.renderEcma(loader);
     for (final ListNode transform : transforms) {
       currentName = transform.render(builder, currentName);
     }
@@ -43,8 +43,7 @@ public abstract class InformationNodeBaseRepeat extends InformationNode {
     boolean ok = source.resolve(defs, errorHandler);
 
     final Optional<DestructuredArgumentNode> nextName =
-        transforms
-            .stream()
+        transforms.stream()
             .reduce(
                 Optional.of(name),
                 (n, t) -> n.flatMap(name -> t.resolve(name, defs, errorHandler)),
@@ -72,8 +71,7 @@ public abstract class InformationNodeBaseRepeat extends InformationNode {
       Consumer<String> errorHandler) {
     return source.resolveDefinitions(expressionCompilerServices, errorHandler)
         & resolveTerminalDefinitions(expressionCompilerServices, nativeDefinitions, errorHandler)
-        & transforms
-                .stream()
+        & transforms.stream()
                 .filter(t -> t.resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
             == transforms.size()
@@ -95,8 +93,7 @@ public abstract class InformationNodeBaseRepeat extends InformationNode {
       return false;
     }
     final Ordering ordering =
-        transforms
-            .stream()
+        transforms.stream()
             .reduce(
                 source.ordering(),
                 (order, transform) -> transform.order(order, errorHandler),
@@ -104,8 +101,7 @@ public abstract class InformationNodeBaseRepeat extends InformationNode {
                   throw new UnsupportedOperationException();
                 });
     final Optional<Imyhat> resultType =
-        transforms
-            .stream()
+        transforms.stream()
             .reduce(
                 Optional.of(source.streamType()),
                 (t, transform) -> t.flatMap(tt -> transform.typeCheck(tt, errorHandler)),

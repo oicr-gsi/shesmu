@@ -133,10 +133,10 @@ public class GuidedMeditation implements WatchedFileListener {
                   for (final WizardDefineNode definition : definitions.get()) {
                     definition.render(renderer);
                   }
+
                   renderer.statement(
                       String.format(
-                          "return %s",
-                          wizard.get().renderEcma(renderer, baseLoader -> Stream.empty())));
+                          "return %s", renderer.lambda(0, (r, a) -> wizard.get().renderEcma(r))));
                 }));
       } else {
         errorHandler.accept(errors);

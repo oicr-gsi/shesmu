@@ -125,53 +125,43 @@ public class WizardDefineNode {
             renderer.lambda(
                 parameters.size(),
                 (r, a) -> {
-                  final String child =
-                      step.renderEcma(
-                          r,
-                          rr ->
-                              parameters.stream()
-                                  .map(
-                                      new Function<OliveParameter, EcmaLoadableValue>() {
-                                        private int counter;
+                  final String state =
+                      r.newConst(
+                          parameters.stream()
+                              .map(
+                                  new Function<OliveParameter, String>() {
+                                    private int index;
 
-                                        @Override
-                                        public EcmaLoadableValue apply(OliveParameter parameter) {
-                                          return new EcmaLoadableValue() {
-                                            private final int index = counter++;
+                                    @Override
+                                    public String apply(OliveParameter parameter) {
+                                      try {
+                                        return RuntimeSupport.MAPPER.writeValueAsString(
+                                                parameter.name())
+                                            + ": "
+                                            + a.apply(index++);
+                                      } catch (JsonProcessingException e) {
+                                        throw new RuntimeException(e);
+                                      }
+                                    }
+                                  })
+                              .collect(Collectors.joining(", ", "{", "}")));
+                  for (int i = 0; i < parameters.size(); i++) {
+                    final int index = i;
+                    r.define(
+                        new EcmaLoadableValue() {
 
-                                            @Override
-                                            public String apply(EcmaScriptRenderer renderer) {
-                                              return a.apply(index);
-                                            }
+                          @Override
+                          public String get() {
+                            return a.apply(index);
+                          }
 
-                                            @Override
-                                            public String name() {
-                                              return parameter.name();
-                                            }
-                                          };
-                                        }
-                                      }));
-                  return String.format(
-                      "%s(%s)",
-                      child,
-                      parameters.stream()
-                          .map(
-                              new Function<OliveParameter, String>() {
-                                private int index;
-
-                                @Override
-                                public String apply(OliveParameter parameter) {
-                                  try {
-                                    return RuntimeSupport.MAPPER.writeValueAsString(
-                                            parameter.name())
-                                        + ": "
-                                        + a.apply(index++);
-                                  } catch (JsonProcessingException e) {
-                                    throw new RuntimeException(e);
-                                  }
-                                }
-                              })
-                          .collect(Collectors.joining(", ", "{", "}")));
+                          @Override
+                          public String name() {
+                            return parameters.get(index).name();
+                          }
+                        });
+                  }
+                  return step.renderEcma(r);
                 }));
   }
 
