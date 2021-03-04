@@ -28,6 +28,7 @@ public class FetchNodeOlive extends FetchNode {
     private final Target inner;
     private final String name;
     private final String unaliasedName;
+    private boolean read;
 
     private InjectedTarget(Target inner, boolean prefixed) {
       this.inner = inner;
@@ -48,6 +49,7 @@ public class FetchNodeOlive extends FetchNode {
 
     @Override
     public void read() {
+      read = true;
       inner.read();
     }
 
@@ -127,6 +129,7 @@ public class FetchNodeOlive extends FetchNode {
               .map(t -> t.name() + ": \"" + t.type().descriptor() + "\"")
               .collect(Collectors.joining(", ", "{", "}")),
           injections.stream()
+              .filter(c -> c.read)
               .map(
                   c -> {
                     try {
@@ -149,7 +152,7 @@ public class FetchNodeOlive extends FetchNode {
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     injections =
         defs.stream()
-            .filter(t -> t.flavour() == Flavour.LAMBDA)
+            .filter(t -> t.flavour() != Flavour.CONSTANT)
             .flatMap(t -> Stream.of(new InjectedTarget(t, true), new InjectedTarget(t, false)))
             .collect(Collectors.toList());
     ClauseStreamOrder state = ClauseStreamOrder.PURE;
