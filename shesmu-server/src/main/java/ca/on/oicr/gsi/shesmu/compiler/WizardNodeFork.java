@@ -83,8 +83,7 @@ public class WizardNodeFork extends WizardNode {
             && nextName
                 .map(
                     name -> {
-                      final NameDefinitions collectorName =
-                          defs.replaceStream(name.targets(), true);
+                      final NameDefinitions collectorName = defs.bind(name);
                       outputs = name.targets().collect(Collectors.toList());
                       return step.resolve(collectorName, errorHandler)
                           & title.resolve(collectorName, errorHandler);
