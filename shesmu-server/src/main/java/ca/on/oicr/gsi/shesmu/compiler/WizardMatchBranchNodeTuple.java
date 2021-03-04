@@ -4,12 +4,12 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class WizardMatchBranchNodeTuple extends WizardMatchBranchNode {
 
-  private Imyhat argumentType;
   private final List<DestructuredArgumentNode> elements;
 
   public WizardMatchBranchNodeTuple(
@@ -37,8 +37,22 @@ public class WizardMatchBranchNodeTuple extends WizardMatchBranchNode {
   }
 
   @Override
+  protected Stream<EcmaLoadableValue> loadBoundNames(String base) {
+    return elements.stream()
+        .flatMap(
+            new Function<DestructuredArgumentNode, Stream<? extends EcmaLoadableValue>>() {
+              private int index;
+
+              @Override
+              public Stream<? extends EcmaLoadableValue> apply(DestructuredArgumentNode element) {
+                final int current = index++;
+                return element.renderEcma(String.format("%s.contents[%d]", base, current));
+              }
+            });
+  }
+
+  @Override
   protected boolean typeCheckBindings(Imyhat argumentType, Consumer<String> errorHandler) {
-    this.argumentType = argumentType;
     return elements.stream().filter(e -> e.checkWildcard(errorHandler) != WildcardCheck.BAD).count()
             == elements.size()
         && new DestructuredArgumentNodeTuple(line(), column(), elements)

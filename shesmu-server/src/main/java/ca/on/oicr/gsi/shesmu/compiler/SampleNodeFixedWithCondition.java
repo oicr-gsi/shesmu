@@ -119,7 +119,7 @@ public class SampleNodeFixedWithCondition extends SampleNode {
         renderer.lambda(
             1,
             (r, args) -> {
-              name.create(rr -> args.apply(0)).forEach(renderer::define);
+              name.create(args.apply(0)).forEach(renderer::define);
               return conditionExpression.renderEcma(r);
             }));
   }

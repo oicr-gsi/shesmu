@@ -23,7 +23,16 @@ public abstract class MatchBranchNode {
     MatchBranchNode create(int line, int column, String name, ExpressionNode value);
   }
 
+  private static final Type A_ALGEBRAIC_VALUE_TYPE = Type.getType(AlgebraicValue.class);
+  public static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+  private static final Type A_STRING_TYPE = Type.getType(String.class);
   private static final ParseDispatch<NodeConstructor> CONSTRUCTOR = new ParseDispatch<>();
+  private static final Method METHOD_ALGEBRAIC_TYPE__GET =
+      new Method("get", A_OBJECT_TYPE, new Type[] {Type.INT_TYPE});
+  private static final Method METHOD_ALGEBRAIC_TYPE__NAME =
+      new Method("name", A_STRING_TYPE, new Type[] {});
+  private static final Method METHOD_OBJECT__EQUALS =
+      new Method("equals", Type.BOOLEAN_TYPE, new Type[] {A_OBJECT_TYPE});
 
   static {
     CONSTRUCTOR.addSymbol(
@@ -74,19 +83,10 @@ public abstract class MatchBranchNode {
     return result;
   }
 
-  private static final Type A_ALGEBRAIC_VALUE_TYPE = Type.getType(AlgebraicValue.class);
-  public static final Type A_OBJECT_TYPE = Type.getType(Object.class);
-  private static final Type A_STRING_TYPE = Type.getType(String.class);
-  private static final Method METHOD_ALGEBRAIC_TYPE__GET =
-      new Method("get", A_OBJECT_TYPE, new Type[] {Type.INT_TYPE});
-  private static final Method METHOD_ALGEBRAIC_TYPE__NAME =
-      new Method("name", A_STRING_TYPE, new Type[] {});
-  private static final Method METHOD_OBJECT__EQUALS =
-      new Method("equals", Type.BOOLEAN_TYPE, new Type[] {A_OBJECT_TYPE});
+  private final int column;
+  private final int line;
   private final String name;
   private final ExpressionNode value;
-  private final int line;
-  private final int column;
 
   protected MatchBranchNode(int line, int column, String name, ExpressionNode value) {
     this.line = line;
@@ -96,6 +96,8 @@ public abstract class MatchBranchNode {
   }
 
   protected abstract NameDefinitions bind(NameDefinitions definitions);
+
+  protected abstract Stream<Target> boundNames();
 
   public final void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     final Set<String> remove =
@@ -107,11 +109,19 @@ public abstract class MatchBranchNode {
     names.removeAll(remove);
   }
 
-  protected abstract Stream<Target> boundNames();
-
   public final void collectPlugins(Set<Path> pluginFileNames) {
     value.collectPlugins(pluginFileNames);
   }
+
+  public final int column() {
+    return column;
+  }
+
+  public final int line() {
+    return line;
+  }
+
+  protected abstract Stream<EcmaLoadableValue> loadBoundNames(String base);
 
   public final String name() {
     return name;
@@ -138,6 +148,11 @@ public abstract class MatchBranchNode {
     renderer.methodGen().mark(next);
   }
 
+  public String renderEcma(EcmaScriptRenderer renderer, String original) {
+    loadBoundNames(original).forEach(renderer::define);
+    return value.renderEcma(renderer);
+  }
+
   public final boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return value.resolve(bind(defs), errorHandler);
   }
@@ -149,14 +164,6 @@ public abstract class MatchBranchNode {
 
   public final Imyhat resultType() {
     return value.type();
-  }
-
-  public final int line() {
-    return line;
-  }
-
-  public final int column() {
-    return column;
   }
 
   public final boolean typeCheck(Imyhat argumentType, Consumer<String> errorHandler) {

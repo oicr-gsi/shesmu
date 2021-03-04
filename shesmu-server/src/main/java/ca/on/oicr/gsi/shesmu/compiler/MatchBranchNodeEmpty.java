@@ -22,6 +22,11 @@ public class MatchBranchNodeEmpty extends MatchBranchNode {
   }
 
   @Override
+  protected Stream<EcmaLoadableValue> loadBoundNames(String base) {
+    return Stream.empty();
+  }
+
+  @Override
   protected Renderer prepare(Renderer renderer, BiConsumer<Renderer, Integer> loadElement) {
     return renderer;
   }

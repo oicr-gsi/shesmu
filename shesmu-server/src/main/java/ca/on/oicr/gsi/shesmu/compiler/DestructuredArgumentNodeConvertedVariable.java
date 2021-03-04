@@ -8,7 +8,6 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
@@ -45,15 +44,15 @@ public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgum
 
   private class EcmaStringConverter extends EcmaLoadableValue {
 
-    private final Function<EcmaScriptRenderer, String> loader;
+    private final String loader;
 
-    public EcmaStringConverter(Function<EcmaScriptRenderer, String> loader) {
+    public EcmaStringConverter(String loader) {
       this.loader = loader;
     }
 
     @Override
-    public String apply(EcmaScriptRenderer renderer) {
-      return loader.apply(renderer) + ".toString()";
+    public String get() {
+      return loader + ".toString()";
     }
 
     @Override
@@ -243,13 +242,13 @@ public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgum
   }
 
   @Override
-  public Stream<EcmaLoadableValue> renderEcma(Function<EcmaScriptRenderer, String> loader) {
+  public Stream<EcmaLoadableValue> renderEcma(String loader) {
     if (convertedType.isSame(Imyhat.JSON)) {
       return Stream.of(
           new EcmaLoadableValue() {
             @Override
-            public String apply(EcmaScriptRenderer renderer) {
-              return loader.apply(renderer);
+            public String get() {
+              return loader;
             }
 
             @Override
@@ -269,8 +268,8 @@ public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgum
         return Stream.of(
             new EcmaLoadableValue() {
               @Override
-              public String apply(EcmaScriptRenderer renderer) {
-                return String.format("JSON.toString(%s)", loader.apply(renderer));
+              public String get() {
+                return String.format("JSON.toString(%s)", loader);
               }
 
               @Override

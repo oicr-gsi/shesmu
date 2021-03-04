@@ -21,17 +21,11 @@ public class WizardNodeGoto extends WizardNode {
   }
 
   @Override
-  public String renderEcma(EcmaScriptRenderer renderer, EcmaLoadableConstructor name) {
-    return renderer.newConst(
-        renderer.lambda(
-            1,
-            (r, a) -> {
-              name.create(rr -> a.apply(0)).forEach(r::define);
-              return arguments
-                  .stream()
-                  .map(arg -> arg.renderEcma(r))
-                  .collect(Collectors.joining(", ", definition.function() + "(", ")"));
-            }));
+  public String renderEcma(EcmaScriptRenderer renderer) {
+
+    return arguments.stream()
+        .map(arg -> arg.renderEcma(renderer))
+        .collect(Collectors.joining(", ", definition.function() + "(", ")"));
   }
 
   @Override
@@ -58,8 +52,7 @@ public class WizardNodeGoto extends WizardNode {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    return arguments
-            .stream()
+    return arguments.stream()
             .filter(arg -> arg.resolveDefinitions(expressionCompilerServices, errorHandler))
             .count()
         == arguments.size();

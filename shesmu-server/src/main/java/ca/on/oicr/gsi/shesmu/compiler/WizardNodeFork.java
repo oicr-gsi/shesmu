@@ -34,34 +34,33 @@ public class WizardNodeFork extends WizardNode {
   }
 
   @Override
-  public String renderEcma(EcmaScriptRenderer renderer, EcmaLoadableConstructor name) {
-    return renderer.newConst(
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    final EcmaStreamBuilder builder = source.render(renderer);
+    EcmaLoadableConstructor currentName = name::renderEcma;
+    for (final ListNode transform : transforms) {
+      currentName = transform.render(builder, currentName);
+    }
+    builder.map(
+        currentName,
+        Imyhat.BAD,
+        r ->
+            String.format(
+                "{title: %s, extra: %s}",
+                title.renderEcma(r),
+                outputs.stream()
+                    .map(target -> target.name() + ": " + r.load(target))
+                    .collect(Collectors.joining(", ", "{", "}"))));
+
+    final EcmaLoadableConstructor finalName = currentName;
+    return String.format(
+        "{information: [], then: {type: \"fork\",  processor: %s, items: %s}}",
         renderer.lambda(
             1,
             (r, a) -> {
-              name.create(rr -> a.apply(0)).forEach(r::define);
-
-              final EcmaStreamBuilder builder = source.render(r);
-              EcmaLoadableConstructor currentName = this.name::renderEcma;
-              for (final ListNode transform : transforms) {
-                currentName = transform.render(builder, currentName);
-              }
-              builder.map(
-                  currentName,
-                  Imyhat.BAD,
-                  rr ->
-                      String.format(
-                          "{title: %s, extra: %s}",
-                          title.renderEcma(rr),
-                          outputs
-                              .stream()
-                              .map(target -> target.name() + ": " + rr.load(target))
-                              .collect(Collectors.joining(", ", "{", "}"))));
-
-              return String.format(
-                  "{information: [], then: {type: \"fork\",  processor: %s, items: %s}}",
-                  step.renderEcma(renderer, currentName), builder.finish());
-            }));
+              finalName.create(a.apply(0)).forEach(r::define);
+              return step.renderEcma(r);
+            }),
+        builder.finish());
   }
 
   @Override
@@ -69,8 +68,7 @@ public class WizardNodeFork extends WizardNode {
     boolean ok = source.resolve(defs, errorHandler);
 
     final Optional<DestructuredArgumentNode> nextName =
-        transforms
-            .stream()
+        transforms.stream()
             .reduce(
                 Optional.of(name),
                 (n, t) -> n.flatMap(name -> t.resolve(name, defs, errorHandler)),
@@ -105,8 +103,7 @@ public class WizardNodeFork extends WizardNode {
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
     return source.resolveDefinitions(expressionCompilerServices, errorHandler)
-        & transforms
-                .stream()
+        & transforms.stream()
                 .filter(t -> t.resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
             == transforms.size()
@@ -122,8 +119,7 @@ public class WizardNodeFork extends WizardNode {
       return false;
     }
     final Ordering ordering =
-        transforms
-            .stream()
+        transforms.stream()
             .reduce(
                 source.ordering(),
                 (order, transform) -> transform.order(order, errorHandler),
@@ -131,8 +127,7 @@ public class WizardNodeFork extends WizardNode {
                   throw new UnsupportedOperationException();
                 });
     final Optional<Imyhat> resultType =
-        transforms
-            .stream()
+        transforms.stream()
             .reduce(
                 Optional.of(source.streamType()),
                 (t, transform) -> t.flatMap(tt -> transform.typeCheck(tt, errorHandler)),

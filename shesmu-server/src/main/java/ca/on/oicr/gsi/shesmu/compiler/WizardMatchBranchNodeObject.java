@@ -37,9 +37,13 @@ public class WizardMatchBranchNodeObject extends WizardMatchBranchNode {
   }
 
   @Override
+  protected Stream<EcmaLoadableValue> loadBoundNames(String base) {
+    return fields.stream().flatMap(f -> f.second().renderEcma(base + ".contents." + f.first()));
+  }
+
+  @Override
   protected boolean typeCheckBindings(Imyhat argumentType, Consumer<String> errorHandler) {
-    return fields
-                .stream()
+    return fields.stream()
                 .filter(f -> f.second().checkWildcard(errorHandler) != WildcardCheck.BAD)
                 .count()
             == fields.size()

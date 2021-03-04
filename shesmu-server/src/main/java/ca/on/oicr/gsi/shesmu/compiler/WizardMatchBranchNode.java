@@ -65,10 +65,10 @@ public abstract class WizardMatchBranchNode {
     return result;
   }
 
+  private final int column;
+  private final int line;
   private final String name;
   private final WizardNode value;
-  private final int line;
-  private final int column;
 
   protected WizardMatchBranchNode(int line, int column, String name, WizardNode value) {
     this.line = line;
@@ -81,12 +81,23 @@ public abstract class WizardMatchBranchNode {
 
   protected abstract Stream<Target> boundNames();
 
+  public final int column() {
+    return column;
+  }
+
+  public final int line() {
+    return line;
+  }
+
+  protected abstract Stream<EcmaLoadableValue> loadBoundNames(String base);
+
   public final String name() {
     return name;
   }
 
-  public String renderEcma(EcmaScriptRenderer renderer, EcmaLoadableConstructor name) {
-    return value.renderEcma(renderer, name);
+  public String renderEcma(EcmaScriptRenderer renderer, String original) {
+    loadBoundNames(original).forEach(renderer::define);
+    return value.renderEcma(renderer);
   }
 
   public final boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
@@ -103,14 +114,6 @@ public abstract class WizardMatchBranchNode {
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
     return value.resolveDefinitions(expressionCompilerServices, nativeDefinitions, errorHandler);
-  }
-
-  public final int line() {
-    return line;
-  }
-
-  public final int column() {
-    return column;
   }
 
   public final boolean typeCheck(Imyhat argumentType, Consumer<String> errorHandler) {

@@ -65,15 +65,18 @@ public class ExpressionNodeMatch extends ExpressionNode {
   public String renderEcma(EcmaScriptRenderer renderer) {
     final String testValue = renderer.newConst(test.renderEcma(renderer));
     final String result = renderer.newLet();
-    renderer.mapIf(cases.stream(), m -> {
-      try {
-        return String.format("%s.type == %s", testValue, RuntimeSupport.MAPPER.writeValueAsString(m.name()));
-      } catch (JsonProcessingException e) {
-        throw new RuntimeException(e);
-      }
-    }, (r, m) -> {
-
-    }, r -> r.statement(String.format("%s = %s", result, alternative.render(r,testValue ))));
+    renderer.mapIf(
+        cases.stream(),
+        m -> {
+          try {
+            return String.format(
+                "%s.type == %s", testValue, RuntimeSupport.MAPPER.writeValueAsString(m.name()));
+          } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+          }
+        },
+        (r, m) -> r.statement(String.format("%s = %s", result, m.renderEcma(r, testValue))),
+        r -> r.statement(String.format("%s = %s", result, alternative.render(r, testValue))));
     return result;
   }
 
@@ -84,8 +87,7 @@ public class ExpressionNodeMatch extends ExpressionNode {
     renderer.methodGen().storeLocal(local);
 
     final Map<Integer, List<MatchBranchNode>> paths =
-        cases
-            .stream()
+        cases.stream()
             .collect(
                 Collectors.groupingBy(b -> b.name().hashCode(), TreeMap::new, Collectors.toList()));
 
@@ -140,8 +142,7 @@ public class ExpressionNodeMatch extends ExpressionNode {
     }
     return ok
         & test.resolveDefinitions(expressionCompilerServices, errorHandler)
-        & cases
-                .stream()
+        & cases.stream()
                 .filter(c -> c.resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
             == cases.size()
@@ -265,8 +266,7 @@ public class ExpressionNodeMatch extends ExpressionNode {
         return false;
       }
       ok =
-          cases
-                  .stream()
+          cases.stream()
                   .filter(
                       c -> {
                         final Imyhat branchType = requiredBranches.get(c.name());

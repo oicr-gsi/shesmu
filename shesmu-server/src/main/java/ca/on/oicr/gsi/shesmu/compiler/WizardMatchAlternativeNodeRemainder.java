@@ -47,28 +47,20 @@ public class WizardMatchAlternativeNodeRemainder extends WizardMatchAlternativeN
   }
 
   @Override
-  public String render(EcmaScriptRenderer renderer, EcmaLoadableConstructor name, String original) {
-    return String.format(
-        "$state => %s({...$state, %s: %s})",
-        step.renderEcma(
-            renderer,
-            base ->
-                Stream.concat(
-                    name.create(base),
-                    Stream.of(
-                        new EcmaLoadableValue() {
-                          @Override
-                          public String apply(EcmaScriptRenderer renderer) {
-                            return base.apply(renderer) + "." + name();
-                          }
+  public String render(EcmaScriptRenderer renderer, String original) {
+    renderer.define(
+        new EcmaLoadableValue() {
+          @Override
+          public String name() {
+            return name;
+          }
 
-                          @Override
-                          public String name() {
-                            return WizardMatchAlternativeNodeRemainder.this.name;
-                          }
-                        }))),
-        this.name,
-        original);
+          @Override
+          public String get() {
+            return original;
+          }
+        });
+    return step.renderEcma(renderer);
   }
 
   @Override

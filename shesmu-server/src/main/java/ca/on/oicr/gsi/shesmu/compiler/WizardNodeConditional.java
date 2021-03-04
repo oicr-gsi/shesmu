@@ -18,23 +18,13 @@ public class WizardNodeConditional extends WizardNode {
   }
 
   @Override
-  public String renderEcma(EcmaScriptRenderer renderer, EcmaLoadableConstructor name) {
-    return renderer.newConst(
-        renderer.lambda(
-            1,
-            (r, a) -> {
-              name.create(rr -> a.apply(0)).forEach(r::define);
-              final String result = r.newLet();
-              r.conditional(
-                  test.renderEcma(r),
-                  (rr) ->
-                      rr.statement(
-                          String.format("%s = %s", result, trueStep.renderEcma(renderer, name))),
-                  rr ->
-                      rr.statement(
-                          String.format("%s = %s", result, falseStep.renderEcma(renderer, name))));
-              return String.format("%s(%s)", result, a.apply(0));
-            }));
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    final String result = renderer.newLet();
+    renderer.conditional(
+        test.renderEcma(renderer),
+        r -> r.statement(String.format("%s = %s", result, trueStep.renderEcma(r))),
+        r -> r.statement(String.format("%s = %s", result, falseStep.renderEcma(r))));
+    return result;
   }
 
   @Override

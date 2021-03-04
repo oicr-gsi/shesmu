@@ -77,7 +77,7 @@ public class CollectNodePartitionCount extends CollectNode {
             .lambda(
                 1,
                 (r, args) -> {
-                  name.create(rr -> args.apply(0)).forEach(r::define);
+                  name.create(args.apply(0)).forEach(r::define);
                   return expression.renderEcma(r);
                 }));
   }

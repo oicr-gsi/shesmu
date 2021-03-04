@@ -68,7 +68,7 @@ public class CollectNodeSum extends CollectNode {
             .lambda(
                 2,
                 (r, args) -> {
-                  name.create(rr -> args.apply(1)).forEach(r::define);
+                  name.create(args.apply(1)).forEach(r::define);
                   return args.apply(0) + " + " + expression.renderEcma(r);
                 }));
   }

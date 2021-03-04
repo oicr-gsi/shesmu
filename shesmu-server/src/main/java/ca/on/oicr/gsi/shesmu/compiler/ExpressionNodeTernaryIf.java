@@ -45,8 +45,14 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
     final String result = renderer.newLet();
-    renderer.conditional(testExpression.renderEcma(renderer), whenTrue-> whenTrue.statement(String.format("%s = %s", result, trueExpression.renderEcma(whenTrue))),
-        whenfalse-> whenfalse.statement(String.format("%s = %s", result, trueExpression.renderEcma(whenfalse))));
+    renderer.conditional(
+        testExpression.renderEcma(renderer),
+        whenTrue ->
+            whenTrue.statement(
+                String.format("%s = %s", result, trueExpression.renderEcma(whenTrue))),
+        whenFalse ->
+            whenFalse.statement(
+                String.format("%s = %s", result, falseExpression.renderEcma(whenFalse))));
     return result;
   }
 

@@ -417,7 +417,7 @@ public final class EcmaScriptRenderer {
   }
 
   public final String load(Target target) {
-    return targets.get(target.name()).apply(this);
+    return targets.get(target.name()).get();
   }
 
   public <T> void mapIf(

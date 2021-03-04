@@ -41,7 +41,7 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
         }
 
         @Override
-        public Stream<EcmaLoadableValue> renderEcma(Function<EcmaScriptRenderer, String> loader) {
+        public Stream<EcmaLoadableValue> renderEcma(String loader) {
           return Stream.empty();
         }
 
@@ -102,9 +102,7 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
       result = result.symbol("}").whitespace();
       if (result.isGood() && !inner.get().isEmpty()) {
         final Map<Boolean, Long> formats =
-            inner
-                .get()
-                .stream()
+            inner.get().stream()
                 .collect(Collectors.partitioningBy(x -> x.first() == null, Collectors.counting()));
         if ((formats.get(true) > 0) && (formats.get(false) > 0)) {
           return result.raise("Destructuring is a mixture of object and tuple fields.");
@@ -207,7 +205,7 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
 
   public abstract Stream<LoadableValue> render(Consumer<Renderer> loader);
 
-  public abstract Stream<EcmaLoadableValue> renderEcma(Function<EcmaScriptRenderer, String> loader);
+  public abstract Stream<EcmaLoadableValue> renderEcma(String loader);
 
   public abstract boolean resolve(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler);

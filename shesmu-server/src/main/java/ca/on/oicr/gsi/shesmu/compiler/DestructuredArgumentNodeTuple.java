@@ -6,7 +6,6 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
@@ -47,8 +46,7 @@ public class DestructuredArgumentNodeTuple extends DestructuredArgumentNode {
   @Override
   public WildcardCheck checkWildcard(Consumer<String> errorHandler) {
     final WildcardCheck result =
-        elements
-            .stream()
+        elements.stream()
             .map(element -> element.checkWildcard(errorHandler))
             .reduce(WildcardCheck.NONE, WildcardCheck::combine);
     if (result == WildcardCheck.BAD) {
@@ -76,17 +74,16 @@ public class DestructuredArgumentNodeTuple extends DestructuredArgumentNode {
   }
 
   @Override
-  public Stream<EcmaLoadableValue> renderEcma(Function<EcmaScriptRenderer, String> loader) {
+  public Stream<EcmaLoadableValue> renderEcma(String loader) {
     return IntStream.range(0, elements.size())
         .boxed()
-        .flatMap(i -> elements.get(i).renderEcma(r -> loader.apply(r) + "[" + i + "]"));
+        .flatMap(i -> elements.get(i).renderEcma(loader + "[" + i + "]"));
   }
 
   @Override
   public boolean resolve(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return elements
-            .stream()
+    return elements.stream()
             .filter(element -> element.resolve(expressionCompilerServices, errorHandler))
             .count()
         == elements.size();

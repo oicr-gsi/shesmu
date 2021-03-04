@@ -27,42 +27,33 @@ public class WizardNodeChoice extends WizardNode {
   }
 
   @Override
-  public String renderEcma(EcmaScriptRenderer renderer, EcmaLoadableConstructor name) {
+  public String renderEcma(EcmaScriptRenderer renderer) {
     final String choiceObject =
-        choices
-            .stream()
+        choices.stream()
             .map(
                 c -> {
                   try {
                     return RuntimeSupport.MAPPER.writeValueAsString(c.first())
                         + ": "
-                        + c.second().renderEcma(renderer, name);
+                        + renderer.lambda(0, (r, a) -> c.second().renderEcma(r));
                   } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                   }
                 })
             .collect(Collectors.joining(",", "{", "}"));
-    return renderer.newConst(
-        renderer.lambda(
-            1,
-            (r, a) -> {
-              name.create(rr -> a.apply(0)).forEach(r::define);
-              return String.format(
-                  "{information: %s, then: {type: \"choice\", choices: %s}}",
-                  information
-                      .stream()
-                      .map(i -> i.renderEcma(r))
-                      .collect(Collectors.joining(", ", "[", "]")),
-                  choiceObject);
-            }));
+    return String.format(
+        "{information: %s, then: {type: \"choice\", choices: %s}}",
+        information.stream()
+            .map(i -> i.renderEcma(renderer))
+            .collect(Collectors.joining(", ", "[", "]")),
+        choiceObject);
   }
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     boolean ok = true;
     for (final Map.Entry<String, Long> choice :
-        choices
-            .stream()
+        choices.stream()
             .collect(Collectors.groupingBy(Pair::first, Collectors.counting()))
             .entrySet()) {
       if (choice.getValue() > 1) {
@@ -83,8 +74,7 @@ public class WizardNodeChoice extends WizardNode {
   @Override
   public boolean resolveCrossReferences(
       Map<String, WizardDefineNode> references, Consumer<String> errorHandler) {
-    return choices
-            .stream()
+    return choices.stream()
             .filter(c -> c.second().resolveCrossReferences(references, errorHandler))
             .count()
         == choices.size();
@@ -95,16 +85,14 @@ public class WizardNodeChoice extends WizardNode {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    return information
-                .stream()
+    return information.stream()
                 .filter(
                     i ->
                         i.resolveDefinitions(
                             expressionCompilerServices, nativeDefinitions, errorHandler))
                 .count()
             == information.size()
-        & choices
-                .stream()
+        & choices.stream()
                 .filter(
                     c ->
                         c.second()

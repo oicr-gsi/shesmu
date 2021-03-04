@@ -4,7 +4,6 @@ import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 
@@ -96,7 +95,7 @@ public class DestructuredArgumentNodeVariable extends DestructuredArgumentNode {
   }
 
   @Override
-  public Stream<EcmaLoadableValue> renderEcma(Function<EcmaScriptRenderer, String> loader) {
+  public Stream<EcmaLoadableValue> renderEcma(String loader) {
     return Stream.of(
         new EcmaLoadableValue() {
           @Override
@@ -105,8 +104,8 @@ public class DestructuredArgumentNodeVariable extends DestructuredArgumentNode {
           }
 
           @Override
-          public String apply(EcmaScriptRenderer renderer) {
-            return loader.apply(renderer);
+          public String get() {
+            return loader;
           }
         });
   }
