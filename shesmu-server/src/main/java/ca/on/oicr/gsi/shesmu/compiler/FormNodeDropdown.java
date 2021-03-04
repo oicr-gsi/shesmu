@@ -51,7 +51,7 @@ public final class FormNodeDropdown extends FormNode {
         renderer.lambda(
             1,
             (r, a) -> {
-              itemName.renderEcma(rr -> a.apply(0)).forEach(r::define);
+              itemName.renderEcma(a.apply(0)).forEach(r::define);
               return itemLabel.renderEcma(r);
             }));
   }

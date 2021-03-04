@@ -51,6 +51,7 @@ import {
 } from "./simulation.js";
 import {
   FilenameFormatter,
+  StatefulModel,
   combineModels,
   commonPathPrefix,
   individualPropertyModel,
@@ -97,109 +98,109 @@ type Information =
   | { type: "table"; data: DisplayElement[][]; headers: string[] }
   | { type: "display"; contents: DisplayElement };
 
-type Parameters<T> = {
-  [P in keyof T]?:
-    | (T[P] extends string
-        ? {
-            label: DisplayElement;
-            type: "text";
-          }
-        : never)
-    | (T[P] extends number
-        ? {
-            label: DisplayElement;
-            type: "number" | "offset";
-          }
-        : never)
-    | (T[P] extends boolean
-        ? {
-            label: DisplayElement;
-            type: "boolean";
-          }
-        : never)
-    | (T[P] extends string[]
-        ? {
-            label: DisplayElement;
-            type: "subset";
-            values: string[];
-          }
-        : never)
-    | (T[P] extends { [name: string]: string }[]
-        ? {
-            label: DisplayElement;
-            type: "upload-table";
-            columns: string[];
-          }
-        : never)
-    | {
-        items: [DisplayElement, T[P]][];
-        label: DisplayElement;
-        type: "select";
-      }
-    | {
-        label: DisplayElement;
-        type: "upload-json";
-      }
-    | {
-        label: DisplayElement;
-        labelMaker: (input: T[P]) => DisplayElement;
-        type: "select-dynamic";
-        values: T[P][];
-      };
-};
+type FormElement<T> =
+  | (T extends string
+      ? {
+          label: DisplayElement;
+          type: "text";
+        }
+      : never)
+  | (T extends number
+      ? {
+          label: DisplayElement;
+          type: "number" | "offset";
+        }
+      : never)
+  | (T extends boolean
+      ? {
+          label: DisplayElement;
+          type: "boolean";
+        }
+      : never)
+  | (T extends string[]
+      ? {
+          label: DisplayElement;
+          type: "subset";
+          values: string[];
+        }
+      : never)
+  | (T extends { [name: string]: string }[]
+      ? {
+          label: DisplayElement;
+          type: "upload-table";
+          columns: string[];
+        }
+      : never)
+  | {
+      items: [DisplayElement, T][];
+      label: DisplayElement;
+      type: "select";
+    }
+  | {
+      label: DisplayElement;
+      type: "upload-json";
+    }
+  | {
+      label: DisplayElement;
+      labelMaker: (input: T) => DisplayElement;
+      type: "select-dynamic";
+      values: T[];
+    };
 
-type FetchOperation<T> = {
-  [P in keyof T]?:
-    | { type: "count"; filter: ActionFilter }
-    | { type: "action-ids"; filter: ActionFilter }
-    | { type: "action-tags"; filter: ActionFilter }
-    | { type: "constant"; name: string }
-    | { type: "function"; name: string; args: any[] }
-    | {
-        type: "refiller";
-        script: string;
-        compare: (a: any, b: any) => number;
-        fakeRefiller: { export_to_meditation: FakeRefillerParameters };
-        fakeConstants: { [name: string]: FakeConstant };
-      };
-};
+type FetchOperation<T> =
+  | (T extends number ? { type: "count"; filter: ActionFilter } : never)
+  | (T extends string[]
+      ?
+          | { type: "action-ids"; filter: ActionFilter }
+          | { type: "action-tags"; filter: ActionFilter }
+      : never)
+  | { type: "constant"; name: string }
+  | { type: "function"; name: string; args: any[] }
+  | {
+      type: "refiller";
+      script: string;
+      compare: (a: any, b: any) => number;
+      fakeRefiller: { export_to_meditation: FakeRefillerParameters };
+      fakeConstants: { [name: string]: FakeConstant };
+    };
 type InformationNested = Information[] | InformationNested[];
 
-type Wizard<T> =
-  | WizardFetch<T>
-  | WizardForm<T>
-  | WizardChoice<T>
-  | WizardFork<T>;
+type Wizard =
+  | WizardFetch<unknown>
+  | WizardForm<unknown>
+  | WizardChoice
+  | WizardFork<unknown>;
 
-interface WizardChoice<T> {
+interface WizardChoice {
   type: "choice";
-  choices: { [name: string]: WizardStep<T> };
+  choices: { [name: string]: WizardStep };
 }
 
 interface WizardFetch<T> {
   type: "fetch";
-  parameters: FetchOperation<T>;
-  processor: WizardStep<T>;
+  parameters: { [P in keyof T]: FetchOperation<T[P]> };
+  processor: WizardDataStep<T>;
 }
 
 interface WizardForm<T> {
   type: "form";
-  parameters: Parameters<T>;
-  processor: WizardStep<T>;
+  parameters: { [P in keyof T]: FormElement<T[P]> };
+  processor: WizardDataStep<T>;
 }
 
 interface WizardFork<T> {
   type: "fork";
-  processor: WizardStep<T>;
-  items: { title: string; extra: Partial<T> }[];
+  processor: WizardDataStep<T>;
+  items: { title: string; extra: T }[];
 }
 
-export type WizardNext<T> = {
+export type WizardNext = {
   information: InformationNested;
-  then: Wizard<T> | null;
+  then: Wizard | null;
 };
 
-export type WizardStep<T> = (input: Partial<T>) => WizardNext<T>;
+export type WizardStep = () => WizardNext;
+export type WizardDataStep<T> = (input: T) => WizardNext;
 
 const endings = [
   "Thank you for coming on this journey.",
@@ -210,18 +211,18 @@ const endings = [
 
 const meditations: GuidedMeditation[] = [];
 
-export function register<T>(name: string, wizard: WizardStep<T>) {
+export function register(name: string, wizard: () => WizardNext) {
   meditations.push({
     name: name,
     start: (filenameFormatter, exportSearches) => {
-      const { information, then } = wizard({});
+      const { information, then } = wizard();
       return [
         information
           .flat(Number.MAX_VALUE)
           .map((i) => renderInformation(i, filenameFormatter, exportSearches)),
         then == null
           ? "Well, that was fast."
-          : renderWizard({}, then, filenameFormatter, exportSearches),
+          : renderWizard(then, filenameFormatter, exportSearches),
       ];
     },
   });
@@ -272,11 +273,135 @@ export function initialiseMeditationDash(
     ]);
   }
 }
+function buildFetch<T>(
+  wizard: WizardFetch<T>,
+  model: StatefulModel<WizardNext | null>
+): UIElement {
+  const { ui: fetchUi, model: fetchModel } = pane("medium");
+  fetchModel.statusWaiting();
+  const fetchOutput = {} as T;
+  const promises: Promise<void>[] = [];
+  const refresh = () => {
+    for (const k of Object.keys(wizard.parameters)) {
+      const key = k as keyof T;
+      const parameter = wizard.parameters[key];
+      if (parameter === undefined) {
+        continue;
+      }
+      promises.push(makeFetchEntry(key, parameter, fetchOutput));
+    }
+    Promise.all(promises)
+      .then(() => {
+        fetchModel.statusChanged(
+          button(
+            [{ type: "icon", icon: "arrow-repeat" }, "Refresh"],
+            "Reload this data and start again from this point.",
+            refresh
+          )
+        );
+        model.statusChanged(wizard.processor(fetchOutput));
+      })
+      .catch((e) => fetchModel.statusFailed(`${e}`, refresh));
+  };
+  refresh();
+  return [fetchUi, br()];
+}
+function buildForm<T>(
+  wizard: WizardForm<T>,
+  model: StatefulModel<WizardNext | null>
+): UIElement {
+  const output = {} as T;
+  try {
+    const fields = Object.keys(wizard.parameters).map((k) => {
+      const key = k as keyof T;
+      return makeFormEntry(key, wizard.parameters[key], output);
+    });
 
-function inputProperty<T, K extends keyof T>(
+    return [
+      tableFromRows(
+        fields.map((f) =>
+          tableRow(null, { contents: f.label }, { contents: f.field.ui })
+        )
+      ),
+      button(
+        { type: "icon", icon: "arrow-right-circle" },
+        "Continue to next step",
+        () => {
+          for (const field of fields) {
+            field.update();
+          }
+
+          model.statusChanged(wizard.processor(output));
+        }
+      ),
+      br(),
+    ];
+  } catch (e) {
+    return e.toString();
+  }
+}
+function makeFetchEntry<T, K extends keyof T>(
   key: K,
-  definition: Parameters<T>[K],
-  output: Partial<T>
+  parameter: FetchOperation<T[K]>,
+  fetchOutput: T
+): Promise<void> {
+  switch (parameter.type) {
+    case "action-ids":
+      return fetchAsPromise("action-ids", [parameter.filter]).then((ids) => {
+        fetchOutput[key] = (ids.sort() as unknown) as T[K];
+      });
+    case "action-tags":
+      return fetchAsPromise("tags", [parameter.filter]).then((ids) => {
+        fetchOutput[key] = (ids.sort() as unknown) as T[K];
+      });
+    case "constant":
+      return fetchAsPromise("constant", parameter.name).then((constant) => {
+        if (constant.error) {
+          throw new Error(constant.error);
+        }
+        fetchOutput[key] = constant.value;
+      });
+    case "count":
+      return fetchAsPromise("count", [parameter.filter]).then((count) => {
+        fetchOutput[key] = (count as unknown) as T[K];
+      });
+    case "function":
+      return fetchAsPromise("function", {
+        name: parameter.name,
+        args: parameter.args,
+      }).then((value) => {
+        if (value.error) {
+          throw new Error(value.error);
+        }
+        fetchOutput[key] = value.value;
+      });
+    case "refiller":
+      return fetchAsPromise("simulate", {
+        allowUnused: true,
+        fakeActions: {},
+        fakeRefillers: parameter.fakeRefiller,
+        fakeConstants: parameter.fakeConstants,
+        script: parameter.script,
+        dryRun: false,
+        readStale: false,
+      }).then((result) => {
+        const items = result.refillers?.["export_to_meditation"];
+        if (items) {
+          fetchOutput[key] = (setNew(
+            items,
+            parameter.compare
+          ) as unknown) as T[K];
+        } else {
+          throw new Error(result.errors.join("\n") || "Unknown error.");
+        }
+      });
+  }
+}
+
+function makeFormEntry<T, K extends keyof T>(
+  key: K,
+  definition: FormElement<T[K]>,
+  output: T
 ) {
   let field: InputField<T[K]>;
   if (definition === undefined) {
@@ -721,54 +846,45 @@ export function renderInformation(
   }
 }
 
-export function renderWizard<T>(
-  state: Partial<T>,
-  wizard: Wizard<T>,
+export function renderWizard(
+  wizard: Wizard,
   filenameFormatter: FilenameFormatter,
   exportSearches: ExportSearchCommand[]
 ): UIElement {
-  const childDisplay = singleState(
-    (state: { state: Partial<T>; next: WizardNext<T> } | null) => {
-      if (state == null) {
-        return blank();
-      }
-      let final: UIElement = null;
-      if (state.next.then == null) {
-        final = [
-          br(),
-          { type: "icon", icon: "flower2" },
-          endings[Math.floor(Math.random() * endings.length)],
-        ];
-      } else {
-        final = renderWizard(
-          state.state,
-          state.next.then,
-          filenameFormatter,
-          exportSearches
-        );
-      }
-
-      return [
-        state.next.information
-          .flat(Number.MAX_VALUE)
-          .map((i) => renderInformation(i, filenameFormatter, exportSearches)),
-        final,
-      ];
+  const childDisplay = singleState((next: WizardNext | null) => {
+    if (next == null) {
+      return blank();
     }
-  );
+    let final: UIElement = null;
+    if (next.then == null) {
+      final = [
+        br(),
+        { type: "icon", icon: "flower2" },
+        endings[Math.floor(Math.random() * endings.length)],
+      ];
+    } else {
+      final = renderWizard(next.then, filenameFormatter, exportSearches);
+    }
+
+    return [
+      next.information
+        .flat(Number.MAX_VALUE)
+        .map((i) => renderInformation(i, filenameFormatter, exportSearches)),
+      final,
+    ];
+  });
   let inner: UIElement = "Unknown Step";
   switch (wizard.type) {
     case "choice":
       const selectors = radioSelector(
         { type: "icon", icon: "arrow-down-circle" },
         { type: "icon", icon: "arrow-down-circle-fill" },
-        mapModel(childDisplay.model, (step: WizardStep<T> | null) => {
+        mapModel(childDisplay.model, (step: WizardStep | null) => {
           if (step == null) {
             return null;
           } else {
-            const newState = { ...state };
             try {
-              return { state: newState, next: step(newState) };
+              return step();
             } catch (e) {
               dialog((_) => e.toString());
               return null;
@@ -784,141 +900,10 @@ export function renderWizard<T>(
       );
       break;
     case "form":
-      const output: Partial<T> = { ...state };
-      try {
-        const fields = Object.keys(wizard.parameters).map((key) => {
-          const k = key as keyof T;
-          return inputProperty(k, wizard.parameters[k], output);
-        });
-
-        inner = [
-          tableFromRows(
-            fields.map((f) =>
-              tableRow(null, { contents: f.label }, { contents: f.field.ui })
-            )
-          ),
-          button(
-            { type: "icon", icon: "arrow-right-circle" },
-            "Continue to next step",
-            () => {
-              for (const field of fields) {
-                field.update();
-              }
-
-              childDisplay.model.statusChanged({
-                state: output,
-                next: wizard.processor(output),
-              });
-            }
-          ),
-          br(),
-        ];
-      } catch (e) {
-        inner = e.toString();
-      }
+      inner = buildForm(wizard, childDisplay.model);
       break;
     case "fetch":
-      const { ui: fetchUi, model: fetchModel } = pane("medium");
-      inner = [fetchUi, br()];
-      fetchModel.statusWaiting();
-      const fetchOutput: Partial<T> = { ...state };
-      const promises: Promise<void>[] = [];
-      const refresh = () => {
-        for (const key of Object.keys(wizard.parameters)) {
-          const k = key as keyof T;
-          const parameter = wizard.parameters[k];
-          if (parameter === undefined) {
-            continue;
-          }
-          switch (parameter.type) {
-            case "action-ids":
-              promises.push(
-                fetchAsPromise("action-ids", [parameter.filter]).then((ids) => {
-                  fetchOutput[k] = (ids.sort() as unknown) as T[keyof T];
-                })
-              );
-              break;
-            case "action-tags":
-              promises.push(
-                fetchAsPromise("tags", [parameter.filter]).then((ids) => {
-                  fetchOutput[k] = (ids.sort() as unknown) as T[keyof T];
-                })
-              );
-              break;
-            case "constant":
-              promises.push(
-                fetchAsPromise("constant", parameter.name).then((constant) => {
-                  if (constant.error) {
-                    throw new Error(constant.error);
-                  }
-                  fetchOutput[k] = (constant.value as unknown) as T[keyof T];
-                })
-              );
-              break;
-            case "count":
-              promises.push(
-                fetchAsPromise("count", [parameter.filter]).then((count) => {
-                  fetchOutput[k] = (count as unknown) as T[keyof T];
-                })
-              );
-              break;
-            case "function":
-              promises.push(
-                fetchAsPromise("function", {
-                  name: parameter.name,
-                  args: parameter.args,
-                }).then((value) => {
-                  if (value.error) {
-                    throw new Error(value.error);
-                  }
-                  fetchOutput[k] = (value.value as unknown) as T[keyof T];
-                })
-              );
-              break;
-            case "refiller":
-              promises.push(
-                fetchAsPromise("simulate", {
-                  allowUnused: true,
-                  fakeActions: {},
-                  fakeRefillers: parameter.fakeRefiller,
-                  fakeConstants: parameter.fakeConstants,
-                  script: parameter.script,
-                  dryRun: false,
-                  readStale: false,
-                }).then((result) => {
-                  const items = result.refillers?.["export_to_meditation"];
-                  if (items) {
-                    fetchOutput[k] = (setNew(
-                      items,
-                      parameter.compare
-                    ) as unknown) as T[keyof T];
-                  } else {
-                    throw new Error(
-                      result.errors.join("\n") || "Unknown error."
-                    );
-                  }
-                })
-              );
-              break;
-          }
-        }
-        Promise.all(promises)
-          .then(() => {
-            fetchModel.statusChanged(
-              button(
-                [{ type: "icon", icon: "arrow-repeat" }, "Refresh"],
-                "Reload this data and start again from this point.",
-                refresh
-              )
-            );
-            childDisplay.model.statusChanged({
-              state: fetchOutput,
-              next: wizard.processor(fetchOutput),
-            });
-          })
-          .catch((e) => fetchModel.statusFailed(`${e}`, refresh));
-      };
-      refresh();
+      inner = buildFetch(wizard, childDisplay.model);
       break;
     case "fork":
       switch (wizard.items.length) {
@@ -930,8 +915,7 @@ export function renderWizard<T>(
           ];
           break;
         case 1:
-          const newState = { ...state, ...wizard.items[0].extra };
-          const { information, then } = wizard.processor(newState);
+          const { information, then } = wizard.processor(wizard.items[0].extra);
           inner = [
             information
               .flat(Number.MAX_VALUE)
@@ -944,15 +928,14 @@ export function renderWizard<T>(
                   { type: "icon", icon: "flower2" },
                   endings[Math.floor(Math.random() * endings.length)],
                 ]
-              : renderWizard(newState, then, filenameFormatter, exportSearches),
+              : renderWizard(then, filenameFormatter, exportSearches),
           ];
           break;
         default:
           inner = [
             tabs(
               ...wizard.items.map(({ title, extra }) => {
-                const newState = { ...state, ...extra };
-                const { information, then } = wizard.processor(newState);
+                const { information, then } = wizard.processor(extra);
                 return {
                   name: title,
                   contents: [
@@ -967,12 +950,7 @@ export function renderWizard<T>(
                           { type: "icon", icon: "flower2" } as UIElement,
                           "This branch bears no more fruit.",
                         ]
-                      : renderWizard(
-                          newState,
-                          then,
-                          filenameFormatter,
-                          exportSearches
-                        ),
+                      : renderWizard(then, filenameFormatter, exportSearches),
                   ],
                 };
               })

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class WizardNodeForm extends WizardNode {
   private final List<InformationNode> information;
@@ -30,53 +29,42 @@ public class WizardNodeForm extends WizardNode {
   }
 
   @Override
-  public String renderEcma(EcmaScriptRenderer renderer, EcmaLoadableConstructor name) {
-    final String nextFunction =
-        next.renderEcma(
-            renderer,
-            base ->
-                Stream.concat(
-                    name.create(base),
-                    entries
-                        .stream()
-                        .map(
-                            n ->
-                                new EcmaLoadableValue() {
-                                  @Override
-                                  public String name() {
-                                    return n.name();
-                                  }
-
-                                  @Override
-                                  public String apply(EcmaScriptRenderer renderer) {
-                                    return base.apply(renderer) + "." + n.name();
-                                  }
-                                })));
-    return renderer.newConst(
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return String.format(
+        "{information: %s, then: {type: \"form\", parameters: %s, processor: %s}}",
+        information.stream()
+            .map(i -> i.renderEcma(renderer))
+            .collect(Collectors.joining(", ", "[", "]")),
+        entries.stream()
+            .map(
+                c -> {
+                  try {
+                    return RuntimeSupport.MAPPER.writeValueAsString(c.name())
+                        + ": "
+                        + c.renderEcma(renderer);
+                  } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                  }
+                })
+            .collect(Collectors.joining(",", "{", "}")),
         renderer.lambda(
             1,
             (r, a) -> {
-              name.create(rr -> a.apply(0)).forEach(r::define);
-              return String.format(
-                  "{information: %s, then: {type: \"form\", parameters: %s, processor: %s}}",
-                  information
-                      .stream()
-                      .map(i -> i.renderEcma(r))
-                      .collect(Collectors.joining(", ", "[", "]")),
-                  entries
-                      .stream()
-                      .map(
-                          c -> {
-                            try {
-                              return RuntimeSupport.MAPPER.writeValueAsString(c.name())
-                                  + ": "
-                                  + c.renderEcma(r);
-                            } catch (JsonProcessingException e) {
-                              throw new RuntimeException(e);
-                            }
-                          })
-                      .collect(Collectors.joining(",", "{", "}")),
-                  nextFunction);
+              for (final FormNode entry : entries) {
+                r.define(
+                    new EcmaLoadableValue() {
+                      @Override
+                      public String name() {
+                        return entry.name();
+                      }
+
+                      @Override
+                      public String get() {
+                        return a.apply(0) + "." + entry.name();
+                      }
+                    });
+              }
+              return next.renderEcma(r);
             }));
   }
 
@@ -84,8 +72,7 @@ public class WizardNodeForm extends WizardNode {
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     boolean ok = true;
     for (final Map.Entry<String, Long> entry :
-        entries
-            .stream()
+        entries.stream()
             .collect(Collectors.groupingBy(FormNode::name, Collectors.counting()))
             .entrySet()) {
       if (entry.getValue() > 1) {
@@ -114,16 +101,14 @@ public class WizardNodeForm extends WizardNode {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    return information
-                .stream()
+    return information.stream()
                 .filter(
                     i ->
                         i.resolveDefinitions(
                             expressionCompilerServices, nativeDefinitions, errorHandler))
                 .count()
             == information.size()
-        & entries
-                .stream()
+        & entries.stream()
                 .filter(
                     e ->
                         e.resolveDefinitions(

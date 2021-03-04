@@ -43,12 +43,16 @@ public class MatchBranchNodeObject extends MatchBranchNode {
   }
 
   @Override
+  protected Stream<EcmaLoadableValue> loadBoundNames(String base) {
+    return fields.stream().flatMap(f -> f.second().renderEcma(base + ".contents." + f.first()));
+  }
+
+  @Override
   protected Renderer prepare(Renderer renderer, BiConsumer<Renderer, Integer> loadElement) {
     final List<String> fieldNames =
         fields.stream().map(Pair::first).sorted().collect(Collectors.toList());
     final Renderer result = renderer.duplicate();
-    fields
-        .stream()
+    fields.stream()
         .flatMap(
             f -> {
               final int i = fieldNames.indexOf(f.first());
@@ -67,8 +71,7 @@ public class MatchBranchNodeObject extends MatchBranchNode {
   @Override
   protected boolean typeCheckBindings(Imyhat argumentType, Consumer<String> errorHandler) {
     this.argumentType = argumentType;
-    return fields
-                .stream()
+    return fields.stream()
                 .filter(f -> f.second().checkWildcard(errorHandler) != WildcardCheck.BAD)
                 .count()
             == fields.size()

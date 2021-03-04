@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class WizardNodeFetch extends WizardNode {
   private final List<FetchNode> entries;
@@ -23,49 +22,40 @@ public class WizardNodeFetch extends WizardNode {
   }
 
   @Override
-  public String renderEcma(EcmaScriptRenderer renderer, EcmaLoadableConstructor name) {
-    final String nextFunction =
-        next.renderEcma(
-            renderer,
-            base ->
-                Stream.concat(
-                    name.create(base),
-                    entries
-                        .stream()
-                        .map(
-                            n ->
-                                new EcmaLoadableValue() {
-                                  @Override
-                                  public String name() {
-                                    return n.name();
-                                  }
+  public String renderEcma(EcmaScriptRenderer renderer) {
 
-                                  @Override
-                                  public String apply(EcmaScriptRenderer renderer) {
-                                    return base.apply(renderer) + "." + n.name();
-                                  }
-                                })));
-    return renderer.newConst(
+    return String.format(
+        "{information: [], then: {type: \"fetch\", parameters: %s, processor: %s}}",
+        entries.stream()
+            .map(
+                c -> {
+                  try {
+                    return RuntimeSupport.MAPPER.writeValueAsString(c.name())
+                        + ": "
+                        + c.renderEcma(renderer);
+                  } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                  }
+                })
+            .collect(Collectors.joining(",", "{", "}")),
         renderer.lambda(
             1,
             (r, a) -> {
-              name.create(rr -> a.apply(0)).forEach(r::define);
-              return String.format(
-                  "{information: [], then: {type: \"fetch\", parameters: %s, processor: %s}}",
-                  entries
-                      .stream()
-                      .map(
-                          c -> {
-                            try {
-                              return RuntimeSupport.MAPPER.writeValueAsString(c.name())
-                                  + ": "
-                                  + c.renderEcma(r);
-                            } catch (JsonProcessingException e) {
-                              throw new RuntimeException(e);
-                            }
-                          })
-                      .collect(Collectors.joining(",", "{", "}")),
-                  nextFunction);
+              for (final FetchNode entry : entries) {
+                r.define(
+                    new EcmaLoadableValue() {
+                      @Override
+                      public String name() {
+                        return entry.name();
+                      }
+
+                      @Override
+                      public String get() {
+                        return a.apply(0) + "." + entry.name();
+                      }
+                    });
+              }
+              return next.renderEcma(r);
             }));
   }
 
@@ -73,8 +63,7 @@ public class WizardNodeFetch extends WizardNode {
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     boolean ok = true;
     for (final Map.Entry<String, Long> entry :
-        entries
-            .stream()
+        entries.stream()
             .collect(Collectors.groupingBy(FetchNode::name, Collectors.counting()))
             .entrySet()) {
       if (entry.getValue() > 1) {
@@ -101,8 +90,7 @@ public class WizardNodeFetch extends WizardNode {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    return entries
-                .stream()
+    return entries.stream()
                 .filter(
                     e ->
                         e.resolveDefinitions(

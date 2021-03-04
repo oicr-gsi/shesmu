@@ -57,8 +57,7 @@ public abstract class WizardMatchAlternativeNode {
     return input.whitespace().dispatch(DISPATCH, output);
   }
 
-  public abstract String render(
-      EcmaScriptRenderer renderer, EcmaLoadableConstructor name, String original);
+  public abstract String render(EcmaScriptRenderer renderer, String original);
 
   public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 

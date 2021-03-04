@@ -87,8 +87,8 @@ public class CollectNodeReduce extends CollectNode {
             .lambda(
                 2,
                 (r, args) -> {
-                  accumulatorName.renderEcma(rr -> args.apply(0)).forEach(r::define);
-                  name.create(rr -> args.apply(1)).forEach(r::define);
+                  accumulatorName.renderEcma(args.apply(0)).forEach(r::define);
+                  name.create(args.apply(1)).forEach(r::define);
                   return reducer.renderEcma(r);
                 }),
         initial.renderEcma(builder.renderer()));

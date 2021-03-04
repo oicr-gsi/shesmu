@@ -21,40 +21,27 @@ public class WizardNodeSwitch extends WizardNode {
   }
 
   @Override
-  public String renderEcma(EcmaScriptRenderer renderer, EcmaLoadableConstructor name) {
-    return renderer.newConst(
-        renderer.lambda(
-            1,
-            (r, a) -> {
-              name.create(rr -> a.apply(0)).forEach(r::define);
-              final String testValue = r.newConst(test.renderEcma(r));
-              final String testLambda =
-                  r.newConst(
-                      r.lambda(
-                          1,
-                          (rr, args) ->
-                              test.type()
-                                  .apply(EcmaScriptRenderer.isEqual(args.apply(0), testValue))));
-              final String result = r.newLet();
-              r.mapIf(
-                  cases.stream(),
-                  p -> String.format("%s(%s)", testLambda, p.first().renderEcma(r)),
-                  (rr, p) ->
-                      rr.statement(
-                          String.format("%s = %s", result, p.second().renderEcma(renderer, name))),
-                  rr ->
-                      rr.statement(
-                          String.format(
-                              "%s = %s", result, alternative.renderEcma(renderer, name))));
-              return String.format("%s(%s)", result, a.apply(0));
-            }));
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    final String testValue = renderer.newConst(test.renderEcma(renderer));
+    final String testLambda =
+        renderer.newConst(
+            renderer.lambda(
+                1,
+                (rr, args) ->
+                    test.type().apply(EcmaScriptRenderer.isEqual(args.apply(0), testValue))));
+    final String result = renderer.newLet();
+    renderer.mapIf(
+        cases.stream(),
+        p -> String.format("%s(%s)", testLambda, p.first().renderEcma(renderer)),
+        (r, p) -> r.statement(String.format("%s = %s", result, p.second().renderEcma(r))),
+        r -> r.statement(String.format("%s = %s", result, alternative.renderEcma(r))));
+    return result;
   }
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return test.resolve(defs, errorHandler)
-        & cases
-                .stream()
+        & cases.stream()
                 .filter(
                     c ->
                         c.first().resolve(defs, errorHandler)
@@ -67,8 +54,7 @@ public class WizardNodeSwitch extends WizardNode {
   @Override
   public boolean resolveCrossReferences(
       Map<String, WizardDefineNode> references, Consumer<String> errorHandler) {
-    return cases
-                .stream()
+    return cases.stream()
                 .filter(c -> c.second().resolveCrossReferences(references, errorHandler))
                 .count()
             == cases.size()
@@ -81,8 +67,7 @@ public class WizardNodeSwitch extends WizardNode {
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
     return test.resolveDefinitions(expressionCompilerServices, errorHandler)
-        & cases
-                .stream()
+        & cases.stream()
                 .filter(
                     c ->
                         c.first().resolveDefinitions(expressionCompilerServices, errorHandler)
@@ -99,8 +84,7 @@ public class WizardNodeSwitch extends WizardNode {
   public boolean typeCheck(Consumer<String> errorHandler) {
     boolean ok =
         test.typeCheck(errorHandler)
-            & cases
-                    .stream()
+            & cases.stream()
                     .filter(
                         c -> c.first().typeCheck(errorHandler) & c.second().typeCheck(errorHandler))
                     .count()
@@ -108,8 +92,7 @@ public class WizardNodeSwitch extends WizardNode {
             & alternative.typeCheck(errorHandler);
     if (ok) {
       ok =
-          cases
-                  .stream()
+          cases.stream()
                   .filter(
                       c -> {
                         if (c.first().type().isSame(test.type())) {

@@ -14,19 +14,12 @@ public class WizardNodeEnd extends WizardNode {
   }
 
   @Override
-  public String renderEcma(EcmaScriptRenderer renderer, EcmaLoadableConstructor name) {
-    return renderer.newConst(
-        renderer.lambda(
-            1,
-            (r, a) -> {
-              name.create(rr -> a.apply(0)).forEach(r::define);
-              return String.format(
-                  "{information: %s, then: null}",
-                  information
-                      .stream()
-                      .map(i -> i.renderEcma(r))
-                      .collect(Collectors.joining(", ", "[", "]")));
-            }));
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return String.format(
+        "{information: %s, then: null}",
+        information.stream()
+            .map(i -> i.renderEcma(renderer))
+            .collect(Collectors.joining(", ", "[", "]")));
   }
 
   @Override
@@ -47,8 +40,7 @@ public class WizardNodeEnd extends WizardNode {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    return information
-            .stream()
+    return information.stream()
             .filter(
                 i ->
                     i.resolveDefinitions(

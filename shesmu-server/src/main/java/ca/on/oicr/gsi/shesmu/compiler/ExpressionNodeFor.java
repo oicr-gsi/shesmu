@@ -52,10 +52,9 @@ public class ExpressionNodeFor extends ExpressionNode {
     final EcmaStreamBuilder builder = source.render(renderer);
     return collector.render(
         builder,
-        transforms
-            .stream()
+        transforms.stream()
             .reduce(
-                name::renderEcma,
+                loader -> name.renderEcma(loader),
                 (n, transform) -> transform.render(builder, n),
                 (a, b) -> {
                   throw new UnsupportedOperationException();
@@ -67,8 +66,7 @@ public class ExpressionNodeFor extends ExpressionNode {
     final JavaStreamBuilder builder = source.render(renderer);
     collector.render(
         builder,
-        transforms
-            .stream()
+        transforms.stream()
             .reduce(
                 name::render,
                 (n, transform) -> transform.render(builder, n),
@@ -82,8 +80,7 @@ public class ExpressionNodeFor extends ExpressionNode {
     boolean ok = source.resolve(defs, errorHandler);
 
     final Optional<DestructuredArgumentNode> nextName =
-        transforms
-            .stream()
+        transforms.stream()
             .reduce(
                 Optional.of(name),
                 (n, t) -> n.flatMap(name -> t.resolve(name, defs, errorHandler)),
@@ -100,8 +97,7 @@ public class ExpressionNodeFor extends ExpressionNode {
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return source.resolveDefinitions(expressionCompilerServices, errorHandler)
         & collector.resolveDefinitions(expressionCompilerServices, errorHandler)
-        & transforms
-                .stream()
+        & transforms.stream()
                 .filter(t -> t.resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
             == transforms.size()
@@ -120,8 +116,7 @@ public class ExpressionNodeFor extends ExpressionNode {
       return false;
     }
     final Ordering ordering =
-        transforms
-            .stream()
+        transforms.stream()
             .reduce(
                 source.ordering(),
                 (order, transform) -> transform.order(order, errorHandler),
@@ -129,8 +124,7 @@ public class ExpressionNodeFor extends ExpressionNode {
                   throw new UnsupportedOperationException();
                 });
     final Optional<Imyhat> resultType =
-        transforms
-            .stream()
+        transforms.stream()
             .reduce(
                 Optional.of(source.streamType()),
                 (t, transform) -> t.flatMap(tt -> transform.typeCheck(tt, errorHandler)),

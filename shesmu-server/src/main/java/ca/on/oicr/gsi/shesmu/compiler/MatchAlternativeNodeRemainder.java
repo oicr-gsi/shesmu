@@ -90,17 +90,18 @@ public class MatchAlternativeNodeRemainder extends MatchAlternativeNode {
 
   @Override
   public String render(EcmaScriptRenderer renderer, String original) {
-    renderer.define(new EcmaLoadableValue() {
-      @Override
-      public String name() {
-        return name;
-      }
+    renderer.define(
+        new EcmaLoadableValue() {
+          @Override
+          public String name() {
+            return name;
+          }
 
-      @Override
-      public String apply(EcmaScriptRenderer renderer) {
-        return original;
-      }
-    });
+          @Override
+          public String get() {
+            return original;
+          }
+        });
     return expression.renderEcma(renderer);
   }
 
@@ -136,9 +137,7 @@ public class MatchAlternativeNodeRemainder extends MatchAlternativeNode {
       return Imyhat.BAD;
     }
     type =
-        remainingBranches
-            .entrySet()
-            .stream()
+        remainingBranches.entrySet().stream()
             .map(
                 e ->
                     e.getValue()

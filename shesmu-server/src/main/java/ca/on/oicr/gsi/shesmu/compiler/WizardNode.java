@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 public abstract class WizardNode {
   private static final Parser.ParseDispatch<WizardNode> DISPATCH = new ParseDispatch<>();
   private static final Parser.ParseDispatch<WizardNode> FLOW = new ParseDispatch<>();
+  public static final String STATE = "Meditation State";
   public static final Pattern STRING_CONTENTS = Pattern.compile("^[^\"\n\\\\]*");
   private static final Parser.ParseDispatch<Function<List<InformationNode>, WizardNode>> WIZARD =
       new ParseDispatch<>();
@@ -246,7 +247,7 @@ public abstract class WizardNode {
   }
 
   /** Produce ES6/JavaScript code for this expression */
-  public abstract String renderEcma(EcmaScriptRenderer renderer, EcmaLoadableConstructor name);
+  public abstract String renderEcma(EcmaScriptRenderer renderer);
 
   /** Resolve all variable plugins in this expression and its children. */
   public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
