@@ -185,7 +185,7 @@ public class InformationNodeActions extends InformationNode {
               @Override
               public String tags(Stream<InformationParameterNode<String>> tags) {
                 return String.format(
-                    "{type: \"tag\", types: %s.flat(1)}",
+                    "{type: \"tag\", tags: %s.flat(1)}",
                     tags.map(t -> t.renderEcma(renderer))
                         .collect(Collectors.joining(", ", "[", "]")));
               }
