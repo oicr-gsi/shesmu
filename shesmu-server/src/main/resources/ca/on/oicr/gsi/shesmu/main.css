@@ -737,8 +737,18 @@ a.button.danger:visited {
   background-color: var(--widget-zebra);
 }
 
+.tabs {
+  display: flex;
+}
+.tabs > div {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: hidden;
+  min-height: max-content;
+}
+
 .tab {
-  display: inline-block;
+  flex: 0 0 auto;
   margin: 0.5em;
   padding: 1em;
   border-bottom: 0.1em solid var(--widget-highlight);
