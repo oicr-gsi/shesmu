@@ -81,10 +81,12 @@ public class GuidedMeditation implements WatchedFileListener {
             private final NameLoader<AnnotatedInputFormatDefinition> formats =
                 new NameLoader<>(
                     AnnotatedInputFormatDefinition.formats(), InputFormatDefinition::name);
+            private final NameLoader<FunctionDefinition> functions =
+                new NameLoader<>(new StandardDefinitions().functions(), FunctionDefinition::name);
 
             @Override
             public FunctionDefinition function(String name) {
-              return null;
+              return functions.get(name);
             }
 
             @Override
