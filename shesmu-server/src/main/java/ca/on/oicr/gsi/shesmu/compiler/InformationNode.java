@@ -90,6 +90,7 @@ public abstract class InformationNode {
               ActionFilter.parse(
                       p.whitespace(),
                       InformationParameterNode.ACTION_STATE,
+                      InformationParameterNode.STRING,
                       InformationParameterNode.STRINGS,
                       InformationParameterNode.INSTANT,
                       InformationParameterNode.OFFSET,

@@ -327,6 +327,7 @@ public abstract class ActionFilter {
           Parser parser,
           Rule<T> actionState,
           Rule<S> string,
+          Rule<S> strings,
           Rule<I> instant,
           Rule<O> offset,
           Consumer<ActionFilterNode<T, S, I, O>> output) {
@@ -339,6 +340,7 @@ public abstract class ActionFilter {
           Parser parser,
           Rule<T> actionState,
           Rule<S> string,
+          Rule<S> strings,
           Rule<I> instant,
           Rule<O> offset,
           Consumer<ActionFilterNode<T, S, I, O>> output) {
@@ -351,6 +353,7 @@ public abstract class ActionFilter {
           Parser parser,
           Rule<T> actionState,
           Rule<S> string,
+          Rule<S> strings,
           Rule<I> instant,
           Rule<O> offset,
           Consumer<ActionFilterNode<T, S, I, O>> output) {
@@ -363,6 +366,7 @@ public abstract class ActionFilter {
           Parser parser,
           Rule<T> actionState,
           Rule<S> string,
+          Rule<S> strings,
           Rule<I> instant,
           Rule<O> offset,
           Consumer<ActionFilterNode<T, S, I, O>> output) {
@@ -380,7 +384,7 @@ public abstract class ActionFilter {
                         return negate ? result.map(builder::negate) : result;
                       }
                     }),
-            string);
+            strings);
       }
     },
     SOURCE {
@@ -389,6 +393,7 @@ public abstract class ActionFilter {
           Parser parser,
           Rule<T> actionState,
           Rule<S> string,
+          Rule<S> strings,
           Rule<I> instant,
           Rule<O> offset,
           Consumer<ActionFilterNode<T, S, I, O>> output) {
@@ -416,6 +421,7 @@ public abstract class ActionFilter {
           Parser parser,
           Rule<T> actionState,
           Rule<S> string,
+          Rule<S> strings,
           Rule<I> instant,
           Rule<O> offset,
           Consumer<ActionFilterNode<T, S, I, O>> output) {
@@ -438,12 +444,12 @@ public abstract class ActionFilter {
     },
 
     STATUS_CHANGED {
-
       @Override
       public <T, S, I, O> Parser parse(
           Parser parser,
           Rule<T> actionState,
           Rule<S> string,
+          Rule<S> strings,
           Rule<I> instant,
           Rule<O> offset,
           Consumer<ActionFilterNode<T, S, I, O>> output) {
@@ -456,13 +462,14 @@ public abstract class ActionFilter {
           Parser parser,
           Rule<T> actionState,
           Rule<S> string,
+          Rule<S> strings,
           Rule<I> instant,
           Rule<O> offset,
           Consumer<ActionFilterNode<T, S, I, O>> output) {
         final AtomicReference<TagParser> tag = new AtomicReference<>();
         final Parser result = parser.whitespace().dispatch(TAG_MATCHER, tag::set).whitespace();
         if (result.isGood()) {
-          return tag.get().parseTag(result, string, output).whitespace();
+          return tag.get().parseTag(result, strings, output).whitespace();
         }
         return result;
       }
@@ -473,6 +480,7 @@ public abstract class ActionFilter {
           Parser parser,
           Rule<T> actionState,
           Rule<S> string,
+          Rule<S> strings,
           Rule<I> instant,
           Rule<O> offset,
           Consumer<ActionFilterNode<T, S, I, O>> output) {
@@ -490,6 +498,7 @@ public abstract class ActionFilter {
           Parser parser,
           Rule<T> actionState,
           Rule<S> string,
+          Rule<S> strings,
           Rule<I> instant,
           Rule<O> offset,
           Consumer<ActionFilterNode<T, S, I, O>> output) {
@@ -507,7 +516,7 @@ public abstract class ActionFilter {
                         return negate ? result.map(builder::negate) : result;
                       }
                     }),
-            string);
+            strings);
       }
     };
 
@@ -515,6 +524,7 @@ public abstract class ActionFilter {
         Parser parser,
         Rule<T> actionState,
         Rule<S> string,
+        Rule<S> strings,
         Rule<I> instant,
         Rule<O> offset,
         Consumer<ActionFilterNode<T, S, I, O>> output);
@@ -991,11 +1001,12 @@ public abstract class ActionFilter {
       Parser parser,
       Rule<T> actionState,
       RuleWithLiteral<S, String> string,
+      RuleWithLiteral<S, String> strings,
       RuleWithLiteral<I, Instant> instant,
       RuleWithLiteral<O, Long> offset,
       Consumer<ActionFilterNode<T, S, I, O>> output) {
     return Parser.scanBinary(
-        (p, o) -> parse1(p, actionState, string, instant, offset, o),
+        (p, o) -> parse1(p, actionState, string, strings, instant, offset, o),
         binary(
             "or",
             new BinaryConstructor() {
@@ -1012,11 +1023,12 @@ public abstract class ActionFilter {
       Parser parser,
       Rule<T> actionState,
       RuleWithLiteral<S, String> string,
+      RuleWithLiteral<S, String> strings,
       RuleWithLiteral<I, Instant> instant,
       RuleWithLiteral<O, Long> offset,
       Consumer<ActionFilterNode<T, S, I, O>> output) {
     return Parser.scanBinary(
-        (p, o) -> parse2(p, actionState, string, instant, offset, o),
+        (p, o) -> parse2(p, actionState, string, strings, instant, offset, o),
         binary(
             "and",
             new BinaryConstructor() {
@@ -1033,11 +1045,12 @@ public abstract class ActionFilter {
       Parser parser,
       Rule<T> actionState,
       RuleWithLiteral<S, String> string,
+      RuleWithLiteral<S, String> strings,
       RuleWithLiteral<I, Instant> instant,
       RuleWithLiteral<O, Long> offset,
       Consumer<ActionFilterNode<T, S, I, O>> output) {
     return Parser.scanPrefixed(
-        (p, o) -> parse3(p, actionState, string, instant, offset, o),
+        (p, o) -> parse3(p, actionState, string, strings, instant, offset, o),
         (p, o) -> {
           final Parser result = p.keyword("not").whitespace();
           if (result.isGood()) {
@@ -1063,6 +1076,7 @@ public abstract class ActionFilter {
       Parser parser,
       Rule<T> actionState,
       RuleWithLiteral<S, String> string,
+      RuleWithLiteral<S, String> strings,
       RuleWithLiteral<I, Instant> instant,
       RuleWithLiteral<O, Long> offset,
       Consumer<ActionFilterNode<T, S, I, O>> output) {
@@ -1153,7 +1167,14 @@ public abstract class ActionFilter {
     }
     final Parser subExpressionParser = parser.symbol("(");
     if (subExpressionParser.isGood()) {
-      return parse(subExpressionParser.whitespace(), actionState, string, instant, offset, output)
+      return parse(
+              subExpressionParser.whitespace(),
+              actionState,
+              string,
+              strings,
+              instant,
+              offset,
+              output)
           .symbol(")")
           .whitespace();
     }
@@ -1162,7 +1183,7 @@ public abstract class ActionFilter {
     if (result.isGood()) {
       return variable
           .get()
-          .parse(result, actionState, string, instant, offset, output)
+          .parse(result, actionState, string, strings, instant, offset, output)
           .whitespace();
     }
     return result;
@@ -1233,6 +1254,7 @@ public abstract class ActionFilter {
         parse(
             Parser.start(input, errorHandler).whitespace(),
             PARSE_ACTION_STATE,
+            PARSE_STRING,
             PARSE_STRING,
             PARSE_TIME,
             PARSE_OFFSET,
