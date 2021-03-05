@@ -89,6 +89,7 @@ public abstract class FetchNode implements Target {
           ActionFilter.parse(
                   parser.whitespace(),
                   InformationParameterNode.ACTION_STATE,
+                  InformationParameterNode.STRING,
                   InformationParameterNode.STRINGS,
                   InformationParameterNode.INSTANT,
                   InformationParameterNode.OFFSET,
