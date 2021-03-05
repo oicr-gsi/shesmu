@@ -22,7 +22,20 @@ public abstract class WizardNode {
   static {
     WIZARD.addKeyword(
         "Stop",
-        (p, o) -> p.whitespace().list(i -> o.accept(WizardNodeEnd::new), InformationNode::parse));
+        (p, o) -> {
+          final Parser withResult = p.whitespace().keyword("With");
+          if (withResult.isGood()) {
+            final AtomicReference<ExpressionNode> status = new AtomicReference<>();
+            final Parser result =
+                withResult.whitespace().then(ExpressionNode::parse, status::set).whitespace();
+            if (result.isGood()) {
+              o.accept(information -> new WizardNodeEndWithStatus(information, status.get()));
+              return result;
+            }
+          }
+          o.accept(WizardNodeEnd::new);
+          return p.whitespace();
+        });
     WIZARD.addKeyword(
         "Form",
         (p, o) -> {

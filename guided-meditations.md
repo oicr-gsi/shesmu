@@ -192,8 +192,9 @@ As the meditation is run, the user can select the next step along the way and
 this will determine the behaviour of the rest of the meditation.
 
 ### User-Interactive
-- `Stop`
-Ends the meditation. No further steps follow
+- `Stop` [`With` status]
+Ends the meditation. No further steps follow. If _status_ is supplied, it a
+Boolean value that indicates if the journey was successful or not.
 
 - `Choice` `When "` _description_ `" Then`  _step_, ...
 Allows the user to choose between several options. _step_ is a list of displays followed by another step.
