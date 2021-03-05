@@ -285,6 +285,9 @@ are as exactly as `For` expressions. Each resulting item will be split into a
 new path handled by _step_. They will be labelled to avoid confusion, using
 _title_, which must be a string.
 
+- `Let` _name1_ `=` _expr1_`,` ... `Then` _step_
+This defines new variables for use in the next step.
+
 ### Gathering Server Data
 The information blocks can display information from the server, but this
 information isn't available to make decision. The `Fetch` element allows
