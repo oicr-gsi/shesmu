@@ -166,6 +166,43 @@ public abstract class WizardNode {
     DISPATCH.addKeyword(
         "Flow", (p, o) -> p.whitespace().keyword("By").whitespace().dispatch(FLOW, o));
     DISPATCH.addKeyword(
+        "Let",
+        (p, o) -> {
+          final AtomicReference<List<Pair<DestructuredArgumentNode, ExpressionNode>>> entries =
+              new AtomicReference<>();
+          final AtomicReference<WizardNode> step = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .whitespace()
+                  .list(
+                      entries::set,
+                      (pe, oe) -> {
+                        final AtomicReference<DestructuredArgumentNode> name =
+                            new AtomicReference<>();
+                        final AtomicReference<ExpressionNode> expr = new AtomicReference<>();
+                        final Parser entryResult =
+                            pe.whitespace()
+                                .then(DestructuredArgumentNode::parse, name::set)
+                                .whitespace()
+                                .symbol("=")
+                                .whitespace()
+                                .then(ExpressionNode::parse, expr::set);
+                        if (entryResult.isGood()) {
+                          oe.accept(new Pair<>(name.get(), expr.get()));
+                        }
+                        return entryResult;
+                      },
+                      ',')
+                  .symbol("Then")
+                  .whitespace()
+                  .then(WizardNode::parse, step::set)
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(new WizardNodeLet(p.line(), p.column(), entries.get(), step.get()));
+          }
+          return result;
+        });
+    DISPATCH.addKeyword(
         "GoTo",
         (p, o) -> {
           final AtomicReference<String> name = new AtomicReference<>();
