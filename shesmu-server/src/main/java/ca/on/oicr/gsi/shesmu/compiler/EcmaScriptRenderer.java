@@ -277,7 +277,7 @@ public final class EcmaScriptRenderer {
       @Override
       public String optional(Imyhat inner) {
         return String.format(
-            "(%1$s === null && %2$s === null || %1$s !== null && $1$s !== null && %3$s)",
+            "(%1$s === null && %2$s === null || %1$s !== null && %1$s !== null && %3$s)",
             left, right, inner.apply(this));
       }
 
