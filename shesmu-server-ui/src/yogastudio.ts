@@ -20,6 +20,7 @@ import {
 } from "./util.js";
 import {
   WizardStep,
+  iconForStatus,
   renderInformation,
   renderWizard,
 } from "./guided_meditations.js";
@@ -47,9 +48,10 @@ export function renderResponse(
     ) as WizardStep;
     try {
       const { information, then } = wizard();
+      const status = singleState(iconForStatus);
       return [
         {
-          name: "Meditation",
+          name: ["Meditation ", status.ui],
           contents: [
             information
               .flat(Number.MAX_VALUE)
@@ -58,7 +60,12 @@ export function renderResponse(
               ),
             then == null
               ? "Well, that was fast."
-              : renderWizard(then, filenameFormatter, exportSearches),
+              : renderWizard(
+                  then,
+                  status.model,
+                  filenameFormatter,
+                  exportSearches
+                ),
           ],
         },
         {
