@@ -56,12 +56,14 @@ import {
   commonPathPrefix,
   individualPropertyModel,
   mapModel,
+  reducingModel,
 } from "./util.js";
 import { setNew } from "./runtime.js";
 
 interface GuidedMeditation {
   name: string;
   start: (
+    status: StatefulModel<StatusInidcator>,
     filenameFormatter: FilenameFormatter,
     exportSearches: ExportSearchCommand[]
   ) => UIElement;
@@ -165,11 +167,14 @@ type FetchOperation<T> =
     };
 type InformationNested = Information[] | InformationNested[];
 
+type StatusInidcator = "GOOD" | "FAILED" | "WAITING" | "UNKNOWN";
+
 type Wizard =
   | WizardFetch<unknown>
   | WizardForm<unknown>
   | WizardChoice
-  | WizardFork<unknown>;
+  | WizardFork<unknown>
+  | WizardStatus;
 
 interface WizardChoice {
   type: "choice";
@@ -194,6 +199,11 @@ interface WizardFork<T> {
   items: { title: string; extra: T }[];
 }
 
+interface WizardStatus {
+  type: "status";
+  status: boolean;
+}
+
 export type WizardNext = {
   information: InformationNested;
   then: Wizard | null;
@@ -214,27 +224,43 @@ const meditations: GuidedMeditation[] = [];
 export function register(name: string, wizard: () => WizardNext) {
   meditations.push({
     name: name,
-    start: (filenameFormatter, exportSearches) => {
+    start: (status, filenameFormatter, exportSearches) => {
       const { information, then } = wizard();
+      status.statusChanged("UNKNOWN");
       return [
         information
           .flat(Number.MAX_VALUE)
           .map((i) => renderInformation(i, filenameFormatter, exportSearches)),
         then == null
           ? "Well, that was fast."
-          : renderWizard(then, filenameFormatter, exportSearches),
+          : renderWizard(then, status, filenameFormatter, exportSearches),
       ];
     },
   });
+}
+export function iconForStatus(input: StatusInidcator): UIElement {
+  switch (input) {
+    case "FAILED":
+      return { type: "icon", icon: "x-circle-fill" };
+    case "GOOD":
+      return { type: "icon", icon: "check-circle-fill" };
+    case "WAITING":
+      return { type: "icon", icon: "hourglass" };
+    default:
+      return { type: "icon", icon: "question-circle-fill" };
+  }
 }
 export function initialiseMeditationDash(
   oliveFiles: string[],
   exportSearches: ExportSearchCommand[]
 ): void {
   if (meditations.length) {
+    const status = singleState(iconForStatus);
     const filenameFormatter = commonPathPrefix(oliveFiles);
     const { model, ui } = singleState((input: GuidedMeditation | null) =>
-      input == null ? blank() : input.start(filenameFormatter, exportSearches)
+      input == null
+        ? blank()
+        : input.start(status.model, filenameFormatter, exportSearches)
     );
     const selectors = radioSelector(
       { type: "icon", icon: "signpost" },
@@ -256,6 +282,8 @@ export function initialiseMeditationDash(
         )
       ),
       br(),
+      "Meditation status: ",
+      status.ui,
       ui,
     ]);
   } else {
@@ -275,6 +303,7 @@ export function initialiseMeditationDash(
 }
 function buildFetch<T>(
   wizard: WizardFetch<T>,
+  status: StatefulModel<StatusInidcator>,
   model: StatefulModel<WizardNext | null>
 ): UIElement {
   const { ui: fetchUi, model: fetchModel } = pane("medium");
@@ -282,6 +311,7 @@ function buildFetch<T>(
   const fetchOutput = {} as T;
   const promises: Promise<void>[] = [];
   const refresh = () => {
+    status.statusChanged("WAITING");
     for (const k of Object.keys(wizard.parameters)) {
       const key = k as keyof T;
       const parameter = wizard.parameters[key];
@@ -292,6 +322,7 @@ function buildFetch<T>(
     }
     Promise.all(promises)
       .then(() => {
+        status.statusChanged("UNKNOWN");
         fetchModel.statusChanged(
           button(
             [{ type: "icon", icon: "arrow-repeat" }, "Refresh"],
@@ -848,6 +879,7 @@ export function renderInformation(
 
 export function renderWizard(
   wizard: Wizard,
+  status: StatefulModel<StatusInidcator>,
   filenameFormatter: FilenameFormatter,
   exportSearches: ExportSearchCommand[]
 ): UIElement {
@@ -863,7 +895,12 @@ export function renderWizard(
         endings[Math.floor(Math.random() * endings.length)],
       ];
     } else {
-      final = renderWizard(next.then, filenameFormatter, exportSearches);
+      final = renderWizard(
+        next.then,
+        status,
+        filenameFormatter,
+        exportSearches
+      );
     }
 
     return [
@@ -903,7 +940,13 @@ export function renderWizard(
       inner = buildForm(wizard, childDisplay.model);
       break;
     case "fetch":
-      inner = buildFetch(wizard, childDisplay.model);
+      inner = buildFetch(wizard, status, childDisplay.model);
+      break;
+    case "status":
+      status.statusChanged(wizard.status ? "GOOD" : "FAILED");
+      inner = wizard.status
+        ? [{ type: "icon", icon: "check-circle-fill" }, "This seems good."]
+        : [{ type: "icon", icon: "x-circle-fill" }, "This seems bad."];
       break;
     case "fork":
       switch (wizard.items.length) {
@@ -928,16 +971,37 @@ export function renderWizard(
                   { type: "icon", icon: "flower2" },
                   endings[Math.floor(Math.random() * endings.length)],
                 ]
-              : renderWizard(then, filenameFormatter, exportSearches),
+              : renderWizard(then, status, filenameFormatter, exportSearches),
           ];
           break;
         default:
+          const combinedStatuses = reducingModel(
+            status,
+            (value: StatusInidcator, accumulator: StatusInidcator | null) => {
+              if (accumulator == null) {
+                return value;
+              }
+              if (value == "FAILED" || accumulator == "FAILED") {
+                return "FAILED";
+              }
+              if (value == "WAITING" || accumulator == "WAITING") {
+                return "WAITING";
+              }
+              if (value == "UNKNOWN" || accumulator == "UNKNOWN") {
+                return "UNKNOWN";
+              }
+              return "GOOD";
+            },
+            "GOOD",
+            wizard.items.length
+          );
           inner = [
             tabs(
-              ...wizard.items.map(({ title, extra }) => {
+              ...wizard.items.map(({ title, extra }, index) => {
                 const { information, then } = wizard.processor(extra);
+                const childStatus = singleState(iconForStatus);
                 return {
-                  name: title,
+                  name: [title, " ", childStatus.ui],
                   contents: [
                     information
                       .flat(Number.MAX_VALUE)
@@ -950,7 +1014,15 @@ export function renderWizard(
                           { type: "icon", icon: "flower2" } as UIElement,
                           "This branch bears no more fruit.",
                         ]
-                      : renderWizard(then, filenameFormatter, exportSearches),
+                      : renderWizard(
+                          then,
+                          combineModels(
+                            childStatus.model,
+                            combinedStatuses[index]
+                          ),
+                          filenameFormatter,
+                          exportSearches
+                        ),
                   ],
                 };
               })
