@@ -365,6 +365,19 @@ Running a function on the server. The constants and functions available to
 guided meditations are limited since they must run in the browser, but this
 allows executing a function, just like the _Definitions_ page.
 
+- _name_ `=` `For` _n_ `In` _source_`:` [ _transforms_ ]\* _collector_
+
+This allows doing a collection of related fetch operations.  The _source_ and
+_transforms_ are as exactly as `For` expressions. The _collector_ is one of the
+following:
+
+| Collector                | Behaviour |
+|--------------------------|-----------|
+| `List` _fetch_           | Performs the fetch for each input value and turns the results into a list. |
+| `Fetch` _fetch_          | Performs the fetch, which must return a list, for each input value and turns the results into a list. |
+| `Dict` _key_ `=` _fetch_ | Performs the fetch for each input value and turns the results into the values of a dictionary. _key_ is an expression that provides the corresponding key. |
+
+
 ### Define and Go-to
 It can be useful to reuse steps in different contents. At the beginning of a
 file, a reuable step can be defined:

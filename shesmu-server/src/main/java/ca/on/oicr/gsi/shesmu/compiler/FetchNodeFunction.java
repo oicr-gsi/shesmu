@@ -17,9 +17,8 @@ public class FetchNodeFunction extends FetchNode {
   private final List<ExpressionNode> args;
   private FunctionDefinition funcDef = null;
 
-  public FetchNodeFunction(
-      String name, int line, int column, String funcName, List<ExpressionNode> args) {
-    super(name);
+  public FetchNodeFunction(int line, int column, String funcName, List<ExpressionNode> args) {
+    super();
     this.line = line;
     this.column = column;
     this.funcName = funcName;
@@ -95,16 +94,6 @@ public class FetchNodeFunction extends FetchNode {
           == args.size();
     }
     return false;
-  }
-
-  @Override
-  public Flavour flavour() {
-    return Flavour.LAMBDA;
-  }
-
-  @Override
-  public void read() {
-    // no
   }
 
   @Override
