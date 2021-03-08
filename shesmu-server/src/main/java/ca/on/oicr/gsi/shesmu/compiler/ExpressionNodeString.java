@@ -43,7 +43,11 @@ public class ExpressionNodeString extends ExpressionNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    return parts.stream().map(p -> p.renderEcma(renderer)).collect(Collectors.joining(" + ", "(", ")"));
+    return parts.isEmpty()
+        ? "\"\""
+        : parts.stream()
+            .map(p -> p.renderEcma(renderer))
+            .collect(Collectors.joining(" + ", "(", ")"));
   }
 
   @Override
@@ -69,8 +73,7 @@ public class ExpressionNodeString extends ExpressionNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return parts
-            .stream()
+    return parts.stream()
             .filter(part -> part.resolveDefinitions(expressionCompilerServices, errorHandler))
             .count()
         == parts.size();
