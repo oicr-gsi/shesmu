@@ -149,7 +149,7 @@ public abstract class ExpressionNode implements Renderable {
   }
 
   public static Parser parse(Parser input, Consumer<ExpressionNode> output) {
-    return Parser.scanBinary(ExpressionNode::parse0, COALESCING, input, output);
+    return Parser.scanBinary(ExpressionNode::parse0, COALESCING, input.whitespace(), output);
   }
 
   public static Parser parse0(Parser input, Consumer<ExpressionNode> output) {
