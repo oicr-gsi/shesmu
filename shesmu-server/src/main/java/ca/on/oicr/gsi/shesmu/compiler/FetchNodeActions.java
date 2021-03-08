@@ -22,27 +22,15 @@ public class FetchNodeActions extends FetchNode {
   public FetchNodeActions(
       String fetchType,
       Imyhat type,
-      String name,
       ActionFilterNode<
               InformationParameterNode<ActionState>,
               InformationParameterNode<String>,
               InformationParameterNode<Instant>,
               InformationParameterNode<Long>>
           filter) {
-    super(name);
     this.fetchType = fetchType;
     this.type = type;
     this.filter = filter;
-  }
-
-  @Override
-  public Flavour flavour() {
-    return Flavour.LAMBDA;
-  }
-
-  @Override
-  public void read() {
-    // Do nothing.
   }
 
   @Override

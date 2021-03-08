@@ -58,7 +58,7 @@ import {
   mapModel,
   reducingModel,
 } from "./util.js";
-import { setNew } from "./runtime.js";
+import { dictNew, setNew } from "./runtime.js";
 
 interface GuidedMeditation {
   name: string;
@@ -156,6 +156,11 @@ type FetchOperation<T> =
           | { type: "action-ids"; filter: ActionFilter }
           | { type: "action-tags"; filter: ActionFilter }
       : never)
+  | (T extends unknown[] ? FetchOperationList<T[0]> : never)
+  | (T extends unknown[] ? FetchOperationFlatten<T[0]> : never)
+  | (T extends [unknown, unknown][]
+      ? FetchOperationDictionary<T[0][0], T[0][1]>
+      : never)
   | { type: "constant"; name: string }
   | { type: "function"; name: string; args: any[] }
   | {
@@ -165,6 +170,22 @@ type FetchOperation<T> =
       fakeRefiller: { export_to_meditation: FakeRefillerParameters };
       fakeConstants: { [name: string]: FakeConstant };
     };
+
+type FetchOperationList<T> = {
+  type: "list";
+  operations: FetchOperation<T>[];
+  compare: (a: T, b: T) => number;
+};
+type FetchOperationFlatten<T> = {
+  type: "flatten";
+  operations: FetchOperation<T[]>[];
+  compare: (a: T, b: T) => number;
+};
+type FetchOperationDictionary<K, V> = {
+  type: "dictionary";
+  operations: { key: K; value: FetchOperation<V> }[];
+  compare: (a: K, b: K) => number;
+};
 type InformationNested = Information[] | InformationNested[];
 
 type StatusInidcator = "GOOD" | "FAILED" | "WAITING" | "UNKNOWN";
@@ -376,26 +397,32 @@ function makeFetchEntry<T, K extends keyof T>(
   parameter: FetchOperation<T[K]>,
   fetchOutput: T
 ): Promise<void> {
+  return makeFetchPromise(parameter).then((result) => {
+    fetchOutput[key] = result;
+  });
+}
+
+function makeFetchPromise<T>(parameter: FetchOperation<T>): Promise<T> {
   switch (parameter.type) {
     case "action-ids":
-      return fetchAsPromise("action-ids", [parameter.filter]).then((ids) => {
-        fetchOutput[key] = (ids.sort() as unknown) as T[K];
-      });
+      return fetchAsPromise("action-ids", [parameter.filter]).then(
+        (ids) => (ids.sort() as unknown) as T
+      );
     case "action-tags":
-      return fetchAsPromise("tags", [parameter.filter]).then((ids) => {
-        fetchOutput[key] = (ids.sort() as unknown) as T[K];
-      });
+      return fetchAsPromise("tags", [parameter.filter]).then(
+        (ids) => (ids.sort() as unknown) as T
+      );
     case "constant":
       return fetchAsPromise("constant", parameter.name).then((constant) => {
         if (constant.error) {
           throw new Error(constant.error);
         }
-        fetchOutput[key] = constant.value;
+        return constant.value;
       });
     case "count":
-      return fetchAsPromise("count", [parameter.filter]).then((count) => {
-        fetchOutput[key] = (count as unknown) as T[K];
-      });
+      return fetchAsPromise("count", [parameter.filter]).then(
+        (count) => (count as unknown) as T
+      );
     case "function":
       return fetchAsPromise("function", {
         name: parameter.name,
@@ -404,7 +431,7 @@ function makeFetchEntry<T, K extends keyof T>(
         if (value.error) {
           throw new Error(value.error);
         }
-        fetchOutput[key] = value.value;
+        return value.value;
       });
     case "refiller":
       return fetchAsPromise("simulate", {
@@ -418,17 +445,39 @@ function makeFetchEntry<T, K extends keyof T>(
       }).then((result) => {
         const items = result.refillers?.["export_to_meditation"];
         if (items) {
-          fetchOutput[key] = (setNew(
-            items,
-            parameter.compare
-          ) as unknown) as T[K];
+          return (setNew(items, parameter.compare) as unknown) as T;
         } else {
           throw new Error(result.errors.join("\n") || "Unknown error.");
         }
       });
+    case "list":
+      return (makeFetchPromiseList(parameter) as unknown) as Promise<T>;
+    case "flatten":
+      return (makeFetchPromiseFlatten(parameter) as unknown) as Promise<T>;
+    case "dictionary":
+      return makeFetchPromiseDict(parameter).then((r) => (r as unknown) as T);
   }
 }
+function makeFetchPromiseDict<K, V>(
+  parameter: FetchOperationDictionary<K, V>
+): Promise<[K, V][]> {
+  return Promise.all(
+    parameter.operations.map(({ key, value }) =>
+      makeFetchPromise(value).then((result) => [key, result] as [K, V])
+    )
+  ).then((items) => dictNew(items, parameter.compare));
+}
 
+function makeFetchPromiseList<T>(parameter: FetchOperationList<T>) {
+  return Promise.all(parameter.operations.map(makeFetchPromise)).then((items) =>
+    setNew(items, parameter.compare)
+  );
+}
+function makeFetchPromiseFlatten<T>(parameter: FetchOperationFlatten<T>) {
+  return Promise.all(parameter.operations.map(makeFetchPromise)).then((items) =>
+    setNew(items.flat(1), parameter.compare)
+  );
+}
 function makeFormEntry<T, K extends keyof T>(
   key: K,
   definition: FormElement<T[K]>,

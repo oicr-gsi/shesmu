@@ -1,6 +1,9 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
@@ -9,12 +12,13 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class WizardNodeFetch extends WizardNode {
-  private final List<FetchNode> entries;
+  private final List<Pair<String, FetchNode>> entries;
   private final WizardNode next;
   private final int line;
   private final int column;
 
-  public WizardNodeFetch(int line, int column, List<FetchNode> entries, WizardNode next) {
+  public WizardNodeFetch(
+      int line, int column, List<Pair<String, FetchNode>> entries, WizardNode next) {
     this.line = line;
     this.column = column;
     this.entries = entries;
@@ -30,9 +34,9 @@ public class WizardNodeFetch extends WizardNode {
             .map(
                 c -> {
                   try {
-                    return RuntimeSupport.MAPPER.writeValueAsString(c.name())
+                    return RuntimeSupport.MAPPER.writeValueAsString(c.first())
                         + ": "
-                        + c.renderEcma(renderer);
+                        + c.second().renderEcma(renderer);
                   } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                   }
@@ -41,17 +45,17 @@ public class WizardNodeFetch extends WizardNode {
         renderer.lambda(
             1,
             (r, a) -> {
-              for (final FetchNode entry : entries) {
+              for (final Pair<String, FetchNode> entry : entries) {
                 r.define(
                     new EcmaLoadableValue() {
                       @Override
                       public String name() {
-                        return entry.name();
+                        return entry.first();
                       }
 
                       @Override
                       public String get() {
-                        return a.apply(0) + "." + entry.name();
+                        return a.apply(0) + "." + entry.first();
                       }
                     });
               }
@@ -64,7 +68,7 @@ public class WizardNodeFetch extends WizardNode {
     boolean ok = true;
     for (final Map.Entry<String, Long> entry :
         entries.stream()
-            .collect(Collectors.groupingBy(FetchNode::name, Collectors.counting()))
+            .collect(Collectors.groupingBy(Pair::first, Collectors.counting()))
             .entrySet()) {
       if (entry.getValue() > 1) {
         errorHandler.accept(
@@ -75,8 +79,36 @@ public class WizardNodeFetch extends WizardNode {
       }
     }
     return ok
-        & entries.stream().filter(e -> e.resolve(defs, errorHandler)).count() == entries.size()
-        & next.resolve(defs.bind(entries), errorHandler);
+        & entries.stream().filter(e -> e.second().resolve(defs, errorHandler)).count()
+            == entries.size()
+        & next.resolve(
+            defs.bind(
+                entries.stream()
+                    .map(
+                        e ->
+                            new Target() {
+                              @Override
+                              public Flavour flavour() {
+                                return Flavour.LAMBDA;
+                              }
+
+                              @Override
+                              public String name() {
+                                return e.first();
+                              }
+
+                              @Override
+                              public void read() {
+                                // Don't care
+                              }
+
+                              @Override
+                              public Imyhat type() {
+                                return e.second().type();
+                              }
+                            })
+                    .collect(Collectors.toList())),
+            errorHandler);
   }
 
   @Override
@@ -93,8 +125,9 @@ public class WizardNodeFetch extends WizardNode {
     return entries.stream()
                 .filter(
                     e ->
-                        e.resolveDefinitions(
-                            expressionCompilerServices, nativeDefinitions, errorHandler))
+                        e.second()
+                            .resolveDefinitions(
+                                expressionCompilerServices, nativeDefinitions, errorHandler))
                 .count()
             == entries.size()
         & next.resolveDefinitions(expressionCompilerServices, nativeDefinitions, errorHandler);
@@ -102,7 +135,8 @@ public class WizardNodeFetch extends WizardNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    return entries.stream().filter(e -> e.typeCheck(errorHandler)).count() == entries.size()
+    return entries.stream().filter(e -> e.second().typeCheck(errorHandler)).count()
+            == entries.size()
         & next.typeCheck(errorHandler);
   }
 }
