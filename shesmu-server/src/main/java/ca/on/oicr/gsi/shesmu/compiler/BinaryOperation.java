@@ -299,7 +299,9 @@ public abstract class BinaryOperation {
           public String render(
               EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
             final String result = renderer.newLet(left.renderEcma(renderer));
-            renderer.conditional(String.format("%s === null", result), right::renderEcma);
+            renderer.conditional(
+                String.format("%s === null", result),
+                r -> r.statement(String.format("%s = %s", result, right.renderEcma(r))));
             return result;
           }
         });
@@ -345,7 +347,9 @@ public abstract class BinaryOperation {
               public String render(
                   EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
                 final String result = renderer.newLet(left.renderEcma(renderer));
-                renderer.conditional(String.format("%s === null", result), right::renderEcma);
+                renderer.conditional(
+                    String.format("%s === null", result),
+                    r -> r.statement(String.format("%s = %s", result, right.renderEcma(r))));
                 return result;
               }
             });
