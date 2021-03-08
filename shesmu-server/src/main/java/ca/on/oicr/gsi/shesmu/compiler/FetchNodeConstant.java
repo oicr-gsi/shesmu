@@ -13,8 +13,7 @@ public class FetchNodeConstant extends FetchNode {
   private final int column;
   private Target target = Target.BAD;
 
-  public FetchNodeConstant(int line, int column, String name, String constantName) {
-    super(name);
+  public FetchNodeConstant(int line, int column, String constantName) {
     this.line = line;
     this.column = column;
     this.constantName = constantName;
@@ -54,16 +53,6 @@ public class FetchNodeConstant extends FetchNode {
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
     return true;
-  }
-
-  @Override
-  public Flavour flavour() {
-    return Flavour.LAMBDA;
-  }
-
-  @Override
-  public void read() {
-    // We don't care
   }
 
   @Override

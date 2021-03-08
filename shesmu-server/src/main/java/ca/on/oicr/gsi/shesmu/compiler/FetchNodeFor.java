@@ -8,41 +8,51 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-public abstract class InformationNodeBaseRepeat extends InformationNode {
-
+public class FetchNodeFor extends FetchNode {
   private final DestructuredArgumentNode name;
   private final SourceNode source;
   private final List<ListNode> transforms;
+  private final FetchCollectNode collector;
 
-  public InformationNodeBaseRepeat(
-      DestructuredArgumentNode name, SourceNode source, List<ListNode> transforms) {
+  public FetchNodeFor(
+      DestructuredArgumentNode name,
+      SourceNode source,
+      List<ListNode> transforms,
+      FetchCollectNode collector) {
+    super();
     this.name = name;
     this.source = source;
     this.transforms = transforms;
+    this.collector = collector;
     name.setFlavour(Flavour.LAMBDA);
   }
 
-  protected abstract String renderBlock(EcmaScriptRenderer renderer, String data);
-
   @Override
-  public final String renderEcma(EcmaScriptRenderer renderer) {
-    final var builder = source.render(renderer);
-    EcmaLoadableConstructor currentName = name::renderEcma;
-    for (final var transform : transforms) {
-      currentName = transform.render(builder, currentName);
-    }
-    builder.map(currentName, Imyhat.BAD, this::renderRow);
-
-    return renderBlock(renderer, builder.finish());
+  public Imyhat type() {
+    return collector.type();
   }
 
-  public abstract String renderRow(EcmaScriptRenderer renderer);
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    final EcmaStreamBuilder builder = source.render(renderer);
+    EcmaLoadableConstructor currentName = name::renderEcma;
+    for (final ListNode transform : transforms) {
+      currentName = transform.render(builder, currentName);
+    }
+    builder.map(currentName, Imyhat.BAD, collector::renderEcma);
+
+    return String.format(
+        "{type: \"%s\", compare: (a, b) => %s, operations: %s}",
+        collector.operation(),
+        collector.comparatorType().apply(EcmaScriptRenderer.COMPARATOR),
+        builder.finish());
+  }
 
   @Override
-  public final boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    var ok = source.resolve(defs, errorHandler);
+  public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
+    boolean ok = source.resolve(defs, errorHandler);
 
-    final var nextName =
+    final Optional<DestructuredArgumentNode> nextName =
         transforms.stream()
             .reduce(
                 Optional.of(name),
@@ -56,42 +66,35 @@ public abstract class InformationNodeBaseRepeat extends InformationNode {
             && nextName
                 .map(
                     name -> {
-                      final var collectorName = defs.replaceStream(name.targets(), true);
-                      return resolveTerminal(collectorName, errorHandler);
+                      final NameDefinitions collectorName =
+                          defs.replaceStream(name.targets(), true);
+                      return collector.resolve(collectorName, errorHandler);
                     })
                 .orElse(false);
     return ok;
   }
 
   @Override
-  public final boolean resolveDefinitions(
+  public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    return source.resolveDefinitions(expressionCompilerServices, errorHandler)
-        & resolveTerminalDefinitions(expressionCompilerServices, nativeDefinitions, errorHandler)
+    return name.resolve(expressionCompilerServices, errorHandler)
+        & name.checkWildcard(errorHandler) != WildcardCheck.BAD
+        & source.resolveDefinitions(expressionCompilerServices, errorHandler)
         & transforms.stream()
                 .filter(t -> t.resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
             == transforms.size()
-        & name.resolve(expressionCompilerServices, errorHandler)
-        & name.checkWildcard(errorHandler) != WildcardCheck.BAD;
+        & collector.resolveDefinitions(expressionCompilerServices, nativeDefinitions, errorHandler);
   }
 
-  protected abstract boolean resolveTerminal(
-      NameDefinitions collectorName, Consumer<String> errorHandler);
-
-  protected abstract boolean resolveTerminalDefinitions(
-      ExpressionCompilerServices expressionCompilerServices,
-      DefinitionRepository nativeDefinitions,
-      Consumer<String> errorHandler);
-
   @Override
-  public final boolean typeCheck(Consumer<String> errorHandler) {
+  public boolean typeCheck(Consumer<String> errorHandler) {
     if (!source.typeCheck(errorHandler) || !name.typeCheck(source.streamType(), errorHandler)) {
       return false;
     }
-    final var ordering =
+    final Ordering ordering =
         transforms.stream()
             .reduce(
                 source.ordering(),
@@ -99,7 +102,7 @@ public abstract class InformationNodeBaseRepeat extends InformationNode {
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
-    final var resultType =
+    final Optional<Imyhat> resultType =
         transforms.stream()
             .reduce(
                 Optional.of(source.streamType()),
@@ -107,8 +110,8 @@ public abstract class InformationNodeBaseRepeat extends InformationNode {
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
-    return resultType.isPresent() && typeCheckTerminal(errorHandler) && ordering != Ordering.BAD;
+    return resultType.isPresent()
+        && collector.typeCheck(resultType.get(), errorHandler)
+        && ordering != Ordering.BAD;
   }
-
-  protected abstract boolean typeCheckTerminal(Consumer<String> errorHandler);
 }

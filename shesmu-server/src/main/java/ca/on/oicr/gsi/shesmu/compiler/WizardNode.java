@@ -231,11 +231,11 @@ public abstract class WizardNode {
     DISPATCH.addKeyword(
         "Fetch",
         (p, o) -> {
-          final var entries = new AtomicReference<List<FetchNode>>();
+          final var entries = new AtomicReference<List<Pair<String, FetchNode>>>();
           final var next = new AtomicReference<WizardNode>();
           final var result =
               p.whitespace()
-                  .list(entries::set, FetchNode::parse, ',')
+                  .list(entries::set, FetchNode::parseAsDefinition, ',')
                   .whitespace()
                   .symbol("Then")
                   .whitespace()

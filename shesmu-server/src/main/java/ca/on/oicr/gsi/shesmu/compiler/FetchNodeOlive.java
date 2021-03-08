@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
@@ -76,28 +77,12 @@ public class FetchNodeOlive extends FetchNode {
   private Imyhat type = Imyhat.BAD;
 
   public FetchNodeOlive(
-      int line,
-      int column,
-      String name,
-      String format,
-      List<OliveClauseNode> clauses,
-      String script) {
-    super(name);
+      int line, int column, String format, List<OliveClauseNode> clauses, String script) {
     this.clauses = clauses;
     this.column = column;
     this.format = format;
     this.line = line;
     this.script = script;
-  }
-
-  @Override
-  public Flavour flavour() {
-    return Flavour.LAMBDA;
-  }
-
-  @Override
-  public void read() {
-    // Do nothing
   }
 
   @Override
