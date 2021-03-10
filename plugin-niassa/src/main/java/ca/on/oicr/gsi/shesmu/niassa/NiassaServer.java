@@ -88,7 +88,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                       }
                       return true;
                     })
-                .filter(ap -> ap.getWorkflowId() != null)
+                .filter(ap -> ap.getWorkflowId() != null && ap.getWorkflowRunId() != null)
                 .collect(Collectors.groupingBy(AnalysisProvenance::getWorkflowRunId)).entrySet()
                 .stream()
                 .map(
@@ -702,6 +702,10 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     return metadataConstructor.get();
   }
 
+  public Optional<String> outputDirectory() {
+    return configuration.map(Configuration::getVidarrOutputDirectory);
+  }
+
   @ShesmuInputSource
   public Stream<CerberusAnalysisProvenanceValue> provenance(boolean readStale) {
     return readStale ? analysisDataCache.getStale() : analysisDataCache.get();
@@ -784,5 +788,21 @@ class NiassaServer extends JsonPluginFile<Configuration> {
 
   public String url() {
     return url;
+  }
+
+  public Optional<String> vidarrDbPassword() {
+    return configuration.map(Configuration::getVidarrDbPassword);
+  }
+
+  public Optional<String> vidarrDbUrl() {
+    return configuration.map(Configuration::getVidarrDbUrl);
+  }
+
+  public Optional<String> vidarrDbUser() {
+    return configuration.map(Configuration::getVidarrDbUser);
+  }
+
+  public Optional<URI> vidarrUrl() {
+    return configuration.map(Configuration::getVidarrUrl).map(URI::create);
   }
 }

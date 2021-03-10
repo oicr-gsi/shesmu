@@ -16,4 +16,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 @JsonDeserialize(using = InputLimsKeyDeserializer.class)
 public interface InputLimsKeyProvider {
   CustomActionParameter<WorkflowAction> parameter();
+
+  CustomActionParameter<MigrationAction> parameterMigration();
 }

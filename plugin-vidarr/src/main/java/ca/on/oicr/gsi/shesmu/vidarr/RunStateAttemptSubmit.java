@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /** State when we have no knowledge of what's going on in Vidarr */
-final class RunStateAttemptSubmit extends RunState {
+public final class RunStateAttemptSubmit extends RunState {
   private final int attempt;
   private int retryMinutes = 5;
 

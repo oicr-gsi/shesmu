@@ -27,6 +27,7 @@ public class AnalysisState implements Comparable<AnalysisState> {
   private final ActionState state;
   private final long workflowAccession;
   private final int workflowRunAccession;
+  private final String workflowVersion;
 
   public AnalysisState(
       int workflowRunAccession,
@@ -35,20 +36,17 @@ public class AnalysisState implements Comparable<AnalysisState> {
       List<? extends AnalysisProvenance> source,
       Runnable incrementSlowFetch) {
     fileSWIDSToRun =
-        source
-            .stream()
+        source.stream()
             .flatMap(s -> s.getWorkflowRunInputFileIds().stream())
             .collect(Collectors.toCollection(TreeSet::new));
     state =
-        source
-            .stream()
+        source.stream()
             .map(AnalysisProvenance::getWorkflowRunStatus)
             .map(NiassaServer::processingStateToActionState)
             .min(Comparator.comparing(ActionState::sortPriority))
             .get();
     skipped =
-        source
-            .stream()
+        source.stream()
             .anyMatch(
                 ap ->
                     (ap.getSkip() != null && ap.getSkip())
@@ -70,13 +68,10 @@ public class AnalysisState implements Comparable<AnalysisState> {
     }
     limsKeys =
         (workflowRun == null
-                ? source
-                    .stream()
+                ? source.stream()
                     .flatMap(ap -> ap.getIusLimsKeys().stream())
                     .map(lk -> new Pair<>(new SimpleLimsKey(lk.getLimsKey()), lk.getIusSWID()))
-                : workflowRun
-                    .getIus()
-                    .stream()
+                : workflowRun.getIus().stream()
                     .flatMap(
                         i -> {
                           // We forcibly load the LIMS key from Niassa because the WorkflowRun
@@ -100,8 +95,7 @@ public class AnalysisState implements Comparable<AnalysisState> {
             .collect(Collectors.toList());
     knownSignatures =
         workflowRun == null
-            ? source
-                    .stream()
+            ? source.stream()
                     .anyMatch(
                         ap ->
                             ap.getIusLimsKeys().size()
@@ -109,36 +103,30 @@ public class AnalysisState implements Comparable<AnalysisState> {
                 // attributes will contain the signatures of only one of them,
                 // which is useless, so pretend like we have no signature
                 ? Collections.emptySet()
-                : source
-                    .stream()
+                : source.stream()
                     .flatMap(
                         ap ->
                             ap.getIusAttributes()
-                                .getOrDefault("signature", Collections.emptySortedSet())
-                                .stream())
+                                .getOrDefault("signature", Collections.emptySortedSet()).stream())
                     .collect(Collectors.toSet())
-            : workflowRun
-                .getIus()
-                .stream()
+            : workflowRun.getIus().stream()
                 .flatMap(
                     i ->
-                        i.getIusAttributes()
-                            .stream()
+                        i.getIusAttributes().stream()
                             .filter(a -> a.getTag().equals("signature"))
                             .map(IUSAttribute::getValue))
                 .collect(Collectors.toSet());
 
     this.workflowRunAccession = workflowRunAccession;
     workflowAccession = source.get(0).getWorkflowId();
+    this.workflowVersion = source.get(0).getWorkflowVersion();
     lastModified =
-        source
-            .stream()
+        source.stream()
             .map(ap -> ap.getLastModified().toInstant())
             .max(Comparator.naturalOrder())
             .orElse(null);
     majorOliveVersion =
-        source
-            .stream()
+        source.stream()
             .flatMap(
                 s ->
                     s.getWorkflowRunAttributes()
@@ -147,8 +135,7 @@ public class AnalysisState implements Comparable<AnalysisState> {
                         .stream())
             .collect(Collectors.toCollection(TreeSet::new));
     annotations =
-        source
-            .stream()
+        source.stream()
             .flatMap(
                 s ->
                     Stream.of(s.getWorkflowRunAttributes(), s.getWorkflowAttributes())
@@ -159,18 +146,20 @@ public class AnalysisState implements Comparable<AnalysisState> {
                 Collectors.groupingBy(
                     Pair::first, Collectors.mapping(Pair::second, Collectors.toSet())));
     files =
-        source
-            .stream()
+        source.stream()
             .filter(ap -> ap.getFileId() != null && ap.getFilePath() != null)
             .map(FileInfo::new)
             .collect(Collectors.toCollection(TreeSet::new));
   }
 
   public void addSeenLimsKeys(Set<Pair<String, String>> seenLimsKeys) {
-    limsKeys
-        .stream()
+    limsKeys.stream()
         .map(l -> new Pair<>(l.first().getProvider(), l.first().getId()))
         .forEach(seenLimsKeys::add);
+  }
+
+  public Map<String, Set<String>> annotations() {
+    return annotations;
   }
 
   /** Check how much this analysis record matches the data provided */
@@ -185,9 +174,7 @@ public class AnalysisState implements Comparable<AnalysisState> {
     // If the WF, version or input files doesn't match, bail
     if (workflowAccessions.noneMatch(a -> workflowAccession == a)
         || !this.majorOliveVersion.isEmpty() && !this.majorOliveVersion.contains(majorOliveVersion)
-        || !annotations
-            .entrySet()
-            .stream()
+        || !annotations.entrySet().stream()
             .allMatch(
                 e ->
                     this.annotations
@@ -312,6 +299,10 @@ public class AnalysisState implements Comparable<AnalysisState> {
     return files;
   }
 
+  public Set<Integer> inputFiles() {
+    return fileSWIDSToRun;
+  }
+
   public Instant lastModified() {
     return lastModified;
   }
@@ -330,5 +321,9 @@ public class AnalysisState implements Comparable<AnalysisState> {
 
   public int workflowRunAccession() {
     return workflowRunAccession;
+  }
+
+  public String workflowVersion() {
+    return workflowVersion;
   }
 }
