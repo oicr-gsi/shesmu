@@ -48,4 +48,16 @@ public class CustomInputLimsKeyProvider implements InputLimsKeyProvider {
       }
     };
   }
+
+  @Override
+  public CustomActionParameter<MigrationAction> parameterMigration() {
+    return new CustomActionParameter<MigrationAction>("wdl_outputs", true, type) {
+      @Override
+      public void store(MigrationAction action, Object value) {
+        final List<Pair<String, CustomLimsEntry>> entries = new ArrayList<>();
+        converter.write(type, value, (name, handler) -> entries.add(new Pair<>(name, handler)));
+        action.limsKeyCollection(new CustomLimsKeys(entries));
+      }
+    };
+  }
 }

@@ -90,8 +90,109 @@ public class WorkflowConfiguration {
 
                     @Override
                     public String applyMap(Map<?, ?> map, Imyhat key, Imyhat value) {
-                      return map.entrySet()
-                          .stream()
+                      return map.entrySet().stream()
+                          .map(
+                              e ->
+                                  key.apply(this, e.getKey())
+                                      + ":"
+                                      + value.apply(this, e.getValue()))
+                          .collect(Collectors.joining(","));
+                    }
+
+                    @Override
+                    public String applyObject(Stream<Field<String>> contents) {
+                      return contents
+                          .sorted(Comparator.comparing(Field::index))
+                          .map(f -> f.type().apply(this, f.value()))
+                          .collect(Collectors.joining("|", "{", "}"));
+                    }
+
+                    @Override
+                    public String applyTuple(Stream<Field<Integer>> contents) {
+                      return contents
+                          .sorted(Comparator.comparing(Field::index))
+                          .map(f -> f.type().apply(this, f.value()))
+                          .collect(Collectors.joining("|", "(", ")"));
+                    }
+                  },
+                  value));
+    }
+  }
+
+  // CustomActionParameter is already paremeterized so copypasta it is
+  private static class MigrationUserAnnotationParameter
+      extends CustomActionParameter<MigrationAction> {
+
+    public MigrationUserAnnotationParameter(Entry<String, Imyhat> e) {
+      super(e.getKey(), true, e.getValue());
+    }
+
+    @Override
+    public void store(MigrationAction action, Object value) {
+      action.setAnnotation(
+          name(),
+          type()
+              .apply(
+                  new ImyhatFunction<String>() {
+                    @Override
+                    public String apply(String name, AccessContents accessor) {
+                      return name + ":" + accessor.apply(this);
+                    }
+
+                    @Override
+                    public String apply(boolean value) {
+                      return Boolean.toString(value);
+                    }
+
+                    @Override
+                    public String apply(double value) {
+                      return Double.toString(value);
+                    }
+
+                    @Override
+                    public String apply(Instant value) {
+                      return value.toString();
+                    }
+
+                    @Override
+                    public String apply(long value) {
+                      return Long.toString(value);
+                    }
+
+                    @Override
+                    public String apply(Stream<Object> values, Imyhat inner) {
+                      return values
+                          .map(v -> inner.apply(this, v))
+                          .collect(Collectors.joining(",", "[", "]"));
+                    }
+
+                    @Override
+                    public String apply(String value) {
+                      return value;
+                    }
+
+                    @Override
+                    public String apply(Path value) {
+                      return value.toString();
+                    }
+
+                    @Override
+                    public String apply(Imyhat inner, Optional<?> value) {
+                      return value.map(v -> inner.apply(this, v)).orElse("null");
+                    }
+
+                    @Override
+                    public String apply(JsonNode value) {
+                      try {
+                        return NiassaServer.MAPPER.writeValueAsString(value);
+                      } catch (JsonProcessingException ex) {
+                        throw new RuntimeException(ex);
+                      }
+                    }
+
+                    @Override
+                    public String applyMap(Map<?, ?> map, Imyhat key, Imyhat value) {
+                      return map.entrySet().stream()
                           .map(
                               e ->
                                   key.apply(this, e.getKey())
@@ -132,6 +233,7 @@ public class WorkflowConfiguration {
   private InputLimsKeyProvider type;
   private Map<String, Imyhat> userAnnotations = Collections.emptyMap();
   private String kind = "UNKNOWN";
+  private String vidarrName;
 
   public void define(
       String name, Definer<NiassaServer> definer, Map<String, AlgebraicValue> workflowKind) {
@@ -174,6 +276,38 @@ public class WorkflowConfiguration {
                 .flatMap(Function.identity()),
             () -> definer.get().displayMaxInfo(accession, name)),
         new AlgebraicValue(kind.toUpperCase()));
+
+    if (vidarrName != null) {
+      workflowKind.put(
+          definer.defineAction(
+              "migration::" + name,
+              description,
+              MigrationAction.class,
+              () -> {
+                final MigrationAction migrationAction =
+                    new MigrationAction(
+                        definer,
+                        vidarrName,
+                        accession,
+                        previousAccessions,
+                        fileMatchingPolicy,
+                        services,
+                        annotations,
+                        relaunchFailedOnUpgrade,
+                        userAnnotations.keySet());
+                for (final IniParam<?> param : getParameters()) {
+                  param.writeDefaultMigration(migrationAction);
+                }
+                return migrationAction;
+              },
+              Stream.of(
+                      Stream.of(getType().parameterMigration()),
+                      Stream.of(getParameters()).map(IniParam::parameterMigration),
+                      userAnnotations.entrySet().stream()
+                          .map(MigrationUserAnnotationParameter::new))
+                  .flatMap(Function.identity())),
+          new AlgebraicValue(kind.toUpperCase()));
+    }
   }
 
   public long getAccession() {
@@ -218,6 +352,10 @@ public class WorkflowConfiguration {
 
   public Map<String, Imyhat> getUserAnnotations() {
     return userAnnotations;
+  }
+
+  public String getVidarrName() {
+    return vidarrName;
   }
 
   public boolean isRelaunchFailedOnUpgrade() {
@@ -270,5 +408,9 @@ public class WorkflowConfiguration {
 
   public void setUserAnnotations(Map<String, Imyhat> userAnnotations) {
     this.userAnnotations = userAnnotations;
+  }
+
+  public void setVidarrName(String name) {
+    this.vidarrName = name;
   }
 }
