@@ -204,3 +204,31 @@ actionRender.set("vidarr-run", (a) => [
   ),
   vidarrStateRenderer[a.runState](a),
 ]);
+
+[
+  {
+    type: "runs",
+    title: "Workflow Runs",
+    entries: (a) => a.workflowRuns,
+    columns: [["Workflow Run Identifier", (i) => i]],
+  },
+  {
+    type: "external-identifiers",
+    title: "External Identifiers",
+    entries: (a) =>
+      Object.entries(a.externalIds).flatMap(([provider, ids]) =>
+        ids.map((id) => ({
+          provider,
+          id,
+        }))
+      ),
+
+    columns: [[("Provider", (e) => e.provider)], ["Identifier", (e) => e.id]],
+  },
+].forEach(({ type, entries, title, columns }) =>
+  actionRender.set(`vidarr-unload-${type}`, (a) => [
+    title(a, "Unload Workflow Runs"),
+    a.vidarrOutputName ? "Not attempted" : `Output in ${a.vidarrOutputName}`,
+    collapsible(title, table(entries(a), ...columns)),
+  ])
+);
