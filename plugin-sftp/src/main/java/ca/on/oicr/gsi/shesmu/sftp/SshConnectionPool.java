@@ -37,12 +37,17 @@ public class SshConnectionPool implements Supplier<PooledSshConnection>, AutoClo
 
     public PooledSshConnection(ConnectionInfo info) throws IOException {
       this.info = info;
-      client = new SSHClient();
-      client.addHostKeyVerifier(new PromiscuousVerifier());
-      client.connect(info.host, info.port);
-      client.authPublickey(info.user);
-      sftp = client.newSFTPClient();
-      createdConnections.labels(info.host, Integer.toString(info.port), info.user).inc();
+      try {
+        client = new SSHClient();
+        client.addHostKeyVerifier(new PromiscuousVerifier());
+        client.connect(info.host, info.port);
+        client.authPublickey(info.user);
+        sftp = client.newSFTPClient();
+        createdConnections.labels(info.host, Integer.toString(info.port), info.user).inc();
+      } catch (IOException e) {
+        maxConnections.release();
+        throw e;
+      }
     }
 
     public SSHClient client() {
@@ -111,12 +116,13 @@ public class SshConnectionPool implements Supplier<PooledSshConnection>, AutoClo
 
   @Override
   public PooledSshConnection get() {
+    int attempts = 100;
     final ConnectionInfo info = connectionInfo.get();
     if (info == null) {
       throw new IllegalStateException("Connection pool is not initialised");
     }
     PooledSshConnection connection;
-    while (true) {
+    while (attempts-- > 0) {
       while ((connection = connections.pollLast()) != null) {
         if (connection.info.epoch < info.epoch) {
           connection.destroy();
@@ -139,5 +145,6 @@ public class SshConnectionPool implements Supplier<PooledSshConnection>, AutoClo
         }
       }
     }
+    throw new IllegalStateException("Exhausted maximum attempts waiting to get an SSH connection.");
   }
 }
