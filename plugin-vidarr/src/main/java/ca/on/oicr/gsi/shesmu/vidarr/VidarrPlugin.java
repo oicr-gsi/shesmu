@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
+import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.json.AsJsonNode;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
@@ -128,6 +129,16 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   public void configuration(SectionRenderer renderer) {
     final var u = url;
     u.ifPresent(uri -> renderer.link("URL", uri.toString(), uri.toString()));
+  }
+
+  @ShesmuAction(name = "unload_by_external_ids")
+  public UnloadExternalIdentifiersAction unloadByExternalIds() {
+    return new UnloadExternalIdentifiersAction(definer);
+  }
+
+  @ShesmuAction(name = "unload_by_workflow_runs")
+  public UnloadWorkflowRunsAction unloadByWorkflowRuns() {
+    return new UnloadWorkflowRunsAction(definer);
   }
 
   @Override
