@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 
 public abstract class WizardNode {
   private static final Parser.ParseDispatch<WizardNode> DISPATCH = new ParseDispatch<>();
-  private static final Parser.ParseDispatch<WizardNode> FLOW = new ParseDispatch<>();
   public static final String STATE = "Meditation State";
   public static final Pattern STRING_CONTENTS = Pattern.compile("^[^\"\n\\\\]*");
   private static final Parser.ParseDispatch<Function<List<InformationNode>, WizardNode>> WIZARD =
@@ -92,7 +91,7 @@ public abstract class WizardNode {
           }
           return result;
         });
-    FLOW.addKeyword(
+    DISPATCH.addKeyword(
         "Switch",
         (p, o) -> {
           final var cases = new AtomicReference<List<Pair<ExpressionNode, WizardNode>>>();
@@ -131,7 +130,7 @@ public abstract class WizardNode {
           }
           return result;
         });
-    FLOW.addKeyword(
+    DISPATCH.addKeyword(
         "Match",
         (p, o) -> {
           final var cases = new AtomicReference<List<WizardMatchBranchNode>>();
@@ -152,7 +151,7 @@ public abstract class WizardNode {
           }
           return result;
         });
-    FLOW.addKeyword(
+    DISPATCH.addKeyword(
         "If",
         (p, o) -> {
           final var test = new AtomicReference<ExpressionNode>();
@@ -175,8 +174,6 @@ public abstract class WizardNode {
           }
           return result;
         });
-    DISPATCH.addKeyword(
-        "Flow", (p, o) -> p.whitespace().keyword("By").whitespace().dispatch(FLOW, o));
     DISPATCH.addKeyword(
         "Let",
         (p, o) -> {
@@ -250,7 +247,7 @@ public abstract class WizardNode {
           return result;
         });
     DISPATCH.addKeyword(
-        "Fork",
+        "For",
         (p, o) -> {
           final var name = new AtomicReference<DestructuredArgumentNode>();
           final var source = new AtomicReference<SourceNode>();
@@ -274,7 +271,7 @@ public abstract class WizardNode {
                   .whitespace();
           if (result.isGood()) {
             o.accept(
-                new WizardNodeFork(
+                new WizardNodeFor(
                     name.get(), source.get(), transforms.get(), title.get(), step.get()));
           }
           return result;

@@ -153,6 +153,8 @@ public abstract class FormNode implements Target {
             .whitespace()
             .dispatch(FORM_TYPE, type::set)
             .whitespace()
+            .keyword("With")
+            .whitespace()
             .keyword("Label")
             .whitespace()
             .list(label::set, DisplayNode::parse)
