@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class WizardNodeFork extends WizardNode {
+public class WizardNodeFor extends WizardNode {
 
   private final DestructuredArgumentNode name;
   private List<Target> outputs;
@@ -19,7 +19,7 @@ public class WizardNodeFork extends WizardNode {
   private final ExpressionNode title;
   private final List<ListNode> transforms;
 
-  public WizardNodeFork(
+  public WizardNodeFor(
       DestructuredArgumentNode name,
       SourceNode source,
       List<ListNode> transforms,

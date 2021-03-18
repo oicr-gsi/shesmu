@@ -11,12 +11,18 @@ import ca.on.oicr.gsi.shesmu.plugin.filter.AlertFilter;
 import ca.on.oicr.gsi.shesmu.plugin.filter.AlertFilter.AlertFilterNode;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public abstract class InformationNode {
+  private interface RepeatCollectorConstructor {
+    InformationNode create(
+        DestructuredArgumentNode name, SourceNode source, List<ListNode> transforms);
+  }
+
   private interface SimulationConstructor {
     InformationNode create(List<ObjectElementNode> constants);
   }
@@ -25,6 +31,8 @@ public abstract class InformationNode {
       new ParseDispatch<>();
   private static final Parser.ParseDispatch<InformationNode> DISPATCH = new ParseDispatch<>();
   private static final Parser.ParseDispatch<Optional<ExpressionNode>> MIME_TYPE =
+      new ParseDispatch<>();
+  private static final ParseDispatch<RepeatCollectorConstructor> REPEAT_COLLECTOR =
       new ParseDispatch<>();
   private static final Parser.ParseDispatch<SimulationConstructor> SIMULATION =
       new ParseDispatch<>();
@@ -62,6 +70,60 @@ public abstract class InformationNode {
           }
           return end;
         });
+
+    REPEAT_COLLECTOR.addKeyword(
+        "Table",
+        (p, o) -> {
+          final var columns = new AtomicReference<List<ColumnNode>>();
+          final var result =
+              p.whitespace()
+                  .list(
+                      columns::set,
+                      (pc, po) -> {
+                        final var header = new AtomicReference<String>();
+                        final var contents = new AtomicReference<List<DisplayNode>>();
+                        final var cResult =
+                            pc.whitespace()
+                                .keyword("Column")
+                                .whitespace()
+                                .symbol("\"")
+                                .regex(
+                                    ActionFilter.STRING_CONTENTS,
+                                    m -> header.set(m.group(0)),
+                                    "string contents")
+                                .symbol("\"")
+                                .whitespace()
+                                .list(contents::set, DisplayNode::parse)
+                                .whitespace();
+                        if (cResult.isGood()) {
+                          po.accept(new ColumnNode(header.get(), contents.get()));
+                        }
+                        return cResult;
+                      })
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(
+                (name, source, transforms) ->
+                    new InformationNodeTable(name, source, transforms, columns.get()));
+          }
+          return result;
+        });
+    REPEAT_COLLECTOR.addKeyword(
+        "Begin",
+        (p, o) -> {
+          final var collectors = new AtomicReference<List<InformationNode>>();
+          final var result =
+              p.whitespace()
+                  .list(collectors::set, InformationNode::parse)
+                  .whitespace()
+                  .keyword("End")
+                  .whitespace();
+          o.accept(
+              (name, source, transforms) ->
+                  new InformationNodeRepeat(name, source, transforms, collectors.get()));
+          return result;
+        });
+
     DISPATCH.addKeyword(
         "Alerts",
         (p, o) -> {
@@ -121,33 +183,23 @@ public abstract class InformationNode {
           return result;
         });
     DISPATCH.addKeyword(
-        "Repeat",
-        (p, o) -> {
+        "RepeatFor",
+        (input, output) -> {
           final var name = new AtomicReference<DestructuredArgumentNode>();
           final var source = new AtomicReference<SourceNode>();
           final var transforms = new AtomicReference<List<ListNode>>();
-          final var collectors = new AtomicReference<List<InformationNode>>();
-          final var result =
-              p.whitespace()
-                  .then(DestructuredArgumentNode::parse, name::set)
-                  .whitespace()
-                  .then(SourceNode::parse, source::set)
-                  .whitespace()
-                  .symbol(":")
-                  .whitespace()
-                  .list(transforms::set, ListNode::parse)
-                  .keyword("Begin")
-                  .whitespace()
-                  .list(collectors::set, InformationNode::parse)
-                  .whitespace()
-                  .keyword("End")
-                  .whitespace();
-          if (result.isGood()) {
-            o.accept(
-                new InformationNodeRepeat(
-                    name.get(), source.get(), transforms.get(), collectors.get()));
-          }
-          return result;
+          return input
+              .whitespace()
+              .then(DestructuredArgumentNode::parse, name::set)
+              .whitespace()
+              .then(SourceNode::parse, source::set)
+              .whitespace()
+              .symbol(":")
+              .whitespace()
+              .list(transforms::set, ListNode::parse)
+              .dispatch(
+                  REPEAT_COLLECTOR,
+                  c -> output.accept(c.create(name.get(), source.get(), transforms.get())));
         });
     DISPATCH.addKeyword(
         "Simulate",
@@ -165,55 +217,7 @@ public abstract class InformationNode {
           return result;
         });
     DISPATCH.addKeyword(
-        "Table",
-        (p, o) -> {
-          final var name = new AtomicReference<DestructuredArgumentNode>();
-          final var source = new AtomicReference<SourceNode>();
-          final var transforms = new AtomicReference<List<ListNode>>();
-          final var columns = new AtomicReference<List<ColumnNode>>();
-          final var result =
-              p.whitespace()
-                  .then(DestructuredArgumentNode::parse, name::set)
-                  .whitespace()
-                  .then(SourceNode::parse, source::set)
-                  .whitespace()
-                  .symbol(":")
-                  .whitespace()
-                  .list(transforms::set, ListNode::parse)
-                  .whitespace()
-                  .list(
-                      columns::set,
-                      (pc, po) -> {
-                        final var header = new AtomicReference<String>();
-                        final var contents = new AtomicReference<List<DisplayNode>>();
-                        final var cResult =
-                            pc.whitespace()
-                                .keyword("Column")
-                                .whitespace()
-                                .symbol("\"")
-                                .regex(
-                                    ActionFilter.STRING_CONTENTS,
-                                    m -> header.set(m.group(0)),
-                                    "string contents")
-                                .symbol("\"")
-                                .whitespace()
-                                .list(contents::set, DisplayNode::parse)
-                                .whitespace();
-                        if (cResult.isGood()) {
-                          po.accept(new ColumnNode(header.get(), contents.get()));
-                        }
-                        return cResult;
-                      })
-                  .whitespace();
-          if (result.isGood()) {
-            o.accept(
-                new InformationNodeTable(
-                    name.get(), source.get(), transforms.get(), columns.get()));
-          }
-          return result;
-        });
-    DISPATCH.addRaw(
-        "display",
+        "Print",
         (p, o) -> {
           final List<DisplayNode> elements = new ArrayList<>();
           final var result =
@@ -221,7 +225,7 @@ public abstract class InformationNode {
                   .then(DisplayNode::parse, elements::add)
                   .list(elements::addAll, DisplayNode::parse);
           if (result.isGood()) {
-            o.accept(new InformationNodeDisplay(elements));
+            o.accept(new InformationNodePrint(elements));
           }
           return result;
         });

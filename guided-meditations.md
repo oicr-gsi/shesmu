@@ -27,7 +27,7 @@ There are several displays supported.
 Text can be displayed to the user. _expr_ is an expression that provides a
 string containing text. There are additional formatting options.
 
-- _expr_
+- `Print` _expr_
 - `Bold` _expr_
 - `Italic` _expr_
 - `Mono` _expr_
@@ -109,14 +109,24 @@ be strings and _contents_ can be a string or JSON value. If the MIME type is
 omitted, `text/plain` will be used for strings and `application/json` will be
 used for JSON values.
 
-### Repeat Information
-Any of these can be repeated over a collection:
+### Repeated Information
+Repeated information can be displayed either in a list or a table. Much like `For` expressions, there are different collectors that produce different results.
 
-- `Repeat` _name_ `In` _source_`:` [ _transforms_ ]\* `Begin` _display_ `End`
+- `RepeatFor` _name_ `In` _source_`:` [ _transforms_ ]\* _collector_
 
-The _source_ and _transforms_ are as exactly as `For` expressions. Rather than
-collect into a list, the display elements between `Begin` and `End` will be
-displayed multiple times.
+The _source_ and _transforms_ are as exactly as `For` expressions. The
+collectors that can be used are:
+
+- ... `Begin` _display_ `End`
+
+The display elements between `Begin` and `End` will be displayed multiple times
+as if they had been written out repeatedly.
+
+- ... `Table` `Column` _header_ _value_ ...
+
+The items will be placed in rows in a table. Each column starts with a string
+_header_ and then the text display information to fill that cell in _value_.
+
 
 <a name="simulation">
 ### Simulations
@@ -176,17 +186,6 @@ server.
 The script will be checked as part of the meditation's compilation, so values
 injected via `Let` will be checked for correctness in the script.
 
-### Table Display
-Any of these can be repeated over a collection:
-
-- `Table` _name_ `In` _source_`:` [ _transforms_ ]\* `Column` _header_ _values_ ...
-
-The _source_ and _transforms_ are as exactly as `For` expressions. Rather than
-collect into a list, the items will be placed in rows in a table. Each column
-starts with a string _header_ and then the text display information to fill
-that cell in _contents_.
-
-
 ## Next Steps
 As the meditation is run, the user can select the next step along the way and
 this will determine the behaviour of the rest of the meditation.
@@ -207,7 +206,7 @@ another step. For details on the form entires, see the next section.
 #### Form Entires
 To collect data from the user, a form entry will display a prompt that is stored in a variable.
 
-- _name_ `=` _type_ `Label` _labelexpr_
+- _name_ `=` _type_ `With Label` _labelexpr_
 Creates an input box of some kind. The _type_ will determine both the UI input
 widget and the output type. The output will be assigned to _name_ in subsequent
 steps. _labelexpr_ is text display elements to show to the left of the input
@@ -220,31 +219,31 @@ widget.
 | `Offset`   | a number box + time unit selector | `integer` as milliseconds |
 | `Checkbox` | a check box                       | `boolean`                 |
 
-- _name_ `= Dropdown Show` _item_ `With` _itemlabel_ `From` _values_ `Label` _labelexpr_
+- _name_ `= Dropdown Show` _item_ `With` _itemlabel_ `From` _values_ `With Label` _labelexpr_
 Creates a drop down list from the items in  _values_, which must be a list.
 Each item will be displayed as _itemlabel_, with the selected values as _item_.
 The selected value will be assigned to _name_ in subsequent steps.  _labelexpr_
 is text display elements to show to the left of the input widget. If _values_
 is an empty list, the meditation will be stopped.
 
-- _name_ `= Select` _optionvalue_ `As` _optionlabel_ ... `Label` _labelexpr_
+- _name_ `= Select` _optionvalue_ `As` _optionlabel_ ... `With Label` _labelexpr_
 Creates a drop down list. The _optionlabel_ is display text that will be shown.
 There is no restriction on the type of _optionvalue_, though they all must be
 the same. The selected value will be assigned to _name_ in subsequent steps.
 _labelexpr_ is text display elements to show to the left of the input widget.
 
-- _name_ `= Subset` _values_ `Label` _labelexpr_
+- _name_ `= Subset` _values_ `With Label` _labelexpr_
 Allows selecting a subset of items. A list of strings must be provided in
 _values_ and the ones selected by the user will be assigned to _names_, also as
 a list of strings.  _labelexpr_ is text display elements to show to the left of
 the input widget.
 
-- _name_ `= Upload Json Label` _labelexpr_
+- _name_ `= Upload Json With Label` _labelexpr_
 Allows uploading JSON data into the meditation as _name_. If the user fails to
 upload any data, it will be `null`.  _labelexpr_ is text display elements to
 show to the left of the input widget.
 
-- _name_ `= Upload Table(` _field1_`,` _field2_`,` ... `) Label` _labelexpr_
+- _name_ `= Upload Table(` _field1_`,` _field2_`,` ... `) With Label` _labelexpr_
 Allows uploading tabular data into the meditation as _name_. Each row will be
 converted to an object with fields as listed; the type of every field will be
 `string`. If the user fails to upload any data, it will be an empty list. The
@@ -254,16 +253,16 @@ _labelexpr_ is text display elements to show to the left of the input widget.
 
 ### Automatic Flow Control
 If there is information provided that can be used to determine what decision to
-make next, the `Flow By Switch` and `Flow By Match` steps allow selecting it.
+make next, the `Switch` and `Match` steps allow selecting it.
 They are structured similarly to `Switch` and `Match` expressions. These cannot
 be preceded by information to display.
 
-- `Flow By If` _testexpr_ `Then` _truestep_ `Else` _falsestep_
+- `If` _testexpr_ `Then` _truestep_ `Else` _falsestep_
 
 Computes the value _testexpr_, which must be a Boolean, and, if it is true,
 _truestep_ will be performed; otherwise, _falsestep_ is performed.
 
-- `Flow By Match` _refexpr_ (`When` _algmatch_ `Then` _step_)\* (`Else` _altstep_  `Remainder (`_name_`)` _altstep_)?
+- `Match` _refexpr_ (`When` _algmatch_ `Then` _step_)\* (`Else` _altstep_  `Remainder (`_name_`)` _altstep_)?
 
 Computes the algebraic value returned by _refexpr_ and access its contents.  A
 `When` branch can be provided for every possible algebraic type returned by
@@ -274,12 +273,12 @@ access to the case being handled.
 For details on algebraic type matching, see [Algebraic Values without
 Algebra](algebraicguide.md).
 
-- `Flow By Switch` _refexpr_ (`When` _testexpr_ `Then` _step_)\* `Else` _altstep_
+- `Switch` _refexpr_ (`When` _testexpr_ `Then` _step_)\* `Else` _altstep_
 
 Computes the value _refexpr_ and if it is equal to any _textexpr_, the matching
 _step_ will be performed. If no value match, _altstep_ is performed instead.
 
-- `Fork` _name_ `In` _source_`:` [ _transforms_ ]\* `Title` _title_ _step_
+- `For` _name_ `In` _source_`:` [ _transforms_ ]\* `Title` _title_ _step_
 
 Splits the journey into several parallel journeys.  _source_ and _transforms_
 are as exactly as `For` expressions. Each resulting item will be split into a
@@ -350,7 +349,7 @@ may not appreciate that. There are three important things to do:
            Input unix_file
              Where user == owner Let file, size
        Then
-         Repeat {; file,  size} In files:
+         ForDisplay {; file,  size} In files:
            Begin Bold "{file}" " ({size}) " End
        Stop
 
@@ -393,9 +392,9 @@ There is a functional, though somewhat useless meditation:
           Stop
        When "I'm looking for something more conventional"
          Form
-           Entry text name Label "What is your name?"
+           text = name With Label "What is your name?"
          Then
-           Download  "Hello, {name}! Does this meet your expectations"
+           Download "Hello, {name}! Does this meet your expectations"
              To "example.txt" MimeType "text/plain"
            Stop
        When "I yearn for knowledge"

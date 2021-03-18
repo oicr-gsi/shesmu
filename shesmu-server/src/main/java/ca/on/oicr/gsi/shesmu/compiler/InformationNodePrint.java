@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class InformationNodeDisplay extends InformationNode {
+public class InformationNodePrint extends InformationNode {
   private final List<DisplayNode> contents;
 
-  public InformationNodeDisplay(List<DisplayNode> contents) {
+  public InformationNodePrint(List<DisplayNode> contents) {
     this.contents = contents;
   }
 
@@ -16,8 +16,7 @@ public class InformationNodeDisplay extends InformationNode {
   public String renderEcma(EcmaScriptRenderer renderer) {
     return String.format(
         "{type: \"display\", contents: %s}",
-        contents
-            .stream()
+        contents.stream()
             .map(e -> e.renderEcma(renderer))
             .collect(Collectors.joining(",", "[", "]")));
   }
@@ -32,8 +31,7 @@ public class InformationNodeDisplay extends InformationNode {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    return contents
-            .stream()
+    return contents.stream()
             .filter(
                 e ->
                     e.resolveDefinitions(

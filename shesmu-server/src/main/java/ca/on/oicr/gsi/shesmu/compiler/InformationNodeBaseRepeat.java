@@ -9,7 +9,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 public abstract class InformationNodeBaseRepeat extends InformationNode {
-
   private final DestructuredArgumentNode name;
   private final SourceNode source;
   private final List<ListNode> transforms;
