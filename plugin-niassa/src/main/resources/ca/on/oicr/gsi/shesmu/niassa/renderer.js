@@ -29,6 +29,7 @@ actionRender.set("niassa", (a) => [
   title(a, `Workflow ${a.workflowName} (${a.workflowAccession})`),
   table(
     [
+      ["Can Launch?", a.neverEverLaunch ? "Never Launch" : "Will Launch"],
       ["Major Olive Version", a.majorOliveVersion.toString()],
       a.workflowRunAccession
         ? ["Workflow Run Accession", a.workflowRunAccession.toString()]

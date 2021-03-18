@@ -305,6 +305,10 @@ public final class WorkflowAction extends Action {
   private InputLimsCollection limsKeysCollection;
   private long majorOliveVersion;
   private List<WorkflowRunMatch> matches = Collections.emptyList();
+
+  @ActionParameter(name = "never_ever_launch")
+  public boolean neverEverLaunch;
+
   private boolean overrideLock;
   private final long[] previousAccessions;
 
@@ -373,6 +377,7 @@ public final class WorkflowAction extends Action {
     if (o == null || getClass() != o.getClass()) return false;
     WorkflowAction that = (WorkflowAction) o;
     return majorOliveVersion == that.majorOliveVersion
+        && neverEverLaunch == that.neverEverLaunch
         && workflowAccession == that.workflowAccession
         && Objects.equals(annotations, that.annotations)
         && Objects.equals(ini, that.ini)
@@ -386,6 +391,10 @@ public final class WorkflowAction extends Action {
 
   @Override
   public void generateUUID(Consumer<byte[]> digest) {
+    if (neverEverLaunch) {
+      // Done this way to that existing action identifiers won't change
+      digest.accept(new byte[] {0});
+    }
     digest.accept(Utils.toBytes(majorOliveVersion));
     digest.accept(Utils.toBytes(workflowAccession));
     generateUUID(digest, annotations, s -> s.getBytes(StandardCharsets.UTF_8));
@@ -407,7 +416,13 @@ public final class WorkflowAction extends Action {
 
   @Override
   public int hashCode() {
-    return Objects.hash(majorOliveVersion, workflowAccession, annotations, ini, limsKeysCollection);
+    return Objects.hash(
+        neverEverLaunch,
+        majorOliveVersion,
+        workflowAccession,
+        annotations,
+        ini,
+        limsKeysCollection);
   }
 
   void limsKeyCollection(InputLimsCollection limsKeys) {
@@ -598,6 +613,10 @@ public final class WorkflowAction extends Action {
           this.errors =
               Collections.singletonList("Workflow has already been attempted. Purge to try again.");
           return ActionState.FAILED;
+        }
+        if (neverEverLaunch) {
+          this.errors = Collections.singletonList("Would launch but forbidden.");
+          return ActionState.ZOMBIE;
         }
         try {
           // Check if there are already too many copies of this workflow running; if so, wait until
@@ -949,6 +968,7 @@ public final class WorkflowAction extends Action {
   public final ObjectNode toJson(ObjectMapper mapper) {
     final ObjectNode node = mapper.createObjectNode();
     node.put("majorOliveVersion", majorOliveVersion);
+    node.put("neverEverLaunch", neverEverLaunch);
     limsKeysCollection
         .limsKeys()
         .sorted(LIMS_KEY_COMPARATOR)
