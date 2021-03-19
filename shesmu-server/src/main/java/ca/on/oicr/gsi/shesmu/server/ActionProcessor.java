@@ -34,6 +34,7 @@ import io.prometheus.client.Collector;
 import io.prometheus.client.Gauge;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -51,7 +52,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.apache.http.client.utils.URIBuilder;
 
 /**
  * Background process for launching actions and reporting the results
@@ -579,7 +579,7 @@ public final class ActionProcessor
   private final Map<Action, Information> actions = new ConcurrentHashMap<>();
   private final AutoLock alertLock = new AutoLock();
   private final Map<Map<String, String>, Alert> alerts = new HashMap<>();
-  private final String baseUri;
+  private final URI baseUri;
   private String currentAlerts = "[]";
   private final AtomicInteger currentRunningActions = new AtomicInteger();
   private final Set<String> knownActionTypes = ConcurrentHashMap.newKeySet();
@@ -591,7 +591,7 @@ public final class ActionProcessor
       Executors.newSingleThreadScheduledExecutor();
   private final ExecutorService workExecutor = Executors.newFixedThreadPool(ACTION_PERFORM_THREADS);
 
-  public ActionProcessor(String baseUri, PluginManager manager, ActionServices actionServices) {
+  public ActionProcessor(URI baseUri, PluginManager manager, ActionServices actionServices) {
     super();
     this.baseUri = baseUri;
     this.manager = manager;
@@ -642,7 +642,7 @@ public final class ActionProcessor
     // Alert Manager doesn't officially require an instance, but it gets weird if not included, so
     // add one unless the olive supplied it.
     if (!labelMap.containsKey("instance")) {
-      labelMap.put("instance", baseUri);
+      labelMap.put("instance", baseUri.toASCIIString());
     }
     try (var lock = alertLock.acquire()) {
       Alert alert;
@@ -661,9 +661,7 @@ public final class ActionProcessor
         alert.setLabels(labelMap);
         alert.setStartsAt(Instant.now());
         alerts.put(labelMap, alert);
-        final var builder = new URIBuilder(baseUri);
-        builder.setFragment(alert.id());
-        alert.setGeneratorURL(builder.build().toASCIIString());
+        alert.setGeneratorURL(baseUri.resolve("#" + alert.id()).toASCIIString());
       }
       alert.setAnnotations(repack(annotations, "Annotations"));
       alert.expiresIn(ttl);

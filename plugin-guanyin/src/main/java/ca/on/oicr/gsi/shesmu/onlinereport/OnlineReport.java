@@ -1,7 +1,12 @@
 package ca.on.oicr.gsi.shesmu.onlinereport;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.cromwell.LabelsResponse;
+import ca.on.oicr.gsi.shesmu.cromwell.WorkflowIdAndStatus;
+import ca.on.oicr.gsi.shesmu.cromwell.WorkflowQueryResponse;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
+import ca.on.oicr.gsi.shesmu.plugin.MultiPartBodyPublisher;
+import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.refill.CustomRefillerParameter;
@@ -11,29 +16,50 @@ import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Gauge;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.WorkflowQueryResponse;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class OnlineReport extends JsonPluginFile<Configuration> {
+
+  private static final class OnlineReportParameter<I>
+      extends CustomRefillerParameter<OnlineReportRefiller<I>, I> {
+
+    private final String wdlName;
+
+    public OnlineReportParameter(Entry<String, String> parameter, boolean pairsAsObjects) {
+      super(
+          parameter.getKey().replace(".", "_"),
+          WdlInputType.parseString(parameter.getValue(), pairsAsObjects));
+      wdlName = parameter.getKey();
+    }
+
+    @Override
+    public void store(OnlineReportRefiller<I> refiller, Function<I, Object> function) {
+      refiller.writers.add(
+          (row, output) -> type().accept(new PackJsonObject(output, wdlName), function.apply(row)));
+    }
+  }
+
+  private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   static final ObjectMapper MAPPER = new ObjectMapper();
-  private final Optional<Configuration> configuration = Optional.empty();
   private static final Gauge reportOk =
       Gauge.build("shesmu_onlinereport_ok", "Whether the report launched everything successfully.")
           .labelNames("filename")
           .register();
+  private final Optional<Configuration> configuration = Optional.empty();
   private final Definer<OnlineReport> definer;
   private String labelKey;
   private String wdl;
   private String workflowName;
-  private WorkflowsApi wfApi;
 
   public OnlineReport(Path fileName, String instanceName, Definer<OnlineReport> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);
@@ -60,9 +86,25 @@ public class OnlineReport extends JsonPluginFile<Configuration> {
     // Query for all workflows that are Running with "workflowName"
     try {
       workflowQueryResponse =
-          wfApi.query(
-              "v1", null, null, null, status, names, null, null, null, null, null, null, null);
-    } catch (ApiException e) {
+          HTTP_CLIENT
+              .send(
+                  HttpRequest.newBuilder(
+                          URI.create(
+                              String.format(
+                                  "%s/api/workflows/v1/query",
+                                  configuration.orElseThrow().getCromwell())))
+                      .POST(
+                          BodyPublishers.ofString(
+                              MAPPER.writeValueAsString(
+                                  Stream.concat(
+                                          status.stream().map(s -> Map.of("status", s)),
+                                          names.stream().map(n -> Map.of("name", n)))
+                                      .collect(Collectors.toList()))))
+                      .build(),
+                  new JsonBodyHandler<>(MAPPER, WorkflowQueryResponse.class))
+              .body()
+              .get();
+    } catch (Exception e) {
       ok.set(false);
       e.printStackTrace();
       return;
@@ -74,8 +116,20 @@ public class OnlineReport extends JsonPluginFile<Configuration> {
             .map(
                 r -> {
                   try {
-                    return wfApi.labels("v1", r.getId()).getLabels().get(labelKey);
-                  } catch (ApiException e) {
+                    return HTTP_CLIENT
+                        .send(
+                            HttpRequest.newBuilder(
+                                    URI.create(
+                                        String.format(
+                                            "%s/v1/%s/labels",
+                                            configuration.orElseThrow().getCromwell(), r.getId())))
+                                .build(),
+                            new JsonBodyHandler<>(MAPPER, LabelsResponse.class))
+                        .body()
+                        .get()
+                        .getLabels()
+                        .get(labelKey);
+                  } catch (Exception e) {
                     ok.set(false);
                     e.printStackTrace();
                   }
@@ -99,22 +153,28 @@ public class OnlineReport extends JsonPluginFile<Configuration> {
                 o -> {
                   labels.put(labelKey, o.first());
                   try {
-                    return wfApi.submit(
-                        "v1",
-                        wdl,
-                        null,
-                        false,
-                        MAPPER.writeValueAsString(o.second()),
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        "WDL",
-                        null,
-                        "1.0",
-                        MAPPER.writeValueAsString(labels),
-                        null);
+                    final var cromwellBody =
+                        new MultiPartBodyPublisher()
+                            .addPart("workflowSource", wdl)
+                            .addPart("workflowInputs", MAPPER.writeValueAsString(o.second()))
+                            .addPart("workflowType", "WDL")
+                            .addPart("workflowTypeVersion", "1.0")
+                            .addPart("labels", MAPPER.writeValueAsString(labels));
+
+                    return HTTP_CLIENT
+                        .send(
+                            HttpRequest.newBuilder()
+                                .uri(
+                                    URI.create(
+                                        String.format(
+                                            "%s/api/workflows/v1",
+                                            configuration.orElseThrow().getCromwell())))
+                                .header("Content-Type", cromwellBody.getContentType())
+                                .POST(cromwellBody.build())
+                                .build(),
+                            new JsonBodyHandler<>(MAPPER, WorkflowIdAndStatus.class))
+                        .body()
+                        .get();
                   } catch (Exception e) {
                     ok.set(false);
                     e.printStackTrace();
@@ -129,9 +189,6 @@ public class OnlineReport extends JsonPluginFile<Configuration> {
 
   @Override
   protected Optional<Integer> update(Configuration configuration) {
-    var apiClient = new ApiClient();
-    apiClient.setBasePath(configuration.getCromwell());
-    wfApi = new WorkflowsApi(apiClient);
     labelKey = configuration.getLabelKey();
     wdl = configuration.getWdl();
     workflowName = configuration.getWorkflowName();
@@ -153,23 +210,8 @@ public class OnlineReport extends JsonPluginFile<Configuration> {
                 return configuration.getParameters().entrySet().stream()
                     .map(
                         parameter ->
-                            new CustomRefillerParameter<>(
-                                parameter.getKey().replace(".", "_"),
-                                WdlInputType.parseString(
-                                    parameter.getValue(), configuration.isPairsAsObjects())) {
-                              private final String wdlName = parameter.getKey();
-
-                              @Override
-                              public void store(
-                                  OnlineReportRefiller<I> refiller, Function<I, Object> function) {
-                                refiller.writers.add(
-                                    (row, output) ->
-                                        type()
-                                            .accept(
-                                                new PackJsonObject(output, wdlName),
-                                                function.apply(row)));
-                              }
-                            });
+                            new OnlineReportParameter<>(
+                                parameter, configuration.isPairsAsObjects()));
               }
 
               @Override

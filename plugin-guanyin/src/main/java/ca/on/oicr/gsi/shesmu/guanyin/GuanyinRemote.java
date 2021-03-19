@@ -4,19 +4,21 @@ import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
+import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.http.client.methods.HttpGet;
 
 public class GuanyinRemote extends JsonPluginFile<Configuration> {
 
@@ -31,22 +33,23 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
       if (configuration.isEmpty()) {
         return Stream.empty();
       }
-      try (var reportsResponse =
-              RunReport.HTTP_CLIENT.execute(
-                  new HttpGet(configuration.get().getGuanyin() + "/reportdb/reports"));
-          var recordsResponse =
-              RunReport.HTTP_CLIENT.execute(
-                  new HttpGet(configuration.get().getGuanyin() + "/reportdb/records"))) {
-        final var reports =
-            Stream.of(
-                    RunReport.MAPPER.readValue(
-                        reportsResponse.getEntity().getContent(), ReportDto[].class))
-                .collect(Collectors.toMap(ReportDto::getId, Function.identity()));
-        return Stream.of(
-                RunReport.MAPPER.readValue(
-                    recordsResponse.getEntity().getContent(), RecordDto[].class))
-            .map(dto -> new GuanyinReportValue(reports.get(dto.getReport()), dto));
-      }
+      final var reportsResponse =
+          RunReport.HTTP_CLIENT.send(
+              HttpRequest.newBuilder(
+                      URI.create(configuration.get().getGuanyin() + "/reportdb/reports"))
+                  .build(),
+              new JsonBodyHandler<>(RunReport.MAPPER, ReportDto[].class));
+      final var recordsResponse =
+          RunReport.HTTP_CLIENT.send(
+              HttpRequest.newBuilder(
+                      URI.create(configuration.get().getGuanyin() + "/reportdb/records"))
+                  .build(),
+              new JsonBodyHandler<>(RunReport.MAPPER, RecordDto[].class));
+      final var reports =
+          Stream.of(reportsResponse.body().get())
+              .collect(Collectors.toMap(ReportDto::getId, Function.identity()));
+      return Stream.of(recordsResponse.body().get())
+          .map(dto -> new GuanyinReportValue(reports.get(dto.getReport()), dto));
     }
   }
 
@@ -95,12 +98,15 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
 
   @Override
   protected Optional<Integer> update(Configuration configuration) {
-    try (var response =
-        RunReport.HTTP_CLIENT.execute(
-            new HttpGet(configuration.getGuanyin() + "/reportdb/reports"))) {
+    try {
+      final var response =
+          RunReport.HTTP_CLIENT.send(
+              HttpRequest.newBuilder(URI.create(configuration.getGuanyin() + "/reportdb/reports"))
+                  .GET()
+                  .build(),
+              new JsonBodyHandler<>(RunReport.MAPPER, ReportDto[].class));
       definer.clearActions();
-      for (final var report :
-          RunReport.MAPPER.readValue(response.getEntity().getContent(), ReportDto[].class)) {
+      for (final var report : response.body().get()) {
         if (!report.isValid()) {
           continue;
         }
@@ -129,7 +135,7 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
       }
       this.configuration = Optional.of(configuration);
       return Optional.of(60);
-    } catch (final IOException e) {
+    } catch (final IOException | InterruptedException e) {
       e.printStackTrace();
       return Optional.of(5);
     }

@@ -34,11 +34,6 @@
       <artifactId>metainf-services</artifactId>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-      <scope>provided</scope>
-    </dependency>
   </dependencies>
   <build>
     <finalName>shesmu-plugin-github</finalName>

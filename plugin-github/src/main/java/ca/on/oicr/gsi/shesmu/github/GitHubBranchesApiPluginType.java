@@ -5,17 +5,18 @@ import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
+import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.invoke.MethodHandles;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.kohsuke.MetaInfServices;
 
 @MetaInfServices
@@ -33,39 +34,41 @@ public class GitHubBranchesApiPluginType
       protected Stream<GithubBranchValue> fetch(Instant lastUpdated) throws Exception {
         if (configuration.isEmpty()) return Stream.empty();
         final var c = configuration.get();
-        try (var response =
-            HTTP_CLIENT.execute(
-                new HttpGet(
-                    String.format(
-                        "https://api.github.com/repos/%s/%s/branches",
-                        c.getOwner(), c.getRepo())))) {
-          return Stream.of(
-                  MAPPER.readValue(response.getEntity().getContent(), BranchResponse[].class)) //
-              .map(
-                  r ->
-                      new GithubBranchValue() {
+        var response =
+            HTTP_CLIENT.send(
+                HttpRequest.newBuilder(
+                        URI.create(
+                            String.format(
+                                "https://api.github.com/repos/%s/%s/branches",
+                                c.getOwner(), c.getRepo())))
+                    .GET()
+                    .build(),
+                new JsonBodyHandler<>(MAPPER, BranchResponse[].class));
+        return Stream.of(response.body().get()) //
+            .map(
+                r ->
+                    new GithubBranchValue() {
 
-                        @Override
-                        public String branch() {
-                          return r.getName();
-                        }
+                      @Override
+                      public String branch() {
+                        return r.getName();
+                      }
 
-                        @Override
-                        public String commit() {
-                          return r.getCommit().getSha();
-                        }
+                      @Override
+                      public String commit() {
+                        return r.getCommit().getSha();
+                      }
 
-                        @Override
-                        public String owner() {
-                          return c.getOwner();
-                        }
+                      @Override
+                      public String owner() {
+                        return c.getOwner();
+                      }
 
-                        @Override
-                        public String repository() {
-                          return c.getRepo();
-                        }
-                      });
-        }
+                      @Override
+                      public String repository() {
+                        return c.getRepo();
+                      }
+                    });
       }
     }
 
@@ -98,7 +101,7 @@ public class GitHubBranchesApiPluginType
     }
   }
 
-  public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+  public static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Override

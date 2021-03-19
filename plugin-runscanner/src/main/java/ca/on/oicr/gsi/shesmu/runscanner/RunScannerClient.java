@@ -3,20 +3,26 @@ package ca.on.oicr.gsi.shesmu.runscanner;
 import ca.on.oicr.gsi.runscanner.dto.IlluminaNotificationDto;
 import ca.on.oicr.gsi.runscanner.dto.NotificationDto;
 import ca.on.oicr.gsi.runscanner.dto.type.IlluminaChemistry;
-import ca.on.oicr.gsi.shesmu.plugin.cache.*;
+import ca.on.oicr.gsi.shesmu.plugin.cache.InitialCachePopulationException;
+import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
+import ca.on.oicr.gsi.shesmu.plugin.cache.RecordFactory;
+import ca.on.oicr.gsi.shesmu.plugin.cache.SimpleRecord;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
+import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.*;
-import org.apache.commons.codec.net.URLCodec;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import java.util.Optional;
+import java.util.Set;
 
 public final class RunScannerClient extends JsonPluginFile<Configuration> {
   private abstract class BaseRunCache<T> extends KeyValueCache<String, Optional<T>, Optional<T>> {
@@ -32,15 +38,19 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
       if (url.isEmpty()) {
         return Optional.empty();
       }
-      final var request =
-          new HttpGet(String.format("%s/run/%s", url.get(), new URLCodec().encode(runName)));
-      try (var response = HTTP_CLIENT.execute(request)) {
-        if (response.getStatusLine().getStatusCode() != 200) {
-          return Optional.empty();
-        }
-        var run = MAPPER.readValue(response.getEntity().getContent(), NotificationDto.class);
-        return Optional.ofNullable(extract(run));
+      var response =
+          HTTP_CLIENT.send(
+              HttpRequest.newBuilder(
+                      URI.create(
+                          String.format(
+                              "%s/run/%s",
+                              url.get(), URLEncoder.encode(runName, StandardCharsets.UTF_8))))
+                  .build(),
+              new JsonBodyHandler<>(MAPPER, NotificationDto.class));
+      if (response.statusCode() != 200) {
+        return Optional.empty();
       }
+      return Optional.ofNullable(extract(response.body().get()));
     }
   }
 
@@ -72,7 +82,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
     }
   }
 
-  static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+  static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   static {

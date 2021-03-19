@@ -6,12 +6,16 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
+import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,9 +31,6 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -46,9 +47,14 @@ public final class Check extends Compiler {
   }
 
   public static <T> Optional<T> fetch(String remote, String slug, Class<T> clazz) {
-    final var request = new HttpGet(String.format("%s/%s", remote, slug));
-    try (var response = HTTP_CLIENT.execute(request)) {
-      return Optional.of(RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), clazz));
+    final var request =
+        HttpRequest.newBuilder(URI.create(String.format("%s/%s", remote, slug))).GET().build();
+    try {
+      return Optional.of(
+          HTTP_CLIENT
+              .send(request, new JsonBodyHandler<>(RuntimeSupport.MAPPER, clazz))
+              .body()
+              .get());
     } catch (final Exception e) {
       e.printStackTrace();
       return Optional.empty();
@@ -516,7 +522,7 @@ public final class Check extends Compiler {
     };
   }
 
-  static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+  static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private final NameLoader<ActionDefinition> actions;
   private final NameLoader<CallableDefinition> definitions;
   private final String fileName;

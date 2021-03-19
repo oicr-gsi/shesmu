@@ -58,6 +58,7 @@ import io.prometheus.client.exporter.common.TextFormat;
 import io.prometheus.client.hotspot.DefaultExports;
 import java.io.*;
 import java.net.*;
+import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -77,9 +78,6 @@ import java.util.stream.Stream;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.objectweb.asm.ClassVisitor;
 
 @SuppressWarnings("restriction")
@@ -162,7 +160,7 @@ public final class Server implements ServerConfig, ActionServices {
   private static final Pattern BASE64URL_DATA =
       Pattern.compile("((?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}|[A-Za-z0-9_-]{3}|))");
   private static final Pattern EQUAL = Pattern.compile("=");
-  public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+  public static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private static final Map<String, Instant> INFLIGHT = new ConcurrentSkipListMap<>();
   private static final Gauge inflightCount =
       Gauge.build("shesmu_inflight_count", "The number of inflight processes.").register();
@@ -255,7 +253,7 @@ public final class Server implements ServerConfig, ActionServices {
             fileWatcher,
             GuidedMeditation.EXTENSION,
             fileName -> new GuidedMeditation(fileName, definitionRepository));
-    processor = new ActionProcessor(localname(), pluginManager, this);
+    processor = new ActionProcessor(localname().resolve("/alerts"), pluginManager, this);
     compiler = new CompiledGenerator(executor, definitionRepository, processor::isPaused);
     staticActions = new StaticActions(processor, definitionRepository);
     final InputSource inputSource =
@@ -2658,40 +2656,24 @@ public final class Server implements ServerConfig, ActionServices {
         .collect(Collectors.toSet());
   }
 
-  private String localname() {
-    URIBuilder builder = null;
+  private URI localname() {
     final var url = System.getenv("LOCAL_URL");
     if (url != null) {
-      try {
-        builder = new URIBuilder(url);
-      } catch (final URISyntaxException e) {
-        e.printStackTrace();
-      }
+      return URI.create(url);
     }
-    if (builder == null) {
-      builder = new URIBuilder();
-      builder.setScheme("http");
-      builder.setHost("localhost");
-      builder.setPort(8081);
-      builder.setPath("");
-      try {
-        builder.setHost(InetAddress.getLocalHost().getCanonicalHostName());
-      } catch (final UnknownHostException eh1) {
-        eh1.printStackTrace();
-        try {
-          builder.setHost(InetAddress.getLocalHost().getHostAddress());
-        } catch (final UnknownHostException eh2) {
-          eh2.printStackTrace();
-        }
-      }
-    }
-    builder.setPath(builder.getPath() + "/alerts");
     try {
-      return builder.build().toASCIIString();
-    } catch (final URISyntaxException e) {
+      return new URI(
+          "http", null, InetAddress.getLocalHost().getCanonicalHostName(), 8081, "/", null, null);
+    } catch (final UnknownHostException | URISyntaxException e) {
       e.printStackTrace();
-      return "http://localhost:8081/alerts";
     }
+    try {
+      return new URI(
+          "http", null, InetAddress.getLocalHost().getHostAddress(), 8081, "/", null, null);
+    } catch (final UnknownHostException | URISyntaxException e) {
+      e.printStackTrace();
+    }
+    return URI.create("http://localhost:8081/");
   }
 
   @Override

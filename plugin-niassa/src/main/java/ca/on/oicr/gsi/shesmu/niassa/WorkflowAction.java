@@ -27,6 +27,10 @@ import io.seqware.pipeline.api.Scheduler;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -44,8 +48,6 @@ import net.sourceforge.seqware.common.model.IUSAttribute;
 import net.sourceforge.seqware.common.model.Workflow;
 import net.sourceforge.seqware.common.model.WorkflowRun;
 import net.sourceforge.seqware.common.model.WorkflowRunAttribute;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 
 /**
@@ -849,14 +851,21 @@ public final class WorkflowAction extends Action {
                           .map(WorkflowRunAttribute::getValue)
                           .forEach(
                               id -> {
-                                final HttpPost request =
-                                    new HttpPost(
-                                        String.format("%s/api/workflows/v1/%s/abort", root, id));
-                                request.addHeader(
-                                    "Accept", ContentType.APPLICATION_JSON.getMimeType());
-                                try (CloseableHttpResponse response =
-                                    HTTP_CLIENT.execute(request)) {
-                                  if (response.getStatusLine().getStatusCode() / 100 != 2) {
+                                try {
+                                  final var response =
+                                      HTTP_CLIENT.send(
+                                          HttpRequest.newBuilder(
+                                                  URI.create(
+                                                      String.format(
+                                                          "%s/api/workflows/v1/%s/abort",
+                                                          root, id)))
+                                              .header(
+                                                  "Accept",
+                                                  ContentType.APPLICATION_JSON.getMimeType())
+                                              .POST(BodyPublishers.noBody())
+                                              .build(),
+                                          BodyHandlers.discarding());
+                                  if (response.statusCode() / 100 != 2) {
                                     server
                                         .get()
                                         .writeLog(
@@ -865,7 +874,7 @@ public final class WorkflowAction extends Action {
                                                 id,
                                                 workflowRunSwid,
                                                 actionId,
-                                                response.getStatusLine().getReasonPhrase()),
+                                                response.statusCode()),
                                             Collections.emptyMap());
                                   }
                                 } catch (Exception e) {

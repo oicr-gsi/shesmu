@@ -4,12 +4,17 @@ import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
+import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.prometheus.client.Gauge;
-import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -18,12 +23,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.kohsuke.MetaInfServices;
 
 /**
@@ -62,15 +61,17 @@ public class PrometheusAlertManagerPluginType
         if (url == null) {
           return Stream.empty();
         }
-        try (var response =
-            HTTP_CLIENT.execute(new HttpGet(String.format("%s/api/v1/alerts", url)))) {
-          final var result =
-              MAPPER.readValue(response.getEntity().getContent(), AlertResultDto.class);
-          if (result == null || result.getData() == null) {
-            return Stream.empty();
-          }
-          return result.getData().stream();
+        var response =
+            HTTP_CLIENT.send(
+                HttpRequest.newBuilder(URI.create(String.format("%s/api/v1/alerts", url)))
+                    .GET()
+                    .build(),
+                new JsonBodyHandler<>(MAPPER, AlertResultDto.class));
+        final var result = response.body().get();
+        if (result == null || result.getData() == null) {
+          return Stream.empty();
         }
+        return result.getData().stream();
       }
     }
 
@@ -97,20 +98,22 @@ public class PrometheusAlertManagerPluginType
     public void pushAlerts(String alertJson) {
       configuration.ifPresent(
           config -> {
-            var request = new HttpPost(String.format("%s/api/v1/alerts", config.getAlertmanager()));
-            request.addHeader("Content-type", ContentType.APPLICATION_JSON.getMimeType());
-            request.setEntity(new StringEntity(alertJson, StandardCharsets.UTF_8));
-            try (var response = HTTP_CLIENT.execute(request)) {
-              var ok = response.getStatusLine().getStatusCode() != 200;
+            var request =
+                HttpRequest.newBuilder(
+                        URI.create(String.format("%s/api/v1/alerts", config.getAlertmanager())))
+                    .header("Content-type", "application/json")
+                    .POST(BodyPublishers.ofString(alertJson, StandardCharsets.UTF_8))
+                    .build();
+            try {
+              final var response = HTTP_CLIENT.send(request, BodyHandlers.discarding());
+              var ok = response.statusCode() != 200;
               if (ok) {
                 System.err.printf(
-                    "Failed to write alerts to %s: %d %s",
-                    config.getAlertmanager(),
-                    response.getStatusLine().getStatusCode(),
-                    response.getStatusLine().getReasonPhrase());
+                    "Failed to write alerts to %s: %d",
+                    config.getAlertmanager(), response.statusCode());
               }
               pushOk.labels(config.getAlertmanager()).set(ok ? 1 : 0);
-            } catch (IOException e) {
+            } catch (Exception e) {
               e.printStackTrace();
               pushOk.labels(config.getAlertmanager()).set(0);
             }
@@ -137,7 +140,7 @@ public class PrometheusAlertManagerPluginType
     }
   }
 
-  private static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+  private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
   public PrometheusAlertManagerPluginType() {
     super(MethodHandles.lookup(), AlertManagerEndpoint.class, ".alertman", "prometheus");
