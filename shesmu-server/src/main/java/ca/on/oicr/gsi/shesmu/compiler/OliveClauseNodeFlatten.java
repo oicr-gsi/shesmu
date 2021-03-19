@@ -110,7 +110,7 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
     final Set<String> freeVariables = new HashSet<>();
     expression.collectFreeVariables(freeVariables, Target.Flavour::needsCapture);
 
-    final FlattenBuilder flattenBuilder =
+    final var flattenBuilder =
         oliveBuilder.flatten(
             line,
             column,
@@ -140,9 +140,8 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
       NameDefinitions defs,
       Consumer<String> errorHandler) {
     incoming = defs.stream().filter(t -> t.flavour().isStream()).collect(Collectors.toList());
-    final Set<String> existingNames =
-        incoming.stream().map(Target::name).collect(Collectors.toSet());
-    boolean ok =
+    final var existingNames = incoming.stream().map(Target::name).collect(Collectors.toSet());
+    var ok =
         name.checkWildcard(errorHandler) != WildcardCheck.BAD
             & name.targets()
                     .filter(

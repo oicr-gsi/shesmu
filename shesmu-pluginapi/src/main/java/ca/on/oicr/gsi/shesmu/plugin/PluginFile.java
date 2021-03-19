@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 
 /**
  * Every configuration file read by Shesmu has a matching {@link PluginFile} to export services
@@ -31,7 +30,7 @@ public abstract class PluginFile implements RequiredServices {
   }
 
   /** Generate a configuration block to be shown on the status page */
-  public abstract void configuration(SectionRenderer renderer) throws XMLStreamException;
+  public abstract void configuration(SectionRenderer renderer);
 
   /** Generate a list of export buttons to provide to the UI */
   public <T> Stream<T> exportSearches(ExportSearch<T> builder) {

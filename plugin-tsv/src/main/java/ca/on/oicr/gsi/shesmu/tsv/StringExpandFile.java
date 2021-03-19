@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 class StringExpandFile extends PluginFile {
 
@@ -21,8 +20,8 @@ class StringExpandFile extends PluginFile {
       Gauge.build("shesmu_strexpand_lookup_bad", "A string expansion table is badly formed.")
           .labelNames("fileName")
           .register();
-  private final Definer definer;
-  private Map<String, Set<String>> expansions = Collections.emptyMap();
+  private final Definer<StringExpandFile> definer;
+  private Map<String, Set<String>> expansions = Map.of();
   private boolean good;
 
   public StringExpandFile(Path fileName, String instanceName, Definer<StringExpandFile> definer) {
@@ -44,21 +43,20 @@ class StringExpandFile extends PluginFile {
               description =
                   "The input string to find the in the table; if it does not exist in the table, it is returned as a list containing the input")
           String input) {
-    return expansions.getOrDefault(input, Collections.singleton(input));
+    return expansions.getOrDefault(input, Set.of(input));
   }
 
   @Override
   public Optional<Integer> update() {
     good = false;
-    try (Stream<String> lines = Files.lines(fileName(), StandardCharsets.UTF_8)) {
+    try (var lines = Files.lines(fileName(), StandardCharsets.UTF_8)) {
       expansions =
           lines
               .map(String::trim)
               .filter(l -> !l.startsWith("#"))
               .map(TAB::split)
               .collect(
-                  Collectors.toMap(
-                      x -> x[0], x -> new TreeSet<>(Arrays.asList(x).subList(1, x.length))));
+                  Collectors.toMap(x -> x[0], x -> new TreeSet<>(List.of(x).subList(1, x.length))));
       good = true;
     } catch (final Exception e) {
       good = false;

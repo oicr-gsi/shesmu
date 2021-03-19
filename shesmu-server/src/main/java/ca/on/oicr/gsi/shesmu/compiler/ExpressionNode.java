@@ -51,19 +51,19 @@ public abstract class ExpressionNode implements Renderable {
     if (acceptable.isSame(found)) return Optional.empty();
     if (acceptable instanceof Imyhat.ObjectImyhat && found instanceof Imyhat.ObjectImyhat) {
       final List<String> errors = new ArrayList<>();
-      final Map<String, Imyhat> acceptableFields =
+      final var acceptableFields =
           ((Imyhat.ObjectImyhat) acceptable)
               .fields()
               .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().first()));
-      final Map<String, Imyhat> foundFields =
+      final var foundFields =
           ((Imyhat.ObjectImyhat) found)
               .fields()
               .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().first()));
       final Set<String> union = new TreeSet<>(acceptableFields.keySet());
       union.addAll(foundFields.keySet());
-      for (final String field : union) {
-        final Imyhat acceptableFieldType = acceptableFields.get(field);
-        final Imyhat foundFieldType = foundFields.get(field);
+      for (final var field : union) {
+        final var acceptableFieldType = acceptableFields.get(field);
+        final var foundFieldType = foundFields.get(field);
         if (acceptableFieldType == null) {
           errors.add(String.format("extra %s", field));
         } else if (foundFieldType == null) {
@@ -90,16 +90,15 @@ public abstract class ExpressionNode implements Renderable {
           .map(p -> new Pair<>(p.second() ? ("(" + p.first() + ")?") : (p.first() + "?"), false));
     }
     if (acceptable instanceof Imyhat.TupleImyhat && found instanceof Imyhat.TupleImyhat) {
-      final List<Imyhat> acceptableElements =
+      final var acceptableElements =
           ((Imyhat.TupleImyhat) acceptable).inner().collect(Collectors.toList());
-      final List<Imyhat> foundElements =
-          ((Imyhat.TupleImyhat) found).inner().collect(Collectors.toList());
+      final var foundElements = ((Imyhat.TupleImyhat) found).inner().collect(Collectors.toList());
       final List<String> errors = new ArrayList<>();
-      for (int index = 0;
+      for (var index = 0;
           index < Math.min(acceptableElements.size(), foundElements.size());
           index++) {
-        final Imyhat acceptableFieldType = acceptableElements.get(index);
-        final Imyhat foundFieldType = foundElements.get(index);
+        final var acceptableFieldType = acceptableElements.get(index);
+        final var foundFieldType = foundElements.get(index);
         errors.add(
             generateRecursiveError(acceptableFieldType, foundFieldType, false)
                 .map(Pair::first)
@@ -128,8 +127,7 @@ public abstract class ExpressionNode implements Renderable {
       Imyhat acceptable,
       Imyhat found,
       Consumer<String> errorHandler) {
-    final Optional<String> recursiveError =
-        generateRecursiveError(acceptable, found, true).map(Pair::first);
+    final var recursiveError = generateRecursiveError(acceptable, found, true).map(Pair::first);
     if (recursiveError.isPresent()) {
       errorHandler.accept(
           String.format("%d:%d: Type mismatch%s %s.", line, column, context, recursiveError.get()));
@@ -221,7 +219,7 @@ public abstract class ExpressionNode implements Renderable {
       new Parser.ParseDispatch<>();
 
   static {
-    final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
+    final var A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
 
     INT_SUFFIX.addKeyword("Gi", Parser.just(1024 * 1024 * 1024));
     INT_SUFFIX.addKeyword("Mi", Parser.just(1024 * 1024));
@@ -238,10 +236,10 @@ public abstract class ExpressionNode implements Renderable {
     OUTER.addKeyword(
         "IfDefined",
         (p, o) -> {
-          final AtomicReference<List<DefinedCheckNode>> tests = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> trueExpression = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> falseExpression = new AtomicReference<>();
-          final Parser result =
+          final var tests = new AtomicReference<List<DefinedCheckNode>>();
+          final var trueExpression = new AtomicReference<ExpressionNode>();
+          final var falseExpression = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace()
                   .list(tests::set, DefinedCheckNode::parse, ',')
                   .whitespace()
@@ -267,10 +265,10 @@ public abstract class ExpressionNode implements Renderable {
     OUTER.addKeyword(
         "If",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> testExpression = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> trueExpression = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> falseExpression = new AtomicReference<>();
-          final Parser result =
+          final var testExpression = new AtomicReference<ExpressionNode>();
+          final var trueExpression = new AtomicReference<ExpressionNode>();
+          final var falseExpression = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace()
                   .then(ExpressionNode::parse, testExpression::set)
                   .whitespace()
@@ -296,22 +294,19 @@ public abstract class ExpressionNode implements Renderable {
     OUTER.addKeyword(
         "Switch",
         (p, o) -> {
-          final AtomicReference<List<Pair<ExpressionNode, ExpressionNode>>> cases =
-              new AtomicReference<>();
-          final AtomicReference<ExpressionNode> test = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> alternative = new AtomicReference<>();
-          final Parser result =
+          final var cases = new AtomicReference<List<Pair<ExpressionNode, ExpressionNode>>>();
+          final var test = new AtomicReference<ExpressionNode>();
+          final var alternative = new AtomicReference<ExpressionNode>();
+          final var result =
               parse1(
                       parse(p.whitespace(), test::set)
                           .whitespace()
                           .list(
                               cases::set,
                               (cp, co) -> {
-                                final AtomicReference<ExpressionNode> condition =
-                                    new AtomicReference<>();
-                                final AtomicReference<ExpressionNode> value =
-                                    new AtomicReference<>();
-                                final Parser cresult =
+                                final var condition = new AtomicReference<ExpressionNode>();
+                                final var value = new AtomicReference<ExpressionNode>();
+                                final var cresult =
                                     parse(
                                         parse(
                                                 cp.whitespace().keyword("When").whitespace(),
@@ -340,10 +335,10 @@ public abstract class ExpressionNode implements Renderable {
     OUTER.addKeyword(
         "Match",
         (p, o) -> {
-          final AtomicReference<List<MatchBranchNode>> cases = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> test = new AtomicReference<>();
-          final AtomicReference<MatchAlternativeNode> alternative = new AtomicReference<>();
-          final Parser result =
+          final var cases = new AtomicReference<List<MatchBranchNode>>();
+          final var test = new AtomicReference<ExpressionNode>();
+          final var alternative = new AtomicReference<MatchAlternativeNode>();
+          final var result =
               parse(p.whitespace(), test::set)
                   .whitespace()
                   .list(cases::set, MatchBranchNode::parse)
@@ -360,11 +355,11 @@ public abstract class ExpressionNode implements Renderable {
     OUTER.addKeyword(
         "For",
         (p, o) -> {
-          final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
-          final AtomicReference<SourceNode> source = new AtomicReference<>();
-          final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
-          final AtomicReference<CollectNode> collector = new AtomicReference<>();
-          final Parser result =
+          final var name = new AtomicReference<DestructuredArgumentNode>();
+          final var source = new AtomicReference<SourceNode>();
+          final var transforms = new AtomicReference<List<ListNode>>();
+          final var collector = new AtomicReference<CollectNode>();
+          final var result =
               p.whitespace()
                   .then(DestructuredArgumentNode::parse, name::set)
                   .whitespace()
@@ -390,18 +385,17 @@ public abstract class ExpressionNode implements Renderable {
     OUTER.addKeyword(
         "Begin",
         (p, o) -> {
-          final AtomicReference<List<Pair<DestructuredArgumentNode, ExpressionNode>>> definitions =
-              new AtomicReference<>();
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser result =
+          final var definitions =
+              new AtomicReference<List<Pair<DestructuredArgumentNode, ExpressionNode>>>();
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace()
                   .list(
                       definitions::set,
                       (defp, defo) -> {
-                        final AtomicReference<DestructuredArgumentNode> name =
-                            new AtomicReference<>();
-                        final AtomicReference<ExpressionNode> expr = new AtomicReference<>();
-                        final Parser defResult =
+                        final var name = new AtomicReference<DestructuredArgumentNode>();
+                        final var expr = new AtomicReference<ExpressionNode>();
+                        final var defResult =
                             defp.whitespace()
                                 .then(DestructuredArgumentNode::parse, name::set)
                                 .whitespace()
@@ -441,12 +435,12 @@ public abstract class ExpressionNode implements Renderable {
     LOGICAL_CONJUNCTION.addSymbol(
         "&&", binaryOperators("&&", BinaryOperation.shortCircuit(GeneratorAdapter.EQ)));
 
-    for (final Comparison comparison : Comparison.values()) {
+    for (final var comparison : Comparison.values()) {
       COMPARISON.addSymbol(
           comparison.symbol(),
           (p, o) -> {
-            final AtomicReference<ExpressionNode> right = new AtomicReference<>();
-            final Parser result = parse4(p.whitespace(), right::set).whitespace();
+            final var right = new AtomicReference<ExpressionNode>();
+            final var result = parse4(p.whitespace(), right::set).whitespace();
             if (result.isGood()) {
 
               o.accept(
@@ -460,8 +454,8 @@ public abstract class ExpressionNode implements Renderable {
     COMPARISON.addSymbol(
         "=~",
         (p, o) -> {
-          final AtomicReference<Pair<String, Integer>> regex = new AtomicReference<>();
-          final Parser result =
+          final var regex = new AtomicReference<Pair<String, Integer>>();
+          final var result =
               p.whitespace().regex(REGEX, regexParser(regex), "Regular expression.").whitespace();
           if (result.isGood()) {
             o.accept(
@@ -474,8 +468,8 @@ public abstract class ExpressionNode implements Renderable {
     COMPARISON.addSymbol(
         "~",
         (p, o) -> {
-          final AtomicReference<Pair<String, Integer>> regex = new AtomicReference<>();
-          final Parser result =
+          final var regex = new AtomicReference<Pair<String, Integer>>();
+          final var result =
               p.whitespace().regex(REGEX, regexParser(regex), "Regular expression.").whitespace();
           if (result.isGood()) {
             o.accept(
@@ -488,8 +482,8 @@ public abstract class ExpressionNode implements Renderable {
     COMPARISON.addSymbol(
         "!~",
         (p, o) -> {
-          final AtomicReference<Pair<String, Integer>> regex = new AtomicReference<>();
-          final Parser result =
+          final var regex = new AtomicReference<Pair<String, Integer>>();
+          final var result =
               p.whitespace().regex(REGEX, regexParser(regex), "Regular expression.").whitespace();
           if (result.isGood()) {
             o.accept(
@@ -556,10 +550,10 @@ public abstract class ExpressionNode implements Renderable {
     SUFFIX_LOOSE.addKeyword(
         "In",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> collection = new AtomicReference<>();
-          final Parser result = parse7(p.whitespace(), collection::set);
+          final var collection = new AtomicReference<ExpressionNode>();
+          final var result = parse7(p.whitespace(), collection::set);
           if (result.isGood()) {
-            final ExpressionNode c = collection.get();
+            final var c = collection.get();
             o.accept(node -> new ExpressionNodeContains(p.line(), p.column(), node, c));
           }
           return result;
@@ -567,10 +561,10 @@ public abstract class ExpressionNode implements Renderable {
     SUFFIX_LOOSE.addKeyword(
         "As",
         (p, o) -> {
-          final AtomicReference<ImyhatNode> typeNode = new AtomicReference<>();
-          final Parser result = p.whitespace().then(ImyhatNode::parse, typeNode::set).whitespace();
+          final var typeNode = new AtomicReference<ImyhatNode>();
+          final var result = p.whitespace().then(ImyhatNode::parse, typeNode::set).whitespace();
           if (result.isGood()) {
-            final ImyhatNode type = typeNode.get();
+            final var type = typeNode.get();
             o.accept(node -> new ExpressionNodeJsonConvert(p.line(), p.column(), node, type));
           }
           return result;
@@ -583,16 +577,16 @@ public abstract class ExpressionNode implements Renderable {
     SUFFIX_TIGHT.addSymbol(
         "[",
         (p, o) -> {
-          final AtomicLong index = new AtomicLong();
-          final Parser result =
+          final var index = new AtomicLong();
+          final var result =
               p.whitespace().integer(index::set, 10).whitespace().symbol("]").whitespace();
           if (result.isGood()) {
-            final int i = (int) index.get();
+            final var i = (int) index.get();
             o.accept(node -> new ExpressionNodeTupleGet(p.line(), p.column(), node, i));
             return result;
           } else {
-            final AtomicReference<ExpressionNode> indexExpression = new AtomicReference<>();
-            final Parser mapResult =
+            final var indexExpression = new AtomicReference<ExpressionNode>();
+            final var mapResult =
                 p.whitespace()
                     .then(ExpressionNode::parse, indexExpression::set)
                     .whitespace()
@@ -610,8 +604,8 @@ public abstract class ExpressionNode implements Renderable {
     SUFFIX_TIGHT.addSymbol(
         ".",
         (p, o) -> {
-          final AtomicReference<String> index = new AtomicReference<>();
-          final Parser result = p.whitespace().identifier(index::set).whitespace();
+          final var index = new AtomicReference<String>();
+          final var result = p.whitespace().identifier(index::set).whitespace();
           if (result.isGood()) {
             o.accept(node -> new ExpressionNodeObjectGet(p.line(), p.column(), node, index.get()));
           }
@@ -653,10 +647,9 @@ public abstract class ExpressionNode implements Renderable {
         (p, o) ->
             p.whitespace()
                 .integer(
-                    e -> {
-                      o.accept(
-                          new ExpressionNodeDate(p.line(), p.column(), Instant.ofEpochMilli(e)));
-                    },
+                    e ->
+                        o.accept(
+                            new ExpressionNodeDate(p.line(), p.column(), Instant.ofEpochMilli(e))),
                     10)
                 .whitespace());
     TERMINAL.addKeyword(
@@ -664,10 +657,9 @@ public abstract class ExpressionNode implements Renderable {
         (p, o) ->
             p.whitespace()
                 .integer(
-                    e -> {
-                      o.accept(
-                          new ExpressionNodeDate(p.line(), p.column(), Instant.ofEpochSecond(e)));
-                    },
+                    e ->
+                        o.accept(
+                            new ExpressionNodeDate(p.line(), p.column(), Instant.ofEpochSecond(e))),
                     10)
                 .whitespace());
     TERMINAL.addSymbol(
@@ -682,8 +674,8 @@ public abstract class ExpressionNode implements Renderable {
     TERMINAL.addKeyword(
         "Dict",
         (p, o) -> {
-          final AtomicReference<List<DictionaryElementNode>> fields = new AtomicReference<>();
-          final Parser result =
+          final var fields = new AtomicReference<List<DictionaryElementNode>>();
+          final var result =
               p.whitespace()
                   .symbol("{")
                   .list(fields::set, DictionaryElementNode::parse, ',')
@@ -698,8 +690,8 @@ public abstract class ExpressionNode implements Renderable {
     TERMINAL.addSymbol(
         "[",
         (p, o) -> {
-          final AtomicReference<List<ExpressionNode>> items = new AtomicReference<>();
-          final Parser result =
+          final var items = new AtomicReference<List<ExpressionNode>>();
+          final var result =
               p.whitespace()
                   .listEmpty(items::set, (cp, co) -> parse(cp.whitespace(), co).whitespace(), ',')
                   .whitespace()
@@ -713,8 +705,8 @@ public abstract class ExpressionNode implements Renderable {
     TERMINAL.addSymbol(
         "\"",
         (p, o) -> {
-          final AtomicReference<List<StringNode>> items = new AtomicReference<>();
-          final Parser result = p.list(items::set, StringNode::parse).symbol("\"").whitespace();
+          final var items = new AtomicReference<List<StringNode>>();
+          final var result = p.list(items::set, StringNode::parse).symbol("\"").whitespace();
           if (p.isGood()) {
             o.accept(new ExpressionNodeString(p.line(), p.column(), items.get()));
           }
@@ -723,8 +715,8 @@ public abstract class ExpressionNode implements Renderable {
     TERMINAL.addSymbol(
         "'",
         (p, o) -> {
-          final AtomicReference<List<String>> path = new AtomicReference<>();
-          final Parser result =
+          final var path = new AtomicReference<List<String>>();
+          final var result =
               p.list(path::set, (ip, io) -> ip.dispatch(PATH, io)).symbol("'").whitespace();
           if (p.isGood()) {
             o.accept(
@@ -735,8 +727,8 @@ public abstract class ExpressionNode implements Renderable {
     TERMINAL.addSymbol(
         "`",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> value = new AtomicReference<>();
-          final Parser result =
+          final var value = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace()
                   .then(ExpressionNode::parse, value::set)
                   .whitespace()
@@ -745,7 +737,7 @@ public abstract class ExpressionNode implements Renderable {
           if (p.isGood()) {
             o.accept(new ExpressionNodeOptionalOf(p.line(), p.column(), value.get()));
           }
-          final Parser emptyResult = p.whitespace().symbol("`").whitespace();
+          final var emptyResult = p.whitespace().symbol("`").whitespace();
           if (emptyResult.isGood()) {
             o.accept(new ExpressionNodeOptionalEmpty(p.line(), p.column()));
             return emptyResult;
@@ -755,8 +747,8 @@ public abstract class ExpressionNode implements Renderable {
     TERMINAL.addSymbol(
         "(",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser result =
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var result =
               parse(p.whitespace(), expression::set).whitespace().symbol(")").whitespace();
           if (result.isGood()) {
             o.accept(expression.get());
@@ -766,8 +758,8 @@ public abstract class ExpressionNode implements Renderable {
     TERMINAL.addRaw(
         "floating-point number",
         (p, o) -> {
-          final AtomicReference<Double> value = new AtomicReference<>();
-          final Parser result =
+          final var value = new AtomicReference<Double>();
+          final var result =
               p.regex(
                       DOUBLE_PATTERN,
                       m -> value.set(Double.parseDouble(m.group(0))),
@@ -781,9 +773,9 @@ public abstract class ExpressionNode implements Renderable {
     TERMINAL.addRaw(
         "integer",
         (p, o) -> {
-          final AtomicLong value = new AtomicLong();
-          final AtomicInteger multiplier = new AtomicInteger();
-          final Parser result =
+          final var value = new AtomicLong();
+          final var multiplier = new AtomicInteger();
+          final var result =
               p.integer(value::set, 10).dispatch(INT_SUFFIX, multiplier::set).whitespace();
           if (result.isGood()) {
             o.accept(
@@ -812,8 +804,8 @@ public abstract class ExpressionNode implements Renderable {
     TERMINAL.addRaw(
         "function call, variable, algebraic value",
         (p, o) -> {
-          final AtomicReference<String> name = new AtomicReference<>();
-          final Parser algebraicResult = p.algebraicIdentifier(name::set).whitespace();
+          final var name = new AtomicReference<String>();
+          final var algebraicResult = p.algebraicIdentifier(name::set).whitespace();
           if (algebraicResult.isGood()) {
             if (algebraicResult.lookAhead('{')) {
               return parseTupleOrObject(
@@ -824,16 +816,15 @@ public abstract class ExpressionNode implements Renderable {
                   e -> new ExpressionNodeAlgebraicTuple(p.line(), p.column(), name.get(), e));
             } else {
               o.accept(
-                  new ExpressionNodeAlgebraicTuple(
-                      p.line(), p.column(), name.get(), Collections.emptyList()));
+                  new ExpressionNodeAlgebraicTuple(p.line(), p.column(), name.get(), List.of()));
             }
             return algebraicResult;
           }
 
-          Parser result = p.qualifiedIdentifier(name::set);
+          var result = p.qualifiedIdentifier(name::set);
           if (result.isGood()) {
             if (result.lookAhead('(')) {
-              final AtomicReference<List<ExpressionNode>> items = new AtomicReference<>();
+              final var items = new AtomicReference<List<ExpressionNode>>();
               result =
                   result
                       .symbol("(")
@@ -868,18 +859,18 @@ public abstract class ExpressionNode implements Renderable {
       Function<String, ExpressionNode> gangConstructor,
       Function<List<ObjectElementNode>, ExpressionNode> objectContsructor,
       Function<List<TupleElementNode>, ExpressionNode> tupleConstructor) {
-    final Parser gangParser = parser.whitespace().symbol("@");
+    final var gangParser = parser.whitespace().symbol("@");
     if (gangParser.isGood()) {
-      final AtomicReference<String> name = new AtomicReference<>();
-      final Parser gangResult =
+      final var name = new AtomicReference<String>();
+      final var gangResult =
           gangParser.whitespace().identifier(name::set).whitespace().symbol("}").whitespace();
       if (gangResult.isGood()) {
         output.accept(gangConstructor.apply(name.get()));
       }
       return gangResult;
     }
-    final AtomicReference<List<ObjectElementNode>> fields = new AtomicReference<>();
-    Parser objectResult =
+    final var fields = new AtomicReference<List<ObjectElementNode>>();
+    var objectResult =
         parser.whitespace().listEmpty(fields::set, ObjectElementNode::parse, ',').whitespace();
     if (objectResult.symbol(";").isGood()) {
       objectResult =
@@ -905,8 +896,8 @@ public abstract class ExpressionNode implements Renderable {
       return objectResult;
     }
 
-    final AtomicReference<List<TupleElementNode>> items = new AtomicReference<>();
-    final Parser result =
+    final var items = new AtomicReference<List<TupleElementNode>>();
+    final var result =
         parser
             .whitespace()
             .list(items::set, TupleElementNode::parse, ',')
@@ -921,7 +912,7 @@ public abstract class ExpressionNode implements Renderable {
 
   public static Consumer<Matcher> regexParser(AtomicReference<Pair<String, Integer>> regex) {
     return m -> {
-      int flags = 0;
+      var flags = 0;
 
       if (m.group(2).contains("i")) {
         flags |= Pattern.CASE_INSENSITIVE;

@@ -43,7 +43,7 @@ public final class VidarrPluginType extends PluginFileType<VidarrPlugin> {
 
   @Override
   public void writeJavaScriptRenderer(PrintStream writer) {
-    try (final Scanner input =
+    try (final var input =
         new Scanner(
             VidarrPluginType.class.getResourceAsStream("renderer.js"), StandardCharsets.UTF_8)) {
       writer.print(input.useDelimiter("\\Z").next());

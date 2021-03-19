@@ -11,7 +11,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
@@ -63,8 +62,8 @@ public class ExpressionNodeMatch extends ExpressionNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    final String testValue = renderer.newConst(test.renderEcma(renderer));
-    final String result = renderer.newLet();
+    final var testValue = renderer.newConst(test.renderEcma(renderer));
+    final var result = renderer.newLet();
     renderer.mapIf(
         cases.stream(),
         m -> {
@@ -83,7 +82,7 @@ public class ExpressionNodeMatch extends ExpressionNode {
   @Override
   public void render(Renderer renderer) {
     test.render(renderer);
-    final int local = renderer.methodGen().newLocal(test.type().apply(TypeUtils.TO_ASM));
+    final var local = renderer.methodGen().newLocal(test.type().apply(TypeUtils.TO_ASM));
     renderer.methodGen().storeLocal(local);
 
     final Map<Integer, List<MatchBranchNode>> paths =
@@ -91,24 +90,24 @@ public class ExpressionNodeMatch extends ExpressionNode {
             .collect(
                 Collectors.groupingBy(b -> b.name().hashCode(), TreeMap::new, Collectors.toList()));
 
-    final Label alternativePath = renderer.methodGen().newLabel();
-    final int[] pathValues = new int[paths.size()];
-    final Label[] pathLocations = new Label[paths.size()];
-    int i = 0;
+    final var alternativePath = renderer.methodGen().newLabel();
+    final var pathValues = new int[paths.size()];
+    final var pathLocations = new Label[paths.size()];
+    var i = 0;
     for (final int value : paths.keySet()) {
       pathValues[i] = value;
       pathLocations[i] = renderer.methodGen().newLabel();
       i++;
     }
 
-    final Label end = renderer.methodGen().newLabel();
+    final var end = renderer.methodGen().newLabel();
     renderer.methodGen().loadLocal(local);
     renderer.methodGen().invokeVirtual(A_ALGEBRAIC_VALUE_TYPE, METHOD_ALGEBRAIC_VALUE__NAME);
     renderer.methodGen().invokeVirtual(A_STRING_TYPE, METHOD__HASH_CODE);
     renderer.methodGen().visitLookupSwitchInsn(alternativePath, pathValues, pathLocations);
     for (i = 0; i < paths.size(); i++) {
       renderer.methodGen().mark(pathLocations[i]);
-      for (final MatchBranchNode branch : paths.get(pathValues[i])) {
+      for (final var branch : paths.get(pathValues[i])) {
         branch.render(renderer, end, local);
       }
       renderer.methodGen().goTo(alternativePath);
@@ -128,10 +127,10 @@ public class ExpressionNodeMatch extends ExpressionNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    boolean ok = true;
-    final Map<String, Long> caseCounts =
+    var ok = true;
+    final var caseCounts =
         cases.stream().collect(Collectors.groupingBy(MatchBranchNode::name, Collectors.counting()));
-    for (final Entry<String, Long> entry : caseCounts.entrySet()) {
+    for (final var entry : caseCounts.entrySet()) {
       if (entry.getValue() > 1) {
         errorHandler.accept(
             String.format(
@@ -156,9 +155,9 @@ public class ExpressionNodeMatch extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = test.typeCheck(errorHandler);
+    var ok = test.typeCheck(errorHandler);
     if (ok) {
-      final Map<String, Imyhat> requiredBranches =
+      final var requiredBranches =
           test.type()
               .apply(
                   new ImyhatTransformer<Map<String, Imyhat>>() {
@@ -269,7 +268,7 @@ public class ExpressionNodeMatch extends ExpressionNode {
           cases.stream()
                   .filter(
                       c -> {
-                        final Imyhat branchType = requiredBranches.get(c.name());
+                        final var branchType = requiredBranches.get(c.name());
                         if (branchType == null) {
                           errorHandler.accept(
                               String.format(
@@ -278,7 +277,7 @@ public class ExpressionNodeMatch extends ExpressionNode {
                           return false;
                         }
                         requiredBranches.remove(c.name());
-                        boolean isSame = c.typeCheck(branchType, errorHandler);
+                        var isSame = c.typeCheck(branchType, errorHandler);
                         if (resultType == null) {
                           resultType = c.resultType();
                         } else if (c.resultType().isSame(resultType)) {
@@ -292,7 +291,7 @@ public class ExpressionNodeMatch extends ExpressionNode {
                   .count()
               == cases.size();
       if (ok) {
-        final Imyhat alternativeType =
+        final var alternativeType =
             alternative.typeCheck(line(), column(), resultType, requiredBranches, errorHandler);
         if (alternativeType.isBad()) {
           return false;

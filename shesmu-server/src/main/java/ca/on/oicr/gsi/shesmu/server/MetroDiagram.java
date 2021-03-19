@@ -13,7 +13,6 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.awt.Canvas;
 import java.awt.Font;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -48,7 +47,7 @@ public class MetroDiagram {
     private boolean done;
 
     public Stream<VariableInformation> liveVariables(OliveTable olive) {
-      final List<VariableInformation> clauseInput =
+      final var clauseInput =
           olive
               .clauses()
               .filter(this)
@@ -110,8 +109,8 @@ public class MetroDiagram {
       InputFormatDefinition format,
       OliveFlowReader reader)
       throws XMLStreamException {
-    final String id = String.format("%s:%d:%d[%s]", filename, olive.column(), olive.line(), hash);
-    final long metroStart =
+    final var id = String.format("%s:%d:%d[%s]", filename, olive.column(), olive.line(), hash);
+    final var metroStart =
         120
             + Stream.concat(
                     olive.clauses().map(OliveClauseRow::syntax),
@@ -121,24 +120,23 @@ public class MetroDiagram {
                         ::stringWidth)
                 .max()
                 .orElse(100);
-    final List<VariableInformation> liveVariableInfo =
+    final var liveVariableInfo =
         new DeathChecker().liveVariables(olive).collect(Collectors.toList());
-    final long topPadding =
+    final var topPadding =
         (long)
             Math.max(
                 SVG_ROW_HEIGHT,
-                liveVariableInfo
-                        .stream()
+                liveVariableInfo.stream()
                         .flatMap(VariableInformation::inputs)
                         .mapToInt(String::length)
                         .max()
                         .orElse(0)
                     * AVG_SMALL_CHAR_WIDTH
                     * Math.sin(Math.toRadians(45)));
-    final long height =
+    final var height =
         SVG_ROW_HEIGHT * (olive.clauses().count() + 2)
             + topPadding; // Padding (includes title) + Input + Clauses + Output
-    final long width =
+    final var width =
         metroStart
             + SVG_METRO_WIDTH
                 * (Stream.concat(
@@ -216,19 +214,18 @@ public class MetroDiagram {
     writer.writeCharacters(CLAUSE_HEADER);
     writer.writeEndElement();
 
-    final AtomicInteger idGen = new AtomicInteger();
-    final AtomicInteger row = new AtomicInteger(1);
+    final var idGen = new AtomicInteger();
+    final var row = new AtomicInteger(1);
     final List<DelayedXml> textLayerBuffer = new ArrayList<>();
 
     final Map<String, MetroDiagram> initialVariables = new HashMap<>();
-    liveVariableInfo
-        .stream()
+    liveVariableInfo.stream()
         .flatMap(VariableInformation::inputs)
         .distinct()
         .sorted()
         .forEach(
             name -> {
-              final int colour = idGen.getAndIncrement();
+              final var colour = idGen.getAndIncrement();
               try {
                 initialVariables.put(
                     name,
@@ -255,16 +252,16 @@ public class MetroDiagram {
               }
             });
 
-    final SourceLocation source = new SourceLocation(filename, olive.line(), olive.column(), hash);
+    final var source = new SourceLocation(filename, olive.line(), olive.column(), hash);
     writeClause(writer, linker, topPadding, 0, "Input", inputCount, source);
 
-    final Map<String, MetroDiagram> terminalVariables =
+    final var terminalVariables =
         olive
             .clauses()
             .reduce(
                 initialVariables,
                 (variables, clause) -> {
-                  final int currentRow = row.getAndIncrement();
+                  final var currentRow = row.getAndIncrement();
                   try {
                     writeClause(
                         writer,
@@ -313,7 +310,7 @@ public class MetroDiagram {
         terminalVariables,
         olive::variables,
         row.get());
-    for (DelayedXml textElement : textLayerBuffer) {
+    for (var textElement : textLayerBuffer) {
       textElement.write(writer);
     }
     writer.writeEndElement();
@@ -329,7 +326,7 @@ public class MetroDiagram {
       Map<String, MetroDiagram> variables,
       Supplier<Stream<VariableInformation>> information,
       int row) {
-    final Map<String, Integer> outputVariableColumns =
+    final var outputVariableColumns =
         Stream.concat(
                 information
                     .get()
@@ -346,7 +343,7 @@ public class MetroDiagram {
             .sorted()
             .distinct()
             .map(Pair.number())
-            .collect(Collectors.toMap(Pair::second, p -> (int) p.first()));
+            .collect(Collectors.toMap(Pair::second, Pair::first));
 
     final Map<String, MetroDiagram> outputVariables = new HashMap<>();
 
@@ -355,16 +352,16 @@ public class MetroDiagram {
         .forEach(
             variable -> {
               try {
-                final Pair<Integer, Integer> currentPoint =
+                final var currentPoint =
                     new Pair<>(outputVariableColumns.get(variable.name()), row);
                 switch (variable.behaviour()) {
                   case DEFINITION:
                   case DEFINITION_BY:
                   case EPHEMERAL:
                     // If we have a defined variable, then it always needs to be drawn
-                    final String mangledName =
+                    final var mangledName =
                         variable.name() + (variable.behaviour() == Behaviour.EPHEMERAL ? " " : "");
-                    final MetroDiagram newVariable =
+                    final var newVariable =
                         new MetroDiagram(
                             textLayer,
                             connectorLayer,
@@ -395,7 +392,7 @@ public class MetroDiagram {
                         .inputs()
                         .forEach(
                             name -> {
-                              final MetroDiagram observedVariable = variables.get(name);
+                              final var observedVariable = variables.get(name);
                               try {
                                 observedVariable.drawDot(currentPoint, "used");
                               } catch (XMLStreamException e) {
@@ -404,7 +401,7 @@ public class MetroDiagram {
                             });
                     break;
                   case PASSTHROUGH:
-                    final MetroDiagram passthroughVariable = variables.get(variable.name());
+                    final var passthroughVariable = variables.get(variable.name());
                     passthroughVariable.drawSquare(currentPoint);
                     break;
                   default:
@@ -415,11 +412,11 @@ public class MetroDiagram {
               }
             });
 
-    for (final Entry<String, Integer> entry : outputVariableColumns.entrySet()) {
+    for (final var entry : outputVariableColumns.entrySet()) {
       if (outputVariables.containsKey(entry.getKey())) {
         continue;
       }
-      final MetroDiagram variable = variables.get(entry.getKey());
+      final var variable = variables.get(entry.getKey());
       variable.append(new Pair<>(entry.getValue(), row));
       outputVariables.put(entry.getKey(), variable);
     }
@@ -458,7 +455,7 @@ public class MetroDiagram {
       writer.writeCharacters(Long.toString(count));
       writer.writeEndElement();
     }
-    final Optional<String> url = location.url(linker);
+    final var url = location.url(linker);
     if (url.isPresent()) {
       writer.writeStartElement("a");
       writer.writeAttribute("xlink", XLINK_NS_URI, "href", url.get());
@@ -518,8 +515,8 @@ public class MetroDiagram {
     } else {
       drawSquare(start);
     }
-    final long x = metroStart + column * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2;
-    final long y = topPadding + SVG_ROW_HEIGHT * row + SVG_ROW_HEIGHT / 2;
+    final var x = metroStart + column * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2;
+    final var y = topPadding + SVG_ROW_HEIGHT * row + SVG_ROW_HEIGHT / 2;
     textLayer.add(
         textWriter -> {
           textWriter.writeStartElement("text");
@@ -548,7 +545,7 @@ public class MetroDiagram {
     connectorLayer.writeStartElement("path");
     connectorLayer.writeAttribute("stroke", colour);
     connectorLayer.writeAttribute("fill", "none");
-    StringBuilder path = new StringBuilder();
+    var path = new StringBuilder();
     path.append("M ")
         .append(xCoordinate(segments.peek()))
         .append(" ")
@@ -588,10 +585,10 @@ public class MetroDiagram {
 
   private void drawSegment(
       StringBuilder path, Pair<Integer, Integer> input, Pair<Integer, Integer> output) {
-    final long inputX = xCoordinate(input);
-    final long outputX = xCoordinate(output);
-    final long inputY = yCoordinate(input);
-    final long outputY = yCoordinate(output);
+    final var inputX = xCoordinate(input);
+    final var outputX = xCoordinate(output);
+    final var inputY = yCoordinate(input);
+    final var outputY = yCoordinate(output);
     if (inputX == outputX) {
       path.append("L ").append(outputX).append(" ").append(outputY);
     } else {

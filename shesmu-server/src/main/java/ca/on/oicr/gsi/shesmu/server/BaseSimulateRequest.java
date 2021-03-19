@@ -27,7 +27,6 @@ import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
-import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
@@ -40,7 +39,6 @@ import com.sun.net.httpserver.HttpExchange;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.common.TextFormat;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.lang.invoke.CallSite;
@@ -50,7 +48,6 @@ import java.lang.invoke.MethodType;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -69,7 +66,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -128,11 +124,11 @@ public abstract class BaseSimulateRequest {
 
     @Override
     public void consume(Stream<T> items) {
-      final ArrayNode result = RESULTS.get().putArray(name);
+      final var result = RESULTS.get().putArray(name);
       items.forEach(
           i -> {
-            final ObjectNode o = result.addObject();
-            for (final BiConsumer<T, ObjectNode> parameter : parameters) {
+            final var o = result.addObject();
+            for (final var parameter : parameters) {
               parameter.accept(i, o);
             }
           });
@@ -341,7 +337,7 @@ public abstract class BaseSimulateRequest {
   private static final Method PACK_JSON_OBJECT__CTOR =
       new Method("<init>", Type.VOID_TYPE, new Type[] {A_OBJECT_NODE_TYPE, A_STRING_TYPE});
   private static final ThreadLocal<ObjectNode> RESULTS = new ThreadLocal<>();
-  private Map<String, FakeConstant> fakeConstants = Collections.emptyMap();
+  private Map<String, FakeConstant> fakeConstants = Map.of();
   private boolean readStale;
 
   protected abstract boolean allowUnused();
@@ -365,20 +361,18 @@ public abstract class BaseSimulateRequest {
       String script,
       HttpExchange http)
       throws IOException {
-    final ObjectNode response = RuntimeSupport.MAPPER.createObjectNode();
-    final ArrayNode exports = response.putArray("exports");
-    final ArrayNode errors = response.putArray("errors");
-    final AtomicReference<FileTable> fileTable = new AtomicReference<>();
-    final AtomicBoolean exceptionThrown = new AtomicBoolean();
+    final var response = RuntimeSupport.MAPPER.createObjectNode();
+    final var exports = response.putArray("exports");
+    final var errors = response.putArray("errors");
+    final var fileTable = new AtomicReference<FileTable>();
+    final var exceptionThrown = new AtomicBoolean();
     try {
-      final HotloadingCompiler compiler =
+      final var compiler =
           new HotloadingCompiler(
               CompiledGenerator.SOURCES::get,
               new DefinitionRepository() {
                 private final List<ConstantDefinition> jsonConstants =
-                    fakeConstants
-                        .entrySet()
-                        .stream()
+                    fakeConstants.entrySet().stream()
                         .map(
                             e ->
                                 new JsonConstant(
@@ -448,14 +442,14 @@ public abstract class BaseSimulateRequest {
                   definitionRepository.writeJavaScriptRenderer(writer);
                 }
               });
-      final Optional<ActionGenerator> result =
+      final var result =
           compiler.compile(
               "Uploaded Simulation Request.shesmu",
               script,
               new LiveExportConsumer() {
                 @Override
                 public void constant(MethodHandle method, String name, Imyhat type) {
-                  final ObjectNode info = exports.addObject();
+                  final var info = exports.addObject();
                   info.put("name", name);
                   info.put("type", "constant");
                   info.put("returns", type.descriptor());
@@ -470,17 +464,16 @@ public abstract class BaseSimulateRequest {
                     List<Imyhat> parameterTypes,
                     List<DefineVariableExport> variables,
                     List<DefineVariableExport> checks) {
-                  final ObjectNode info = exports.addObject();
+                  final var info = exports.addObject();
                   info.put("type", "define");
                   info.put("name", name);
                   info.put("isRoot", isRoot);
                   info.put("inputFormat", inputFormatName);
-                  final ObjectNode output = info.putObject("output");
-                  for (final DefineVariableExport variable : variables) {
+                  final var output = info.putObject("output");
+                  for (final var variable : variables) {
                     output.put(variable.name(), variable.type().name());
                   }
-                  parameterTypes
-                      .stream()
+                  parameterTypes.stream()
                       .map(Imyhat::descriptor)
                       .forEach(info.putArray("parameters")::add);
                 }
@@ -491,7 +484,7 @@ public abstract class BaseSimulateRequest {
                     String name,
                     Imyhat returnType,
                     Supplier<Stream<FunctionParameter>> parameters) {
-                  final ObjectNode info = exports.addObject();
+                  final var info = exports.addObject();
                   info.put("name", name);
                   info.put("type", "function");
                   info.put("returns", returnType.descriptor());
@@ -512,21 +505,21 @@ public abstract class BaseSimulateRequest {
       if (!dryRun()) {
         result.ifPresent(
             action -> {
-              final Set<String> overloadedInputs =
+              final var overloadedInputs =
                   actionServices.isOverloaded(action.inputs().collect(Collectors.toSet()));
               if (!overloadedInputs.isEmpty()) {
                 overloadedInputs.forEach(response.putArray("overloadedInputs")::add);
                 return;
               }
 
-              final CollectorRegistry registry = new CollectorRegistry();
+              final var registry = new CollectorRegistry();
               action.register(registry);
               final Map<Action, Pair<Set<String>, Set<SourceLocation>>> actions = new HashMap<>();
               final Map<Pair<List<String>, List<String>>, Set<SourceLocation>> alerts =
                   new HashMap<>();
-              final ObjectNode dumpers = response.putObject("dumpers");
-              final ArrayNode olives = response.putArray("olives");
-              final ArrayNode overloadedServices = response.putArray("overloadedServices");
+              final var dumpers = response.putObject("dumpers");
+              final var olives = response.putArray("olives");
+              final var overloadedServices = response.putArray("overloadedServices");
               final Map<Pair<Integer, Integer>, Long> durations = new HashMap<>();
 
               final Map<Pair<SourceLocation, SourceLocation>, AtomicLong> flow = new HashMap<>();
@@ -534,7 +527,7 @@ public abstract class BaseSimulateRequest {
               final Map<String, Long> counts = new HashMap<>();
 
               try {
-                final Map<String, List<Object>> inputs =
+                final var inputs =
                     action
                         .inputs()
                         .collect(
@@ -544,7 +537,7 @@ public abstract class BaseSimulateRequest {
                                     inputSource
                                         .fetch(name, readStale)
                                         .collect(Collectors.toList())));
-                for (final Map.Entry<String, List<Object>> input : inputs.entrySet()) {
+                for (final var input : inputs.entrySet()) {
                   counts.put(input.getKey(), (long) input.getValue().size());
                 }
                 action.run(
@@ -557,10 +550,10 @@ public abstract class BaseSimulateRequest {
                           int column,
                           String hash,
                           String[] tags) {
-                        final Pair<Set<String>, Set<SourceLocation>> info =
+                        final var info =
                             actions.computeIfAbsent(
                                 action, k -> new Pair<>(new TreeSet<>(), new HashSet<>()));
-                        return info.first().addAll(Arrays.asList(tags))
+                        return info.first().addAll(List.of(tags))
                             | info.second().add(new SourceLocation(filename, line, column, hash));
                       }
 
@@ -572,11 +565,10 @@ public abstract class BaseSimulateRequest {
                           String filename,
                           int line,
                           int column,
-                          String hash)
-                          throws Exception {
+                          String hash) {
                         return alerts
                             .computeIfAbsent(
-                                new Pair<>(Arrays.asList(labels), Arrays.asList(annotation)),
+                                new Pair<>(List.of(labels), Arrays.asList(annotation)),
                                 k -> new HashSet<>())
                             .add(new SourceLocation(filename, line, column, hash));
                       }
@@ -593,8 +585,8 @@ public abstract class BaseSimulateRequest {
 
                           @Override
                           public void write(Object... values) {
-                            final ObjectNode row = dump.addObject();
-                            for (int i = 0; i < types.length; i++) {
+                            final var row = dump.addObject();
+                            for (var i = 0; i < types.length; i++) {
                               types[i].accept(new PackJsonObject(row, columns[i]), values[i]);
                             }
                           }
@@ -603,7 +595,7 @@ public abstract class BaseSimulateRequest {
 
                       @Override
                       public boolean isOverloaded(String... services) {
-                        final Set<String> overloads = actionServices.isOverloaded(services);
+                        final var overloads = actionServices.isOverloaded(services);
                         overloads.forEach(overloadedServices::add);
                         return !overloads.isEmpty();
                       }
@@ -619,7 +611,7 @@ public abstract class BaseSimulateRequest {
                           int oliveLine,
                           int oliveColumn,
                           String oliveHash) {
-                        final AtomicLong counter = new AtomicLong();
+                        final var counter = new AtomicLong();
                         flow.put(
                             new Pair<>(
                                 new SourceLocation(filename, line, column, hash),
@@ -640,7 +632,7 @@ public abstract class BaseSimulateRequest {
                 errors.add(String.format("Failed to populate %s cache", e.getMessage()));
               }
 
-              final StringWriter writer = new StringWriter();
+              final var writer = new StringWriter();
               try {
                 TextFormat.write004(writer, registry.metricFamilySamples());
               } catch (IOException e) {
@@ -655,8 +647,8 @@ public abstract class BaseSimulateRequest {
                   .forEach(
                       olive -> {
                         try {
-                          final StringWriter metroWriter = new StringWriter();
-                          final XMLStreamWriter xmlWriter =
+                          final var metroWriter = new StringWriter();
+                          final var xmlWriter =
                               XMLOutputFactory.newFactory().createXMLStreamWriter(metroWriter);
                           xmlWriter.writeStartDocument("utf-8", "1.0");
                           MetroDiagram.draw(
@@ -688,7 +680,7 @@ public abstract class BaseSimulateRequest {
                                       .orElse(null));
                           xmlWriter.writeEndDocument();
 
-                          final ObjectNode diagram = olives.addObject();
+                          final var diagram = olives.addObject();
                           diagram.put("diagram", metroWriter.toString());
                           diagram.put("line", olive.line());
                           diagram.put("syntax", olive.syntax());
@@ -703,23 +695,21 @@ public abstract class BaseSimulateRequest {
                         }
                       });
 
-              final ArrayNode actionsJson = response.putArray("actions");
-              for (final Map.Entry<Action, Pair<Set<String>, Set<SourceLocation>>> a :
-                  actions.entrySet()) {
-                final ObjectNode aj = a.getKey().toJson(RuntimeSupport.MAPPER);
+              final var actionsJson = response.putArray("actions");
+              for (final var a : actions.entrySet()) {
+                final var aj = a.getKey().toJson(RuntimeSupport.MAPPER);
                 aj.put("type", a.getKey().type());
                 a.getValue().first().forEach(aj.putArray("tags")::add);
-                final ArrayNode locations = aj.putArray("locations");
+                final var locations = aj.putArray("locations");
                 a.getValue().second().forEach(l -> l.toJson(locations, SourceLocationLinker.EMPTY));
                 actionsJson.add(aj);
               }
-              final ArrayNode alertsJson = response.putArray("alerts");
-              for (final Map.Entry<Pair<List<String>, List<String>>, Set<SourceLocation>> a :
-                  alerts.entrySet()) {
-                final ObjectNode alertJson = alertsJson.addObject();
+              final var alertsJson = response.putArray("alerts");
+              for (final var a : alerts.entrySet()) {
+                final var alertJson = alertsJson.addObject();
                 writeLabels(alertJson.putObject("labels"), a.getKey().first());
                 writeLabels(alertJson.putObject("annotations"), a.getKey().second());
-                final ArrayNode locations = alertJson.putArray("locations");
+                final var locations = alertJson.putArray("locations");
                 a.getValue().forEach(l -> l.toJson(locations, SourceLocationLinker.EMPTY));
               }
             });
@@ -732,7 +722,7 @@ public abstract class BaseSimulateRequest {
     response.put("exceptionThrown", exceptionThrown.get());
     http.getResponseHeaders().set("Content-type", "application/json");
     http.sendResponseHeaders(200, 0);
-    try (OutputStream os = http.getResponseBody()) {
+    try (var os = http.getResponseBody()) {
       RuntimeSupport.MAPPER.writeValue(os, response);
     }
   }
@@ -746,7 +736,7 @@ public abstract class BaseSimulateRequest {
   }
 
   private void writeLabels(ObjectNode output, List<String> input) {
-    for (int i = 0; i < input.size(); i += 2) {
+    for (var i = 0; i < input.size(); i += 2) {
       output.put(input.get(i), input.get(i + 1));
     }
   }

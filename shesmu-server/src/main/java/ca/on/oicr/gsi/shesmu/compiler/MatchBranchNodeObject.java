@@ -11,7 +11,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.objectweb.asm.Type;
 
 public class MatchBranchNodeObject extends MatchBranchNode {
 
@@ -26,7 +25,7 @@ public class MatchBranchNodeObject extends MatchBranchNode {
       List<Pair<String, DestructuredArgumentNode>> fields) {
     super(line, column, name, value);
     this.fields = fields;
-    for (final Pair<String, DestructuredArgumentNode> field : fields) {
+    for (final var field : fields) {
       field.second().setFlavour(Flavour.LAMBDA);
     }
   }
@@ -49,14 +48,13 @@ public class MatchBranchNodeObject extends MatchBranchNode {
 
   @Override
   protected Renderer prepare(Renderer renderer, BiConsumer<Renderer, Integer> loadElement) {
-    final List<String> fieldNames =
-        fields.stream().map(Pair::first).sorted().collect(Collectors.toList());
-    final Renderer result = renderer.duplicate();
+    final var fieldNames = fields.stream().map(Pair::first).sorted().collect(Collectors.toList());
+    final var result = renderer.duplicate();
     fields.stream()
         .flatMap(
             f -> {
-              final int i = fieldNames.indexOf(f.first());
-              final Type type = ((ObjectImyhat) argumentType).get(f.first()).apply(TO_ASM);
+              final var i = fieldNames.indexOf(f.first());
+              final var type = ((ObjectImyhat) argumentType).get(f.first()).apply(TO_ASM);
               return f.second()
                   .render(
                       r -> {

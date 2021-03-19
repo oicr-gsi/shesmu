@@ -14,8 +14,8 @@ import java.lang.annotation.Target;
 @Target({FIELD, METHOD})
 public @interface RefillerParameter {
   /** The name for the parameter in Shesmu if different from the Java name */
-  public String name() default "";
+  String name() default "";
 
   /** The Shesmu type descriptor for the setter if not inferred from the Java type */
-  public String type() default "";
+  String type() default "";
 }

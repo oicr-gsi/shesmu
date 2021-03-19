@@ -7,20 +7,18 @@ import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import io.prometheus.client.Gauge;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
 public final class MonitoredOliveServices implements OliveServices, AutoCloseable {
   private static class AlertInfo {
-    List<String> annotations = new ArrayList<>();
-    Set<SourceLocation> locations = new HashSet<>();
+    final List<String> annotations = new ArrayList<>();
+    final Set<SourceLocation> locations = new HashSet<>();
     long ttl;
   }
 
@@ -61,9 +59,9 @@ public final class MonitoredOliveServices implements OliveServices, AutoCloseabl
   @Override
   public boolean accept(
       Action action, String filename, int line, int column, String hash, String[] tags) {
-    final Pair<Set<String>, Set<SourceLocation>> pair =
+    final var pair =
         actions.computeIfAbsent(action, k -> new Pair<>(new TreeSet<>(), new HashSet<>()));
-    pair.first().addAll(Arrays.asList(tags));
+    pair.first().addAll(List.of(tags));
     return pair.second().add(new SourceLocation(filename, line, column, hash));
   }
 
@@ -75,21 +73,20 @@ public final class MonitoredOliveServices implements OliveServices, AutoCloseabl
       String filename,
       int line,
       int column,
-      String hash)
-      throws Exception {
-    final AlertInfo alert = alerts.computeIfAbsent(Arrays.asList(labels), k -> new AlertInfo());
+      String hash) {
+    final var alert = alerts.computeIfAbsent(List.of(labels), k -> new AlertInfo());
     // This is going to massively duplicate the annotations, but the action processor will
     // de-duplicate them and resolve any conflicts
-    alert.annotations.addAll(Arrays.asList(annotation));
+    alert.annotations.addAll(List.of(annotation));
     alert.ttl = Math.max(alert.ttl, ttl);
     return alert.locations.add(new SourceLocation(filename, line, column, hash));
   }
 
   public void close() throws Exception {
-    int newActions = 0;
-    for (final Entry<Action, Pair<Set<String>, Set<SourceLocation>>> entry : actions.entrySet()) {
-      final String[] tags = entry.getValue().first().stream().toArray(String[]::new);
-      for (final SourceLocation location : entry.getValue().second()) {
+    var newActions = 0;
+    for (final var entry : actions.entrySet()) {
+      final var tags = entry.getValue().first().toArray(String[]::new);
+      for (final var location : entry.getValue().second()) {
         if (!backing.accept(
             entry.getKey(),
             location.fileName(),
@@ -102,11 +99,11 @@ public final class MonitoredOliveServices implements OliveServices, AutoCloseabl
       }
     }
 
-    int newAlerts = 0;
-    for (final Entry<List<String>, AlertInfo> entry : alerts.entrySet()) {
-      final String[] labels = entry.getKey().stream().toArray(String[]::new);
-      final String[] annotations = entry.getValue().annotations.stream().toArray(String[]::new);
-      for (final SourceLocation location : entry.getValue().locations) {
+    var newAlerts = 0;
+    for (final var entry : alerts.entrySet()) {
+      final var labels = entry.getKey().toArray(String[]::new);
+      final var annotations = entry.getValue().annotations.toArray(String[]::new);
+      for (final var location : entry.getValue().locations) {
         if (!backing.accept(
             labels,
             annotations,

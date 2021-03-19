@@ -21,7 +21,7 @@ public class CollectNodeConcatenate extends CollectNode {
     PROVIDED("FixedConcat");
     private final String syntax;
 
-    private ConcatentationType(String syntax) {
+    ConcatentationType(String syntax) {
       this.syntax = syntax;
     }
 
@@ -95,7 +95,7 @@ public class CollectNodeConcatenate extends CollectNode {
     final Set<String> freeVariables = new HashSet<>();
     getter.collectFreeVariables(freeVariables, Flavour::needsCapture);
 
-    final Renderer mapMethod =
+    final var mapMethod =
         builder.map(
             line(),
             column(),
@@ -152,7 +152,7 @@ public class CollectNodeConcatenate extends CollectNode {
 
   @Override
   public boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
-    boolean ok = true;
+    var ok = true;
     if (getter.typeCheck(errorHandler)) {
       if (!getter.type().isSame(Imyhat.STRING)) {
         getter.typeError(Imyhat.STRING, getter.type(), errorHandler);

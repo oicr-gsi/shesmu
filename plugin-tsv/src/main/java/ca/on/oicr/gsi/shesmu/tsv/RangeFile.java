@@ -15,8 +15,6 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 
 public class RangeFile extends PluginFile {
   private static final Predicate<String> COMMENTS =
@@ -34,7 +32,7 @@ public class RangeFile extends PluginFile {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {}
+  public void configuration(SectionRenderer renderer) {}
 
   @ShesmuMethod(
       name = "get",
@@ -43,7 +41,7 @@ public class RangeFile extends PluginFile {
           "Gets the value for a range of time windows specified in {file}. Time before the first window will return the empty string.")
   public Tuple get(
       @ShesmuParameter(description = "The time to look for in the window.") Instant time) {
-    final Map.Entry<Instant, String> entry = ranges.floorEntry(time);
+    final var entry = ranges.floorEntry(time);
     return entry == null
         ? new Tuple(Instant.EPOCH, "")
         : new Tuple(entry.getKey(), entry.getValue());
@@ -51,7 +49,7 @@ public class RangeFile extends PluginFile {
 
   @Override
   public Optional<Integer> update() {
-    try (final Stream<String> lines = Files.lines(fileName(), StandardCharsets.UTF_8)) {
+    try (final var lines = Files.lines(fileName(), StandardCharsets.UTF_8)) {
       ranges =
           lines
               .filter(COMMENTS)

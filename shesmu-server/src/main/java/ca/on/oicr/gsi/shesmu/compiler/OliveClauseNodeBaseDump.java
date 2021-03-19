@@ -94,8 +94,8 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
       RootBuilder builder,
       BaseOliveBuilder oliveBuilder,
       Function<String, CallableDefinitionRenderer> definitions) {
-    final Predicate<String> shouldCapture = captureVariable();
-    final Renderer renderer =
+    final var shouldCapture = captureVariable();
+    final var renderer =
         oliveBuilder.peek(
             "Dump " + dumper,
             line,
@@ -116,7 +116,7 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
     renderer.emitNamed(selfName);
     renderer.methodGen().push(columnCount());
     renderer.methodGen().newArray(A_OBJECT_TYPE);
-    for (int it = 0; it < columnCount(); it++) {
+    for (var it = 0; it < columnCount(); it++) {
       renderer.methodGen().dup();
       renderer.methodGen().push(it);
       renderColumn(it, renderer);
@@ -166,8 +166,8 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
       return false;
     }
     if (dumperDefinition.isFresh()) {
-      for (int i = 0; i < columnCount(); i++) {
-        final Pair<String, Imyhat> column = columnDefinition(i);
+      for (var i = 0; i < columnCount(); i++) {
+        final var column = columnDefinition(i);
         dumperDefinition.add(column.first(), column.second());
       }
       return true;
@@ -179,8 +179,8 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
               line, column, columnCount(), dumper, dumperDefinition.size()));
       return false;
     }
-    boolean ok = true;
-    for (int i = 0; i < dumperDefinition.size(); i++) {
+    var ok = true;
+    for (var i = 0; i < dumperDefinition.size(); i++) {
       if (!dumperDefinition.type(i).isSame(columnDefinition(i).second())) {
         errorHandler.accept(
             String.format(

@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -81,14 +80,12 @@ public final class ExpressionNodeBinary extends ExpressionNode {
 
   @Override
   public final boolean typeCheck(Consumer<String> errorHandler) {
-    final boolean ok = left.typeCheck(errorHandler) & right.typeCheck(errorHandler);
+    final var ok = left.typeCheck(errorHandler) & right.typeCheck(errorHandler);
     if (ok) {
-      final Optional<BinaryOperation> operation =
+      final var operation =
           operations
               .get()
-              .flatMap(
-                  def ->
-                      def.match(left.type(), right.type()).map(Stream::of).orElseGet(Stream::empty))
+              .flatMap(def -> def.match(left.type(), right.type()).stream())
               .findFirst();
       if (operation.isPresent()) {
         this.operation = operation.get();

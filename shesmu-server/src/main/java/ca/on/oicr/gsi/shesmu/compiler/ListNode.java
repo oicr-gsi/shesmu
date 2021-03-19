@@ -15,12 +15,11 @@ import java.util.function.Predicate;
 /** One of the stream modification operations in a <tt>For</tt> expression */
 public abstract class ListNode {
   private interface ListNodeConstructor {
-    public ListNode build(int line, int column, ExpressionNode expression);
+    ListNode build(int line, int column, ExpressionNode expression);
   }
 
   private interface ListNodeNamedConstructor {
-    public ListNode build(
-        int line, int column, DestructuredArgumentNode name, ExpressionNode expression);
+    ListNode build(int line, int column, DestructuredArgumentNode name, ExpressionNode expression);
   }
 
   public enum Ordering {
@@ -36,10 +35,10 @@ public abstract class ListNode {
     DISPATCH.addKeyword(
         "Flatten",
         (p, o) -> {
-          final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
-          final AtomicReference<SourceNode> source = new AtomicReference<>();
-          final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
-          final Parser result =
+          final var name = new AtomicReference<DestructuredArgumentNode>();
+          final var source = new AtomicReference<SourceNode>();
+          final var transforms = new AtomicReference<List<ListNode>>();
+          final var result =
               p.whitespace()
                   .symbol("(")
                   .whitespace()
@@ -75,8 +74,8 @@ public abstract class ListNode {
     DISPATCH.addKeyword(
         "Subsample",
         (p, o) -> {
-          final AtomicReference<List<SampleNode>> samplers = new AtomicReference<>();
-          final Parser result =
+          final var samplers = new AtomicReference<List<SampleNode>>();
+          final var result =
               p.whitespace()
                   .symbol("(")
                   .whitespace()
@@ -93,8 +92,8 @@ public abstract class ListNode {
 
   private static Parser.Rule<ListNode> handler(ListNodeConstructor constructor) {
     return (p, o) -> {
-      final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-      final Parser result = p.whitespace().then(ExpressionNode::parse, expression::set);
+      final var expression = new AtomicReference<ExpressionNode>();
+      final var result = p.whitespace().then(ExpressionNode::parse, expression::set);
       if (result.isGood()) {
         o.accept(constructor.build(p.line(), p.column(), expression.get()));
       }
@@ -105,9 +104,9 @@ public abstract class ListNode {
   private static Parser.Rule<ListNode> handler(
       ListNodeNamedConstructor constructor, Function<Parser, Parser> linker) {
     return (p, o) -> {
-      final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
-      final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-      final Parser result =
+      final var name = new AtomicReference<DestructuredArgumentNode>();
+      final var expression = new AtomicReference<ExpressionNode>();
+      final var result =
           linker
               .apply(p.whitespace().then(DestructuredArgumentNode::parse, name::set).whitespace())
               .whitespace()

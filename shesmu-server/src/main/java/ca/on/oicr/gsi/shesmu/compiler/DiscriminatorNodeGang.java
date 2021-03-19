@@ -72,7 +72,7 @@ public class DiscriminatorNodeGang extends DiscriminatorNode {
   private GangDefinition definition;
   private final String gangName;
   private final int line;
-  private List<GroupElement> outputTargets = Collections.emptyList();
+  private List<GroupElement> outputTargets = List.of();
 
   public DiscriminatorNodeGang(int line, int column, String gangName) {
     this.line = line;
@@ -82,7 +82,7 @@ public class DiscriminatorNodeGang extends DiscriminatorNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
-    for (final GroupElement element : outputTargets) {
+    for (final var element : outputTargets) {
       if (predicate.test(element.source.flavour())) {
         names.add(element.source.name());
       }
@@ -96,8 +96,7 @@ public class DiscriminatorNodeGang extends DiscriminatorNode {
 
   @Override
   public Stream<VariableInformation> dashboard() {
-    return outputTargets
-        .stream()
+    return outputTargets.stream()
         .map(
             target ->
                 new VariableInformation(
@@ -109,14 +108,14 @@ public class DiscriminatorNodeGang extends DiscriminatorNode {
 
   @Override
   public void render(RegroupVariablesBuilder builder) {
-    for (GroupElement element : outputTargets) {
+    for (var element : outputTargets) {
       builder.addKey(element.type().apply(TypeUtils.TO_ASM), element.name(), element);
     }
   }
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    final Optional<List<GroupElement>> result =
+    final var result =
         TypeUtils.matchGang(line, column, defs, definition, GroupElement::new, errorHandler);
     result.ifPresent(x -> outputTargets = x);
     return result.isPresent();
@@ -125,7 +124,7 @@ public class DiscriminatorNodeGang extends DiscriminatorNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    final Optional<? extends GangDefinition> gang =
+    final var gang =
         expressionCompilerServices
             .inputFormat()
             .gangs()

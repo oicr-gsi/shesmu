@@ -20,10 +20,8 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -227,7 +225,7 @@ public abstract class RootBuilder {
             Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, CTOR_CLASS, null, null, classVisitor);
     classInitMethod.visitCode();
 
-    final GeneratorAdapter timeoutMethod =
+    final var timeoutMethod =
         new GeneratorAdapter(
             Opcodes.ACC_PUBLIC, METHOD_ACTION_GENERATOR__TIMEOUT, null, null, classVisitor);
     timeoutMethod.visitCode();
@@ -245,7 +243,7 @@ public abstract class RootBuilder {
    */
   public void addGuard(Consumer<GeneratorAdapter> predicate) {
     predicate.accept(runMethod);
-    final Label skip = runMethod.newLabel();
+    final var skip = runMethod.newLabel();
     runMethod.ifZCmp(GeneratorAdapter.EQ, skip);
     runMethod.visitInsn(Opcodes.RETURN);
     runMethod.mark(skip);
@@ -268,9 +266,8 @@ public abstract class RootBuilder {
       String actionName,
       Set<String> signableNames,
       List<SignableVariableCheck> signableVariableChecks) {
-    final Map<String, List<SignableVariableCheck>> checks =
-        signableVariableChecks
-            .stream()
+    final var checks =
+        signableVariableChecks.stream()
             .filter(c -> !signableNames.contains(c.name()))
             .collect(Collectors.groupingBy(SignableVariableCheck::name, Collectors.toList()));
     return new OliveBuilder(
@@ -287,12 +284,11 @@ public abstract class RootBuilder {
                     signableNames.contains(t.name())
                         ? SignableRenderer.always(t)
                         : SignableRenderer.conditional(
-                            t, checks.getOrDefault(t.name(), Collections.emptyList()))));
+                            t, checks.getOrDefault(t.name(), List.of()))));
   }
 
   public Stream<LoadableValue> constants(boolean allowUserDefined) {
-    final Stream<LoadableValue> externalConstants =
-        constants.get().map(ConstantDefinition::asLoadable);
+    final var externalConstants = constants.get().map(ConstantDefinition::asLoadable);
     return allowUserDefined
         ? Stream.concat(userDefinedConstants.stream(), externalConstants)
         : externalConstants;
@@ -307,7 +303,7 @@ public abstract class RootBuilder {
     renderer.methodGen().push(dumper);
     renderer.methodGen().push(columns.size());
     renderer.methodGen().newArray(A_STRING_TYPE);
-    for (int i = 0; i < columns.size(); i++) {
+    for (var i = 0; i < columns.size(); i++) {
       renderer.methodGen().dup();
       renderer.methodGen().push(i);
       renderer.methodGen().push(columns.get(i).first());
@@ -315,7 +311,7 @@ public abstract class RootBuilder {
     }
     renderer.methodGen().push(columns.size());
     renderer.methodGen().newArray(A_IMYHAT_TYPE);
-    for (int i = 0; i < columns.size(); i++) {
+    for (var i = 0; i < columns.size(); i++) {
       renderer.methodGen().dup();
       renderer.methodGen().push(i);
       renderer
@@ -327,7 +323,7 @@ public abstract class RootBuilder {
   }
 
   public void defineConstant(String name, Type type, Consumer<GeneratorAdapter> loader) {
-    final String fieldName = name + "$constant";
+    final var fieldName = name + "$constant";
     classVisitor
         .visitField(Opcodes.ACC_PUBLIC, fieldName, type.getDescriptor(), null, null)
         .visitEnd();
@@ -372,7 +368,7 @@ public abstract class RootBuilder {
           runMethod.getField(selfType, dumper, A_DUMPER_TYPE);
           runMethod.invokeInterface(A_DUMPER_TYPE, METHOD_DUMPER__STOP);
         });
-    final Label endOfRun = runMethod.mark();
+    final var endOfRun = runMethod.mark();
 
     runMethod.visitInsn(Opcodes.RETURN);
 
@@ -400,14 +396,14 @@ public abstract class RootBuilder {
     runPrepare.visitMaxs(0, 0);
     runPrepare.visitEnd();
 
-    GeneratorAdapter inputFormatsMethod =
+    var inputFormatsMethod =
         new GeneratorAdapter(
             Opcodes.ACC_PUBLIC, METHOD_ACTION_GENERATOR__INPUTS, null, null, classVisitor);
     inputFormatsMethod.visitCode();
     inputFormatsMethod.push(usedFormats.size());
     inputFormatsMethod.newArray(A_OBJECT_TYPE);
-    int index = 0;
-    for (String format : usedFormats) {
+    var index = 0;
+    for (var format : usedFormats) {
       inputFormatsMethod.dup();
       inputFormatsMethod.push(index++);
       inputFormatsMethod.push(format);
@@ -432,7 +428,7 @@ public abstract class RootBuilder {
 
   public final void loadGauge(
       String metricName, String help, List<String> labelNames, GeneratorAdapter methodGen) {
-    final String fieldName = "g$" + metricName;
+    final var fieldName = "g$" + metricName;
     if (!gauges.contains(metricName)) {
       classVisitor
           .visitField(Opcodes.ACC_PRIVATE, fieldName, A_GAUGE_TYPE.getDescriptor(), null, null)
@@ -443,7 +439,7 @@ public abstract class RootBuilder {
       ctor.push(help);
       ctor.push(labelNames.size());
       ctor.newArray(A_STRING_TYPE);
-      for (int i = 0; i < labelNames.size(); i++) {
+      for (var i = 0; i < labelNames.size(); i++) {
         ctor.dup();
         ctor.push(i);
         ctor.push(labelNames.get(i));

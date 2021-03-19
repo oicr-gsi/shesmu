@@ -62,12 +62,12 @@ public class CollectNodeTable extends CollectNode {
     format.collectFreeVariables(names, predicate);
     // We do the columns in two parts because the scoping rules on the keys is different from the
     // values
-    for (final Pair<ExpressionNode, ExpressionNode> column : columns) {
+    for (final var column : columns) {
       column.first().collectFreeVariables(names, predicate);
     }
-    final List<String> remove =
+    final var remove =
         definedNames.stream().filter(name -> !names.contains(name)).collect(Collectors.toList());
-    for (final Pair<ExpressionNode, ExpressionNode> column : columns) {
+    for (final var column : columns) {
       column.second().collectFreeVariables(names, predicate);
     }
     names.removeAll(remove);
@@ -76,7 +76,7 @@ public class CollectNodeTable extends CollectNode {
   @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
     format.collectPlugins(pluginFileNames);
-    for (final Pair<ExpressionNode, ExpressionNode> column : columns) {
+    for (final var column : columns) {
       column.first().collectPlugins(pluginFileNames);
       column.second().collectPlugins(pluginFileNames);
     }
@@ -92,7 +92,7 @@ public class CollectNodeTable extends CollectNode {
           format.render(renderer);
           renderer.methodGen().push(columns.size());
           renderer.methodGen().newArray(A_PAIR_TYPE);
-          for (int i = 0; i < columns.size(); i++) {
+          for (var i = 0; i < columns.size(); i++) {
             renderer.methodGen().dup();
             renderer.methodGen().push(i);
             renderer.methodGen().newInstance(A_PAIR_TYPE);
@@ -100,7 +100,7 @@ public class CollectNodeTable extends CollectNode {
             columns.get(i).first().render(renderer);
             final Set<String> capturedNames = new HashSet<>();
             columns.get(i).second().collectFreeVariables(capturedNames, Flavour::needsCapture);
-            final LambdaBuilder lambda =
+            final var lambda =
                 new LambdaBuilder(
                     renderer.root(),
                     String.format("Column %d Table %d:%d", i, line(), column()),
@@ -115,7 +115,7 @@ public class CollectNodeTable extends CollectNode {
             renderer.methodGen().invokeConstructor(A_PAIR_TYPE, CTOR__PAIR);
             renderer.methodGen().arrayStore(A_PAIR_TYPE);
 
-            final Renderer columnRenderer = lambda.renderer(renderer.signerEmitter());
+            final var columnRenderer = lambda.renderer(renderer.signerEmitter());
             columnRenderer.methodGen().visitCode();
             name.create(r -> r.methodGen().loadArg(lambda.trueArgument(0)))
                 .forEach(v -> columnRenderer.define(v.name(), v));
@@ -130,21 +130,19 @@ public class CollectNodeTable extends CollectNode {
 
   @Override
   public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
-    final String tableFormat = format.renderEcma(builder.renderer());
+    final var tableFormat = format.renderEcma(builder.renderer());
     builder.map(
         name,
         Imyhat.STRING,
         r ->
-            columns
-                .stream()
+            columns.stream()
                 .map(p -> p.second().renderEcma(r))
                 .collect(
                     Collectors.joining(
                         " + " + tableFormat + ".data_separator + ",
                         tableFormat + ".data_start + ",
                         tableFormat + ".data_end")));
-    return columns
-            .stream()
+    return columns.stream()
             .map(p -> p.first().renderEcma(builder.renderer()))
             .collect(
                 Collectors.joining(
@@ -159,11 +157,10 @@ public class CollectNodeTable extends CollectNode {
   @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
-    final NameDefinitions innerDefs = defs.bind(name);
-    final boolean ok =
+    final var innerDefs = defs.bind(name);
+    final var ok =
         format.resolve(defs, errorHandler)
-            & columns
-                    .stream()
+            & columns.stream()
                     .filter(
                         c ->
                             c.first().resolve(defs, errorHandler)
@@ -178,8 +175,7 @@ public class CollectNodeTable extends CollectNode {
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return format.resolveDefinitions(expressionCompilerServices, errorHandler)
-        & columns
-                .stream()
+        & columns.stream()
                 .filter(
                     column ->
                         column.first().resolveDefinitions(expressionCompilerServices, errorHandler)
@@ -197,7 +193,7 @@ public class CollectNodeTable extends CollectNode {
 
   @Override
   public boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
-    boolean ok = format.typeCheck(errorHandler);
+    var ok = format.typeCheck(errorHandler);
     if (ok) {
       if (!format.type().isSame(FORMAT_TYPE)) {
         format.typeError(FORMAT_TYPE, format.type(), errorHandler);
@@ -205,8 +201,7 @@ public class CollectNodeTable extends CollectNode {
       }
     }
     return ok
-        & columns
-                .stream()
+        & columns.stream()
                 .flatMap(p -> Stream.of(p.first(), p.second()))
                 .filter(
                     e -> {

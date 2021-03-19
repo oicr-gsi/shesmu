@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -74,7 +73,7 @@ public abstract class ConstantDefinition implements Target {
   private class ConstantCompiler extends BaseHotloadingCompiler {
 
     public ConstantLoader compile() {
-      final ClassVisitor classVisitor = createClassVisitor();
+      final var classVisitor = createClassVisitor();
       classVisitor.visit(
           Opcodes.V1_8,
           Opcodes.ACC_PUBLIC,
@@ -83,7 +82,7 @@ public abstract class ConstantDefinition implements Target {
           A_OBJECT_TYPE.getInternalName(),
           new String[] {A_CONSTANT_LOADER_TYPE.getInternalName()});
 
-      final GeneratorAdapter ctor =
+      final var ctor =
           new GeneratorAdapter(Opcodes.ACC_PUBLIC, DEFAULT_CTOR, null, null, classVisitor);
       ctor.visitCode();
       ctor.loadThis();
@@ -92,7 +91,7 @@ public abstract class ConstantDefinition implements Target {
       ctor.visitMaxs(0, 0);
       ctor.visitEnd();
 
-      final GeneratorAdapter handle =
+      final var handle =
           new GeneratorAdapter(Opcodes.ACC_PUBLIC, LOAD_METHOD, null, null, classVisitor);
       handle.visitCode();
       handle.invokeDynamic(type.descriptor(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
@@ -136,7 +135,7 @@ public abstract class ConstantDefinition implements Target {
     public final void load(GeneratorAdapter methodGen) {
       Renderer.loadImyhatInMethod(methodGen, type().descriptor());
       methodGen.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_SET);
-      for (final T value : values) {
+      for (final var value : values) {
         methodGen.dup();
         write(methodGen, value);
         methodGen.invokeVirtual(A_SET_TYPE, SET__ADD);

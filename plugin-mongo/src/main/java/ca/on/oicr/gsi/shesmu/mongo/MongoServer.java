@@ -13,7 +13,6 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Optional;
 
 public class MongoServer extends JsonPluginFile<Configuration> {
@@ -40,8 +39,8 @@ public class MongoServer extends JsonPluginFile<Configuration> {
     this.configuration = Optional.of(configuration);
     connection = Optional.of(MongoClients.create(configuration.getUri()));
     definer.clearFunctions();
-    for (final Map.Entry<String, MongoFunction> entry : configuration.getFunctions().entrySet()) {
-      final MongoFunction function = entry.getValue();
+    for (final var entry : configuration.getFunctions().entrySet()) {
+      final var function = entry.getValue();
       definer.defineFunction(
           entry.getKey(),
           function.getDescription(),
@@ -49,7 +48,7 @@ public class MongoServer extends JsonPluginFile<Configuration> {
           new VariadicFunction() {
             private final Definer<MongoServer> definer = MongoServer.this.definer;
             private final KeyValueCache<Tuple, Optional<Object>, Optional<Object>> cache =
-                new KeyValueCache<Tuple, Optional<Object>, Optional<Object>>(
+                new KeyValueCache<>(
                     String.format("mongo %s %s", MongoServer.this.fileName(), entry.getKey()),
                     function.getTtl(),
                     SimpleRecord::new) {
@@ -67,9 +66,7 @@ public class MongoServer extends JsonPluginFile<Configuration> {
                       () -> new IllegalStateException("Failed to get response for Mongo request"));
             }
           },
-          function
-              .getParameters()
-              .stream()
+          function.getParameters().stream()
               .map(p -> new FunctionParameter("Mongo function parameter", p.type()))
               .toArray(FunctionParameter[]::new));
     }

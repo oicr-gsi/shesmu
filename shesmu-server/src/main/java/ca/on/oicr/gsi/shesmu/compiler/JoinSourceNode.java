@@ -27,9 +27,9 @@ public abstract class JoinSourceNode {
     DISPATCH.addKeyword(
         "Call",
         (p, o) -> {
-          final AtomicReference<String> name = new AtomicReference<>();
-          final AtomicReference<List<ExpressionNode>> arguments = new AtomicReference<>();
-          final Parser result =
+          final var name = new AtomicReference<String>();
+          final var arguments = new AtomicReference<List<ExpressionNode>>();
+          final var result =
               p.qualifiedIdentifier(name::set)
                   .whitespace()
                   .symbol("(")
@@ -45,8 +45,8 @@ public abstract class JoinSourceNode {
     DISPATCH.addRaw(
         "input format",
         (p, o) -> {
-          final AtomicReference<String> name = new AtomicReference<>();
-          final Parser result = p.identifier(name::set).whitespace();
+          final var name = new AtomicReference<String>();
+          final var result = p.identifier(name::set).whitespace();
           if (result.isGood()) {
             o.accept(new JoinSourceNodeInput(p.line(), p.column(), name.get()));
           }

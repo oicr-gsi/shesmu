@@ -29,11 +29,9 @@ import ca.on.oicr.gsi.shesmu.server.ImportVerifier.RefillerVerifier;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -66,7 +64,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
     try {
       return compile(
           fileName.toString(),
-          new String(Files.readAllBytes(fileName), StandardCharsets.UTF_8),
+          Files.readString(fileName),
           exportConsumer,
           dashboardConsumer,
           registerImport,
@@ -86,7 +84,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
       boolean allowUnused) {
     try {
       errors.clear();
-      final Compiler compiler =
+      final var compiler =
           new Compiler(false) {
             private final NameLoader<ActionDefinition> actionCache =
                 new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
@@ -110,7 +108,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
             @Override
             protected ActionDefinition getAction(String name) {
-              final ActionDefinition definition = actionCache.get(name);
+              final var definition = actionCache.get(name);
               if (definition != null) {
                 registerImport.accept(new ActionVerifier(definition));
               }
@@ -119,7 +117,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
             @Override
             protected FunctionDefinition getFunction(String function) {
-              final FunctionDefinition definition = functionCache.get(function);
+              final var definition = functionCache.get(function);
               if (definition != null) {
                 registerImport.accept(new FunctionVerifier(definition));
               }
@@ -133,7 +131,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
             @Override
             protected CallableDefinition getOliveDefinition(String name) {
-              final CallableOliveDefinition definition = definitionCache.get(name);
+              final var definition = definitionCache.get(name);
               if (definition != null) {
                 registerImport.accept(new OliveDefinitionVerifier(definition));
               }
@@ -147,7 +145,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
             @Override
             protected RefillerDefinition getRefiller(String name) {
-              final RefillerDefinition definition = refillerCache.get(name);
+              final var definition = refillerCache.get(name);
               if (definition != null) {
                 registerImport.accept(new RefillerVerifier(definition));
               }
@@ -156,7 +154,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
           };
 
       final List<Consumer<ActionGenerator>> exports = new ArrayList<>();
-      final MethodHandles.Lookup lookup = MethodHandles.lookup();
+      final var lookup = MethodHandles.lookup();
       if (compiler.compile(
           contents,
           "dyn/shesmu/Program",
@@ -234,8 +232,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                           inputFormat,
                           root,
                           parameters,
-                          outputVariables
-                              .stream()
+                          outputVariables.stream()
                               .map(
                                   v -> {
                                     try {
@@ -277,7 +274,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                                         }
                                       })
                                   .collect(Collectors.toList())
-                              : Collections.emptyList());
+                              : List.of());
 
                     } catch (NoSuchMethodException | IllegalAccessException e) {
                       e.printStackTrace();
@@ -315,8 +312,8 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
           dashboardConsumer,
           false,
           allowUnused)) {
-        final ActionGenerator generator = load(ActionGenerator.class, "dyn.shesmu.Program");
-        for (final Consumer<ActionGenerator> export : exports) {
+        final var generator = load(ActionGenerator.class, "dyn.shesmu.Program");
+        for (final var export : exports) {
           export.accept(generator);
         }
         return Optional.of(generator);

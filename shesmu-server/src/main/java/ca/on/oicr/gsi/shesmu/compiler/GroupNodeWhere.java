@@ -68,7 +68,7 @@ public class GroupNodeWhere extends GroupNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = condition.typeCheck(errorHandler);
+    var ok = condition.typeCheck(errorHandler);
     if (ok && !condition.type().isSame(Imyhat.BOOLEAN)) {
       condition.typeError(Imyhat.BOOLEAN, condition.type(), errorHandler);
       ok = false;

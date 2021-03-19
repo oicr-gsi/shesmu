@@ -6,7 +6,6 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.TupleImyhat;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -34,12 +33,11 @@ public class ExpressionNodeWdlPair extends ExpressionNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    final String value = inner.renderEcma(renderer);
+    final var value = inner.renderEcma(renderer);
     if (type instanceof TupleImyhat) {
       return String.format("[ %1$s.left, %1$s.right ]", value);
     } else {
       return String.format("{left: %1$s[0], right: %1$s[1]}", value);
-
     }
   }
 
@@ -72,7 +70,7 @@ public class ExpressionNodeWdlPair extends ExpressionNode {
   public boolean typeCheck(Consumer<String> errorHandler) {
     if (inner.typeCheck(errorHandler)) {
       if (inner.type() instanceof TupleImyhat) {
-        final TupleImyhat tuple = (TupleImyhat) inner.type();
+        final var tuple = (TupleImyhat) inner.type();
         if (tuple.count() == 2) {
           type =
               new ObjectImyhat(
@@ -81,15 +79,15 @@ public class ExpressionNodeWdlPair extends ExpressionNode {
         }
         typeError("tuple of two items", inner.type(), errorHandler);
       } else if (inner.type() instanceof ObjectImyhat) {
-        final ObjectImyhat object = (ObjectImyhat) inner.type();
-        final long count = object.fields().count();
-        final Optional<Imyhat> left =
+        final var object = (ObjectImyhat) inner.type();
+        final var count = object.fields().count();
+        final var left =
             object
                 .fields()
                 .filter(e -> e.getKey().equals("left"))
                 .map(e -> e.getValue().first())
                 .findFirst();
-        final Optional<Imyhat> right =
+        final var right =
             object
                 .fields()
                 .filter(e -> e.getKey().equals("right"))

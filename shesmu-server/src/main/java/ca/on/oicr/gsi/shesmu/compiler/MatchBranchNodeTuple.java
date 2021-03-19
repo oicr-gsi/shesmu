@@ -11,7 +11,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.objectweb.asm.Type;
 
 public class MatchBranchNodeTuple extends MatchBranchNode {
 
@@ -26,7 +25,7 @@ public class MatchBranchNodeTuple extends MatchBranchNode {
       List<DestructuredArgumentNode> elements) {
     super(line, column, name, value);
     this.elements = elements;
-    for (final DestructuredArgumentNode element : elements) {
+    for (final var element : elements) {
       element.setFlavour(Flavour.LAMBDA);
     }
   }
@@ -46,12 +45,12 @@ public class MatchBranchNodeTuple extends MatchBranchNode {
   protected Stream<EcmaLoadableValue> loadBoundNames(String base) {
     return elements.stream()
         .flatMap(
-            new Function<DestructuredArgumentNode, Stream<? extends EcmaLoadableValue>>() {
+            new Function<>() {
               private int index;
 
               @Override
               public Stream<? extends EcmaLoadableValue> apply(DestructuredArgumentNode element) {
-                final int current = index++;
+                final var current = index++;
                 return element.renderEcma(String.format("%s.contents[%d]", base, current));
               }
             });
@@ -59,10 +58,10 @@ public class MatchBranchNodeTuple extends MatchBranchNode {
 
   @Override
   protected Renderer prepare(Renderer renderer, BiConsumer<Renderer, Integer> loadElement) {
-    final Renderer result = renderer.duplicate();
-    for (int i = 0; i < elements.size(); i++) {
-      final int index = i;
-      final Type type = ((TupleImyhat) argumentType).get(index).apply(TO_ASM);
+    final var result = renderer.duplicate();
+    for (var i = 0; i < elements.size(); i++) {
+      final var index = i;
+      final var type = ((TupleImyhat) argumentType).get(index).apply(TO_ASM);
       elements
           .get(index)
           .render(

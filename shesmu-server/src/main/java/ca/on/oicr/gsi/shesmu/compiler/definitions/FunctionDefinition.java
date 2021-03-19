@@ -70,7 +70,7 @@ public interface FunctionDefinition {
    * @param parameters the types of the arguments to the method (the appropriate Java types will be
    *     matched)
    */
-  public static FunctionDefinition staticMethod(
+  static FunctionDefinition staticMethod(
       String name,
       Class<?> owner,
       String methodName,
@@ -129,7 +129,7 @@ public interface FunctionDefinition {
     };
   }
 
-  public static FunctionDefinition virtualIntegerFunction(
+  static FunctionDefinition virtualIntegerFunction(
       String name,
       String methodName,
       String description,
@@ -160,14 +160,14 @@ public interface FunctionDefinition {
 
       @Override
       public void render(GeneratorAdapter methodGen) {
-        Method method =
+        var method =
             new Method(
                 methodName,
                 Type.INT_TYPE,
                 Stream.of(parameters)
                     .map(p -> p.type().apply(TypeUtils.TO_ASM))
                     .toArray(Type[]::new));
-        Imyhat owner = firstParameter.type();
+        var owner = firstParameter.type();
         if (owner.javaType().isInterface()) {
           methodGen.invokeInterface(owner.apply(TypeUtils.TO_ASM), method);
         } else {
@@ -193,7 +193,7 @@ public interface FunctionDefinition {
     };
   }
 
-  public static FunctionDefinition virtualMethod(
+  static FunctionDefinition virtualMethod(
       String name,
       String methodName,
       String description,
@@ -225,14 +225,14 @@ public interface FunctionDefinition {
 
       @Override
       public void render(GeneratorAdapter methodGen) {
-        Method method =
+        var method =
             new Method(
                 methodName,
                 returnType.apply(TypeUtils.TO_ASM),
                 Stream.of(parameters)
                     .map(p -> p.type().apply(TypeUtils.TO_ASM))
                     .toArray(Type[]::new));
-        Imyhat owner = firstParameter.type();
+        var owner = firstParameter.type();
         if (owner.javaType().isInterface()) {
           methodGen.invokeInterface(owner.apply(TypeUtils.TO_ASM), method);
         } else {

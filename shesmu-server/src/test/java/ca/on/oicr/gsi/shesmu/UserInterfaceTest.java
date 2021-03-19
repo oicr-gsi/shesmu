@@ -38,7 +38,7 @@ public class UserInterfaceTest {
 
   public UserInterfaceTest() {
 
-    final ChromeOptions opts = new ChromeOptions();
+    final var opts = new ChromeOptions();
     opts.setHeadless(true);
     opts.addArguments("--window-size=1920,1080");
     // I would love to tell you what these do, but without them, you get a nonspecific ChromeDriver
@@ -50,7 +50,7 @@ public class UserInterfaceTest {
     opts.addArguments("--disable-gpu"); // applicable to windows os only
     opts.addArguments("--disable-dev-shm-usage"); // overcome limited resource problems
     opts.addArguments("--no-sandbox"); // Bypass OS security model
-    final LoggingPreferences loggingPrefs = new LoggingPreferences();
+    final var loggingPrefs = new LoggingPreferences();
     loggingPrefs.enable(LogType.BROWSER, Level.ALL);
     opts.setCapability(CapabilityType.LOGGING_PREFS, loggingPrefs);
     driver = new ChromeDriver(opts);

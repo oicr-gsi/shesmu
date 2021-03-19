@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Scanner;
 import org.kohsuke.MetaInfServices;
@@ -23,9 +24,10 @@ public class FakeRemoteDefinitionInstance extends PluginFileType<RemoteInstance>
 
   @Override
   public void writeJavaScriptRenderer(PrintStream writer) {
-    try (final Scanner input =
+    try (final var input =
         new Scanner(
-            FakeRemoteDefinitionInstance.class.getResourceAsStream("renderer.js"), "UTF-8")) {
+            FakeRemoteDefinitionInstance.class.getResourceAsStream("renderer.js"),
+            StandardCharsets.UTF_8)) {
       writer.print(input.useDelimiter("\\Z").next());
     }
   }

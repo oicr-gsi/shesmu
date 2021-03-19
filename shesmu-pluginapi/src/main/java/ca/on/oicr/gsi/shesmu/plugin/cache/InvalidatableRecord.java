@@ -16,7 +16,7 @@ public class InvalidatableRecord<V> implements Record<Optional<V>> {
    */
   public static <V> RecordFactory<Optional<V>, Optional<V>> checking(
       Predicate<? super V> isValid, Consumer<? super V> destructor) {
-    return (fetcher) -> new InvalidatableRecord<V>(fetcher, isValid, destructor);
+    return (fetcher) -> new InvalidatableRecord<>(fetcher, isValid, destructor);
   }
 
   private final Consumer<? super V> destructor;
@@ -61,7 +61,7 @@ public class InvalidatableRecord<V> implements Record<Optional<V>> {
     if (value.isPresent()) {
       return value;
     }
-    try (AutoCloseable timer = refreshLatency.start(fetcher.owner().name())) {
+    try (var timer = refreshLatency.start(fetcher.owner().name())) {
       value = fetcher.update(lastUpdated);
       if (value.isPresent()) {
         lastUpdated = Instant.now();

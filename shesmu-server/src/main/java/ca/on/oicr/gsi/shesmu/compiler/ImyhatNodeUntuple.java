@@ -16,9 +16,9 @@ public class ImyhatNodeUntuple extends ImyhatNode {
   @Override
   public Imyhat render(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    final Imyhat type = outer.render(expressionCompilerServices, errorHandler);
+    final var type = outer.render(expressionCompilerServices, errorHandler);
     if (type instanceof Imyhat.TupleImyhat) {
-      final Imyhat inner = ((Imyhat.TupleImyhat) type).get(index);
+      final var inner = ((Imyhat.TupleImyhat) type).get(index);
       if (inner.isBad()) {
         errorHandler.accept(
             String.format(

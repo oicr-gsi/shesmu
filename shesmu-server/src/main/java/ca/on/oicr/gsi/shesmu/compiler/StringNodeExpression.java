@@ -113,7 +113,7 @@ public class StringNodeExpression extends StringNode {
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
     if (expression.typeCheck(errorHandler)) {
-      final Imyhat innerType = expression.type();
+      final var innerType = expression.type();
       if (canBeConverted(innerType)) {
         return true;
       }

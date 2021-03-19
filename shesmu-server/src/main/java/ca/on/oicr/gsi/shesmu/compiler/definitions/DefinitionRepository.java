@@ -52,7 +52,7 @@ public interface DefinitionRepository extends LoadedConfiguration {
 
       @Override
       public void writeJavaScriptRenderer(PrintStream writer) {
-        for (DefinitionRepository repository : definitionRepositories) {
+        for (var repository : definitionRepositories) {
           repository.writeJavaScriptRenderer(writer);
         }
       }

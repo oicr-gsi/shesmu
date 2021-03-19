@@ -29,7 +29,7 @@ public class CollectNodePartitionCount extends CollectNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
-    final List<String> remove =
+    final var remove =
         definedNames.stream().filter(name -> !names.contains(name)).collect(Collectors.toList());
     expression.collectFreeVariables(names, predicate);
     names.removeAll(remove);
@@ -44,7 +44,7 @@ public class CollectNodePartitionCount extends CollectNode {
   public void render(JavaStreamBuilder builder, LoadableConstructor name) {
     final Set<String> freeVariables = new HashSet<>();
     expression.collectFreeVariables(freeVariables, Flavour::needsCapture);
-    final Renderer renderer =
+    final var renderer =
         builder.map(
             line(),
             column(),
@@ -62,9 +62,7 @@ public class CollectNodePartitionCount extends CollectNode {
     renderer.methodGen().visitEnd();
     builder.collector(
         A_TUPLE_TYPE,
-        r -> {
-          r.methodGen().getStatic(A_PARTITION_COUNT_TYPE, "COLLECTOR", A_COLLECTOR_TYPE);
-        });
+        r -> r.methodGen().getStatic(A_PARTITION_COUNT_TYPE, "COLLECTOR", A_COLLECTOR_TYPE));
   }
 
   @Override
@@ -85,7 +83,7 @@ public class CollectNodePartitionCount extends CollectNode {
   @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
-    final boolean ok = expression.resolve(defs.bind(name), errorHandler);
+    final var ok = expression.resolve(defs.bind(name), errorHandler);
     definedNames = name.targets().map(Target::name).collect(Collectors.toList());
     return ok;
   }
@@ -103,7 +101,7 @@ public class CollectNodePartitionCount extends CollectNode {
 
   @Override
   public boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
-    boolean ok = expression.typeCheck(errorHandler);
+    var ok = expression.typeCheck(errorHandler);
     if (ok) {
       if (!expression.type().isSame(Imyhat.BOOLEAN)) {
         expression.typeError(Imyhat.BOOLEAN, expression.type(), errorHandler);

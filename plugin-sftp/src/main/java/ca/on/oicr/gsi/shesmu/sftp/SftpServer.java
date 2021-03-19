@@ -21,10 +21,8 @@ import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.refill.CustomRefillerParameter;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.sftp.SshConnectionPool.PooledSshConnection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.prometheus.client.Counter;
@@ -43,10 +41,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 import net.schmizz.sshj.common.Message;
 import net.schmizz.sshj.common.SSHPacket;
-import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Signal;
 import net.schmizz.sshj.sftp.FileAttributes;
 import net.schmizz.sshj.sftp.FileMode;
@@ -65,8 +61,8 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     protected Optional<FileAttributes> fetch(Path fileName, Instant lastUpdated)
         throws IOException {
 
-      try (final PooledSshConnection connection = connections.get()) {
-        final FileAttributes attributes = connection.sftp().statExistence(fileName.toString());
+      try (final var connection = connections.get()) {
+        final var attributes = connection.sftp().statExistence(fileName.toString());
 
         return Optional.of(attributes == null ? NXFILE : attributes);
       } catch (SFTPException e) {
@@ -127,7 +123,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) {
     renderer.line("Filename", fileName().toString());
     configuration.ifPresent(
         configuration -> {
@@ -150,7 +146,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     labels.put("name", name);
     labels.put("type", "refiller");
     labels.put("stream", stream);
-    final Thread errorDrainThread =
+    final var errorDrainThread =
         new Thread(() -> errorReader.lines().forEach(l -> definer.log(l, labels)));
     errorDrainThread.start();
     return errorDrainThread;
@@ -170,9 +166,8 @@ public class SftpServer extends JsonPluginFile<Configuration> {
         .filter(c -> !c.getFileRoots().isEmpty())
         .<JsonInputSource>map(
             c -> {
-              final String roots =
-                  c.getFileRoots()
-                      .stream()
+              final var roots =
+                  c.getFileRoots().stream()
                       .map(
                           p -> {
                             try {
@@ -202,19 +197,19 @@ public class SftpServer extends JsonPluginFile<Configuration> {
       boolean fileInTheWay,
       Consumer<Instant> updateMtime,
       boolean automatic) {
-    final Configuration config = configuration.orElse(null);
+    final var config = configuration.orElse(null);
     if (config == null) return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
 
-    try (final PooledSshConnection connection = connections.get()) {
+    try (final var connection = connections.get()) {
       // Because this library thinks that a file not existing is an error state worthy of
       // exception,
       // it throws whenever stat or lstat is called. There's a wrapper for stat that catches the
       // exception and returns null, but there's no equivalent for lstat, so we reproduce that
       // catch
       // logic here.
-      final String linkStr = link.toString();
+      final var linkStr = link.toString();
       try {
-        final FileAttributes attributes = connection.sftp().lstat(linkStr);
+        final var attributes = connection.sftp().lstat(linkStr);
         updateMtime.accept(Instant.ofEpochSecond(attributes.getMtime()));
         // File exists and it is a symlink
         if (attributes.getType() == FileMode.Type.SYMLINK
@@ -246,7 +241,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
             return new Pair<>(ActionState.HALP, true);
           }
           // Create parent if necessary
-          final String dirStr = link.getParent().toString();
+          final var dirStr = link.getParent().toString();
           if (connection.sftp().statExistence(dirStr) == null) {
             connection.sftp().mkdirs(dirStr);
           }
@@ -284,22 +279,21 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   }
 
   public boolean refill(String name, String command, ArrayNode data) {
-    final Configuration config = configuration.orElse(null);
+    final var config = configuration.orElse(null);
     if (config == null) return false;
     int exitStatus;
-    try (final PooledSshConnection connection = connections.get()) {
+    try (final var connection = connections.get()) {
 
       refillLastUpdate.labels(fileName().toString(), name).setToCurrentTime();
-      try (final AutoCloseable latency = refillLatency.start(fileName().toString(), name);
-          final Session session = connection.client().startSession()) {
+      try (final var latency = refillLatency.start(fileName().toString(), name);
+          final var session = connection.client().startSession()) {
 
-        try (final Session.Command process = session.exec(command);
-            final BufferedReader reader =
-                new BufferedReader(new InputStreamReader(process.getInputStream()));
-            final BufferedReader errorReader =
+        try (final var process = session.exec(command);
+            final var reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            final var errorReader =
                 new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
           final Thread inputThread;
-          final String response = reader.readLine();
+          final var response = reader.readLine();
           if (response == null) {
             inputThread = null;
             process.signal(Signal.KILL);
@@ -353,8 +347,8 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                 break;
             }
           }
-          final Thread errorDrainThread = drainOutput(name, command, errorReader, "stderr");
-          final Thread outputDrainThread = drainOutput(name, command, reader, "stdout");
+          final var errorDrainThread = drainOutput(name, command, errorReader, "stderr");
+          final var outputDrainThread = drainOutput(name, command, reader, "stdout");
           process.join();
           outputDrainThread.join();
           errorDrainThread.join();
@@ -373,9 +367,9 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   }
 
   ActionState rm(String path, boolean automatic) {
-    final Configuration config = configuration.orElse(null);
+    final var config = configuration.orElse(null);
     if (config == null) return ActionState.UNKNOWN;
-    try (final PooledSshConnection connection = connections.get()) {
+    try (final var connection = connections.get()) {
       if (connection.sftp().statExistence(path) != null) {
         if (automatic) {
           connection.sftp().rm(path);
@@ -411,7 +405,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
         configuration.getHost(), configuration.getPort(), configuration.getUser());
     fileAttributes.invalidateAll();
     definer.clearRefillers();
-    for (final Map.Entry<String, RefillerConfig> entry : configuration.getRefillers().entrySet()) {
+    for (final var entry : configuration.getRefillers().entrySet()) {
       definer.defineRefiller(
           entry.getKey(),
           String.format(
@@ -420,7 +414,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           new Definer.RefillDefiner() {
             @Override
             public <I> Definer.RefillInfo<I, SshRefiller<I>> info(Class<I> rowType) {
-              return new Definer.RefillInfo<I, SshRefiller<I>>() {
+              return new Definer.RefillInfo<>() {
                 @Override
                 public SshRefiller<I> create() {
                   return new SshRefiller<>(definer, entry.getKey(), entry.getValue().getCommand());
@@ -428,14 +422,10 @@ public class SftpServer extends JsonPluginFile<Configuration> {
 
                 @Override
                 public Stream<CustomRefillerParameter<SshRefiller<I>, I>> parameters() {
-                  return entry
-                      .getValue()
-                      .getParameters()
-                      .entrySet()
-                      .stream()
+                  return entry.getValue().getParameters().entrySet().stream()
                       .map(
                           parameter ->
-                              new CustomRefillerParameter<SshRefiller<I>, I>(
+                              new CustomRefillerParameter<>(
                                   parameter.getKey(), parameter.getValue()) {
                                 @Override
                                 public void store(
@@ -459,10 +449,10 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           });
     }
     definer.clearFunctions();
-    for (final Map.Entry<String, FunctionConfig> entry : configuration.getFunctions().entrySet()) {
-      final Imyhat returns = entry.getValue().getReturns();
-      final Imyhat[] parameters = entry.getValue().getParameters().stream().toArray(Imyhat[]::new);
-      final KeyValueCache<Tuple, Optional<Object>, Optional<Object>> cache =
+    for (final var entry : configuration.getFunctions().entrySet()) {
+      final var returns = entry.getValue().getReturns();
+      final var parameters = entry.getValue().getParameters().toArray(Imyhat[]::new);
+      final var cache =
           new KeyValueCache<Tuple, Optional<Object>, Optional<Object>>(
               String.format("sftp-function %s %s", fileName(), entry.getKey()),
               entry.getValue().getTtl(),
@@ -472,19 +462,19 @@ public class SftpServer extends JsonPluginFile<Configuration> {
 
             @Override
             protected Optional<Object> fetch(Tuple key, Instant lastUpdated) throws Exception {
-              try (final PooledSshConnection connection = connections.get()) {
-                try (final Session session = connection.client().startSession()) {
+              try (final var connection = connections.get()) {
+                try (final var session = connection.client().startSession()) {
 
-                  try (final Session.Command process = session.exec(command);
-                      final BufferedReader reader =
+                  try (final var process = session.exec(command);
+                      final var reader =
                           new BufferedReader(new InputStreamReader(process.getInputStream()));
-                      final BufferedReader errorReader =
+                      final var errorReader =
                           new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
                     try (final OutputStream output =
                         new PrometheusLoggingOutputStream(
                             process.getOutputStream(), refillBytes, fileName().toString(), name)) {
-                      final ArrayNode array = MAPPER.createArrayNode();
-                      for (int i = 0; i < parameters.length; i++) {
+                      final var array = MAPPER.createArrayNode();
+                      for (var i = 0; i < parameters.length; i++) {
                         parameters[i].accept(new PackJsonArray(array), key.get(i));
                       }
                       MAPPER.writeValue(output, array);
@@ -496,7 +486,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                           .write(
                               new SSHPacket(Message.CHANNEL_EOF).putUInt32(process.getRecipient()));
                     }
-                    final JsonNode jsonResult = MAPPER.readTree(reader);
+                    final var jsonResult = MAPPER.readTree(reader);
                     final Map<String, String> labels = new TreeMap<>();
                     labels.put("command", command);
                     labels.put("name", name);
@@ -506,7 +496,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                     if (process.getExitStatus() == null || process.getExitStatus() != 0) {
                       return Optional.empty();
                     }
-                    final Object result = returns.apply(new UnpackJson(jsonResult));
+                    final var result = returns.apply(new UnpackJson(jsonResult));
                     return returns instanceof Imyhat.OptionalImyhat
                         ? ((Optional<?>) result).map(x -> x)
                         : Optional.of(result);
@@ -531,7 +521,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
               .toArray(FunctionParameter[]::new));
     }
     definer.clearSource();
-    for (final JsonDataSource source : configuration.getJsonSources()) {
+    for (final var source : configuration.getJsonSources()) {
       definer.defineSource(
           source.getFormat(),
           source.getTtl(),

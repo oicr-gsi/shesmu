@@ -16,11 +16,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class WizardDefineNode {
-  public static final Parser parse(Parser parser, Consumer<WizardDefineNode> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
-    final AtomicReference<List<OliveParameter>> parameters = new AtomicReference<>();
-    final AtomicReference<WizardNode> step = new AtomicReference<>();
-    final Parser result =
+  public static Parser parse(Parser parser, Consumer<WizardDefineNode> output) {
+    final var name = new AtomicReference<String>();
+    final var parameters = new AtomicReference<List<OliveParameter>>();
+    final var step = new AtomicReference<WizardNode>();
+    final var result =
         parser
             .whitespace()
             .keyword("Define")
@@ -65,8 +65,8 @@ public class WizardDefineNode {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final Map.Entry<String, Long> duplicate :
+    var ok = true;
+    for (final var duplicate :
         parameters.stream()
             .collect(Collectors.groupingBy(OliveParameter::name, Collectors.counting()))
             .entrySet()) {
@@ -102,8 +102,8 @@ public class WizardDefineNode {
               line, column, name, parameters.size(), arguments.size()));
       return false;
     }
-    boolean ok = true;
-    for (int i = 0; i < parameters.size(); i++) {
+    var ok = true;
+    for (var i = 0; i < parameters.size(); i++) {
       if (!parameters.get(i).type().isAssignableFrom(arguments.get(i))) {
         errorHandler.accept(
             String.format(
@@ -125,7 +125,7 @@ public class WizardDefineNode {
             renderer.lambda(
                 parameters.size(),
                 (r, a) -> {
-                  final String state =
+                  final var state =
                       r.newConst(
                           parameters.stream()
                               .map(
@@ -145,8 +145,8 @@ public class WizardDefineNode {
                                     }
                                   })
                               .collect(Collectors.joining(", ", "{", "}")));
-                  for (int i = 0; i < parameters.size(); i++) {
-                    final int index = i;
+                  for (var i = 0; i < parameters.size(); i++) {
+                    final var index = i;
                     r.define(
                         new EcmaLoadableValue() {
 
@@ -167,7 +167,7 @@ public class WizardDefineNode {
 
   public boolean resolveCrossReferences(
       Map<String, WizardDefineNode> references, Consumer<String> errorHandler) {
-    boolean ok = step.resolveCrossReferences(references, errorHandler);
+    var ok = step.resolveCrossReferences(references, errorHandler);
     if (references.containsKey(name)) {
       errorHandler.accept(
           String.format("%d:%d: Meditation step %s has already been defined.", line, column, name));

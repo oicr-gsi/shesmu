@@ -56,13 +56,18 @@ public class SourceNodeJsonObject extends SourceNode {
             lifted
                 ? METHOD_RUNTIME_SUPPORT__JSON_FIELDS_OPTIONAL
                 : METHOD_RUNTIME_SUPPORT__JSON_FIELDS);
-    final JavaStreamBuilder builder = renderer.buildStream(streamType());
-    return builder;
+    return renderer.buildStream(streamType());
   }
 
   @Override
   public EcmaStreamBuilder render(EcmaScriptRenderer renderer) {
-    return renderer.buildStream(streamType(), lifted ? String.format("$runtime.mapNullOrDefault(%s, $v => Object.entires(v), [])", expression.renderEcma(renderer)): String.format("Object.entries(%s)", expression.renderEcma(renderer)));
+    return renderer.buildStream(
+        streamType(),
+        lifted
+            ? String.format(
+                "$runtime.mapNullOrDefault(%s, $v => Object.entires(v), [])",
+                expression.renderEcma(renderer))
+            : String.format("Object.entries(%s)", expression.renderEcma(renderer)));
   }
 
   @Override
@@ -86,7 +91,7 @@ public class SourceNodeJsonObject extends SourceNode {
     if (!expression.typeCheck(errorHandler)) {
       return false;
     }
-    final Imyhat type = expression.type();
+    final var type = expression.type();
     if (type.isSame(Imyhat.JSON)) {
       return true;
     } else if (type.isSame(Imyhat.JSON.asOptional())) {

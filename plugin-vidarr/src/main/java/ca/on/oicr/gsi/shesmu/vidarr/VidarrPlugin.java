@@ -31,14 +31,13 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 
 public class VidarrPlugin extends JsonPluginFile<Configuration> {
   static final HttpClient CLIENT = HttpClient.newHttpClient();
   private static final Pattern INVALID = Pattern.compile("[^A-Za-z0-9_]");
   static final ObjectMapper MAPPER = new ObjectMapper();
   static final BasicType.Visitor<Imyhat> SIMPLE_TO_IMYHAT =
-      new Visitor<Imyhat>() {
+      new Visitor<>() {
         @Override
         public Imyhat bool() {
           return Imyhat.BOOLEAN;
@@ -126,11 +125,9 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) {
     final var u = url;
-    if (u.isPresent()) {
-      renderer.link("URL", u.get().toString(), u.get().toString());
-    }
+    u.ifPresent(uri -> renderer.link("URL", uri.toString(), uri.toString()));
   }
 
   @Override

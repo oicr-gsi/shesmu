@@ -92,12 +92,11 @@ public class OliveClauseNodeCall extends OliveClauseNode {
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
       Consumer<String> errorHandler) {
-    final NameDefinitions limitedDefs = defs.replaceStream(Stream.empty(), true);
-    boolean good =
+    final var limitedDefs = defs.replaceStream(Stream.empty(), true);
+    var good =
         arguments.stream().filter(argument -> argument.resolve(limitedDefs, errorHandler)).count()
             == arguments.size();
-    final Optional<Stream<Target>> replacements =
-        target.outputStreamVariables(oliveCompilerServices, errorHandler);
+    final var replacements = target.outputStreamVariables(oliveCompilerServices, errorHandler);
     good = good && replacements.isPresent();
     return defs.replaceStream(replacements.orElseGet(Stream::empty), good);
   }
@@ -105,9 +104,8 @@ public class OliveClauseNodeCall extends OliveClauseNode {
   @Override
   public boolean resolveDefinitions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    final boolean ok =
-        arguments
-                .stream()
+    final var ok =
+        arguments.stream()
                 .filter(
                     argument -> argument.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
@@ -145,7 +143,7 @@ public class OliveClauseNodeCall extends OliveClauseNode {
                   if (!arguments.get(index).typeCheck(errorHandler)) {
                     return false;
                   }
-                  final boolean isSame =
+                  final var isSame =
                       target.parameterType(index).isAssignableFrom(arguments.get(index).type());
                   if (!isSame) {
                     errorHandler.accept(

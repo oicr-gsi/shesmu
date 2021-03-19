@@ -6,7 +6,6 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import com.atlassian.jira.rest.client.api.domain.*;
-import com.atlassian.jira.rest.client.api.domain.Transition.Field;
 import com.atlassian.jira.rest.client.api.domain.input.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -23,7 +22,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class BaseTicketAction extends Action {
-  private static final List<String> STANDARD_LABELS = Arrays.asList("shesmu", "bot");
+  private static final List<String> STANDARD_LABELS = List.of("shesmu", "bot");
   private static final Counter failure =
       Counter.build(
               "shesmu_jira_client_failures", "Number of failed requests to the JIRA web service.")
@@ -49,13 +48,13 @@ public abstract class BaseTicketAction extends Action {
   private final Supplier<JiraConnection> connection;
 
   private final Optional<ActionState> emptyTransitionState;
-  private List<String> errors = Collections.emptyList();
+  private List<String> errors = List.of();
   private Optional<Instant> issueLastModified = Optional.empty();
   private URI issueUrl;
   private final Set<String> issues = new TreeSet<>();
 
   @ActionParameter(required = false)
-  public Set<String> labels = Collections.emptySet();
+  public Set<String> labels = Set.of();
 
   @ActionParameter public String summary;
 
@@ -77,19 +76,15 @@ public abstract class BaseTicketAction extends Action {
 
   protected final ActionState createIssue(
       ActionServices services, String description, String assignee) {
-    final Set<String> overloadedServices =
-        services.isOverloaded("jira", connection.get().projectKey());
+    final var overloadedServices = services.isOverloaded("jira", connection.get().projectKey());
     if (!overloadedServices.isEmpty()) {
-      errors =
-          Collections.singletonList(
-              "Overloaded services: " + String.join(", ", overloadedServices));
+      errors = List.of("Overloaded services: " + String.join(", ", overloadedServices));
       return ActionState.THROTTLED;
     }
     issueCreates.labels(connection.get().url(), connection.get().projectKey()).inc();
 
-    final IssueInputBuilder inputBuilder = new IssueInputBuilder();
-    for (IssueType issueType :
-        connection.get().client().getMetadataClient().getIssueTypes().claim()) {
+    final var inputBuilder = new IssueInputBuilder();
+    for (var issueType : connection.get().client().getMetadataClient().getIssueTypes().claim()) {
       if (issueType.getName().equals(type)) {
         inputBuilder.setIssueType(issueType);
         break;
@@ -102,7 +97,7 @@ public abstract class BaseTicketAction extends Action {
       inputBuilder.setAssigneeName(assignee);
     }
 
-    final BasicIssue result =
+    final var result =
         connection.get().client().getIssueClient().createIssue(inputBuilder.build()).claim();
     issueUrl = result.getSelf();
     connection
@@ -136,7 +131,7 @@ public abstract class BaseTicketAction extends Action {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final BaseTicketAction other = (BaseTicketAction) obj;
+    final var other = (BaseTicketAction) obj;
     if (connection == null) {
       if (other.connection != null) {
         return false;
@@ -145,13 +140,8 @@ public abstract class BaseTicketAction extends Action {
       return false;
     }
     if (summary == null) {
-      if (other.summary != null) {
-        return false;
-      }
-    } else if (!summary.equals(other.summary)) {
-      return false;
-    }
-    return true;
+      return other.summary == null;
+    } else return summary.equals(other.summary);
   }
 
   @Override
@@ -168,8 +158,8 @@ public abstract class BaseTicketAction extends Action {
 
   @Override
   public final int hashCode() {
-    final int prime = 31;
-    int result = 1;
+    final var prime = 31;
+    var result = 1;
     result = prime * result + (connection == null ? 0 : connection.hashCode());
     result = prime * result + (summary == null ? 0 : summary.hashCode());
     return result;
@@ -228,7 +218,7 @@ public abstract class BaseTicketAction extends Action {
 
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
-    final ObjectNode node = mapper.createObjectNode();
+    final var node = mapper.createObjectNode();
     node.put("projectKey", connection.get().projectKey());
     node.put("summary", summary);
     node.put("instanceUrl", connection.get().url());
@@ -248,7 +238,7 @@ public abstract class BaseTicketAction extends Action {
    * is allowed for the issue and doesn't require any input. It then attempts to change the issue in
    * JIRA.
    */
-  private final Optional<ActionState> transitionIssue(
+  private Optional<ActionState> transitionIssue(
       ActionServices services, Issue issue, Comment comment) {
     if (isInTargetState(issue)) {
       return Optional.of(ActionState.SUCCEEDED);
@@ -265,7 +255,7 @@ public abstract class BaseTicketAction extends Action {
         .findAny()
         .map(
             t -> {
-              final Set<String> overloadedServices =
+              final var overloadedServices =
                   services.isOverloaded("jira", connection.get().projectKey());
               if (!overloadedServices.isEmpty()) {
                 errors =
@@ -277,12 +267,12 @@ public abstract class BaseTicketAction extends Action {
               issueUrl = issue.getSelf();
               issueLastModified =
                   Stream.concat(
-                          issueLastModified.map(Stream::of).orElseGet(Stream::empty),
+                          issueLastModified.stream(),
                           Stream.of(
                               Instant.ofEpochMilli(issue.getUpdateDate().toInstant().getMillis())))
                       .max(Comparator.naturalOrder());
               final List<FieldInput> fields = new ArrayList<>();
-              for (final Field field : t.getFields()) {
+              for (final var field : t.getFields()) {
                 if (field.getId().equals(IssueFieldId.LABELS_FIELD.id)) {
                   fields.add(
                       new FieldInput(
@@ -292,7 +282,7 @@ public abstract class BaseTicketAction extends Action {
                               .distinct()
                               .collect(Collectors.toList())));
                 } else if (field.isRequired()) {
-                  final String value = connection.get().defaultFieldValues(field.getId());
+                  final var value = connection.get().defaultFieldValues(field.getId());
                   fields.add(
                       new FieldInput(
                           field.getId(), ComplexIssueInputFieldValue.with("name", value)));
@@ -320,7 +310,7 @@ public abstract class BaseTicketAction extends Action {
    */
   protected final ActionState transitionIssues(
       ActionServices services, Stream<Issue> issues, String commentText) {
-    final Comment comment = commentText == null ? null : Comment.valueOf(asciiOnly(commentText));
+    final var comment = commentText == null ? null : Comment.valueOf(asciiOnly(commentText));
     return issues
         .sorted(Comparator.comparingInt(issue -> isInTargetState(issue) ? 0 : 1))
         .reduce(

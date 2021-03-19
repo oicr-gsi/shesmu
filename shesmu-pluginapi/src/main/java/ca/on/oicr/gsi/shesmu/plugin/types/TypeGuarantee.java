@@ -41,11 +41,11 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
   }
 
   public static <T> TypeGuarantee<T> algebraic(Stream<AlgebraicGuarantee<? extends T>> inner) {
-    final Map<String, AlgebraicGuarantee<? extends T>> processors =
+    final var processors =
         inner.collect(Collectors.toMap(AlgebraicGuarantee::name, Function.identity()));
-    final Imyhat innerType =
+    final var innerType =
         processors.values().stream().map(AlgebraicGuarantee::type).reduce(Imyhat::unify).get();
-    return new TypeGuarantee<T>() {
+    return new TypeGuarantee<>() {
       @Override
       public Imyhat type() {
         return innerType;
@@ -53,7 +53,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
 
       @Override
       public T unpack(Object value) {
-        final AlgebraicValue algebraicValue = (AlgebraicValue) value;
+        final var algebraicValue = (AlgebraicValue) value;
         return processors.get(algebraicValue.name()).unpack(algebraicValue);
       }
     };
@@ -66,8 +66,8 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
   }
 
   public static <T> TypeGuarantee<List<T>> list(TypeGuarantee<T> inner) {
-    final Imyhat listType = inner.type().asList();
-    return new TypeGuarantee<List<T>>() {
+    final var listType = inner.type().asList();
+    return new TypeGuarantee<>() {
       @Override
       public Imyhat type() {
         return listType;
@@ -81,8 +81,8 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
   }
 
   public static <T> TypeGuarantee<Optional<T>> optional(TypeGuarantee<T> inner) {
-    final Imyhat listType = inner.type().asOptional();
-    return new TypeGuarantee<Optional<T>>() {
+    final var listType = inner.type().asOptional();
+    return new TypeGuarantee<>() {
       @Override
       public Imyhat type() {
         return listType;
@@ -107,7 +107,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
     if (firstName.compareTo(secondName) >= 0) {
       throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
     }
-    return new TypeGuarantee<R>() {
+    return new TypeGuarantee<>() {
       @Override
       public Imyhat type() {
         return tupleType;
@@ -115,7 +115,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
 
       @Override
       public R unpack(Object object) {
-        final Tuple input = (Tuple) object;
+        final var input = (Tuple) object;
         return convert.pack(first.unpack(input.get(0)), second.unpack(input.get(1)));
       }
     };
@@ -138,7 +138,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
     if (firstName.compareTo(secondName) >= 0 || secondName.compareTo(thirdName) >= 0) {
       throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
     }
-    return new TypeGuarantee<R>() {
+    return new TypeGuarantee<>() {
       @Override
       public Imyhat type() {
         return tupleType;
@@ -146,7 +146,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
 
       @Override
       public R unpack(Object object) {
-        final Tuple input = (Tuple) object;
+        final var input = (Tuple) object;
         return convert.pack(
             first.unpack(input.get(0)), second.unpack(input.get(1)), third.unpack(input.get(2)));
       }
@@ -175,7 +175,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
         || thirdName.compareTo(fourthName) >= 0) {
       throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
     }
-    return new TypeGuarantee<R>() {
+    return new TypeGuarantee<>() {
       @Override
       public Imyhat type() {
         return tupleType;
@@ -183,7 +183,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
 
       @Override
       public R unpack(Object object) {
-        final Tuple input = (Tuple) object;
+        final var input = (Tuple) object;
         return convert.pack(
             first.unpack(input.get(0)),
             second.unpack(input.get(1)),
@@ -219,7 +219,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
         || fourthName.compareTo(fifthName) >= 0) {
       throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
     }
-    return new TypeGuarantee<R>() {
+    return new TypeGuarantee<>() {
       @Override
       public Imyhat type() {
         return tupleType;
@@ -227,7 +227,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
 
       @Override
       public R unpack(Object object) {
-        final Tuple input = (Tuple) object;
+        final var input = (Tuple) object;
         return convert.pack(
             first.unpack(input.get(0)),
             second.unpack(input.get(1)),
@@ -243,7 +243,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
       TypeGuarantee<T> first,
       TypeGuarantee<U> second) {
     final Imyhat tupleType = Imyhat.tuple(first.type(), second.type());
-    return new TypeGuarantee<R>() {
+    return new TypeGuarantee<>() {
       @Override
       public Imyhat type() {
         return tupleType;
@@ -251,7 +251,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
 
       @Override
       public R unpack(Object object) {
-        final Tuple input = (Tuple) object;
+        final var input = (Tuple) object;
         return convert.pack(first.unpack(input.get(0)), second.unpack(input.get(1)));
       }
     };
@@ -263,7 +263,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
       TypeGuarantee<U> second,
       TypeGuarantee<V> third) {
     final Imyhat tupleType = Imyhat.tuple(first.type(), second.type(), third.type());
-    return new TypeGuarantee<R>() {
+    return new TypeGuarantee<>() {
       @Override
       public Imyhat type() {
         return tupleType;
@@ -271,7 +271,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
 
       @Override
       public R unpack(Object object) {
-        final Tuple input = (Tuple) object;
+        final var input = (Tuple) object;
         return convert.pack(
             first.unpack(input.get(0)), second.unpack(input.get(1)), third.unpack(input.get(2)));
       }
@@ -285,7 +285,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
       TypeGuarantee<V> third,
       TypeGuarantee<W> fourth) {
     final Imyhat tupleType = Imyhat.tuple(first.type(), second.type(), third.type(), fourth.type());
-    return new TypeGuarantee<R>() {
+    return new TypeGuarantee<>() {
       @Override
       public Imyhat type() {
         return tupleType;
@@ -293,7 +293,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
 
       @Override
       public R unpack(Object object) {
-        final Tuple input = (Tuple) object;
+        final var input = (Tuple) object;
         return convert.pack(
             first.unpack(input.get(0)),
             second.unpack(input.get(1)),
@@ -305,7 +305,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
 
   public static TypeGuarantee<Tuple> tuple(Imyhat... elements) {
     final Imyhat tupleType = Imyhat.tuple(elements);
-    return new TypeGuarantee<Tuple>() {
+    return new TypeGuarantee<>() {
       @Override
       public Imyhat type() {
         return tupleType;
@@ -319,7 +319,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
   }
 
   public static final TypeGuarantee<Boolean> BOOLEAN =
-      new TypeGuarantee<Boolean>() {
+      new TypeGuarantee<>() {
         @Override
         public Imyhat type() {
           return Imyhat.BOOLEAN;
@@ -331,7 +331,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
         }
       };
   public static final TypeGuarantee<Instant> DATE =
-      new TypeGuarantee<Instant>() {
+      new TypeGuarantee<>() {
         @Override
         public Imyhat type() {
           return Imyhat.DATE;
@@ -343,7 +343,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
         }
       };
   public static final TypeGuarantee<Double> DOUBLE =
-      new TypeGuarantee<Double>() {
+      new TypeGuarantee<>() {
         @Override
         public Imyhat type() {
           return Imyhat.FLOAT;
@@ -355,7 +355,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
         }
       };
   public static final TypeGuarantee<Long> LONG =
-      new TypeGuarantee<Long>() {
+      new TypeGuarantee<>() {
         @Override
         public Imyhat type() {
           return Imyhat.INTEGER;
@@ -367,7 +367,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
         }
       };
   public static final TypeGuarantee<Path> PATH =
-      new TypeGuarantee<Path>() {
+      new TypeGuarantee<>() {
         @Override
         public Imyhat type() {
           return Imyhat.PATH;
@@ -379,7 +379,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
         }
       };
   public static final TypeGuarantee<String> STRING =
-      new TypeGuarantee<String>() {
+      new TypeGuarantee<>() {
         @Override
         public Imyhat type() {
           return Imyhat.STRING;

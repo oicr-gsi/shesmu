@@ -11,15 +11,12 @@ import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import java.lang.invoke.LambdaMetafactory;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Handle;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -30,7 +27,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
   public static void buildSignerAccessor(
       RootBuilder owner, Type accessorType, String signerPrefix, InputFormatDefinition format) {
-    final ClassVisitor signerClass = owner.createClassVisitor();
+    final var signerClass = owner.createClassVisitor();
     signerClass.visit(
         Opcodes.V1_8,
         Opcodes.ACC_PUBLIC,
@@ -39,7 +36,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
         A_OBJECT_TYPE.getInternalName(),
         new String[] {A_SIGNATURE_ACCESSOR_TYPE.getInternalName()});
 
-    final GeneratorAdapter ctor =
+    final var ctor =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, CTOR_DEFAULT, null, null, signerClass);
     ctor.visitCode();
     ctor.loadThis();
@@ -47,7 +44,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
     ctor.visitInsn(Opcodes.RETURN);
     ctor.endMethod();
 
-    final GeneratorAdapter dynamicMethod =
+    final var dynamicMethod =
         new GeneratorAdapter(
             Opcodes.ACC_PUBLIC,
             METHOD_SIGNATURE_ACCESSOR__DYNAMIC_SIGNATURE,
@@ -55,7 +52,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
             null,
             signerClass);
     dynamicMethod.visitCode();
-    final GeneratorAdapter staticMethod =
+    final var staticMethod =
         new GeneratorAdapter(
             Opcodes.ACC_PUBLIC,
             METHOD_SIGNATURE_ACCESSOR__STATIC_SIGNATURE,
@@ -67,10 +64,10 @@ public final class OliveBuilder extends BaseOliveBuilder {
         .signatureVariables()
         .forEach(
             signer -> {
-              final Type resultType = signer.type().apply(TypeUtils.TO_ASM);
+              final var resultType = signer.type().apply(TypeUtils.TO_ASM);
               switch (signer.storage()) {
                 case STATIC:
-                  final Label staticNext = staticMethod.newLabel();
+                  final var staticNext = staticMethod.newLabel();
                   staticMethod.loadArg(0);
                   staticMethod.push(signer.name());
                   staticMethod.invokeVirtual(A_STRING_TYPE, METHOD_OBJECT__EQUALS);
@@ -82,7 +79,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
                   staticMethod.mark(staticNext);
                   break;
                 case DYNAMIC:
-                  final Label dynamicNext = dynamicMethod.newLabel();
+                  final var dynamicNext = dynamicMethod.newLabel();
                   dynamicMethod.loadArg(0);
                   dynamicMethod.push(signer.name());
                   dynamicMethod.invokeVirtual(A_STRING_TYPE, METHOD_OBJECT__EQUALS);
@@ -154,7 +151,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
   private final int line;
   private final String signerPrefix;
   private final List<LoadableValue> sourceLocationLoadableValues =
-      Arrays.asList(
+      List.of(
           new LoadableValue() {
             @Override
             public void accept(Renderer renderer) {
@@ -237,7 +234,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
     accessorType =
         Type.getObjectType(String.format("shesmu/dyn/Signer Accessor %d:%d", line, column));
     signerPrefix = String.format("Olive %d:%d ", line, column);
-    final List<SignableRenderer> signables = signableNames.collect(Collectors.toList());
+    final var signables = signableNames.collect(Collectors.toList());
     owner
         .signatureVariables()
         .forEach(
@@ -270,9 +267,9 @@ public final class OliveBuilder extends BaseOliveBuilder {
   }
 
   private void finish(Consumer<Renderer> finishStream) {
-    final Renderer runMethod =
+    final var runMethod =
         owner.rootRenderer(true, actionName, sourceLocationLoadableValues.stream());
-    final int startTime = runMethod.methodGen().newLocal(LONG_TYPE);
+    final var startTime = runMethod.methodGen().newLocal(LONG_TYPE);
     runMethod.methodGen().invokeStatic(A_SYSTEM_TYPE, METHOD_SYSTEM__NANO_TIME);
     runMethod.methodGen().storeLocal(startTime);
 
@@ -341,7 +338,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
   /** Generate bytecode for the olive and create a method to consume the result. */
   public final Renderer finish(String actionType, Stream<LoadableValue> captures) {
-    final LambdaBuilder consumer =
+    final var consumer =
         new LambdaBuilder(
             owner,
             String.format("%s %d:%d", actionType, line, column),
@@ -382,12 +379,12 @@ public final class OliveBuilder extends BaseOliveBuilder {
     finish(
         runMethod -> {
           creator.accept(runMethod);
-          final int refillerLocal = runMethod.methodGen().newLocal(A_REFILLER_TYPE);
-          final int functionLocal = runMethod.methodGen().newLocal(A_FUNCTION_TYPE);
+          final var refillerLocal = runMethod.methodGen().newLocal(A_REFILLER_TYPE);
+          final var functionLocal = runMethod.methodGen().newLocal(A_FUNCTION_TYPE);
           runMethod.methodGen().storeLocal(refillerLocal);
           arguments.forEach(
               argument -> {
-                final LambdaBuilder function =
+                final var function =
                     new LambdaBuilder(
                         owner,
                         String.format(
@@ -438,7 +435,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
                 signer.type().apply(TypeUtils.TO_ASM));
         break;
       case DYNAMIC:
-        final Handle handle =
+        final var handle =
             new Handle(
                 Opcodes.H_INVOKESTATIC,
                 owner.selfType().getInternalName(),

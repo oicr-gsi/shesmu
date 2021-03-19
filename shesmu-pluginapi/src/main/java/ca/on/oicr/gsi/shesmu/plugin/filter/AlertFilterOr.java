@@ -1,10 +1,9 @@
 package ca.on.oicr.gsi.shesmu.plugin.filter;
 
-import java.util.Collections;
 import java.util.List;
 
 public final class AlertFilterOr extends AlertFilter {
-  private List<AlertFilter> filters = Collections.emptyList();
+  private List<AlertFilter> filters = List.of();
 
   @Override
   public <F> F convert(AlertFilterBuilder<F, String> f) {

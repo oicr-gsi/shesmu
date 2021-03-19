@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.prometheus.client.Gauge;
 import io.seqware.common.model.WorkflowRunStatus;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.file.Path;
@@ -36,7 +35,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 import net.sourceforge.seqware.common.metadata.Metadata;
 import net.sourceforge.seqware.common.metadata.MetadataWS;
 import net.sourceforge.seqware.common.model.*;
@@ -63,7 +61,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
 
     @Override
-    protected Stream<AnalysisState> fetch(Long key, Instant lastUpdated) throws IOException {
+    protected Stream<AnalysisState> fetch(Long key, Instant lastUpdated) {
       final MetadataWS metadata = metadataConstructor.get();
       if (metadata.getWorkflow(key.intValue()) == null) {
         definer.log(
@@ -143,8 +141,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
 
     @Override
-    protected Stream<CerberusAnalysisProvenanceValue> fetch(Instant lastUpdated)
-        throws IOException {
+    protected Stream<CerberusAnalysisProvenanceValue> fetch(Instant lastUpdated) {
       final MetadataWS metadata = metadataConstructor.get();
       return metadata
           .streamAnalysisProvenance(Collections.emptyMap())
@@ -272,7 +269,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
       if (isLive) {
         synchronized (activeLimsKeys) {
           activeLimsKeys.removeAll(lockedLimsKeys.keySet());
@@ -330,7 +327,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
 
     @Override
-    protected Optional<MaxCheck> fetch(Long workflowSwid, Instant lastUpdated) throws IOException {
+    protected Optional<MaxCheck> fetch(Long workflowSwid, Instant lastUpdated) {
       final MetadataWS metadata = metadataConstructor.get();
       final Workflow workflow = metadata.getWorkflow(workflowSwid.intValue());
       if (workflow == null) {
@@ -399,7 +396,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
 
     @Override
-    protected Stream<Pair<Tuple, Tuple>> fetch(Instant lastUpdated) throws IOException {
+    protected Stream<Pair<Tuple, Tuple>> fetch(Instant lastUpdated) {
       final MetadataWS metadata = metadataConstructor.get();
       return metadata
           .streamAnalysisProvenance(Collections.emptyMap())
@@ -619,12 +616,9 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) {
     renderer.line("Filename", fileName().toString());
-    configuration.ifPresent(
-        c -> {
-          renderer.line("Settings", c.getSettings());
-        });
+    configuration.ifPresent(c -> renderer.line("Settings", c.getSettings()));
   }
 
   public Optional<String> cromwellUrl() {

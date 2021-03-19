@@ -13,10 +13,10 @@ import java.util.stream.Stream;
 /** The arguments defined in “Monitor” clause. */
 public final class MonitorArgumentNode {
   public static Parser parse(Parser input, Consumer<MonitorArgumentNode> output) {
-    final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
-    final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+    final var name = new AtomicReference<DestructuredArgumentNode>();
+    final var expression = new AtomicReference<ExpressionNode>();
 
-    final Parser result =
+    final var result =
         input
             .whitespace()
             .then(DestructuredArgumentNode::parse, name::set)

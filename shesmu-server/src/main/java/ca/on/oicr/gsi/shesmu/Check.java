@@ -22,13 +22,11 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -44,12 +42,12 @@ import org.objectweb.asm.commons.GeneratorAdapter;
  */
 public final class Check extends Compiler {
   public static Stream<ObjectNode> fetch(String remote, String slug) {
-    return fetch(remote, slug, ObjectNode[].class).map(Stream::of).orElse(Stream.empty());
+    return fetch(remote, slug, ObjectNode[].class).stream().flatMap(Stream::of);
   }
 
   public static <T> Optional<T> fetch(String remote, String slug, Class<T> clazz) {
-    final HttpGet request = new HttpGet(String.format("%s/%s", remote, slug));
-    try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
+    final var request = new HttpGet(String.format("%s/%s", remote, slug));
+    try (var response = HTTP_CLIENT.execute(request)) {
       return Optional.of(RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), clazz));
     } catch (final Exception e) {
       e.printStackTrace();
@@ -58,18 +56,18 @@ public final class Check extends Compiler {
   }
 
   public static void main(String[] args) {
-    final Options options = new Options();
+    final var options = new Options();
     options.addOption("h", "help", false, "This dreck.");
     options.addOption(
         "r", "remote", true, "The remote instance with all the actions/functions/etc.");
     final CommandLineParser parser = new DefaultParser();
     String[] files;
-    String remote = "http://localhost:8081/";
+    var remote = "http://localhost:8081/";
     try {
-      final CommandLine cmd = parser.parse(options, args);
+      final var cmd = parser.parse(options, args);
 
       if (cmd.hasOption("h")) {
-        final HelpFormatter formatter = new HelpFormatter();
+        final var formatter = new HelpFormatter();
         formatter.printHelp("Shesmu Compiler", options);
         System.exit(0);
         return;
@@ -130,26 +128,26 @@ public final class Check extends Compiler {
                       }
                     }) //
             .collect(Collectors.toList());
-    final NameLoader<InputFormatDefinition> inputFormats =
+    final var inputFormats =
         new NameLoader<>(
             fetch(remote, "variables", ObjectNode.class)
                 .map(Check::makeInputFormat)
                 .orElse(Stream.empty()),
             InputFormatDefinition::name);
-    final NameLoader<FunctionDefinition> functions =
+    final var functions =
         new NameLoader<>(
             fetch(remote, "functions").map(Check::makeFunction), FunctionDefinition::name);
-    final NameLoader<ActionDefinition> actions =
+    final var actions =
         new NameLoader<>(fetch(remote, "actions").map(Check::makeAction), ActionDefinition::name);
-    final NameLoader<RefillerDefinition> refillers =
+    final var refillers =
         new NameLoader<>(
             fetch(remote, "refillers").map(Check::makeRefiller), RefillerDefinition::name);
-    final NameLoader<CallableDefinition> oliveDefinitions =
+    final var oliveDefinitions =
         new NameLoader<>(
             fetch(remote, "olivedefinitions").map(Check::makeOliveDefinition),
             CallableDefinition::name);
 
-    final boolean ok =
+    final var ok =
         Stream.of(files)
                 .filter(
                     file -> {
@@ -199,10 +197,10 @@ public final class Check extends Compiler {
   }
 
   private static FunctionDefinition makeFunction(ObjectNode node) {
-    final String name = node.get("name").asText();
-    final String description = node.get("description").asText();
-    final Imyhat returnType = Imyhat.parse(node.get("return").asText());
-    final FunctionParameter[] parameters =
+    final var name = node.get("name").asText();
+    final var description = node.get("description").asText();
+    final var returnType = Imyhat.parse(node.get("return").asText());
+    final var parameters =
         Utils.stream(node.get("parameters").elements())
             .map(
                 p ->
@@ -261,8 +259,8 @@ public final class Check extends Compiler {
                   Utils.stream(pair.getValue().get("variables").fields())
                       .map(
                           field -> {
-                            final String name = field.getKey();
-                            final Imyhat type = Imyhat.parse(field.getValue().asText());
+                            final var name = field.getKey();
+                            final var type = Imyhat.parse(field.getValue().asText());
                             return new InputVariable() {
 
                               @Override
@@ -306,7 +304,7 @@ public final class Check extends Compiler {
                                                     e.get("name").asText(),
                                                     Imyhat.parse(e.get("type").asText()),
                                                     e.get("dropIfDefault").asBoolean()))
-                                        .collect(Collectors.toList());;
+                                        .collect(Collectors.toList());
 
                                 @Override
                                 public Stream<GangElement> elements() {
@@ -319,7 +317,7 @@ public final class Check extends Compiler {
                                 }
                               })
                       .collect(Collectors.toList());
-              final String name = pair.getKey();
+              final var name = pair.getKey();
               return new InputFormatDefinition() {
 
                 @Override
@@ -346,9 +344,9 @@ public final class Check extends Compiler {
   }
 
   private static ActionParameterDefinition makeParameter(JsonNode node) {
-    final String name = node.get("name").asText();
-    final Imyhat type = Imyhat.parse(node.get("type").asText());
-    final boolean required = node.get("required").asBoolean();
+    final var name = node.get("name").asText();
+    final var type = Imyhat.parse(node.get("type").asText());
+    final var required = node.get("required").asBoolean();
     return new ActionParameterDefinition() {
 
       @Override

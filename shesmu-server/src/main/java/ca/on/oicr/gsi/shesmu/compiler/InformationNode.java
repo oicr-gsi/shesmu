@@ -11,7 +11,6 @@ import ca.on.oicr.gsi.shesmu.plugin.filter.AlertFilter;
 import ca.on.oicr.gsi.shesmu.plugin.filter.AlertFilter.AlertFilterNode;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -32,7 +31,7 @@ public abstract class InformationNode {
 
   static {
     CONSTANTS.addKeyword("Let", (p, o) -> p.list(o, ObjectElementNode::parse));
-    CONSTANTS.addRaw("nothing", Parser.just(Collections.emptyList()));
+    CONSTANTS.addRaw("nothing", Parser.just(List.of()));
     MIME_TYPE.addKeyword(
         "MimeType",
         (p, o) -> p.whitespace().then(ExpressionNode::parse, v -> o.accept(Optional.of(v))));
@@ -47,15 +46,15 @@ public abstract class InformationNode {
     SIMULATION.addRaw(
         "script",
         (p, o) -> {
-          final AtomicReference<List<RefillerDefinitionNode>> refillers = new AtomicReference<>();
-          final AtomicReference<ProgramNode> script = new AtomicReference<>();
-          final Parser start =
+          final var refillers = new AtomicReference<List<RefillerDefinitionNode>>();
+          final var script = new AtomicReference<ProgramNode>();
+          final var start =
               p.whitespace()
                   .listEmpty(refillers::set, RefillerDefinitionNode::parse, ';')
                   .whitespace();
-          final Parser end = start.then(ProgramNode::parse, script::set);
+          final var end = start.then(ProgramNode::parse, script::set);
           if (end.isGood()) {
-            final String raw = start.slice(end);
+            final var raw = start.slice(end);
             o.accept(
                 c ->
                     new InformationNodeSimulation(
@@ -66,9 +65,9 @@ public abstract class InformationNode {
     DISPATCH.addKeyword(
         "Alerts",
         (p, o) -> {
-          final AtomicReference<AlertFilterNode<InformationParameterNode<String>>> filter =
-              new AtomicReference<>();
-          final Parser result =
+          final var filter =
+              new AtomicReference<AlertFilterNode<InformationParameterNode<String>>>();
+          final var result =
               AlertFilter.parse(p.whitespace(), InformationParameterNode.STRING, filter::set)
                   .whitespace();
           if (result.isGood()) {
@@ -79,14 +78,14 @@ public abstract class InformationNode {
     DISPATCH.addKeyword(
         "Actions",
         (p, o) -> {
-          final AtomicReference<
+          final var filter =
+              new AtomicReference<
                   ActionFilterNode<
                       InformationParameterNode<ActionState>,
                       InformationParameterNode<String>,
                       InformationParameterNode<Instant>,
-                      InformationParameterNode<Long>>>
-              filter = new AtomicReference<>();
-          final Parser result =
+                      InformationParameterNode<Long>>>();
+          final var result =
               ActionFilter.parse(
                       p.whitespace(),
                       InformationParameterNode.ACTION_STATE,
@@ -104,10 +103,10 @@ public abstract class InformationNode {
     DISPATCH.addKeyword(
         "Download",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> fileName = new AtomicReference<>();
-          final AtomicReference<Optional<ExpressionNode>> mimeType = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> contents = new AtomicReference<>();
-          final Parser result =
+          final var fileName = new AtomicReference<ExpressionNode>();
+          final var mimeType = new AtomicReference<Optional<ExpressionNode>>();
+          final var contents = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace()
                   .then(ExpressionNode::parse, contents::set)
                   .whitespace()
@@ -124,11 +123,11 @@ public abstract class InformationNode {
     DISPATCH.addKeyword(
         "Repeat",
         (p, o) -> {
-          final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
-          final AtomicReference<SourceNode> source = new AtomicReference<>();
-          final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
-          final AtomicReference<List<InformationNode>> collectors = new AtomicReference<>();
-          final Parser result =
+          final var name = new AtomicReference<DestructuredArgumentNode>();
+          final var source = new AtomicReference<SourceNode>();
+          final var transforms = new AtomicReference<List<ListNode>>();
+          final var collectors = new AtomicReference<List<InformationNode>>();
+          final var result =
               p.whitespace()
                   .then(DestructuredArgumentNode::parse, name::set)
                   .whitespace()
@@ -153,10 +152,10 @@ public abstract class InformationNode {
     DISPATCH.addKeyword(
         "Simulate",
         (p, o) -> {
-          final AtomicReference<List<ObjectElementNode>> constants = new AtomicReference<>();
-          final AtomicReference<SimulationConstructor> simulation = new AtomicReference<>();
+          final var constants = new AtomicReference<List<ObjectElementNode>>();
+          final var simulation = new AtomicReference<SimulationConstructor>();
 
-          final Parser result =
+          final var result =
               p.whitespace()
                   .dispatch(CONSTANTS, constants::set)
                   .dispatch(SIMULATION, simulation::set);
@@ -168,11 +167,11 @@ public abstract class InformationNode {
     DISPATCH.addKeyword(
         "Table",
         (p, o) -> {
-          final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
-          final AtomicReference<SourceNode> source = new AtomicReference<>();
-          final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
-          final AtomicReference<List<ColumnNode>> columns = new AtomicReference<>();
-          final Parser result =
+          final var name = new AtomicReference<DestructuredArgumentNode>();
+          final var source = new AtomicReference<SourceNode>();
+          final var transforms = new AtomicReference<List<ListNode>>();
+          final var columns = new AtomicReference<List<ColumnNode>>();
+          final var result =
               p.whitespace()
                   .then(DestructuredArgumentNode::parse, name::set)
                   .whitespace()
@@ -185,9 +184,9 @@ public abstract class InformationNode {
                   .list(
                       columns::set,
                       (pc, po) -> {
-                        final AtomicReference<String> header = new AtomicReference<>();
-                        final AtomicReference<List<DisplayNode>> contents = new AtomicReference<>();
-                        final Parser cResult =
+                        final var header = new AtomicReference<String>();
+                        final var contents = new AtomicReference<List<DisplayNode>>();
+                        final var cResult =
                             pc.whitespace()
                                 .keyword("Column")
                                 .whitespace()
@@ -217,7 +216,7 @@ public abstract class InformationNode {
         "display",
         (p, o) -> {
           final List<DisplayNode> elements = new ArrayList<>();
-          final Parser result =
+          final var result =
               p.whitespace()
                   .then(DisplayNode::parse, elements::add)
                   .list(elements::addAll, DisplayNode::parse);

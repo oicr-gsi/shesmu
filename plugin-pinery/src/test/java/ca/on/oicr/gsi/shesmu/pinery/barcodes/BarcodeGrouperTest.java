@@ -3,12 +3,11 @@ package ca.on.oicr.gsi.shesmu.pinery.barcodes;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ca.on.oicr.gsi.shesmu.plugin.grouper.Grouper;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class BarcodeGrouperTest {
-  class Result {
+  static class Result {
     boolean ok = true;
 
     public boolean check() {
@@ -24,13 +23,13 @@ public class BarcodeGrouperTest {
             2,
             i -> "run",
             i -> basesMask,
-            Collections::singletonList,
+            List::of,
             (len, barcodes, newMask) ->
                 (Result o, String i) ->
                     o.ok &= barcodes.apply(i).iterator().next().equals(i.substring(0, 6)));
     assertTrue(
         grouper
-            .group(Arrays.asList("ACGTTT", "TTTAAATA"))
+            .group(List.of("ACGTTT", "TTTAAATA"))
             .allMatch(s -> s.build(i -> new Result()).check()));
   }
 
@@ -42,10 +41,10 @@ public class BarcodeGrouperTest {
             2,
             i -> "run",
             i -> basesMask,
-            Collections::singletonList,
+            List::of,
             (len, barcodes, newMask) ->
                 (Result o, String i) ->
                     o.ok &= barcodes.apply(i).iterator().next().equals(i.substring(0, 6)));
-    assertEquals(0L, grouper.group(Arrays.asList("CTTTTT", "ATTTTT")).count());
+    assertEquals(0L, grouper.group(List.of("CTTTTT", "ATTTTT")).count());
   }
 }

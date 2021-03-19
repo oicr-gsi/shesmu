@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 public class DeleteAction extends Action {
 
   public static final ActionCommand<DeleteAction> HUMAN_APPROVE_COMMAND =
-      new ActionCommand<DeleteAction>(
+      new ActionCommand<>(
           DeleteAction.class,
           "SFTP-HUMAN-APPROVE",
           FrontEndIcon.HAND_THUMBS_UP,
@@ -59,7 +59,7 @@ public class DeleteAction extends Action {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    DeleteAction that = (DeleteAction) o;
+    var that = (DeleteAction) o;
     return Objects.equals(target, that.target);
   }
 
@@ -107,7 +107,7 @@ public class DeleteAction extends Action {
 
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
-    final ObjectNode node = mapper.createObjectNode();
+    final var node = mapper.createObjectNode();
     node.put("target", target.toString());
     node.put("instance", connection.get().name());
     return node;

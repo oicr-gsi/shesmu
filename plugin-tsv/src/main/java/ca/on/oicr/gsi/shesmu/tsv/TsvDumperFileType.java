@@ -14,22 +14,19 @@ import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 import org.kohsuke.MetaInfServices;
 
 @MetaInfServices
 public class TsvDumperFileType extends PluginFileType<TsvDumperFileType.DumperConfiguration> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  class DumperConfiguration extends JsonPluginFile<ObjectNode> {
-    private Map<String, Path> paths = Collections.emptyMap();
+  static class DumperConfiguration extends JsonPluginFile<ObjectNode> {
+    private Map<String, Path> paths = Map.of();
 
     public DumperConfiguration(
         Path fileName,
@@ -38,17 +35,15 @@ public class TsvDumperFileType extends PluginFileType<TsvDumperFileType.DumperCo
       super(fileName, instanceName, MAPPER, ObjectNode.class);
     }
 
-    public void configuration(SectionRenderer renderer) throws XMLStreamException {
-      paths
-          .entrySet()
-          .stream()
-          .sorted(Comparator.comparing(Entry::getKey))
+    public void configuration(SectionRenderer renderer) {
+      paths.entrySet().stream()
+          .sorted(Entry.comparingByKey())
           .forEach(pair -> renderer.line(pair.getKey(), pair.getValue().toString()));
     }
 
     @Override
     public Stream<Dumper> findDumper(String name, String[] columns, Imyhat... types) {
-      final Path path = paths.get(name);
+      final var path = paths.get(name);
       return path == null
           ? Stream.empty()
           : Stream.of(
@@ -58,8 +53,8 @@ public class TsvDumperFileType extends PluginFileType<TsvDumperFileType.DumperCo
                 {
                   Optional<PrintStream> output;
                   try {
-                    final PrintStream stream = new PrintStream(path.toFile());
-                    for (int it = 0; it < columns.length; it++) {
+                    final var stream = new PrintStream(path.toFile());
+                    for (var it = 0; it < columns.length; it++) {
                       if (it > 0) {
                         stream.print("\t");
                       }
@@ -83,7 +78,7 @@ public class TsvDumperFileType extends PluginFileType<TsvDumperFileType.DumperCo
                 public void write(Object... values) {
                   output.ifPresent(
                       o -> {
-                        for (int it = 0; it < values.length; it++) {
+                        for (var it = 0; it < values.length; it++) {
                           if (it > 0) {
                             o.print("\t");
                           }

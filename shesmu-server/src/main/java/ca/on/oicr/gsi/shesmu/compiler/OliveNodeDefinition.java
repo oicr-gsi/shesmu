@@ -47,8 +47,8 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
 
   @Override
   public boolean checkUnusedDeclarationsExtra(Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final OliveParameter parameter : parameters) {
+    var ok = true;
+    for (final var parameter : parameters) {
       if (!parameter.isRead()) {
         ok = false;
         errorHandler.accept(
@@ -151,7 +151,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
   @Override
   public void render(
       RootBuilder builder, Function<String, CallableDefinitionRenderer> definitions) {
-    final OliveDefineBuilder oliveBuilder = (OliveDefineBuilder) definitions.apply(name);
+    final var oliveBuilder = (OliveDefineBuilder) definitions.apply(name);
     clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
     oliveBuilder.finish();
     if (export) {
@@ -171,9 +171,8 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
       return true;
     }
     resolveLock = true;
-    final NameDefinitions result =
-        clauses()
-            .stream()
+    final var result =
+        clauses().stream()
             .reduce(
                 NameDefinitions.root(
                     oliveCompilerServices.inputFormat(),
@@ -185,8 +184,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
                 });
     if (result.isGood()) {
       outputStreamVariables =
-          result
-              .stream()
+          result.stream()
               .filter(target -> target.flavour().isStream())
               .collect(Collectors.toList());
     }
@@ -204,8 +202,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
   @Override
   public boolean resolveTypes(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    return parameters
-            .stream()
+    return parameters.stream()
             .filter(p -> p.resolveTypes(oliveCompilerServices, errorHandler))
             .count()
         == parameters.size();

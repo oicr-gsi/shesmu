@@ -38,7 +38,7 @@ public class TypeUtils {
   private static final Type A_STRING_TYPE = Type.getType(String.class);
   private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
   public static final GenericTransformer<Type> TO_ASM =
-      new GenericTransformer<Type>() {
+      new GenericTransformer<>() {
 
         @Override
         public Type algebraic(Stream<AlgebraicTransformer> contents) {
@@ -139,7 +139,7 @@ public class TypeUtils {
         }
       };
   public static final ImyhatTransformer<Type> TO_BOXED_ASM =
-      new ImyhatTransformer<Type>() {
+      new ImyhatTransformer<>() {
 
         @Override
         public Type algebraic(Stream<AlgebraicTransformer> contents) {
@@ -213,7 +213,7 @@ public class TypeUtils {
    * end
    */
   public static final ImyhatTransformer<String> TO_JS_PARSER =
-      new ImyhatTransformer<String>() {
+      new ImyhatTransformer<>() {
 
         @Override
         public String algebraic(Stream<AlgebraicTransformer> contents) {
@@ -315,14 +315,14 @@ public class TypeUtils {
       GangDefinition definition,
       GangProcessor<? extends T> constructor,
       Consumer<String> errorHandler) {
-    final AtomicBoolean ok = new AtomicBoolean(true);
+    final var ok = new AtomicBoolean(true);
     final List<T> result =
         definition
             .elements()
             .flatMap(
                 p -> {
-                  final Optional<Target> source = defs.get(p.name());
-                  if (!source.isPresent()) {
+                  final var source = defs.get(p.name());
+                  if (source.isEmpty()) {
                     ok.set(false);
                     errorHandler.accept(
                         String.format(

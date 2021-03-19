@@ -32,7 +32,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 
 public class JiraConnection extends JsonPluginFile<Configuration> {
   private class FilterCache
@@ -42,16 +41,16 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
     }
 
     @Override
-    protected Stream<JiraActionFilter> fetch(String jql, Instant lastUpdated) throws Exception {
+    protected Stream<JiraActionFilter> fetch(String jql, Instant lastUpdated) {
       if (client == null) {
         return Stream.empty();
       }
       final List<JiraActionFilter> buffer = new ArrayList<>();
-      for (int page = 0; true; page++) {
-        final SearchResult results =
+      for (var page = 0; true; page++) {
+        final var results =
             client.getSearchClient().searchJql(jql, 500, 500 * page, FIELDS_FILTERS).claim();
-        boolean empty = true;
-        for (final Issue issue : results.getIssues()) {
+        var empty = true;
+        for (final var issue : results.getIssues()) {
           empty = false;
           if (issue.getDescription() == null) {
             continue;
@@ -85,19 +84,19 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
     }
 
     @Override
-    protected Stream<Issue> fetch(Instant lastUpdated) throws Exception {
+    protected Stream<Issue> fetch(Instant lastUpdated) {
       if (client == null) {
         return Stream.empty();
       }
-      final String jql =
+      final var jql =
           String.format(
               "updated >= '%s' AND project = %s",
               FORMAT.format(lastUpdated.atZone(ZoneId.systemDefault())), projectKey);
       final List<Issue> buffer = new ArrayList<>();
-      for (int page = 0; true; page++) {
-        final SearchResult results =
+      for (var page = 0; true; page++) {
+        final var results =
             client.getSearchClient().searchJql(jql, 500, 500 * page, FIELDS_STANDARD).claim();
-        for (final Issue issue : results.getIssues()) {
+        for (final var issue : results.getIssues()) {
           buffer.add(issue);
         }
         if (buffer.size() >= results.getTotal()) {
@@ -180,10 +179,10 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private JiraRestClient client;
 
-  private List<String> closeActions = Collections.emptyList();
+  private List<String> closeActions = List.of();
 
-  private List<String> closedStatuses = Collections.emptyList();
-  private Map<String, String> defaultFieldValues = Collections.emptyMap();
+  private List<String> closedStatuses = List.of();
+  private Map<String, String> defaultFieldValues = Map.of();
   private final Supplier<JiraConnection> definer;
   private final FilterCache filters;
   private long issueTypeId;
@@ -192,8 +191,8 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   private String passwordFile;
   private long projectId = 0;
   private String projectKey = "FAKE";
-  private List<String> reopenActions = Collections.emptyList();
-  private List<Search> searches = Collections.emptyList();
+  private List<String> reopenActions = List.of();
+  private List<Search> searches = List.of();
   private String url;
   private String user;
 
@@ -217,7 +216,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) {
     if (url != null) {
       renderer.link("URL", url, url);
     }
@@ -308,8 +307,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   public <F> Stream<Pair<String, F>> searches(
       ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
     try {
-      return searches
-          .stream()
+      return searches.stream()
           .flatMap(
               search ->
                   search
@@ -333,7 +331,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   @Override
   public Optional<Integer> update(Configuration config) {
     url = config.getUrl();
-    try (Scanner passwordScanner =
+    try (var passwordScanner =
         new Scanner(fileName().getParent().resolve(Paths.get(config.getPasswordFile())))) {
       client =
           new AsynchronousJiraRestClientFactory()
@@ -349,12 +347,12 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       defaultFieldValues = config.getDefaultFieldValues();
       issues.invalidate();
       filters.invalidateAll();
-      final Project project = client.getProjectClient().getProject(projectKey).claim();
+      final var project = client.getProjectClient().getProject(projectKey).claim();
       projectId = Objects.requireNonNull(project.getId());
       issueTypeId = 0;
       issueTypeName = null;
       if (config.getIssueType() != null) {
-        for (final IssueType issueType : project.getIssueTypes()) {
+        for (final var issueType : project.getIssueTypes()) {
           if (issueType.getName().equals(config.getIssueType())) {
             issueTypeId = issueType.getId();
             issueTypeName = issueType.getName();

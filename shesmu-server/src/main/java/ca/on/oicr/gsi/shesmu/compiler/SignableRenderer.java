@@ -2,7 +2,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.List;
 import java.util.function.BiConsumer;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 public abstract class SignableRenderer {
@@ -28,9 +27,9 @@ public abstract class SignableRenderer {
       @Override
       public void render(
           GeneratorAdapter methodGen, BiConsumer<GeneratorAdapter, Target> callback) {
-        final Label end = methodGen.newLabel();
-        final Label present = methodGen.newLabel();
-        for (final SignableVariableCheck check : checks) {
+        final var end = methodGen.newLabel();
+        final var present = methodGen.newLabel();
+        for (final var check : checks) {
           check.render(methodGen);
           methodGen.ifZCmp(GeneratorAdapter.NE, present);
         }

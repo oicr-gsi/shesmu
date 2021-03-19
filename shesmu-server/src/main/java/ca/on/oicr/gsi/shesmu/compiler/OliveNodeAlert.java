@@ -181,8 +181,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
                                           inputs.parallelStream(),
                                           Behaviour.DEFINITION));
                         }),
-                ttlInputs
-                    .stream()
+                ttlInputs.stream()
                     .map(
                         n ->
                             new VariableInformation(
@@ -197,7 +196,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
   private void render(Renderer renderer, Consumer<Renderer> loadOliveServices) {
     renderer.methodGen().visitLineNumber(line, renderer.methodGen().mark());
 
-    final int labelLocal = renderer.methodGen().newLocal(A_STRING_ARRAY_TYPE);
+    final var labelLocal = renderer.methodGen().newLocal(A_STRING_ARRAY_TYPE);
     renderer
         .methodGen()
         .push((int) labels.stream().flatMap(OliveArgumentNode::targets).count() * 2);
@@ -206,7 +205,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
 
     labels.forEach(l -> l.render(renderer, labelLocal));
 
-    final int annotationLocal = renderer.methodGen().newLocal(A_STRING_ARRAY_TYPE);
+    final var annotationLocal = renderer.methodGen().newLocal(A_STRING_ARRAY_TYPE);
     renderer
         .methodGen()
         .push((int) annotations.stream().flatMap(OliveArgumentNode::targets).count() * 2);
@@ -215,7 +214,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
 
     annotations.forEach(a -> a.render(renderer, annotationLocal));
 
-    final int ttlLocal = renderer.methodGen().newLocal(Type.LONG_TYPE);
+    final var ttlLocal = renderer.methodGen().newLocal(Type.LONG_TYPE);
     ttl.render(renderer);
     renderer.methodGen().storeLocal(ttlLocal);
 
@@ -266,11 +265,11 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
     labels.forEach(label -> label.collectFreeVariables(captures, Flavour::needsCapture));
     annotations.forEach(
         annotation -> annotation.collectFreeVariables(captures, Flavour::needsCapture));
-    final OliveBuilder oliveBuilder =
+    final var oliveBuilder =
         builder.buildRunOlive(line, column, null, signableNames, signableVariableChecks);
     clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
     oliveBuilder.line(line);
-    final Renderer action =
+    final var action =
         oliveBuilder.finish(
             "Alert", oliveBuilder.loadableValues().filter(v -> captures.contains(v.name())));
     action.methodGen().visitCode();
@@ -300,9 +299,8 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
   @Override
   public boolean resolve(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    final NameDefinitions defs =
-        clauses()
-            .stream()
+    final var defs =
+        clauses().stream()
             .reduce(
                 NameDefinitions.root(
                     oliveCompilerServices.inputFormat(),
@@ -319,25 +317,23 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
   @Override
   protected boolean resolveDefinitionsExtra(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    boolean ok =
-        labels
-                    .stream()
+    var ok =
+        labels.stream()
                     .filter(arg -> arg.resolveFunctions(oliveCompilerServices, errorHandler))
                     .count()
                 == labels.size()
-            & annotations
-                    .stream()
+            & annotations.stream()
                     .filter(arg -> arg.resolveFunctions(oliveCompilerServices, errorHandler))
                     .count()
                 == annotations.size()
             & ttl.resolveDefinitions(oliveCompilerServices, errorHandler);
 
-    final Map<String, Long> argumentNames =
+    final var argumentNames =
         Stream.concat(labels.stream(), annotations.stream())
             .flatMap(OliveArgumentNode::targets)
             .map(Target::name)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-    for (final Map.Entry<String, Long> argumentName : argumentNames.entrySet()) {
+    for (final var argumentName : argumentNames.entrySet()) {
       if (argumentName.getValue() == 1) {
         continue;
       }
@@ -346,8 +342,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
               "%d:%d: Duplicate arguments %s to alert.", line, column, argumentName.getKey()));
       ok = false;
     }
-    if (labels
-        .stream()
+    if (labels.stream()
         .flatMap(OliveArgumentNode::targets)
         .noneMatch(l -> l.name().equals("alertname"))) {
       errorHandler.accept(
@@ -391,7 +386,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
 
   @Override
   protected boolean typeCheckExtra(Consumer<String> errorHandler) {
-    boolean ok =
+    var ok =
         labels.stream().filter(new ArgumentCheckAndDefiner(errorHandler)).count() == labels.size()
             & annotations.stream().filter(new ArgumentCheckAndDefiner(errorHandler)).count()
                 == annotations.size()

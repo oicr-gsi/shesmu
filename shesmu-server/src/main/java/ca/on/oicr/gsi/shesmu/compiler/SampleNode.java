@@ -10,7 +10,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /** Perform a subsampling operation in a <tt>Subsample</tt> clause in a <tt>For</tt> expression */
-public abstract class SampleNode implements JavaStreamBuilder.RenderSubsampler, EcmaStreamBuilder.RenderSubsampler {
+public abstract class SampleNode
+    implements JavaStreamBuilder.RenderSubsampler, EcmaStreamBuilder.RenderSubsampler {
 
   public enum Consumption {
     BAD,
@@ -24,8 +25,8 @@ public abstract class SampleNode implements JavaStreamBuilder.RenderSubsampler, 
     DISPATCH.addKeyword(
         "Squish",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser result =
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace().then(ExpressionNode::parse, expression::set).whitespace();
           if (result.isGood()) {
             o.accept(new SampleNodeSquish(expression.get()));
@@ -35,11 +36,11 @@ public abstract class SampleNode implements JavaStreamBuilder.RenderSubsampler, 
     DISPATCH.addKeyword(
         "Fixed",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> limit = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> condition = new AtomicReference<>();
-          final Parser result = p.whitespace().then(ExpressionNode::parse, limit::set).whitespace();
+          final var limit = new AtomicReference<ExpressionNode>();
+          final var condition = new AtomicReference<ExpressionNode>();
+          final var result = p.whitespace().then(ExpressionNode::parse, limit::set).whitespace();
           if (result.isGood()) {
-            final Parser conditionResult =
+            final var conditionResult =
                 result
                     .keyword("While")
                     .whitespace()

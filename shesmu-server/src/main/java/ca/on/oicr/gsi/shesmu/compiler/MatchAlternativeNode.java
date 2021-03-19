@@ -20,8 +20,8 @@ public abstract class MatchAlternativeNode {
     DISPATCH.addKeyword(
         "Else",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser result =
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace().then(ExpressionNode::parse0, expression::set).whitespace();
           if (result.isGood()) {
             o.accept(new MatchAlternativeNodeElse(expression.get()));
@@ -31,9 +31,9 @@ public abstract class MatchAlternativeNode {
     DISPATCH.addKeyword(
         "Remainder",
         (p, o) -> {
-          final AtomicReference<String> name = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser result =
+          final var name = new AtomicReference<String>();
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace()
                   .symbol("(")
                   .whitespace()

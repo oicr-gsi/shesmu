@@ -6,8 +6,6 @@ import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Gauge;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -17,12 +15,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.regex.Pattern;
-import javax.xml.stream.XMLStreamException;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -59,11 +54,11 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) {
     configuration.ifPresent(
         configuration -> {
           renderer.link("Instance", configuration.getUrl(), configuration.getUrl());
-          for (final Map.Entry<String, String> entry : configuration.getLabels().entrySet()) {
+          for (final var entry : configuration.getLabels().entrySet()) {
             renderer.line("Label: " + entry.getKey(), entry.getValue());
           }
         });
@@ -72,9 +67,9 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
   private void flush(Instant now) {
     configuration.ifPresent(
         c -> {
-          int size = 0;
-          boolean flush = false;
-          for (final List<Pair<Instant, String>> list : buffer.values()) {
+          var size = 0;
+          var flush = false;
+          for (final var list : buffer.values()) {
             size += list.size();
             flush =
                 list.stream()
@@ -88,29 +83,28 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
             }
           }
           if (flush) {
-            final ObjectNode body = MAPPER.createObjectNode();
-            final ArrayNode streams = body.putArray("streams");
-            for (final Entry<Map<String, String>, List<Pair<Instant, String>>> entry :
-                buffer.entrySet()) {
-              final ObjectNode stream = streams.addObject();
-              final ObjectNode labels = stream.putObject("stream");
-              for (final Entry<String, String> label : entry.getKey().entrySet()) {
+            final var body = MAPPER.createObjectNode();
+            final var streams = body.putArray("streams");
+            for (final var entry : buffer.entrySet()) {
+              final var stream = streams.addObject();
+              final var labels = stream.putObject("stream");
+              for (final var label : entry.getKey().entrySet()) {
                 labels.put(INVALID_LABEL.matcher(label.getKey()).replaceAll("_"), label.getValue());
               }
-              for (final Entry<String, String> label : c.getLabels().entrySet()) {
+              for (final var label : c.getLabels().entrySet()) {
                 labels.put(INVALID_LABEL.matcher(label.getKey()).replaceAll("_"), label.getValue());
               }
-              final ArrayNode values = stream.putArray("values");
+              final var values = stream.putArray("values");
               entry.getValue().sort(Comparator.comparing(Pair::first));
-              for (final Pair<Instant, String> value : entry.getValue()) {
-                final ArrayNode record = values.addArray();
+              for (final var value : entry.getValue()) {
+                final var record = values.addArray();
                 record.add(
                     String.format(
                         "%d%09d", value.first().getEpochSecond(), value.first().getNano()));
                 record.add(value.second().replace('\n', ' '));
               }
             }
-            final HttpPost request = new HttpPost(c.getUrl());
+            final var request = new HttpPost(c.getUrl());
             try {
               // This doesn't use the built-in constant for JSON because that one includes a charset
               // and Loki then thinks the request is a protobuf
@@ -122,17 +116,17 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
               error.labels(fileName().toString()).set(1);
             }
             writeTime.labels(fileName().toString()).setToCurrentTime();
-            try (final AutoCloseable timer = writeLatency.start(fileName().toString());
-                final CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
-              final boolean success = response.getStatusLine().getStatusCode() / 100 == 2;
+            try (final var timer = writeLatency.start(fileName().toString());
+                final var response = HTTP_CLIENT.execute(request)) {
+              final var success = response.getStatusLine().getStatusCode() / 100 == 2;
               if (success) {
                 buffer.clear();
                 error.labels(fileName().toString()).set(0);
               } else {
-                try (final Scanner s = new Scanner(response.getEntity().getContent())) {
+                try (final var s = new Scanner(response.getEntity().getContent())) {
                   s.useDelimiter("\\A");
                   if (s.hasNext()) {
-                    final String message = s.next();
+                    final var message = s.next();
                     if (message.contains("ignored")) {
                       buffer.clear();
                       // Loki complains if we send duplicate messages, so treat that like success
@@ -164,7 +158,7 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
 
   @Override
   public synchronized void writeLog(String message, Map<String, String> attributes) {
-    final Instant now = Instant.now();
+    final var now = Instant.now();
     buffer.computeIfAbsent(attributes, k -> new ArrayList<>()).add(new Pair<>(now, message));
     flush(now);
   }

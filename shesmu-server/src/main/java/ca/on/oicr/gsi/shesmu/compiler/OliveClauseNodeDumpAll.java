@@ -44,7 +44,7 @@ public final class OliveClauseNodeDumpAll extends OliveClauseNodeBaseDump implem
 
   @Override
   public Pair<String, Imyhat> columnDefinition(int index) {
-    final Target target = columns.get(index);
+    final var target = columns.get(index);
     return new Pair<>(target.name(), target.type());
   }
 

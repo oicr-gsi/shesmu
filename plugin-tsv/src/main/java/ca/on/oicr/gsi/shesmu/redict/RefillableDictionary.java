@@ -10,14 +10,12 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 
 public class RefillableDictionary extends JsonPluginFile<Configuration> {
 
@@ -48,7 +46,7 @@ public class RefillableDictionary extends JsonPluginFile<Configuration> {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) {
     // Do nothing
   }
 
@@ -58,8 +56,7 @@ public class RefillableDictionary extends JsonPluginFile<Configuration> {
       return Optional.empty();
     }
 
-    final AtomicReference<Map<Object, Object>> dictionary =
-        new AtomicReference<>(Collections.emptyMap());
+    final var dictionary = new AtomicReference<>(Map.of());
     definer.defineConstantBySupplier(
         "get",
         "Dictionary of values collected from refiller.",
@@ -71,7 +68,7 @@ public class RefillableDictionary extends JsonPluginFile<Configuration> {
         new RefillDefiner() {
           @Override
           public <I> RefillInfo<I, DictionaryRefiller<I>> info(Class<I> rowType) {
-            return new RefillInfo<I, DictionaryRefiller<I>>() {
+            return new RefillInfo<>() {
               @Override
               public DictionaryRefiller<I> create() {
                 return new DictionaryRefiller<>(dictionary);
@@ -80,16 +77,14 @@ public class RefillableDictionary extends JsonPluginFile<Configuration> {
               @Override
               public Stream<CustomRefillerParameter<DictionaryRefiller<I>, I>> parameters() {
                 return Stream.of(
-                    new CustomRefillerParameter<DictionaryRefiller<I>, I>(
-                        "key", configuration.getKey()) {
+                    new CustomRefillerParameter<>("key", configuration.getKey()) {
                       @Override
                       public void store(
                           DictionaryRefiller<I> refiller, Function<I, Object> function) {
                         refiller.key = function;
                       }
                     },
-                    new CustomRefillerParameter<DictionaryRefiller<I>, I>(
-                        "value", configuration.getValue()) {
+                    new CustomRefillerParameter<>("value", configuration.getValue()) {
                       @Override
                       public void store(
                           DictionaryRefiller<I> refiller, Function<I, Object> function) {

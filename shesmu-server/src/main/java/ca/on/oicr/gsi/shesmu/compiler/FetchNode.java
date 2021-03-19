@@ -26,12 +26,12 @@ public abstract class FetchNode implements Target {
     DISPATCH.addKeyword(
         "Olive",
         (p, o) -> {
-          final AtomicReference<String> format = new AtomicReference<>();
-          final AtomicReference<List<OliveClauseNode>> clauses = new AtomicReference<>();
-          final Parser start =
+          final var format = new AtomicReference<String>();
+          final var clauses = new AtomicReference<List<OliveClauseNode>>();
+          final var start =
               p.whitespace().keyword("Input").whitespace().identifier(format::set).whitespace();
-          final Parser clausesResult = start.list(clauses::set, OliveClauseNode::parse);
-          final Parser result = clausesResult.whitespace();
+          final var clausesResult = start.list(clauses::set, OliveClauseNode::parse);
+          final var result = clausesResult.whitespace();
           if (result.isGood()) {
             o.accept(
                 name ->
@@ -48,12 +48,12 @@ public abstract class FetchNode implements Target {
     DISPATCH.addRaw(
         "Constant or Function",
         (p, o) -> {
-          final AtomicReference<String> constantName = new AtomicReference<>();
-          final Parser results = p.qualifiedIdentifier(constantName::set).whitespace();
+          final var constantName = new AtomicReference<String>();
+          final var results = p.qualifiedIdentifier(constantName::set).whitespace();
           if (results.lookAhead('(')) {
             // assume this is a function call
-            final AtomicReference<List<ExpressionNode>> arguments = new AtomicReference<>();
-            final Parser funcResults =
+            final var arguments = new AtomicReference<List<ExpressionNode>>();
+            final var funcResults =
                 results
                     .symbol("(")
                     .list(arguments::set, ExpressionNode::parse, ',')
@@ -70,7 +70,6 @@ public abstract class FetchNode implements Target {
           if (results.isGood()) {
             o.accept(name -> new FetchNodeConstant(p.line(), p.column(), name, constantName.get()));
           }
-          ;
 
           return results;
         });
@@ -78,14 +77,14 @@ public abstract class FetchNode implements Target {
 
   private static Rule<FetchNodeConstructor> actions(String fetchType, Imyhat type) {
     return (parser, output) -> {
-      final AtomicReference<
+      final var filter =
+          new AtomicReference<
               ActionFilter.ActionFilterNode<
                   InformationParameterNode<ActionState>,
                   InformationParameterNode<String>,
                   InformationParameterNode<Instant>,
-                  InformationParameterNode<Long>>>
-          filter = new AtomicReference<>();
-      final Parser result =
+                  InformationParameterNode<Long>>>();
+      final var result =
           ActionFilter.parse(
                   parser.whitespace(),
                   InformationParameterNode.ACTION_STATE,
@@ -103,7 +102,7 @@ public abstract class FetchNode implements Target {
   }
 
   public static Parser parse(Parser parser, Consumer<FetchNode> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
+    final var name = new AtomicReference<String>();
     return parser
         .whitespace()
         .identifier(name::set)

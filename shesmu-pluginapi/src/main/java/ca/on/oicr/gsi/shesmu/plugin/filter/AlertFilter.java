@@ -33,7 +33,7 @@ public abstract class AlertFilter {
           RuleWithLiteral<S, String> string,
           Consumer<AlertFilterNode<S>> output) {
         output.accept(
-            new AlertFilterNode<S>() {
+            new AlertFilterNode<>() {
               @Override
               public <F> Optional<F> generate(
                   AlertFilterBuilder<F, S> builder, ErrorConsumer errorHandler) {
@@ -55,7 +55,7 @@ public abstract class AlertFilter {
                 string,
                 labelValue ->
                     output.accept(
-                        new AlertFilterNode<S>() {
+                        new AlertFilterNode<>() {
                           @Override
                           public <F> Optional<F> generate(
                               AlertFilterBuilder<F, S> builder, ErrorConsumer errorHandler) {
@@ -72,17 +72,17 @@ public abstract class AlertFilter {
           S labelName,
           RuleWithLiteral<S, String> string,
           Consumer<AlertFilterNode<S>> output) {
-        final AtomicReference<String> pattern = new AtomicReference<>();
-        final Parser result =
+        final var pattern = new AtomicReference<String>();
+        final var result =
             parser
                 .whitespace()
                 .regex(ActionFilter.REGEX, m -> pattern.set(m.group(1)), "regular expression")
                 .whitespace();
         if (result.isGood()) {
           try {
-            final Pattern labelValue = Pattern.compile(pattern.get());
+            final var labelValue = Pattern.compile(pattern.get());
             output.accept(
-                new AlertFilterNode<S>() {
+                new AlertFilterNode<>() {
                   @Override
                   public <F> Optional<F> generate(
                       AlertFilterBuilder<F, S> builder, ErrorConsumer errorHandler) {
@@ -110,7 +110,7 @@ public abstract class AlertFilter {
       public <S> Parser parse(
           Parser parser, RuleWithLiteral<S, String> string, Consumer<AlertFilterNode<S>> output) {
         output.accept(
-            new AlertFilterNode<S>() {
+            new AlertFilterNode<>() {
               @Override
               public <F> Optional<F> generate(
                   AlertFilterBuilder<F, S> builder, ErrorConsumer errorHandler) {
@@ -124,9 +124,9 @@ public abstract class AlertFilter {
       @Override
       public <S> Parser parse(
           Parser parser, RuleWithLiteral<S, String> string, Consumer<AlertFilterNode<S>> output) {
-        final AtomicReference<S> labelName = new AtomicReference<>();
-        final AtomicReference<LabelValue> value = new AtomicReference<>();
-        final Parser result =
+        final var labelName = new AtomicReference<S>();
+        final var value = new AtomicReference<LabelValue>();
+        final var result =
             parser
                 .whitespace()
                 .then(string, labelName::set)
@@ -145,17 +145,17 @@ public abstract class AlertFilter {
       @Override
       public <S> Parser parse(
           Parser parser, RuleWithLiteral<S, String> string, Consumer<AlertFilterNode<S>> output) {
-        final AtomicReference<String> pattern = new AtomicReference<>();
-        final Parser result =
+        final var pattern = new AtomicReference<String>();
+        final var result =
             parser
                 .whitespace()
                 .regex(ActionFilter.REGEX, m -> pattern.set(m.group(1)), "regular expression")
                 .whitespace();
         if (result.isGood()) {
           try {
-            final Pattern labelName = Pattern.compile(pattern.get());
+            final var labelName = Pattern.compile(pattern.get());
             output.accept(
-                new AlertFilterNode<S>() {
+                new AlertFilterNode<>() {
                   @Override
                   public <F> Optional<F> generate(
                       AlertFilterBuilder<F, S> builder, ErrorConsumer errorHandler) {
@@ -192,7 +192,7 @@ public abstract class AlertFilter {
     LABEL_VALUE.addSymbol(
         "=",
         (p, o) -> {
-          final Parser anyResult = p.whitespace().symbol("*").whitespace();
+          final var anyResult = p.whitespace().symbol("*").whitespace();
           if (anyResult.isGood()) {
             o.accept(LabelValue.HAS);
             return anyResult;
@@ -206,16 +206,16 @@ public abstract class AlertFilter {
   private static <S> Parser.Rule<BinaryOperator<AlertFilterNode<S>>> binary(
       String keyword, BinaryConstructor constructor) {
     return (p, o) -> {
-      final Parser result = p.keyword(keyword).whitespace();
+      final var result = p.keyword(keyword).whitespace();
       if (result.isGood()) {
         o.accept(
             (a, b) ->
-                new AlertFilterNode<S>() {
+                new AlertFilterNode<>() {
                   @Override
                   public <F> Optional<F> generate(
                       AlertFilterBuilder<F, S> builder, ErrorConsumer errorHandler) {
-                    final Optional<F> aValue = a.generate(builder, errorHandler);
-                    final Optional<F> bValue = b.generate(builder, errorHandler);
+                    final var aValue = a.generate(builder, errorHandler);
+                    final var bValue = b.generate(builder, errorHandler);
                     if (aValue.isPresent() && bValue.isPresent()) {
                       return Optional.of(
                           constructor.create(builder, Stream.of(aValue.get(), bValue.get())));
@@ -265,11 +265,11 @@ public abstract class AlertFilter {
     return Parser.scanPrefixed(
         (p, o) -> parse3(p, string, o),
         (p, o) -> {
-          final Parser result = p.keyword("!").whitespace();
+          final var result = p.keyword("!").whitespace();
           if (result.isGood()) {
             o.accept(
                 node ->
-                    new AlertFilterNode<S>() {
+                    new AlertFilterNode<>() {
                       @Override
                       public <F> Optional<F> generate(
                           AlertFilterBuilder<F, S> builder, ErrorConsumer errorHandler) {
@@ -286,12 +286,12 @@ public abstract class AlertFilter {
   private static <S> Parser parse3(
       Parser parser, RuleWithLiteral<S, String> string, Consumer<AlertFilterNode<S>> output) {
 
-    final Parser subExpressionParser = parser.symbol("(");
+    final var subExpressionParser = parser.symbol("(");
     if (subExpressionParser.isGood()) {
       return parse(subExpressionParser.whitespace(), string, output).symbol(")").whitespace();
     }
-    final AtomicReference<Variable> variable = new AtomicReference<>();
-    final Parser result = parser.dispatch(VARIABLE, variable::set).whitespace();
+    final var variable = new AtomicReference<Variable>();
+    final var result = parser.dispatch(VARIABLE, variable::set).whitespace();
     if (result.isGood()) {
       return variable.get().parse(result, string, output).whitespace();
     }

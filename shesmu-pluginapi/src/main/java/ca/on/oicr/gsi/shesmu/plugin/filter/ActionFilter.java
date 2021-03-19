@@ -49,19 +49,13 @@ public abstract class ActionFilter {
     EQUALS("=") {
       @Override
       public <T> Parser parse(Parser parser, Rule<T> rule, BiConsumer<Boolean, List<T>> output) {
-        return parser
-            .whitespace()
-            .then(rule, s -> output.accept(false, Collections.singletonList(s)))
-            .whitespace();
+        return parser.whitespace().then(rule, s -> output.accept(false, List.of(s))).whitespace();
       }
     },
     NOT_EQUALS("!=") {
       @Override
       public <T> Parser parse(Parser parser, Rule<T> rule, BiConsumer<Boolean, List<T>> output) {
-        return parser
-            .whitespace()
-            .then(rule, s -> output.accept(true, Collections.singletonList(s)))
-            .whitespace();
+        return parser.whitespace().then(rule, s -> output.accept(true, List.of(s))).whitespace();
       }
     },
     IN("in") {
@@ -114,13 +108,13 @@ public abstract class ActionFilter {
           rule,
           (negate, tags) ->
               output.accept(
-                  new ActionFilterNode<T, S, I, O>() {
+                  new ActionFilterNode<>() {
                     @Override
                     public <F> Optional<F> generate(
                         Function<String, Optional<F>> existing,
                         ActionFilterBuilder<F, T, S, I, O> builder,
                         ErrorConsumer errorHandler) {
-                      final F result = builder.tags(tags.stream());
+                      final var result = builder.tags(tags.stream());
                       return Optional.of(negate ? builder.negate(result) : result);
                     }
                   }));
@@ -142,7 +136,7 @@ public abstract class ActionFilter {
                 instantRule,
                 instant ->
                     output.accept(
-                        new ActionFilterNode<T, S, I, O>() {
+                        new ActionFilterNode<>() {
                           @Override
                           public <F> Optional<F> generate(
                               Function<String, Optional<F>> existing,
@@ -170,7 +164,7 @@ public abstract class ActionFilter {
                 instantRule,
                 instant ->
                     output.accept(
-                        new ActionFilterNode<T, S, I, O>() {
+                        new ActionFilterNode<>() {
                           @Override
                           public <F> Optional<F> generate(
                               Function<String, Optional<F>> existing,
@@ -192,9 +186,9 @@ public abstract class ActionFilter {
           Rule<I> instantRule,
           Rule<O> offsetRule,
           Consumer<ActionFilterNode<T, S, I, O>> output) {
-        final AtomicReference<I> start = new AtomicReference<>();
-        final AtomicReference<I> end = new AtomicReference<>();
-        final Parser result =
+        final var start = new AtomicReference<I>();
+        final var end = new AtomicReference<I>();
+        final var result =
             parser
                 .whitespace()
                 .then(instantRule, start::set)
@@ -205,7 +199,7 @@ public abstract class ActionFilter {
                 .whitespace();
         if (result.isGood()) {
           output.accept(
-              new ActionFilterNode<T, S, I, O>() {
+              new ActionFilterNode<>() {
                 @Override
                 public <F> Optional<F> generate(
                     Function<String, Optional<F>> existing,
@@ -235,7 +229,7 @@ public abstract class ActionFilter {
                 offsetRule,
                 offset ->
                     output.accept(
-                        new ActionFilterNode<T, S, I, O>() {
+                        new ActionFilterNode<>() {
                           @Override
                           public <F> Optional<F> generate(
                               Function<String, Optional<F>> existing,
@@ -255,9 +249,9 @@ public abstract class ActionFilter {
           Rule<I> instantRule,
           Rule<O> offsetRule,
           Consumer<ActionFilterNode<T, S, I, O>> output) {
-        final AtomicReference<I> start = new AtomicReference<>();
-        final AtomicReference<I> end = new AtomicReference<>();
-        final Parser result =
+        final var start = new AtomicReference<I>();
+        final var end = new AtomicReference<I>();
+        final var result =
             parser
                 .whitespace()
                 .then(instantRule, start::set)
@@ -268,7 +262,7 @@ public abstract class ActionFilter {
                 .whitespace();
         if (result.isGood()) {
           output.accept(
-              new ActionFilterNode<T, S, I, O>() {
+              new ActionFilterNode<>() {
                 @Override
                 public <F> Optional<F> generate(
                     Function<String, Optional<F>> existing,
@@ -298,7 +292,7 @@ public abstract class ActionFilter {
                 offsetRule,
                 offset ->
                     output.accept(
-                        new ActionFilterNode<T, S, I, O>() {
+                        new ActionFilterNode<>() {
                           @Override
                           public <F> Optional<F> generate(
                               Function<String, Optional<F>> existing,
@@ -374,13 +368,13 @@ public abstract class ActionFilter {
             parser,
             (negate, files) ->
                 output.accept(
-                    new ActionFilterNode<T, S, I, O>() {
+                    new ActionFilterNode<>() {
                       @Override
                       public <F> Optional<F> generate(
                           Function<String, Optional<F>> existing,
                           ActionFilterBuilder<F, T, S, I, O> builder,
                           ErrorConsumer errorHandler) {
-                        final Optional<F> result = Optional.of(builder.fromFile(files.stream()));
+                        final var result = Optional.of(builder.fromFile(files.stream()));
                         return negate ? result.map(builder::negate) : result;
                       }
                     }),
@@ -397,12 +391,11 @@ public abstract class ActionFilter {
           Rule<I> instant,
           Rule<O> offset,
           Consumer<ActionFilterNode<T, S, I, O>> output) {
-        final AtomicReference<Pair<Boolean, List<SourceOliveLocation>>> matches =
-            new AtomicReference<>();
-        final Parser result = parser.whitespace().dispatch(SOURCE_MATCH, matches::set).whitespace();
+        final var matches = new AtomicReference<Pair<Boolean, List<SourceOliveLocation>>>();
+        final var result = parser.whitespace().dispatch(SOURCE_MATCH, matches::set).whitespace();
         if (result.isGood()) {
           output.accept(
-              new ActionFilterNode<T, S, I, O>() {
+              new ActionFilterNode<>() {
                 @Override
                 public <F> Optional<F> generate(
                     Function<String, Optional<F>> existing,
@@ -429,13 +422,13 @@ public abstract class ActionFilter {
             parser,
             (negate, states) ->
                 output.accept(
-                    new ActionFilterNode<T, S, I, O>() {
+                    new ActionFilterNode<>() {
                       @Override
                       public <F> Optional<F> generate(
                           Function<String, Optional<F>> existing,
                           ActionFilterBuilder<F, T, S, I, O> builder,
                           ErrorConsumer errorHandler) {
-                        final Optional<F> result = Optional.of(builder.isState(states.stream()));
+                        final var result = Optional.of(builder.isState(states.stream()));
                         return negate ? result.map(builder::negate) : result;
                       }
                     }),
@@ -466,8 +459,8 @@ public abstract class ActionFilter {
           Rule<I> instant,
           Rule<O> offset,
           Consumer<ActionFilterNode<T, S, I, O>> output) {
-        final AtomicReference<TagParser> tag = new AtomicReference<>();
-        final Parser result = parser.whitespace().dispatch(TAG_MATCHER, tag::set).whitespace();
+        final var tag = new AtomicReference<TagParser>();
+        final var result = parser.whitespace().dispatch(TAG_MATCHER, tag::set).whitespace();
         if (result.isGood()) {
           return tag.get().parseTag(result, strings, output).whitespace();
         }
@@ -484,8 +477,8 @@ public abstract class ActionFilter {
           Rule<I> instant,
           Rule<O> offset,
           Consumer<ActionFilterNode<T, S, I, O>> output) {
-        final AtomicReference<TextParser> text = new AtomicReference<>();
-        final Parser result = parser.whitespace().dispatch(TEXT_MATCH, text::set).whitespace();
+        final var text = new AtomicReference<TextParser>();
+        final var result = parser.whitespace().dispatch(TEXT_MATCH, text::set).whitespace();
         if (result.isGood()) {
           return text.get().parseText(result, string, output).whitespace();
         }
@@ -506,13 +499,13 @@ public abstract class ActionFilter {
             parser,
             (negate, types) ->
                 output.accept(
-                    new ActionFilterNode<T, S, I, O>() {
+                    new ActionFilterNode<>() {
                       @Override
                       public <F> Optional<F> generate(
                           Function<String, Optional<F>> existing,
                           ActionFilterBuilder<F, T, S, I, O> builder,
                           ErrorConsumer errorHandler) {
-                        final Optional<F> result = Optional.of(builder.type(types.stream()));
+                        final var result = Optional.of(builder.type(types.stream()));
                         return negate ? result.map(builder::negate) : result;
                       }
                     }),
@@ -561,8 +554,8 @@ public abstract class ActionFilter {
         Rule<I> timeRule,
         Rule<O> offsetRule,
         Consumer<ActionFilterNode<T, S, I, O>> output) {
-      final AtomicReference<TemporalType> type = new AtomicReference<>();
-      final Parser result = parser.whitespace().dispatch(TEMPORAL, type::set).whitespace();
+      final var type = new AtomicReference<TemporalType>();
+      final var result = parser.whitespace().dispatch(TEMPORAL, type::set).whitespace();
       if (result.isGood()) {
         return type.get().parse(result, temporal, timeRule, offsetRule, output);
       }
@@ -644,7 +637,7 @@ public abstract class ActionFilter {
       Pattern.compile("(\\d{4})-(\\d{2}|[A-Za-z]+)-(\\d{2})");
   private static final ObjectMapper MAPPER = new ObjectMapper();
   public static final RuleWithLiteral<ActionState, ActionState> PARSE_ACTION_STATE =
-      new RuleWithLiteral<ActionState, ActionState>() {
+      new RuleWithLiteral<>() {
         @Override
         public ActionState literal(ActionState value) {
           return value;
@@ -666,7 +659,7 @@ public abstract class ActionFilter {
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<String> STRING = new Parser.ParseDispatch<>();
   public static final RuleWithLiteral<String, String> PARSE_STRING =
-      new RuleWithLiteral<String, String>() {
+      new RuleWithLiteral<>() {
         @Override
         public String literal(String value) {
           return value;
@@ -682,7 +675,7 @@ public abstract class ActionFilter {
   private static final Parser.ParseDispatch<TemporalType> TEMPORAL = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<Integer> TEMPORAL_UNITS = new Parser.ParseDispatch<>();
   public static final RuleWithLiteral<Long, Long> PARSE_OFFSET =
-      new RuleWithLiteral<Long, Long>() {
+      new RuleWithLiteral<>() {
         @Override
         public Long literal(Long value) {
           return value;
@@ -690,9 +683,9 @@ public abstract class ActionFilter {
 
         @Override
         public Parser parse(Parser parser, Consumer<Long> output) {
-          final AtomicLong time = new AtomicLong();
-          final AtomicInteger units = new AtomicInteger();
-          final Parser result =
+          final var time = new AtomicLong();
+          final var units = new AtomicInteger();
+          final var result =
               parser
                   .whitespace()
                   .integer(time::set, 10)
@@ -711,7 +704,7 @@ public abstract class ActionFilter {
       Pattern.compile("(?:(?:T| *)(\\d{2}):(\\d{2})(?::(\\d{2})))?");
   private static final Parser.ParseDispatch<InstantNode> TIME_ZONE = new Parser.ParseDispatch<>();
   public static final RuleWithLiteral<Instant, Instant> PARSE_TIME =
-      new RuleWithLiteral<Instant, Instant>() {
+      new RuleWithLiteral<>() {
         @Override
         public Instant literal(Instant value) {
           return value;
@@ -719,10 +712,10 @@ public abstract class ActionFilter {
 
         @Override
         public Parser parse(Parser parser, Consumer<Instant> output) {
-          final AtomicReference<Supplier<LocalDate>> date = new AtomicReference<>();
-          final AtomicReference<DateTimeNode> time = new AtomicReference<>();
-          final AtomicReference<InstantNode> zone = new AtomicReference<>();
-          final Parser result =
+          final var date = new AtomicReference<Supplier<LocalDate>>();
+          final var time = new AtomicReference<DateTimeNode>();
+          final var zone = new AtomicReference<InstantNode>();
+          final var result =
               parser
                   .dispatch(DATE, date::set)
                   .dispatch(TIME, time::set)
@@ -737,16 +730,16 @@ public abstract class ActionFilter {
   private static final Parser.ParseDispatch<Variable> VARIABLE = new Parser.ParseDispatch<>();
 
   static {
-    for (final ActionState state : ActionState.values()) {
+    for (final var state : ActionState.values()) {
       ACTION_STATE.addKeyword(state.name().toLowerCase(), Parser.just(state));
     }
-    for (final TemporalType type : TemporalType.values()) {
+    for (final var type : TemporalType.values()) {
       TEMPORAL.addKeyword(type.name().toLowerCase(), Parser.just(type));
     }
-    for (final Variable variable : Variable.values()) {
+    for (final var variable : Variable.values()) {
       VARIABLE.addKeyword(variable.name().toLowerCase(), Parser.just(variable));
     }
-    for (final Comparison comparison : Comparison.values()) {
+    for (final var comparison : Comparison.values()) {
       COMPARISON.addSymbol(comparison.symbol, Parser.just(comparison));
       TAG_MATCHER.addSymbol(comparison.symbol, Parser.just(comparison));
     }
@@ -763,17 +756,13 @@ public abstract class ActionFilter {
         "=",
         (p, o) ->
             p.whitespace()
-                .then(
-                    ActionFilter::parseLocation,
-                    s -> o.accept(new Pair<>(false, Collections.singletonList(s))))
+                .then(ActionFilter::parseLocation, s -> o.accept(new Pair<>(false, List.of(s))))
                 .whitespace());
     SOURCE_MATCH.addSymbol(
         "!=",
         (p, o) ->
             p.whitespace()
-                .then(
-                    ActionFilter::parseLocation,
-                    s -> o.accept(new Pair<>(true, Collections.singletonList(s))))
+                .then(ActionFilter::parseLocation, s -> o.accept(new Pair<>(true, List.of(s))))
                 .whitespace());
     SOURCE_MATCH.addSymbol(
         "in",
@@ -818,24 +807,24 @@ public abstract class ActionFilter {
     TEMPORAL_UNITS.addRaw("nothing", Parser.just(1000));
     DATE.addKeyword("today", Parser.just(LocalDate::now));
     DATE.addKeyword("yesterday", Parser.just(() -> LocalDate.now().minusDays(1)));
-    for (final DayOfWeek weekday : DayOfWeek.values()) {
+    for (final var weekday : DayOfWeek.values()) {
       DATE.addKeyword(
           weekday.name().toLowerCase(), Parser.just(() -> LocalDate.now().with(weekday)));
     }
     DATE.addRaw(
         "ISO-8601 date",
         (p, o) -> {
-          final AtomicReference<Matcher> matcher = new AtomicReference<>();
-          final Parser result = p.regex(DATE_PATTERN, matcher::set, "ISO-8601 date").whitespace();
+          final var matcher = new AtomicReference<Matcher>();
+          final var result = p.regex(DATE_PATTERN, matcher::set, "ISO-8601 date").whitespace();
           if (result.isGood()) {
             {
-              final int year = Integer.parseInt(matcher.get().group(1));
+              final var year = Integer.parseInt(matcher.get().group(1));
               final int month;
-              final int day = Integer.parseInt(matcher.get().group(3));
+              final var day = Integer.parseInt(matcher.get().group(3));
               if (Character.isDigit(matcher.get().group(2).charAt(0))) {
                 month = Integer.parseInt(matcher.get().group(2));
               } else {
-                final OptionalInt monthValue = parseMonth(matcher.get().group(2).toLowerCase());
+                final var monthValue = parseMonth(matcher.get().group(2).toLowerCase());
                 if (monthValue.isPresent()) {
                   month = monthValue.getAsInt();
                 } else {
@@ -853,14 +842,14 @@ public abstract class ActionFilter {
     TIME.addRaw(
         "ISO-8601 time",
         (p, o) -> {
-          final AtomicReference<Matcher> matcher = new AtomicReference<>();
-          final Parser result = p.regex(TIME_PATTERN, matcher::set, "ISO-8601 time").whitespace();
+          final var matcher = new AtomicReference<Matcher>();
+          final var result = p.regex(TIME_PATTERN, matcher::set, "ISO-8601 time").whitespace();
 
           if (result.isGood()) {
-            final int hour = Integer.parseInt(matcher.get().group(1));
-            final int minute =
+            final var hour = Integer.parseInt(matcher.get().group(1));
+            final var minute =
                 matcher.get().group(2).isEmpty() ? 0 : Integer.parseInt(matcher.get().group(2));
-            final int second =
+            final var second =
                 matcher.get().group(3).isEmpty() ? 0 : Integer.parseInt(matcher.get().group(3));
             if (!ChronoField.HOUR_OF_DAY.range().isValidValue(hour)) {
               return p.raise("Invalid hour");
@@ -888,18 +877,18 @@ public abstract class ActionFilter {
   private static <T, S, I, O> Parser.Rule<BinaryOperator<ActionFilterNode<T, S, I, O>>> binary(
       String keyword, BinaryConstructor constructor) {
     return (p, o) -> {
-      final Parser result = p.keyword(keyword).whitespace();
+      final var result = p.keyword(keyword).whitespace();
       if (result.isGood()) {
         o.accept(
             (a, b) ->
-                new ActionFilterNode<T, S, I, O>() {
+                new ActionFilterNode<>() {
                   @Override
                   public <F> Optional<F> generate(
                       Function<String, Optional<F>> existing,
                       ActionFilterBuilder<F, T, S, I, O> builder,
                       ErrorConsumer errorHandler) {
-                    final Optional<F> aValue = a.generate(existing, builder, errorHandler);
-                    final Optional<F> bValue = b.generate(existing, builder, errorHandler);
+                    final var aValue = a.generate(existing, builder, errorHandler);
+                    final var bValue = b.generate(existing, builder, errorHandler);
                     if (aValue.isPresent() && bValue.isPresent()) {
                       return Optional.of(
                           constructor.create(builder, Stream.of(aValue.get(), bValue.get())));
@@ -915,19 +904,19 @@ public abstract class ActionFilter {
   public static Optional<ActionFilter> extractFromText(String text, ObjectMapper mapper) {
     final Set<String> actionIds = new TreeSet<>();
     final List<ActionFilter> filters = new ArrayList<>();
-    final Matcher actionMatcher = ACTION_ID.matcher(text);
+    final var actionMatcher = ACTION_ID.matcher(text);
     while (actionMatcher.find()) {
       actionIds.add("shesmu:" + actionMatcher.group(1).toUpperCase());
     }
     if (!actionIds.isEmpty()) {
-      final ActionFilterIds idFilter = new ActionFilterIds();
+      final var idFilter = new ActionFilterIds();
       idFilter.setIds(new ArrayList<>(actionIds));
       filters.add(idFilter);
     }
-    final Matcher filterMatcher = SEARCH.matcher(text);
+    final var filterMatcher = SEARCH.matcher(text);
     while (filterMatcher.find()) {
       try {
-        final ActionFilter[] current =
+        final var current =
             mapper.readValue(
                 Base64.getDecoder().decode(filterMatcher.group(1)), ActionFilter[].class);
         switch (current.length) {
@@ -937,7 +926,7 @@ public abstract class ActionFilter {
             filters.add(current[0]);
             break;
           default:
-            final ActionFilterAnd and = new ActionFilterAnd();
+            final var and = new ActionFilterAnd();
             and.setFilters(current);
             filters.add(and);
         }
@@ -951,8 +940,8 @@ public abstract class ActionFilter {
       case 1:
         return Optional.of(filters.get(0));
       default:
-        final ActionFilterOr or = new ActionFilterOr();
-        or.setFilters(filters.stream().toArray(ActionFilter[]::new));
+        final var or = new ActionFilterOr();
+        or.setFilters(filters.toArray(ActionFilter[]::new));
         return Optional.of(or);
     }
   }
@@ -1052,11 +1041,11 @@ public abstract class ActionFilter {
     return Parser.scanPrefixed(
         (p, o) -> parse3(p, actionState, string, strings, instant, offset, o),
         (p, o) -> {
-          final Parser result = p.keyword("not").whitespace();
+          final var result = p.keyword("not").whitespace();
           if (result.isGood()) {
             o.accept(
                 node ->
-                    new ActionFilterNode<T, S, I, O>() {
+                    new ActionFilterNode<>() {
                       @Override
                       public <F> Optional<F> generate(
                           Function<String, Optional<F>> existing,
@@ -1080,32 +1069,30 @@ public abstract class ActionFilter {
       RuleWithLiteral<I, Instant> instant,
       RuleWithLiteral<O, Long> offset,
       Consumer<ActionFilterNode<T, S, I, O>> output) {
-    final Parser actionResult =
+    final var actionResult =
         parser
             .symbol("shesmu:")
             .regex(
                 ACTION_ID_HASH,
-                m -> {
-                  output.accept(
-                      new ActionFilterNode<T, S, I, O>() {
-                        private final List<S> ids =
-                            Collections.singletonList(
-                                string.literal("shesmu:" + m.group(0).toUpperCase()));
+                m ->
+                    output.accept(
+                        new ActionFilterNode<>() {
+                          private final List<S> ids =
+                              List.of(string.literal("shesmu:" + m.group(0).toUpperCase()));
 
-                        @Override
-                        public <F> Optional<F> generate(
-                            Function<String, Optional<F>> existing,
-                            ActionFilterBuilder<F, T, S, I, O> builder,
-                            ErrorConsumer errorHandler) {
-                          return Optional.of(builder.ids(ids));
-                        }
-                      });
-                },
+                          @Override
+                          public <F> Optional<F> generate(
+                              Function<String, Optional<F>> existing,
+                              ActionFilterBuilder<F, T, S, I, O> builder,
+                              ErrorConsumer errorHandler) {
+                            return Optional.of(builder.ids(ids));
+                          }
+                        }),
                 "hexadecimal ID");
     if (actionResult.isGood()) {
       return actionResult;
     }
-    final Parser searchParser =
+    final var searchParser =
         parser
             .whitespace()
             .symbol("shesmusearch:")
@@ -1113,15 +1100,14 @@ public abstract class ActionFilter {
                 SEARCH_BASE64,
                 m ->
                     output.accept(
-                        new ActionFilterNode<T, S, I, O>() {
+                        new ActionFilterNode<>() {
                           @Override
                           public <F> Optional<F> generate(
                               Function<String, Optional<F>> existing,
                               ActionFilterBuilder<F, T, S, I, O> builder,
                               ErrorConsumer errorHandler) {
-                            final Optional<ActionFilter> extracted =
-                                extractFromText(m.group(0), MAPPER);
-                            if (!extracted.isPresent()) {
+                            final var extracted = extractFromText(m.group(0), MAPPER);
+                            if (extracted.isEmpty()) {
                               errorHandler.raise(
                                   parser.line(), parser.column(), "Invalid search string.");
                             }
@@ -1133,7 +1119,7 @@ public abstract class ActionFilter {
       return searchParser;
     }
 
-    final Parser knownParser =
+    final var knownParser =
         parser
             .symbol("known:")
             .whitespace()
@@ -1141,7 +1127,7 @@ public abstract class ActionFilter {
                 STRING,
                 name ->
                     output.accept(
-                        new ActionFilterNode<T, S, I, O>() {
+                        new ActionFilterNode<>() {
 
                           @Override
                           public <F> Optional<F> generate(
@@ -1149,7 +1135,7 @@ public abstract class ActionFilter {
                               ActionFilterBuilder<F, T, S, I, O> builder,
                               ErrorConsumer errorHandler) {
 
-                            final Optional<F> filter = existing.apply(name);
+                            final var filter = existing.apply(name);
                             if (filter.isPresent()) {
                               return filter;
                             } else {
@@ -1165,7 +1151,7 @@ public abstract class ActionFilter {
     if (knownParser.isGood()) {
       return knownParser;
     }
-    final Parser subExpressionParser = parser.symbol("(");
+    final var subExpressionParser = parser.symbol("(");
     if (subExpressionParser.isGood()) {
       return parse(
               subExpressionParser.whitespace(),
@@ -1178,8 +1164,8 @@ public abstract class ActionFilter {
           .symbol(")")
           .whitespace();
     }
-    final AtomicReference<Variable> variable = new AtomicReference<>();
-    final Parser result = parser.dispatch(VARIABLE, variable::set).whitespace();
+    final var variable = new AtomicReference<Variable>();
+    final var result = parser.dispatch(VARIABLE, variable::set).whitespace();
     if (result.isGood()) {
       return variable
           .get()
@@ -1190,9 +1176,9 @@ public abstract class ActionFilter {
   }
 
   private static Parser parseLocation(Parser parser, Consumer<SourceOliveLocation> output) {
-    final SourceOliveLocation location = new SourceOliveLocation();
-    final AtomicReference<List<String>> filename = new AtomicReference<>();
-    Parser result =
+    final var location = new SourceOliveLocation();
+    final var filename = new AtomicReference<List<String>>();
+    var result =
         parser
             .whitespace()
             .symbol("\"")
@@ -1200,11 +1186,11 @@ public abstract class ActionFilter {
             .symbol("\"")
             .whitespace();
     if (result.isGood()) {
-      final Parser line =
+      final var line =
           result.symbol(":").whitespace().integer(v -> location.setLine((int) v), 10).whitespace();
       if (line.isGood()) {
         result = line;
-        final Parser column =
+        final var column =
             result
                 .symbol(":")
                 .whitespace()
@@ -1212,7 +1198,7 @@ public abstract class ActionFilter {
                 .whitespace();
         if (column.isGood()) {
           result = column;
-          final Parser hash =
+          final var hash =
               result
                   .symbol("[")
                   .whitespace()
@@ -1234,10 +1220,10 @@ public abstract class ActionFilter {
   }
 
   private static OptionalInt parseMonth(String inputMonth) {
-    final DateFormatSymbols symbols = new DateFormatSymbols();
-    final String[] monthNames = symbols.getMonths();
-    final String[] monthShortNames = symbols.getShortMonths();
-    for (int i = 0; i < monthNames.length; i++) {
+    final var symbols = new DateFormatSymbols();
+    final var monthNames = symbols.getMonths();
+    final var monthShortNames = symbols.getShortMonths();
+    for (var i = 0; i < monthNames.length; i++) {
       if (inputMonth.equalsIgnoreCase(monthNames[i])
           || inputMonth.equalsIgnoreCase(monthShortNames[i])) {
         return OptionalInt.of(i + 1);
@@ -1248,9 +1234,8 @@ public abstract class ActionFilter {
 
   public static Optional<ActionFilter> parseQuery(
       String input, Function<String, Optional<ActionFilter>> existing, ErrorConsumer errorHandler) {
-    final AtomicReference<ActionFilterNode<ActionState, String, Instant, Long>> query =
-        new AtomicReference<>();
-    final Parser parser =
+    final var query = new AtomicReference<ActionFilterNode<ActionState, String, Instant, Long>>();
+    final var parser =
         parse(
             Parser.start(input, errorHandler).whitespace(),
             PARSE_ACTION_STATE,
@@ -1267,8 +1252,8 @@ public abstract class ActionFilter {
 
   private static <T> Parser strings(
       Parser parser, BiConsumer<Boolean, List<T>> output, Rule<T> valueParser) {
-    final AtomicReference<Comparison> comparison = new AtomicReference<>();
-    final Parser result = parser.whitespace().dispatch(COMPARISON, comparison::set).whitespace();
+    final var comparison = new AtomicReference<Comparison>();
+    final var result = parser.whitespace().dispatch(COMPARISON, comparison::set).whitespace();
     if (result.isGood()) {
       return comparison.get().parse(result, valueParser, output).whitespace();
     }
@@ -1287,14 +1272,14 @@ public abstract class ActionFilter {
                     REGEX,
                     m ->
                         output.accept(
-                            new ActionFilterNode<T, S, I, O>() {
+                            new ActionFilterNode<>() {
                               @Override
                               public <F> Optional<F> generate(
                                   Function<String, Optional<F>> existing,
                                   ActionFilterBuilder<F, T, S, I, O> builder,
                                   ErrorConsumer errorHandler) {
                                 try {
-                                  final F result =
+                                  final var result =
                                       builder.tag(
                                           Pattern.compile(
                                               m.group(1),
@@ -1328,13 +1313,13 @@ public abstract class ActionFilter {
                     rule,
                     s ->
                         output.accept(
-                            new ActionFilterNode<T, S, I, O>() {
+                            new ActionFilterNode<>() {
                               @Override
                               public <F> Optional<F> generate(
                                   Function<String, Optional<F>> existing,
                                   ActionFilterBuilder<F, T, S, I, O> builder,
                                   ErrorConsumer errorHandler) {
-                                final F result = builder.textSearch(s, true);
+                                final var result = builder.textSearch(s, true);
                                 return Optional.of(negate ? builder.negate(result) : result);
                               }
                             }));
@@ -1354,14 +1339,14 @@ public abstract class ActionFilter {
                     REGEX,
                     m ->
                         output.accept(
-                            new ActionFilterNode<T, S, I, O>() {
+                            new ActionFilterNode<>() {
                               @Override
                               public <F> Optional<F> generate(
                                   Function<String, Optional<F>> existing,
                                   ActionFilterBuilder<F, T, S, I, O> builder,
                                   ErrorConsumer errorHandler) {
                                 try {
-                                  final F result =
+                                  final var result =
                                       builder.textSearch(
                                           Pattern.compile(
                                               m.group(1),

@@ -53,8 +53,8 @@ public class ExpressionNodeTuple extends ExpressionNode {
     renderer.methodGen().dup();
     renderer.methodGen().push(type.count());
     renderer.methodGen().newArray(A_OBJECT_TYPE);
-    int index = 0;
-    for (final TupleElementNode element : items) {
+    var index = 0;
+    for (final var element : items) {
       index = element.render(renderer, index);
     }
     renderer.mark(line());
@@ -70,8 +70,7 @@ public class ExpressionNodeTuple extends ExpressionNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return items
-            .stream()
+    return items.stream()
             .filter(item -> item.resolveDefinitions(expressionCompilerServices, errorHandler))
             .count()
         == items.size();
@@ -84,7 +83,7 @@ public class ExpressionNodeTuple extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    final boolean ok =
+    final var ok =
         items.stream().filter(item -> item.typeCheck(errorHandler)).count() == items.size();
     if (ok) {
       type = Imyhat.tuple(items.stream().flatMap(TupleElementNode::types).toArray(Imyhat[]::new));

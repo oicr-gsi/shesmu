@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -44,12 +43,12 @@ import org.objectweb.asm.util.CheckClassAdapter;
 
 public class CompilerTest {
   public final class CompilerHarness extends Compiler {
-    private Set<String> allowedErrors;
+    private final Set<String> allowedErrors;
     private boolean dirty;
 
     public CompilerHarness(Path file) throws IOException {
       super(false);
-      try (Stream<String> lines =
+      try (var lines =
           Files.lines(
               file.getParent()
                   .resolve(file.getFileName().toString().replaceFirst("\\.shesmu$", ".errors")))) {
@@ -59,15 +58,15 @@ public class CompilerTest {
 
     @Override
     protected ClassVisitor createClassVisitor() {
-      final ClassWriter outputWriter =
+      final var outputWriter =
           new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
       return new ClassVisitor(Opcodes.ASM5, outputWriter) {
 
         @Override
         public void visitEnd() {
           super.visitEnd();
-          final ClassReader reader = new ClassReader(outputWriter.toByteArray());
-          final CheckClassAdapter check = new CheckClassAdapter(new ClassWriter(0), true);
+          final var reader = new ClassReader(outputWriter.toByteArray());
+          final var check = new CheckClassAdapter(new ClassWriter(0), true);
           reader.accept(check, 0);
         }
       };
@@ -215,10 +214,10 @@ public class CompilerTest {
   }
 
   private static final List<ConstantDefinition> CONSTANTS =
-      Arrays.asList(
+      List.of(
           ConstantDefinition.of("alwaystrue", true, "It's true. I swear."),
           ConstantDefinition.of("notpi", 3, "Any value which is not pi."));
-  private final ActionDefinition ACTIONS[] =
+  private final ActionDefinition[] ACTIONS =
       new ActionDefinition[] {
         new TestActionDefinition(
             "fastqc",
@@ -244,8 +243,7 @@ public class CompilerTest {
 
   @Test
   public void testCompiler() throws IOException {
-    try (Stream<Path> files =
-        Files.walk(Paths.get(this.getClass().getResource("/compiler").getPath()), 1)) {
+    try (var files = Files.walk(Paths.get(this.getClass().getResource("/compiler").getPath()), 1)) {
       Assertions.assertTrue(
           files
                   .filter(Files::isRegularFile)
@@ -265,7 +263,7 @@ public class CompilerTest {
 
   private Pair<Path, Boolean> testFile(Path file) {
     try {
-      final CompilerHarness compiler = new CompilerHarness(file);
+      final var compiler = new CompilerHarness(file);
       // Attempt to compile and throw away whether the compiler was successful; we
       // know everything based on the errors generated.
       compiler.compile(

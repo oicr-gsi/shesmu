@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -29,7 +28,7 @@ public class PragmaNodeFrequency extends PragmaNode {
 
   @Override
   public void renderAtExit(RootBuilder builder) {
-    Renderer renderer = builder.rootRenderer(false, null, Stream.empty());
+    var renderer = builder.rootRenderer(false, null, Stream.empty());
     renderer.methodGen().loadThis();
     renderer
         .methodGen()
@@ -57,8 +56,8 @@ public class PragmaNodeFrequency extends PragmaNode {
           methodGen.math(Opcodes.ISUB, Type.LONG_TYPE);
           methodGen.push((long) frequency);
           methodGen.visitInsn(Opcodes.LCMP);
-          final Label end = methodGen.newLabel();
-          final Label skip = methodGen.newLabel();
+          final var end = methodGen.newLabel();
+          final var skip = methodGen.newLabel();
           methodGen.ifZCmp(GeneratorAdapter.GE, skip);
           methodGen.push(true);
           methodGen.goTo(end);

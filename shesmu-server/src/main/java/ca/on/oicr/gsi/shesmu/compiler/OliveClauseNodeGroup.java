@@ -32,13 +32,12 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
       NameDefinitions defs,
       List<String> discriminators,
       Consumer<String> errorHandler) {
-    final List<Target> discriminatorVariables =
-        discriminators
-            .stream()
+    final var discriminatorVariables =
+        discriminators.stream()
             .map(
                 name -> {
-                  final Optional<Target> target = defs.get(name);
-                  if (!target.isPresent()) {
+                  final var target = defs.get(name);
+                  if (target.isEmpty()) {
                     errorHandler.accept(
                         String.format(
                             "%d:%d: Undefined variable “%s” in “By”.", line, column, name));
@@ -86,8 +85,8 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 
   @Override
   public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final GroupNode child : children) {
+    var ok = true;
+    for (final var child : children) {
       if (!child.isRead()) {
         ok = false;
         errorHandler.accept(
@@ -123,8 +122,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
             true,
             true,
             Stream.concat(
-                children
-                    .stream()
+                children.stream()
                     .map(
                         child -> {
                           final Set<String> inputs = new TreeSet<>(whereInputs);
@@ -167,7 +165,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
         group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
 
     oliveBuilder.line(line);
-    final RegroupVariablesBuilder regroup =
+    final var regroup =
         oliveBuilder.regroup(
             line,
             column,
@@ -177,8 +175,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
                 .toArray(LoadableValue[]::new));
 
     discriminators.forEach(d -> d.render(regroup));
-    final Regrouper regrouperForChildren =
-        where.map(w -> regroup.addWhere(w::render)).orElse(regroup);
+    final var regrouperForChildren = where.map(w -> regroup.addWhere(w::render)).orElse(regroup);
     children.forEach(group -> group.render(regrouperForChildren, builder));
     regroup.finish();
 
@@ -190,22 +187,20 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
       Consumer<String> errorHandler) {
-    boolean ok =
+    var ok =
         children.stream().filter(child -> child.resolve(defs, defs, errorHandler)).count()
                 == children.size()
-            & discriminators
-                    .stream()
+            & discriminators.stream()
                     .filter(discriminator -> discriminator.resolve(defs, errorHandler))
                     .count()
                 == discriminators.size();
 
     ok =
         ok
-            && children
-                .stream()
+            && children.stream()
                 .noneMatch(
                     group -> {
-                      final boolean isDuplicate =
+                      final var isDuplicate =
                           defs.get(group.name())
                               .filter(variable -> !variable.flavour().isStream())
                               .isPresent();
@@ -223,9 +218,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
             && Stream.concat(
                             discriminators.stream().flatMap(DiscriminatorNode::targets),
                             children.stream())
-                        .collect(Collectors.groupingBy(DefinedTarget::name))
-                        .entrySet()
-                        .stream()
+                        .collect(Collectors.groupingBy(DefinedTarget::name)).entrySet().stream()
                         .filter(e -> e.getValue().size() > 1)
                         .peek(
                             e ->
@@ -235,8 +228,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
                                         line,
                                         column,
                                         e.getKey(),
-                                        e.getValue()
-                                            .stream()
+                                        e.getValue().stream()
                                             .sorted(
                                                 Comparator.comparingInt(DefinedTarget::line)
                                                     .thenComparingInt(DefinedTarget::column))
@@ -255,13 +247,11 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
   public final boolean resolveDefinitions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
 
-    return children
-                .stream()
+    return children.stream()
                 .filter(group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == children.size()
-        & discriminators
-                .stream()
+        & discriminators.stream()
                 .filter(group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == discriminators.size()
@@ -272,15 +262,14 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
   public final boolean typeCheck(Consumer<String> errorHandler) {
     return children.stream().filter(group -> group.typeCheck(errorHandler)).count()
             == children.size()
-        && discriminators
-                    .stream()
+        && discriminators.stream()
                     .filter(discriminator -> discriminator.typeCheck(errorHandler))
                     .count()
                 == discriminators.size()
             & where
                 .map(
                     w -> {
-                      boolean whereOk = w.typeCheck(errorHandler);
+                      var whereOk = w.typeCheck(errorHandler);
                       if (whereOk) {
                         if (!w.type().isSame(Imyhat.BOOLEAN)) {
                           w.typeError(Imyhat.BOOLEAN, w.type(), errorHandler);

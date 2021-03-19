@@ -22,10 +22,10 @@ public final class CombinationsGrouper<I, O> implements Grouper<I, O> {
   private List<int[]> generate(int total) {
     // https://www.baeldung.com/java-combinations-algorithm
     final List<int[]> combinations = new ArrayList<>();
-    int[] combination = new int[groupSize];
+    var combination = new int[groupSize];
 
     // initialize with lowest lexicographic combination
-    for (int i = 0; i < groupSize; i++) {
+    for (var i = 0; i < groupSize; i++) {
       combination[i] = i;
     }
 
@@ -33,12 +33,12 @@ public final class CombinationsGrouper<I, O> implements Grouper<I, O> {
       combinations.add(combination.clone());
 
       // generate next combination in lexicographic order
-      int t = groupSize - 1;
+      var t = groupSize - 1;
       while (t != 0 && combination[t] == total - groupSize + t) {
         t--;
       }
       combination[t]++;
-      for (int i = t + 1; i < groupSize; i++) {
+      for (var i = t + 1; i < groupSize; i++) {
         combination[i] = combination[i - 1] + 1;
       }
     }
@@ -54,8 +54,7 @@ public final class CombinationsGrouper<I, O> implements Grouper<I, O> {
     if (inputs.size() == groupSize) {
       return Stream.of(new Subgroup<>(collectorConstructor.get(), inputs.stream()));
     }
-    return generate(inputs.size())
-        .stream()
+    return generate(inputs.size()).stream()
         .map(
             combinations ->
                 new Subgroup<>(

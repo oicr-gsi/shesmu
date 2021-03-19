@@ -121,11 +121,11 @@ public final class JavaStreamBuilder {
 
   public JavaStreamBuilder[] collectObject(
       int line, int column, List<Pair<String, LoadableValue[]>> children) {
-    final JavaStreamBuilder[] builders = new JavaStreamBuilder[children.size()];
+    final var builders = new JavaStreamBuilder[children.size()];
     renderer.methodGen().push(children.size());
     renderer.methodGen().newArray(A_FUNCTION_TYPE);
-    for (int i = 0; i < children.size(); i++) {
-      final LambdaBuilder lambda =
+    for (var i = 0; i < children.size(); i++) {
+      final var lambda =
           new LambdaBuilder(
               renderer.root(),
               String.format("Object %d:%d %s", line, column, children.get(i).first()),
@@ -136,7 +136,7 @@ public final class JavaStreamBuilder {
       renderer.methodGen().push(i);
       lambda.push(renderer);
       renderer.methodGen().arrayStore(A_FUNCTION_TYPE);
-      final Renderer inner = lambda.renderer(renderer.signerEmitter());
+      final var inner = lambda.renderer(renderer.signerEmitter());
       inner.methodGen().visitCode();
       inner.methodGen().loadArg(lambda.trueArgument(0));
       builders[i] = inner.buildStream(currentType);
@@ -160,7 +160,7 @@ public final class JavaStreamBuilder {
       LoadableConstructor name,
       Imyhat targetType,
       LoadableValue... capturedVariables) {
-    final LambdaBuilder builder =
+    final var builder =
         new LambdaBuilder(
             owner,
             String.format("For ⋯ %s %d:%d ⚖️", syntax, line, column),
@@ -187,14 +187,14 @@ public final class JavaStreamBuilder {
       Imyhat keyType,
       Imyhat valueType,
       LoadableValue[] capturedVariables) {
-    final LambdaBuilder keyBuilder =
+    final var keyBuilder =
         new LambdaBuilder(
             owner,
             String.format("For ⋯ Dictionary %d:%d 🔑️", line, column),
             LambdaBuilder.function(keyType, currentType),
             renderer.streamType(),
             capturedVariables);
-    final LambdaBuilder valueBuilder =
+    final var valueBuilder =
         new LambdaBuilder(
             owner,
             String.format("For ⋯ Dictionary %d:%d️", line, column),
@@ -222,7 +222,7 @@ public final class JavaStreamBuilder {
 
   public final Renderer filter(
       int line, int column, LoadableConstructor name, LoadableValue... capturedVariables) {
-    final LambdaBuilder builder =
+    final var builder =
         new LambdaBuilder(
             owner,
             String.format("For ⋯ Where %d:%d", line, column),
@@ -244,10 +244,10 @@ public final class JavaStreamBuilder {
       LoadableConstructor name,
       Imyhat newType,
       LoadableValue... capturedVariables) {
-    final Imyhat oldType = currentType;
+    final var oldType = currentType;
     currentType = newType;
 
-    final LambdaBuilder builder =
+    final var builder =
         new LambdaBuilder(
             owner,
             String.format("For ⋯ Flatten %d:%d", line, column),
@@ -265,8 +265,8 @@ public final class JavaStreamBuilder {
   }
 
   private Renderer makeRender(LambdaBuilder builder, LoadableConstructor name) {
-    final Renderer output = builder.renderer(renderer.signerEmitter());
-    final int argCount = output.methodGen().getArgumentTypes().length;
+    final var output = builder.renderer(renderer.signerEmitter());
+    final var argCount = output.methodGen().getArgumentTypes().length;
     name.create(r -> r.methodGen().loadArg(argCount - 1)).forEach(v -> output.define(v.name(), v));
     return output;
   }
@@ -277,10 +277,10 @@ public final class JavaStreamBuilder {
       LoadableConstructor name,
       Imyhat newType,
       LoadableValue... capturedVariables) {
-    final Imyhat oldType = currentType;
+    final var oldType = currentType;
     currentType = newType;
 
-    final LambdaBuilder builder =
+    final var builder =
         new LambdaBuilder(
             owner,
             String.format("For ⋯ Map %d:%d", line, column),
@@ -298,7 +298,7 @@ public final class JavaStreamBuilder {
       LoadableConstructor name,
       PrimitiveStream primitive,
       LoadableValue... capturedVariables) {
-    final LambdaBuilder builder =
+    final var builder =
         new LambdaBuilder(
             owner,
             String.format("For ⋯ Map %d:%d", line, column),
@@ -323,7 +323,7 @@ public final class JavaStreamBuilder {
       Match matchType,
       LoadableConstructor name,
       LoadableValue... capturedVariables) {
-    final LambdaBuilder builder =
+    final var builder =
         new LambdaBuilder(
             owner,
             String.format("For ⋯ %s %d:%d", matchType.syntax(), line, column),
@@ -342,7 +342,7 @@ public final class JavaStreamBuilder {
       LoadableConstructor name,
       Imyhat targetType,
       LoadableValue... capturedVariables) {
-    final Renderer extractRenderer =
+    final var extractRenderer =
         comparator(line, column, max ? "Max" : "Min", name, targetType, capturedVariables);
 
     renderer
@@ -361,7 +361,7 @@ public final class JavaStreamBuilder {
       Consumer<Renderer> initial,
       LoadableValue... capturedVariables) {
 
-    final LambdaBuilder builder =
+    final var builder =
         new LambdaBuilder(
             owner,
             String.format("For ⋯ Reduce %d:%d", line, column),
@@ -377,8 +377,8 @@ public final class JavaStreamBuilder {
     renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__REDUCE);
     renderer.methodGen().unbox(accumulatorType.apply(TO_ASM));
 
-    final Renderer output = builder.renderer(renderer.signerEmitter());
-    final int argCount = output.methodGen().getArgumentTypes().length;
+    final var output = builder.renderer(renderer.signerEmitter());
+    final var argCount = output.methodGen().getArgumentTypes().length;
     accumulatorName
         .create(r -> r.methodGen().loadArg(argCount - 2))
         .forEach(v -> output.define(v.name(), v));
@@ -405,15 +405,14 @@ public final class JavaStreamBuilder {
       LoadableConstructor name,
       Imyhat targetType,
       LoadableValue... capturedVariables) {
-    final Renderer sortMethod =
-        comparator(line, column, "Sort", name, targetType, capturedVariables);
+    final var sortMethod = comparator(line, column, "Sort", name, targetType, capturedVariables);
     renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__SORTED);
     return sortMethod;
   }
 
   public final void subsample(
       List<? extends RenderSubsampler> renderers, LoadableConstructor name) {
-    final int local = renderer.methodGen().newLocal(A_SUBSAMPLER_TYPE);
+    final var local = renderer.methodGen().newLocal(A_SUBSAMPLER_TYPE);
     renderer.methodGen().newInstance(A_START_TYPE);
     renderer.methodGen().dup();
     renderer.methodGen().invokeConstructor(A_START_TYPE, DEFAULT_CTOR);

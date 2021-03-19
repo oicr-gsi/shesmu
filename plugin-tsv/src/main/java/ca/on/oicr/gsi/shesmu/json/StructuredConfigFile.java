@@ -17,7 +17,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import javax.xml.stream.XMLStreamException;
 
 public class StructuredConfigFile extends JsonPluginFile<Configuration> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -27,7 +26,7 @@ public class StructuredConfigFile extends JsonPluginFile<Configuration> {
               "Whether a particular entry in a structure configuration file is bad")
           .labelNames("filename", "entry")
           .register();
-  private Set<String> badRecords = Collections.emptySet();
+  private Set<String> badRecords = Set.of();
   private final Definer<StructuredConfigFile> definer;
 
   public StructuredConfigFile(
@@ -37,8 +36,8 @@ public class StructuredConfigFile extends JsonPluginFile<Configuration> {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
-    for (final String badRecord : badRecords) {
+  public void configuration(SectionRenderer renderer) {
+    for (final var badRecord : badRecords) {
       renderer.line("Bad record", badRecord);
     }
   }
@@ -46,21 +45,18 @@ public class StructuredConfigFile extends JsonPluginFile<Configuration> {
   @SuppressWarnings("SuspiciousMethodCalls")
   @Override
   protected Optional<Integer> update(Configuration value) {
-    final Imyhat.ObjectImyhat type =
+    final var type =
         new Imyhat.ObjectImyhat(
             value.getTypes().entrySet().stream().map(e -> new Pair<>(e.getKey(), e.getValue())));
     final Set<String> badRecords = new TreeSet<>();
     final Map<String, Optional<Tuple>> values =
-        value
-            .getValues()
-            .entrySet()
-            .stream()
+        value.getValues().entrySet().stream()
             .collect(
                 Collectors.toMap(
                     Map.Entry::getKey,
                     e -> {
-                      final AtomicBoolean ok = new AtomicBoolean(true);
-                      final Object[] convertedValues =
+                      final var ok = new AtomicBoolean(true);
+                      final var convertedValues =
                           type.fields()
                               .sorted(Comparator.comparing(field -> field.getValue().second()))
                               .map(
@@ -93,7 +89,7 @@ public class StructuredConfigFile extends JsonPluginFile<Configuration> {
     final Optional<Tuple> missingResult;
     if (value.isMissingUsesDefaults()) {
       final Set<String> missingFields = new HashSet<>();
-      final Object[] convertedValues =
+      final var convertedValues =
           type.fields()
               .sorted(Comparator.comparing(field -> field.getValue().second()))
               .map(

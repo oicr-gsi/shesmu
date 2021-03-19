@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -19,14 +18,11 @@ public class ImyhatNodeObject extends ImyhatNode {
   @Override
   public Imyhat render(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    final Map<String, Long> fieldCounts =
-        types
-            .stream()
+    final var fieldCounts =
+        types.stream()
             .map(Pair::first)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-    if (fieldCounts
-            .entrySet()
-            .stream()
+    if (fieldCounts.entrySet().stream()
             .filter(e -> e.getValue() > 1)
             .peek(
                 e ->
@@ -38,8 +34,7 @@ public class ImyhatNodeObject extends ImyhatNode {
       return Imyhat.BAD;
     }
     return new Imyhat.ObjectImyhat(
-        types
-            .stream()
+        types.stream()
             .map(
                 field ->
                     new Pair<>(

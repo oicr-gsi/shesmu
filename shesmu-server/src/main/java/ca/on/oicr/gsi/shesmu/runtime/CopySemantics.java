@@ -11,8 +11,8 @@ import java.util.function.IntFunction;
 public abstract class CopySemantics {
   public static CallSite bootstrap(
       MethodHandles.Lookup lookup, String name, MethodType type, int... indices) {
-    final CopySemantics[] output = new CopySemantics[indices.length];
-    for (int i = 0; i < indices.length; i++) {
+    final var output = new CopySemantics[indices.length];
+    for (var i = 0; i < indices.length; i++) {
       final IntFunction<CopySemantics> function;
       switch (name.charAt(i)) {
         case 'A':

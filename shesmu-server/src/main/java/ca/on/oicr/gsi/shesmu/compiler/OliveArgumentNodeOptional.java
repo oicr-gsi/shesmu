@@ -6,7 +6,6 @@ import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 /** The arguments defined in the “With” section of a “Run” olive. */
@@ -48,7 +47,7 @@ public final class OliveArgumentNodeOptional extends OliveArgumentNode {
   public void render(Renderer renderer, int action) {
     condition.render(renderer);
     renderer.mark(line);
-    final Label end = renderer.methodGen().newLabel();
+    final var end = renderer.methodGen().newLabel();
     renderer.methodGen().ifZCmp(GeneratorAdapter.EQ, end);
     storeAll(renderer, action, expression::render);
     renderer.methodGen().mark(end);
@@ -76,7 +75,7 @@ public final class OliveArgumentNodeOptional extends OliveArgumentNode {
   /** Perform type check on this argument's expression */
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = expression.typeCheck(errorHandler) & condition.typeCheck(errorHandler);
+    var ok = expression.typeCheck(errorHandler) & condition.typeCheck(errorHandler);
     if (ok && !Imyhat.BOOLEAN.isSame(condition.type())) {
       errorHandler.accept(
           String.format(

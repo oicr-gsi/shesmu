@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -23,14 +22,14 @@ public class GroupNodeObject extends GroupNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
-    for (final GroupNode child : children) {
+    for (final var child : children) {
       child.collectFreeVariables(names, predicate);
     }
   }
 
   @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
-    for (final GroupNode child : children) {
+    for (final var child : children) {
       child.collectPlugins(pluginFileNames);
     }
   }
@@ -52,10 +51,10 @@ public class GroupNodeObject extends GroupNode {
 
   @Override
   public void render(Regrouper regroup, RootBuilder builder) {
-    final Regrouper childGrouper =
+    final var childGrouper =
         regroup.addObject(
             name, children.stream().map(child -> new Pair<>(child.name(), child.type())));
-    for (final GroupNode child : children) {
+    for (final var child : children) {
       child.render(childGrouper, builder);
     }
   }
@@ -63,10 +62,10 @@ public class GroupNodeObject extends GroupNode {
   @Override
   public boolean resolve(
       NameDefinitions defs, NameDefinitions outerDefs, Consumer<String> errorHandler) {
-    final Map<String, Long> duplicates =
+    final var duplicates =
         children.stream().collect(Collectors.groupingBy(GroupNode::name, Collectors.counting()));
-    boolean ok = true;
-    for (final Map.Entry<String, Long> duplicate : duplicates.entrySet()) {
+    var ok = true;
+    for (final var duplicate : duplicates.entrySet()) {
       if (duplicate.getValue() > 1) {
         errorHandler.accept(
             String.format(
@@ -82,8 +81,7 @@ public class GroupNodeObject extends GroupNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return children
-            .stream()
+    return children.stream()
             .filter(c -> c.resolveDefinitions(expressionCompilerServices, errorHandler))
             .count()
         == children.size();

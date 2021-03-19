@@ -23,7 +23,7 @@ final class JsonSchemaConverter implements ImyhatTransformer<JsonSchema> {
 
   @Override
   public JsonSchema algebraic(Stream<AlgebraicTransformer> contents) {
-    final UnionTypeSchema result = new UnionTypeSchema();
+    final var result = new UnionTypeSchema();
     result.setElements(
         contents
             .map(
@@ -32,9 +32,9 @@ final class JsonSchemaConverter implements ImyhatTransformer<JsonSchema> {
                         new AlgebraicVisitor<ValueTypeSchema>() {
                           @Override
                           public ValueTypeSchema empty(String name) {
-                            final ObjectSchema object = new ObjectSchema();
+                            final var object = new ObjectSchema();
                             object.rejectAdditionalProperties();
-                            final StringSchema nameSchema = new StringSchema();
+                            final var nameSchema = new StringSchema();
                             nameSchema.setPattern(name);
                             object.putProperty("type", nameSchema.asValueTypeSchema());
                             object.putProperty("contents", new NullSchema());
@@ -44,7 +44,7 @@ final class JsonSchemaConverter implements ImyhatTransformer<JsonSchema> {
                           @Override
                           public ValueTypeSchema object(
                               String name, Stream<Pair<String, Imyhat>> contents) {
-                            final ObjectSchema contentObject = new ObjectSchema();
+                            final var contentObject = new ObjectSchema();
                             contentObject.rejectAdditionalProperties();
                             contents.forEach(
                                 field ->
@@ -52,9 +52,9 @@ final class JsonSchemaConverter implements ImyhatTransformer<JsonSchema> {
                                         field.first(),
                                         field.second().apply(JsonSchemaConverter.this)));
 
-                            final ObjectSchema object = new ObjectSchema();
+                            final var object = new ObjectSchema();
                             object.rejectAdditionalProperties();
-                            final StringSchema nameSchema = new StringSchema();
+                            final var nameSchema = new StringSchema();
                             nameSchema.setPattern(name);
                             object.putProperty("type", nameSchema.asValueTypeSchema());
                             object.putProperty("contents", contentObject);
@@ -63,16 +63,16 @@ final class JsonSchemaConverter implements ImyhatTransformer<JsonSchema> {
 
                           @Override
                           public ValueTypeSchema tuple(String name, Stream<Imyhat> contents) {
-                            final ArraySchema contentArray = new ArraySchema();
+                            final var contentArray = new ArraySchema();
                             contentArray.setItems(
                                 new ArrayItems(
                                     contents
                                         .map(element -> element.apply(JsonSchemaConverter.this))
                                         .toArray(JsonSchema[]::new)));
 
-                            final ObjectSchema object = new ObjectSchema();
+                            final var object = new ObjectSchema();
                             object.rejectAdditionalProperties();
-                            final StringSchema nameSchema = new StringSchema();
+                            final var nameSchema = new StringSchema();
                             nameSchema.setPattern(name);
                             object.putProperty("type", nameSchema.asValueTypeSchema());
                             object.putProperty("contents", contentArray);
@@ -90,7 +90,7 @@ final class JsonSchemaConverter implements ImyhatTransformer<JsonSchema> {
 
   @Override
   public JsonSchema date() {
-    final IntegerSchema schema = new IntegerSchema();
+    final var schema = new IntegerSchema();
     schema.setFormat(JsonValueFormat.DATE_TIME);
     return schema;
   }
@@ -112,7 +112,7 @@ final class JsonSchemaConverter implements ImyhatTransformer<JsonSchema> {
 
   @Override
   public JsonSchema list(Imyhat inner) {
-    final ArraySchema schema = new ArraySchema();
+    final var schema = new ArraySchema();
     schema.setItemsSchema(inner.apply(this));
     return schema;
   }
@@ -120,13 +120,13 @@ final class JsonSchemaConverter implements ImyhatTransformer<JsonSchema> {
   @Override
   public JsonSchema map(Imyhat key, Imyhat value) {
     if (key.isSame(Imyhat.STRING)) {
-      final ObjectSchema object = new ObjectSchema();
+      final var object = new ObjectSchema();
       object.setAdditionalProperties(new SchemaAdditionalProperties(value.apply(this)));
       return object;
     } else {
-      final ArraySchema inner = new ArraySchema();
+      final var inner = new ArraySchema();
       inner.setItems(new ArrayItems(new JsonSchema[] {key.apply(this), value.apply(this)}));
-      final ArraySchema schema = new ArraySchema();
+      final var schema = new ArraySchema();
       schema.setItems(new SingleItems(inner));
       return schema;
     }
@@ -134,7 +134,7 @@ final class JsonSchemaConverter implements ImyhatTransformer<JsonSchema> {
 
   @Override
   public JsonSchema object(Stream<Pair<String, Imyhat>> contents) {
-    final ObjectSchema object = new ObjectSchema();
+    final var object = new ObjectSchema();
     object.rejectAdditionalProperties();
     contents.forEach(field -> object.putProperty(field.first(), field.second().apply(this)));
     return object;
@@ -145,7 +145,7 @@ final class JsonSchemaConverter implements ImyhatTransformer<JsonSchema> {
     if (inner == null) {
       return new NullSchema();
     } else {
-      final JsonSchema schema = inner.apply(this);
+      final var schema = inner.apply(this);
       schema.setRequired(false);
       return schema;
     }
@@ -163,7 +163,7 @@ final class JsonSchemaConverter implements ImyhatTransformer<JsonSchema> {
 
   @Override
   public JsonSchema tuple(Stream<Imyhat> contents) {
-    final ArraySchema schema = new ArraySchema();
+    final var schema = new ArraySchema();
     schema.setItems(new ArrayItems(contents.map(e -> e.apply(this)).toArray(JsonSchema[]::new)));
     return schema;
   }

@@ -46,7 +46,7 @@ public interface ImportVerifier {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      ActionVerifier that = (ActionVerifier) o;
+      var that = (ActionVerifier) o;
       return name.equals(that.name) && parameters.equals(that.parameters);
     }
 
@@ -89,7 +89,7 @@ public interface ImportVerifier {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      ConstantVerifier that = (ConstantVerifier) o;
+      var that = (ConstantVerifier) o;
       return name.equals(that.name) && type.equals(that.type);
     }
 
@@ -125,7 +125,7 @@ public interface ImportVerifier {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      FunctionVerifier that = (FunctionVerifier) o;
+      var that = (FunctionVerifier) o;
       return name.equals(that.name)
           && returnType.equals(that.returnType)
           && parameters.equals(that.parameters);
@@ -161,7 +161,7 @@ public interface ImportVerifier {
     public OliveDefinitionVerifier(CallableDefinition definition) {
       name = definition.name();
       isRoot = definition.isRoot();
-      for (int i = 0; i < definition.parameterCount(); i++) {
+      for (var i = 0; i < definition.parameterCount(); i++) {
         parameters.add(definition.parameterType(i));
       }
       output =
@@ -187,7 +187,7 @@ public interface ImportVerifier {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      OliveDefinitionVerifier that = (OliveDefinitionVerifier) o;
+      var that = (OliveDefinitionVerifier) o;
       return isRoot == that.isRoot
           && name.equals(that.name)
           && parameters.equals(that.parameters)
@@ -236,7 +236,7 @@ public interface ImportVerifier {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      RefillerVerifier that = (RefillerVerifier) o;
+      var that = (RefillerVerifier) o;
       return name.equals(that.name) && parameters.equals(that.parameters);
     }
 

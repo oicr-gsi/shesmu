@@ -25,7 +25,6 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collector;
@@ -60,25 +59,22 @@ public abstract class Imyhat {
 
     @Override
     public void accept(ImyhatConsumer dispatcher, Object value) {
-      final AlgebraicValue algebraicValue = (AlgebraicValue) value;
-      final Imyhat inner = unions.get(algebraicValue.name());
+      final var algebraicValue = (AlgebraicValue) value;
+      final var inner = unions.get(algebraicValue.name());
       final Consumer<ImyhatConsumer> consumer;
       if (inner instanceof TupleImyhat) {
-        final TupleImyhat tupleInner = (TupleImyhat) inner;
+        final var tupleInner = (TupleImyhat) inner;
         consumer =
             d ->
                 d.acceptTuple(
                     IntStream.range(0, tupleInner.types.length)
                         .mapToObj(i -> new Field<>(i, algebraicValue.get(i), tupleInner.types[i])));
       } else {
-        final ObjectImyhat objectInner = (ObjectImyhat) inner;
+        final var objectInner = (ObjectImyhat) inner;
         consumer =
             d ->
                 d.acceptObject(
-                    objectInner
-                        .fields
-                        .entrySet()
-                        .stream()
+                    objectInner.fields.entrySet().stream()
                         .map(
                             e ->
                                 new Field<>(
@@ -91,11 +87,11 @@ public abstract class Imyhat {
 
     @Override
     public <R> R apply(ImyhatFunction<R> dispatcher, Object value) {
-      final AlgebraicValue algebraicValue = (AlgebraicValue) value;
-      final Imyhat inner = unions.get(algebraicValue.name());
+      final var algebraicValue = (AlgebraicValue) value;
+      final var inner = unions.get(algebraicValue.name());
       final ImyhatFunction.AccessContents converter;
       if (inner instanceof TupleImyhat) {
-        final TupleImyhat tupleInner = (TupleImyhat) inner;
+        final var tupleInner = (TupleImyhat) inner;
         converter =
             new AccessContents() {
               @Override
@@ -106,16 +102,13 @@ public abstract class Imyhat {
               }
             };
       } else {
-        final ObjectImyhat objectInner = (ObjectImyhat) inner;
+        final var objectInner = (ObjectImyhat) inner;
         converter =
             new AccessContents() {
               @Override
               public <C> C apply(ImyhatFunction<C> function) {
                 return function.applyObject(
-                    objectInner
-                        .fields
-                        .entrySet()
-                        .stream()
+                    objectInner.fields.entrySet().stream()
                         .map(
                             e ->
                                 new Field<>(
@@ -131,13 +124,11 @@ public abstract class Imyhat {
     @Override
     public <R> R apply(ImyhatTransformer<R> transformer) {
       return transformer.algebraic(
-          unions
-              .entrySet()
-              .stream()
+          unions.entrySet().stream()
               .map(
                   e -> {
                     if (e.getValue() instanceof TupleImyhat) {
-                      final TupleImyhat tupleImyhat = (TupleImyhat) e.getValue();
+                      final var tupleImyhat = (TupleImyhat) e.getValue();
                       if (tupleImyhat.types.length == 0) {
                         return new AlgebraicTransformer() {
                           @Override
@@ -164,7 +155,7 @@ public abstract class Imyhat {
                         };
                       }
                     } else {
-                      final ObjectImyhat objectImyhat = (ObjectImyhat) e.getValue();
+                      final var objectImyhat = (ObjectImyhat) e.getValue();
                       if (objectImyhat.fields.isEmpty()) {
                         return new AlgebraicTransformer() {
                           @Override
@@ -188,10 +179,7 @@ public abstract class Imyhat {
                           public <T> T visit(AlgebraicVisitor<T> visitor) {
                             return visitor.object(
                                 e.getKey(),
-                                objectImyhat
-                                    .fields
-                                    .entrySet()
-                                    .stream()
+                                objectImyhat.fields.entrySet().stream()
                                     .map(e -> new Pair<>(e.getKey(), e.getValue().first())));
                           }
                         };
@@ -204,10 +192,10 @@ public abstract class Imyhat {
     @Override
     public Comparator<?> comparator() {
       final Map<String, Comparator<AlgebraicValue>> comparators = new TreeMap<>();
-      for (final Entry<String, Imyhat> union : unions.entrySet()) {
+      for (final var union : unions.entrySet()) {
         Comparator<AlgebraicValue> comparator;
         if (union.getValue() instanceof TupleImyhat) {
-          final TupleImyhat tupleImyhat = (TupleImyhat) union.getValue();
+          final var tupleImyhat = (TupleImyhat) union.getValue();
           comparator =
               IntStream.range(0, tupleImyhat.types.length)
                   .mapToObj(
@@ -220,17 +208,15 @@ public abstract class Imyhat {
         } else {
           comparator =
               ((ObjectImyhat) union.getValue())
-                  .fields
-                  .values()
-                  .stream()
-                  .sorted(Comparator.comparing(Pair::second))
-                  .map(
-                      p ->
-                          Comparator.comparing(
-                              (AlgebraicValue t) -> t.get(p.second()),
-                              (Comparator<Object>) p.first().comparator()))
-                  .reduce(Comparator::thenComparing)
-                  .get();
+                  .fields.values().stream()
+                      .sorted(Comparator.comparing(Pair::second))
+                      .map(
+                          p ->
+                              Comparator.comparing(
+                                  (AlgebraicValue t) -> t.get(p.second()),
+                                  (Comparator<Object>) p.first().comparator()))
+                      .reduce(Comparator::thenComparing)
+                      .get();
         }
         comparators.put(union.getKey(), comparator);
       }
@@ -242,9 +228,7 @@ public abstract class Imyhat {
     public String descriptor() {
       return "u"
           + unions.size()
-          + unions
-              .entrySet()
-              .stream()
+          + unions.entrySet().stream()
               .map(u -> u.getKey() + "$" + u.getValue().descriptor())
               .collect(Collectors.joining());
     }
@@ -252,11 +236,11 @@ public abstract class Imyhat {
     @Override
     public boolean isAssignableFrom(Imyhat other) {
       if (other instanceof AlgebraicImyhat) {
-        final AlgebraicImyhat algebraicOther = (AlgebraicImyhat) other;
+        final var algebraicOther = (AlgebraicImyhat) other;
         if (!unions.keySet().containsAll(algebraicOther.unions.keySet())) {
           return false;
         }
-        for (final Entry<String, Imyhat> union : unions.entrySet()) {
+        for (final var union : unions.entrySet()) {
           if (algebraicOther.unions.containsKey(union.getKey())) {
             if (!union.getValue().isAssignableFrom(algebraicOther.unions.get(union.getKey()))) {
               return false;
@@ -281,8 +265,8 @@ public abstract class Imyhat {
     @Override
     public boolean isSame(Imyhat other) {
       if (other instanceof AlgebraicImyhat) {
-        final AlgebraicImyhat algebraicOther = (AlgebraicImyhat) other;
-        for (final Entry<String, Imyhat> union : unions.entrySet()) {
+        final var algebraicOther = (AlgebraicImyhat) other;
+        for (final var union : unions.entrySet()) {
           if (algebraicOther.unions.containsKey(union.getKey())) {
             if (!union.getValue().isSame(algebraicOther.unions.get(union.getKey()))) {
               return false;
@@ -301,9 +285,7 @@ public abstract class Imyhat {
 
     @Override
     public String name() {
-      return unions
-          .entrySet()
-          .stream()
+      return unions.entrySet().stream()
           .map(
               e -> {
                 if (e.getValue() instanceof TupleImyhat
@@ -320,7 +302,7 @@ public abstract class Imyhat {
     @Override
     public Imyhat unify(Imyhat other) {
       final Map<String, Imyhat> shared = new TreeMap<>(((AlgebraicImyhat) other).unions);
-      for (final Entry<String, Imyhat> union : unions.entrySet()) {
+      for (final var union : unions.entrySet()) {
         shared.merge(union.getKey(), union.getValue(), Imyhat::unify);
       }
       return new AlgebraicImyhat(shared);
@@ -391,20 +373,20 @@ public abstract class Imyhat {
     @Override
     public Comparator<?> comparator() {
       @SuppressWarnings("unchecked")
-      final Comparator<Object> keyComparator = (Comparator<Object>) key.comparator();
+      final var keyComparator = (Comparator<Object>) key.comparator();
       @SuppressWarnings("unchecked")
-      final Comparator<Object> valueComparator = (Comparator<Object>) value.comparator();
+      final var valueComparator = (Comparator<Object>) value.comparator();
       return (Map<?, ?> a, Map<?, ?> b) -> {
         final Iterator<? extends Map.Entry<?, ?>> aIt = a.entrySet().iterator();
         final Iterator<? extends Map.Entry<?, ?>> bIt = b.entrySet().iterator();
         while (aIt.hasNext() && bIt.hasNext()) {
-          final Map.Entry<?, ?> aEntry = aIt.next();
-          final Map.Entry<?, ?> bEntry = bIt.next();
-          final int result = keyComparator.compare(aEntry.getKey(), bEntry.getKey());
+          final var aEntry = aIt.next();
+          final var bEntry = bIt.next();
+          final var result = keyComparator.compare(aEntry.getKey(), bEntry.getKey());
           if (result != 0) {
             return result;
           }
-          final int valueResult = valueComparator.compare(aEntry.getValue(), bEntry.getValue());
+          final var valueResult = valueComparator.compare(aEntry.getValue(), bEntry.getValue());
           if (valueResult != 0) {
             return valueResult;
           }
@@ -426,7 +408,7 @@ public abstract class Imyhat {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      DictionaryImyhat that = (DictionaryImyhat) o;
+      var that = (DictionaryImyhat) o;
       return key.equals(that.key) && value.equals(that.value);
     }
 
@@ -438,7 +420,7 @@ public abstract class Imyhat {
     @Override
     public boolean isAssignableFrom(Imyhat other) {
       if (other instanceof DictionaryImyhat) {
-        final DictionaryImyhat otherMap = (DictionaryImyhat) other;
+        final var otherMap = (DictionaryImyhat) other;
         return key.isAssignableFrom(otherMap.key) && value.isAssignableFrom(otherMap.value);
       }
       return false;
@@ -457,7 +439,7 @@ public abstract class Imyhat {
     @Override
     public boolean isSame(Imyhat other) {
       if (other instanceof DictionaryImyhat) {
-        final DictionaryImyhat otherMap = (DictionaryImyhat) other;
+        final var otherMap = (DictionaryImyhat) other;
         return key.isSame(otherMap.key) && value.isSame(otherMap.value);
       }
       return false;
@@ -479,7 +461,7 @@ public abstract class Imyhat {
 
     @Override
     public Imyhat unify(Imyhat other) {
-      final DictionaryImyhat otherMap = (DictionaryImyhat) other;
+      final var otherMap = (DictionaryImyhat) other;
       return new DictionaryImyhat(key.unify(otherMap.key), value.unify(otherMap.value));
     }
 
@@ -498,14 +480,14 @@ public abstract class Imyhat {
     @Override
     public void accept(ImyhatConsumer dispatcher, Object value) {
       @SuppressWarnings("unchecked")
-      final Set<Object> values = (Set<Object>) value;
+      final var values = (Set<Object>) value;
       dispatcher.accept(values.stream(), inner);
     }
 
     @Override
     public <R> R apply(ImyhatFunction<R> dispatcher, Object value) {
       @SuppressWarnings("unchecked")
-      final Set<Object> values = (Set<Object>) value;
+      final var values = (Set<Object>) value;
       return dispatcher.apply(values.stream(), inner);
     }
 
@@ -517,12 +499,12 @@ public abstract class Imyhat {
     @Override
     public Comparator<?> comparator() {
       @SuppressWarnings("unchecked")
-      final Comparator<Object> innerComparator = (Comparator<Object>) inner.comparator();
+      final var innerComparator = (Comparator<Object>) inner.comparator();
       return (Set<?> a, Set<?> b) -> {
-        final Iterator<?> aIt = a.iterator();
-        final Iterator<?> bIt = b.iterator();
+        final var aIt = a.iterator();
+        final var bIt = b.iterator();
         while (aIt.hasNext() && bIt.hasNext()) {
-          final int result = innerComparator.compare(aIt.next(), bIt.next());
+          final var result = innerComparator.compare(aIt.next(), bIt.next());
           if (result != 0) {
             return result;
           }
@@ -544,7 +526,7 @@ public abstract class Imyhat {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      ListImyhat that = (ListImyhat) o;
+      var that = (ListImyhat) o;
       return inner.equals(that.inner);
     }
 
@@ -610,7 +592,7 @@ public abstract class Imyhat {
       fields
           .sorted(Comparator.comparing(Pair::first))
           .forEach(
-              new Consumer<Pair<String, Imyhat>>() {
+              new Consumer<>() {
                 int index;
 
                 @Override
@@ -622,11 +604,9 @@ public abstract class Imyhat {
 
     @Override
     public void accept(ImyhatConsumer dispatcher, Object value) {
-      final Tuple tuple = (Tuple) value;
+      final var tuple = (Tuple) value;
       dispatcher.acceptObject(
-          fields
-              .entrySet()
-              .stream()
+          fields.entrySet().stream()
               .map(
                   e ->
                       new Field<>(
@@ -635,11 +615,9 @@ public abstract class Imyhat {
 
     @Override
     public <R> R apply(ImyhatFunction<R> dispatcher, Object value) {
-      final Tuple tuple = (Tuple) value;
+      final var tuple = (Tuple) value;
       return dispatcher.applyObject(
-          fields
-              .entrySet()
-              .stream()
+          fields.entrySet().stream()
               .map(
                   e ->
                       new Field<>(
@@ -655,9 +633,7 @@ public abstract class Imyhat {
     @SuppressWarnings("unchecked")
     @Override
     public Comparator<?> comparator() {
-      return fields
-          .values()
-          .stream()
+      return fields.values().stream()
           .sorted(Comparator.comparing(Pair::second))
           .map(
               p ->
@@ -671,9 +647,7 @@ public abstract class Imyhat {
     public String descriptor() {
       return "o"
           + fields.size()
-          + fields
-              .entrySet()
-              .stream()
+          + fields.entrySet().stream()
               .map(e -> e.getKey() + "$" + e.getValue().first().descriptor())
               .collect(Collectors.joining());
     }
@@ -686,7 +660,7 @@ public abstract class Imyhat {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      ObjectImyhat that = (ObjectImyhat) o;
+      var that = (ObjectImyhat) o;
       return fields.equals(that.fields);
     }
 
@@ -712,13 +686,11 @@ public abstract class Imyhat {
       if (!(other instanceof ObjectImyhat)) {
         return false;
       }
-      final Map<String, Pair<Imyhat, Integer>> otherFields = ((ObjectImyhat) other).fields;
+      final var otherFields = ((ObjectImyhat) other).fields;
       if (fields.size() != otherFields.size()) {
         return false;
       }
-      return fields
-          .entrySet()
-          .stream()
+      return fields.entrySet().stream()
           .allMatch(
               e ->
                   e.getValue()
@@ -742,13 +714,11 @@ public abstract class Imyhat {
       if (!(other instanceof ObjectImyhat)) {
         return false;
       }
-      final Map<String, Pair<Imyhat, Integer>> otherFields = ((ObjectImyhat) other).fields;
+      final var otherFields = ((ObjectImyhat) other).fields;
       if (fields.size() != otherFields.size()) {
         return false;
       }
-      return fields
-          .entrySet()
-          .stream()
+      return fields.entrySet().stream()
           .allMatch(
               e ->
                   otherFields
@@ -764,9 +734,7 @@ public abstract class Imyhat {
 
     @Override
     public String name() {
-      return fields
-          .entrySet()
-          .stream()
+      return fields.entrySet().stream()
           .map(e -> e.getKey() + " = " + e.getValue().first().name())
           .sorted()
           .collect(Collectors.joining(", ", "{ ", " }"));
@@ -774,12 +742,9 @@ public abstract class Imyhat {
 
     @Override
     public Imyhat unify(Imyhat other) {
-      final ObjectImyhat otherObject = (ObjectImyhat) other;
+      final var otherObject = (ObjectImyhat) other;
       return new ObjectImyhat(
-          otherObject
-              .fields
-              .entrySet()
-              .stream()
+          otherObject.fields.entrySet().stream()
               .map(
                   e ->
                       new Pair<>(
@@ -787,7 +752,7 @@ public abstract class Imyhat {
     }
   }
 
-  public class OptionalImyhat extends Imyhat {
+  public static class OptionalImyhat extends Imyhat {
     private final Imyhat inner;
 
     public OptionalImyhat(Imyhat inner) {
@@ -817,7 +782,7 @@ public abstract class Imyhat {
     @Override
     public Comparator<?> comparator() {
       @SuppressWarnings("unchecked")
-      final Comparator<Object> innerComparator = (Comparator<Object>) inner.comparator();
+      final var innerComparator = (Comparator<Object>) inner.comparator();
       return (Optional<Object> a, Optional<Object> b) ->
           a.isPresent() && b.isPresent()
               ? innerComparator.compare(a.get(), b.get())
@@ -837,7 +802,7 @@ public abstract class Imyhat {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      OptionalImyhat that = (OptionalImyhat) o;
+      var that = (OptionalImyhat) o;
       return inner.equals(that.inner);
     }
 
@@ -912,14 +877,14 @@ public abstract class Imyhat {
 
     @Override
     public void accept(ImyhatConsumer dispatcher, Object value) {
-      final Tuple tuple = (Tuple) value;
+      final var tuple = (Tuple) value;
       dispatcher.acceptTuple(
           IntStream.range(0, types.length).mapToObj(i -> new Field<>(i, tuple.get(i), types[i])));
     }
 
     @Override
     public <R> R apply(ImyhatFunction<R> dispatcher, Object value) {
-      final Tuple tuple = (Tuple) value;
+      final var tuple = (Tuple) value;
       return dispatcher.applyTuple(
           IntStream.range(0, types.length).mapToObj(i -> new Field<>(i, tuple.get(i), types[i])));
     }
@@ -932,10 +897,10 @@ public abstract class Imyhat {
     @SuppressWarnings("unchecked")
     @Override
     public Comparator<?> comparator() {
-      Comparator<Tuple> comparator =
+      var comparator =
           Comparator.comparing((Tuple t) -> t.get(0), (Comparator<Object>) types[0].comparator());
-      for (int i = 1; i < types.length; i++) {
-        final int index = i;
+      for (var i = 1; i < types.length; i++) {
+        final var index = i;
         comparator =
             comparator.thenComparing(
                 (Tuple t) -> t.get(index), (Comparator<Object>) types[index].comparator());
@@ -962,7 +927,7 @@ public abstract class Imyhat {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      TupleImyhat that = (TupleImyhat) o;
+      var that = (TupleImyhat) o;
       return Arrays.equals(types, that.types);
     }
 
@@ -982,11 +947,11 @@ public abstract class Imyhat {
     @Override
     public boolean isAssignableFrom(Imyhat other) {
       if (other instanceof TupleImyhat) {
-        final Imyhat[] others = ((TupleImyhat) other).types;
+        final var others = ((TupleImyhat) other).types;
         if (others.length != types.length) {
           return false;
         }
-        for (int i = 0; i < types.length; i++) {
+        for (var i = 0; i < types.length; i++) {
           if (!types[i].isAssignableFrom(others[i])) {
             return false;
           }
@@ -1009,11 +974,11 @@ public abstract class Imyhat {
     @Override
     public boolean isSame(Imyhat other) {
       if (other instanceof TupleImyhat) {
-        final Imyhat[] others = ((TupleImyhat) other).types;
+        final var others = ((TupleImyhat) other).types;
         if (others.length != types.length) {
           return false;
         }
-        for (int i = 0; i < types.length; i++) {
+        for (var i = 0; i < types.length; i++) {
           if (!others[i].isSame(types[i])) {
             return false;
           }
@@ -1035,9 +1000,9 @@ public abstract class Imyhat {
 
     @Override
     public Imyhat unify(Imyhat other) {
-      final Imyhat[] unifiedTypes = new Imyhat[types.length];
-      final Imyhat[] otherTypes = ((TupleImyhat) other).types;
-      for (int i = 0; i < unifiedTypes.length; i++) {
+      final var unifiedTypes = new Imyhat[types.length];
+      final var otherTypes = ((TupleImyhat) other).types;
+      for (var i = 0; i < unifiedTypes.length; i++) {
         unifiedTypes[i] = types[i].unify(otherTypes[i]);
       }
       return new TupleImyhat(unifiedTypes);
@@ -1286,7 +1251,7 @@ public abstract class Imyhat {
 
         @Override
         public Object parse(String s) {
-          return Collections.emptySet();
+          return Set.of();
         }
 
         @Override
@@ -1698,7 +1663,7 @@ public abstract class Imyhat {
     if (callsites.containsKey(descriptor)) {
       return callsites.get(descriptor);
     }
-    final Imyhat imyhat = parse(descriptor, true);
+    final var imyhat = parse(descriptor, true);
     if (imyhat.isBad()) {
       throw new IllegalArgumentException("Bad type descriptor: " + descriptor);
     }
@@ -1724,7 +1689,7 @@ public abstract class Imyhat {
                           "%s has no type annotation and %s type isn't a valid Shesmu type.",
                           context, clazz.getTypeName())));
     } else {
-      final Imyhat type = Imyhat.parse(descriptor);
+      final var type = Imyhat.parse(descriptor);
       if (type.isBad()) {
         throw new IllegalArgumentException(
             String.format("%s has invalid type descriptor %s", context, descriptor));
@@ -1767,7 +1732,7 @@ public abstract class Imyhat {
     if (!(c instanceof ParameterizedType)) {
       return Optional.empty();
     }
-    final ParameterizedType p = (ParameterizedType) c;
+    final var p = (ParameterizedType) c;
     if (!(p.getRawType() instanceof Class<?>)) {
       return Optional.empty();
     }
@@ -1800,8 +1765,8 @@ public abstract class Imyhat {
   }
 
   private static Imyhat parse(CharSequence input, boolean allowEmpty) {
-    final AtomicReference<CharSequence> output = new AtomicReference<>();
-    final Imyhat result = parse(input, output, allowEmpty);
+    final var output = new AtomicReference<CharSequence>();
+    final var result = parse(input, output, allowEmpty);
     return output.get().length() == 0 ? result : BAD;
   }
 
@@ -1865,7 +1830,7 @@ public abstract class Imyhat {
       case 'o':
         return parseComplex(input, output, allowEmpty, true);
       case 'u':
-        int count = 0;
+        var count = 0;
         int index;
         for (index = 1; Character.isDigit(input.charAt(index)); index++) {
           count = 10 * count + Character.digit(input.charAt(index), 10);
@@ -1875,9 +1840,9 @@ public abstract class Imyhat {
         }
         output.set(input.subSequence(index, input.length()));
         final Map<String, Imyhat> unions = new TreeMap<>();
-        for (int i = 0; i < count; i++) {
-          final StringBuilder name = new StringBuilder();
-          int dollar = 0;
+        for (var i = 0; i < count; i++) {
+          final var name = new StringBuilder();
+          var dollar = 0;
           while (output.get().charAt(dollar) != '$') {
             name.append(output.get().charAt(dollar));
             dollar++;
@@ -1902,7 +1867,7 @@ public abstract class Imyhat {
       AtomicReference<CharSequence> output,
       boolean allowEmpty,
       boolean noZero) {
-    int count = 0;
+    var count = 0;
     int index;
     for (index = 1; index < input.length() && Character.isDigit(input.charAt(index)); index++) {
       count = 10 * count + Character.digit(input.charAt(index), 10);
@@ -1912,16 +1877,16 @@ public abstract class Imyhat {
     }
     output.set(input.subSequence(index, input.length()));
     if (input.charAt(0) == 't') {
-      final Imyhat[] inner = new Imyhat[count];
-      for (int i = 0; i < count; i++) {
+      final var inner = new Imyhat[count];
+      for (var i = 0; i < count; i++) {
         inner[i] = parse(output.get(), output, allowEmpty);
       }
       return tuple(inner);
     } else {
       final List<Pair<String, Imyhat>> fields = new ArrayList<>();
-      for (int i = 0; i < count; i++) {
-        final StringBuilder name = new StringBuilder();
-        int dollar = 0;
+      for (var i = 0; i < count; i++) {
+        final var name = new StringBuilder();
+        var dollar = 0;
         while (output.get().charAt(dollar) != '$') {
           name.append(output.get().charAt(dollar));
           dollar++;
@@ -2015,20 +1980,20 @@ public abstract class Imyhat {
 
   public <K, V> Map<K, V> newMap() {
     @SuppressWarnings("unchecked")
-    final Comparator<K> comparator = (Comparator<K>) comparator();
+    final var comparator = (Comparator<K>) comparator();
     return new TreeMap<>(comparator);
   }
 
   public <T> Set<T> newSet() {
     @SuppressWarnings("unchecked")
-    final Comparator<T> comparator = (Comparator<T>) comparator();
+    final var comparator = (Comparator<T>) comparator();
     return new TreeSet<>(comparator);
   }
 
   @SuppressWarnings("unchecked")
   public final <T> Collector<T, ?, TreeSet<T>> toSet() {
-    final Comparator<T> comparator = (Comparator<T>) comparator();
-    return Collectors.toCollection(() -> new TreeSet<T>(comparator));
+    final var comparator = (Comparator<T>) comparator();
+    return Collectors.toCollection(() -> new TreeSet<>(comparator));
   }
 
   @Override

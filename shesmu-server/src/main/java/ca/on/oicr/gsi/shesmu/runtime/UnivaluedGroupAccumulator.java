@@ -5,7 +5,7 @@ import java.util.Set;
 
 public class UnivaluedGroupAccumulator<T> {
   private final T defaultValue;
-  private Set<T> items = new HashSet<>();
+  private final Set<T> items = new HashSet<>();
 
   public UnivaluedGroupAccumulator(T defaultValue) {
 

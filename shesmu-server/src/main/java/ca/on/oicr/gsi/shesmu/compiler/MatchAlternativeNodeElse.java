@@ -56,7 +56,7 @@ public class MatchAlternativeNodeElse extends MatchAlternativeNode {
       Imyhat resultType,
       Map<String, Imyhat> remainingBranches,
       Consumer<String> errorHandler) {
-    boolean ok = expression.typeCheck(errorHandler);
+    var ok = expression.typeCheck(errorHandler);
     if (ok) {
       if (expression.type().isSame(resultType)) {
         return expression.type().unify(resultType);

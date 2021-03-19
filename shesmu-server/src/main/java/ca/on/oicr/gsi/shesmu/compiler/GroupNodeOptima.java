@@ -80,7 +80,7 @@ public class GroupNodeOptima extends GroupNodeDefaultable {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = expression.typeCheck(errorHandler);
+    var ok = expression.typeCheck(errorHandler);
     if (ok) {
       if (!expression.type().isOrderable()) {
         expression.typeError("orderable type", expression.type(), errorHandler);

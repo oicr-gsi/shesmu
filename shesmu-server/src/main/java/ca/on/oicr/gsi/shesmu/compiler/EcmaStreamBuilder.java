@@ -116,7 +116,7 @@ public final class EcmaStreamBuilder {
 
   public final void subsample(
       List<? extends RenderSubsampler> renderers, EcmaLoadableConstructor name) {
-    String sampleChain = "$runtime.subsampleStart()";
+    var sampleChain = "$runtime.subsampleStart()";
     for (final RenderSubsampler subsample : renderers) {
       sampleChain = subsample.render(renderer, sampleChain, currentType, name);
     }

@@ -25,7 +25,6 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -79,7 +78,7 @@ public final class StandardDefinitions implements DefinitionRepository {
 
     @Override
     public void render(GeneratorAdapter methodGen) {
-      final Type t = type.apply(TO_ASM);
+      final var t = type.apply(TO_ASM);
       methodGen.invokeStatic(A_MATH_TYPE, new Method("min", t, new Type[] {t, t}));
       methodGen.invokeStatic(A_MATH_TYPE, new Method("max", t, new Type[] {t, t}));
     }
@@ -826,8 +825,8 @@ public final class StandardDefinitions implements DefinitionRepository {
 
   @RuntimeInterop
   public static JsonNode jsonObject(Set<Tuple> fields) {
-    final ObjectNode result = RuntimeSupport.MAPPER.createObjectNode();
-    for (final Tuple field : fields) {
+    final var result = RuntimeSupport.MAPPER.createObjectNode();
+    for (final var field : fields) {
       result.set((String) field.get(0), (JsonNode) field.get(1));
     }
     return result;
@@ -838,7 +837,7 @@ public final class StandardDefinitions implements DefinitionRepository {
     if (original.getNameCount() == 0) {
       return original;
     }
-    final String start = original.getName(0).toString();
+    final var start = original.getName(0).toString();
     if (start.equals("$HOME") || start.equals("~")) {
       return homedir.resolve(original.subpath(1, original.getNameCount()));
     }

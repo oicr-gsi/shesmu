@@ -32,17 +32,17 @@ import org.apache.commons.cli.*;
 
 public class CheckConfig {
   public static void main(String[] args) throws XMLStreamException {
-    final Options options = new Options();
+    final var options = new Options();
     options.addOption("h", "help", false, "This dreck.");
     options.addOption(
         "r", "remote", true, "The remote instance with all the actions/functions/etc.");
     final CommandLineParser parser = new DefaultParser();
     String[] files;
     try {
-      final CommandLine cmd = parser.parse(options, args);
+      final var cmd = parser.parse(options, args);
 
       if (cmd.hasOption("h")) {
-        final HelpFormatter formatter = new HelpFormatter();
+        final var formatter = new HelpFormatter();
         formatter.printHelp("Shesmu Config File checker", options);
         System.exit(0);
         return;
@@ -60,11 +60,11 @@ public class CheckConfig {
       return;
     }
     @SuppressWarnings("rawtypes")
-    final ServiceLoader<PluginFileType> pluginFileTypes = ServiceLoader.load(PluginFileType.class);
-    for (final String file : files) {
-      final Path path = Paths.get(file);
-      final String fileName = path.getFileName().toString();
-      boolean missing = true;
+    final var pluginFileTypes = ServiceLoader.load(PluginFileType.class);
+    for (final var file : files) {
+      final var path = Paths.get(file);
+      final var fileName = path.getFileName().toString();
+      var missing = true;
       for (PluginFileType<?> type : pluginFileTypes) {
         if (fileName.endsWith(type.extension())) {
           showPlugin(type, path);
@@ -85,7 +85,7 @@ public class CheckConfig {
         type.create(
             path,
             "test",
-            new Definer<T>() {
+            new Definer<>() {
               @Override
               public void clearActions() {
                 // Dummy.
@@ -162,7 +162,7 @@ public class CheckConfig {
 
               @Override
               public String defineRefiller(String name, String description, RefillDefiner definer) {
-                RefillInfo<Object, ?> info = definer.info(Object.class);
+                var info = definer.info(Object.class);
                 System.out.printf("Refiller %s bound to %s.\n", name, info.type().getName());
                 return name;
               }
@@ -245,9 +245,7 @@ public class CheckConfig {
                 System.err.printf(
                     "PLUGIN LOG: %s [%s]\n",
                     message,
-                    labels
-                        .entrySet()
-                        .stream()
+                    labels.entrySet().stream()
                         .map(e -> e.getKey() + "=" + e.getValue())
                         .collect(Collectors.joining()));
               }

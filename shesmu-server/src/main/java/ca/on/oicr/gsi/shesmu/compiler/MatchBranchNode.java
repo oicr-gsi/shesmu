@@ -62,10 +62,10 @@ public abstract class MatchBranchNode {
   }
 
   public static Parser parse(Parser input, Consumer<MatchBranchNode> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
-    final AtomicReference<NodeConstructor> ctor = new AtomicReference<>();
-    final AtomicReference<ExpressionNode> value = new AtomicReference<>();
-    final Parser result =
+    final var name = new AtomicReference<String>();
+    final var ctor = new AtomicReference<NodeConstructor>();
+    final var value = new AtomicReference<ExpressionNode>();
+    final var result =
         input
             .whitespace()
             .keyword("When")
@@ -100,7 +100,7 @@ public abstract class MatchBranchNode {
   protected abstract Stream<Target> boundNames();
 
   public final void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
-    final Set<String> remove =
+    final var remove =
         boundNames()
             .filter(n -> predicate.test(n.flavour()) && !names.contains(n.name()))
             .map(Target::name)
@@ -134,7 +134,7 @@ public abstract class MatchBranchNode {
     renderer.methodGen().invokeVirtual(A_ALGEBRAIC_VALUE_TYPE, METHOD_ALGEBRAIC_TYPE__NAME);
     renderer.methodGen().push(name);
     renderer.methodGen().invokeVirtual(A_STRING_TYPE, METHOD_OBJECT__EQUALS);
-    final Label next = renderer.methodGen().newLabel();
+    final var next = renderer.methodGen().newLabel();
     renderer.methodGen().ifZCmp(GeneratorAdapter.EQ, next);
     value.render(
         prepare(

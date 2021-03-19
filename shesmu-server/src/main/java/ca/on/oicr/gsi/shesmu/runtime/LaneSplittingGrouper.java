@@ -27,7 +27,7 @@ public class LaneSplittingGrouper<I, T, O> implements Grouper<I, O> {
 
   @Override
   public Stream<Subgroup<I, O>> group(List<I> inputs) {
-    final Set<List<List<Long>>> permittedMergedLanes =
+    final var permittedMergedLanes =
         inputs.stream().map(permittedMerges).collect(Collectors.toSet());
     if (permittedMergedLanes.size() > 1) {
       // Each sample has a different idea of what merges are permitted by the flowcell. This is no
@@ -35,14 +35,14 @@ public class LaneSplittingGrouper<I, T, O> implements Grouper<I, O> {
       return Stream.empty();
     }
     final Map<Long, Long> canMerge = new TreeMap<>();
-    for (List<Long> mergableLanes : permittedMergedLanes.iterator().next()) {
-      final OptionalLong target = mergableLanes.stream().mapToLong(Long::longValue).min();
-      if (!target.isPresent()) {
+    for (var mergableLanes : permittedMergedLanes.iterator().next()) {
+      final var target = mergableLanes.stream().mapToLong(Long::longValue).min();
+      if (target.isEmpty()) {
         continue;
       }
       // Make all these lanes point to the lowest numbered lane in the group; if a lane has been
       // multiply assigned, drop this mess.
-      for (final Long lane : mergableLanes) {
+      for (final var lane : mergableLanes) {
         if (canMerge.put(lane, target.getAsLong()) != null) {
           return Stream.empty();
         }
@@ -57,8 +57,7 @@ public class LaneSplittingGrouper<I, T, O> implements Grouper<I, O> {
 
     // Bin input by the lane it claims to be
     final Map<Long, List<I>> groups =
-        inputs
-            .stream()
+        inputs.stream()
             .collect(Collectors.groupingBy(laneNumber, TreeMap::new, Collectors.toList()));
     // If we weren't given any useful flow cell information (i.e., no mergable groups), just assume
     // everything goes in the same lane.
@@ -68,8 +67,8 @@ public class LaneSplittingGrouper<I, T, O> implements Grouper<I, O> {
     Set<Long> lanes = null;
     Set<T> idsForLane = null;
     final Deque<Subgroup<I, O>> results = new ArrayDeque<>();
-    for (Map.Entry<Long, List<I>> entry : groups.entrySet()) {
-      final Long target = targetLane.apply(entry.getKey());
+    for (var entry : groups.entrySet()) {
+      final var target = targetLane.apply(entry.getKey());
       // We are now given a lane that we don't know where to assign. Reject this whole thing.
       if (target == null) {
         return Stream.empty();
@@ -85,14 +84,12 @@ public class LaneSplittingGrouper<I, T, O> implements Grouper<I, O> {
       } else {
         // If this isn't the first lane in a group, it should have no samples in it or the samples
         // must match the ones in the first lane
-        final Set<T> idsForThisLane = sampleIdsForLane(entry);
+        final var idsForThisLane = sampleIdsForLane(entry);
         if (idsForThisLane.isEmpty() || idsForThisLane.equals(idsForLane)) {
           lanes.add(entry.getKey());
           // Add only the lane and dump the samples
-          entry
-              .getValue()
-              .stream()
-              .filter(v -> !identifier.apply(v).isPresent())
+          entry.getValue().stream()
+              .filter(v -> identifier.apply(v).isEmpty())
               .forEach(results.getLast()::add);
         } else {
           return Stream.empty();
@@ -103,10 +100,8 @@ public class LaneSplittingGrouper<I, T, O> implements Grouper<I, O> {
   }
 
   private Set<T> sampleIdsForLane(Map.Entry<Long, List<I>> entry) {
-    return entry
-        .getValue()
-        .stream()
-        .flatMap(v -> identifier.apply(v).map(Stream::of).orElseGet(Stream::empty))
+    return entry.getValue().stream()
+        .flatMap(v -> identifier.apply(v).stream())
         .collect(Collectors.toSet());
   }
 }

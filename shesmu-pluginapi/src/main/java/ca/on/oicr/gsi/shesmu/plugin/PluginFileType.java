@@ -12,7 +12,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -34,8 +34,7 @@ public abstract class PluginFileType<T extends PluginFile> {
   private final Class<T> fileClass;
   private final Lookup lookup;
   private static final Set<String> RESERVED_NAMES =
-      new TreeSet<>(
-          Arrays.asList("core", "java", "olive", "plugin", "script", "shesmu", "std", "sys"));
+      new TreeSet<>(List.of("core", "java", "olive", "plugin", "script", "shesmu", "std", "sys"));
 
   /**
    * Create a new configuration format
@@ -63,7 +62,7 @@ public abstract class PluginFileType<T extends PluginFile> {
       throw new IllegalArgumentException(
           String.format("Plugin %s has no namespaces.", getClass().getName()));
     }
-    for (final String namespace : namespaces) {
+    for (final var namespace : namespaces) {
       if (!Parser.IDENTIFIER.matcher(namespace).matches()) {
         throw new IllegalArgumentException(
             String.format(

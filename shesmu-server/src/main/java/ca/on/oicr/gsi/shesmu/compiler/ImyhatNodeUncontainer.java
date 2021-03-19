@@ -14,7 +14,7 @@ public class ImyhatNodeUncontainer extends ImyhatNode {
   @Override
   public Imyhat render(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    final Imyhat type = outer.render(expressionCompilerServices, errorHandler);
+    final var type = outer.render(expressionCompilerServices, errorHandler);
     if (type instanceof Imyhat.ListImyhat) {
       return ((Imyhat.ListImyhat) type).inner();
     }

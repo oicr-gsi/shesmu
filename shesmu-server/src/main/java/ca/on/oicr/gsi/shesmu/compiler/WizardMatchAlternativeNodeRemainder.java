@@ -65,7 +65,7 @@ public class WizardMatchAlternativeNodeRemainder extends WizardMatchAlternativeN
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    boolean ok = step.resolve(defs.bind(target), errorHandler);
+    var ok = step.resolve(defs.bind(target), errorHandler);
     if (ok && !read) {
       errorHandler.accept(String.format("%d:%d: Variable “%s” is never used.", line, column, name));
       return false;

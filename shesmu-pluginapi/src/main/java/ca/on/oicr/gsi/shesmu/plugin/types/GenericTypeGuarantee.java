@@ -18,12 +18,13 @@ import java.util.stream.Stream;
  */
 public abstract class GenericTypeGuarantee<T> {
 
+  @SafeVarargs
   public static <T> GenericTypeGuarantee<T> genericAlgebraic(
       GenericAlgebraicGuarantee<? extends T>... inner) {
-    final Map<String, GenericAlgebraicGuarantee<? extends T>> processors =
+    final var processors =
         Stream.of(inner)
             .collect(Collectors.toMap(GenericAlgebraicGuarantee::name, Function.identity()));
-    return new GenericTypeGuarantee<T>() {
+    return new GenericTypeGuarantee<>() {
 
       @Override
       public <R> R apply(GenericTransformer<R> transformer) {
@@ -33,13 +34,12 @@ public abstract class GenericTypeGuarantee<T> {
       @Override
       public boolean check(Map<String, Imyhat> variables, Imyhat reference) {
         return reference.apply(
-            new ImyhatTransformer<Boolean>() {
+            new ImyhatTransformer<>() {
               @Override
               public Boolean algebraic(Stream<AlgebraicTransformer> contents) {
                 return contents.allMatch(
                     t -> {
-                      final GenericAlgebraicGuarantee<? extends T> processor =
-                          processors.get(t.name());
+                      final var processor = processors.get(t.name());
                       return processor != null && processor.check(variables, t);
                     });
               }
@@ -108,9 +108,7 @@ public abstract class GenericTypeGuarantee<T> {
 
       @Override
       public Imyhat render(Map<String, Imyhat> variables) {
-        return processors
-            .values()
-            .stream()
+        return processors.values().stream()
             .map(v -> v.render(variables))
             .reduce(Imyhat::unify)
             .get();
@@ -118,16 +116,14 @@ public abstract class GenericTypeGuarantee<T> {
 
       @Override
       public String toString(Map<String, Imyhat> typeVariables) {
-        return processors
-            .values()
-            .stream()
+        return processors.values().stream()
             .map(v -> v.toString(typeVariables))
             .collect(Collectors.joining(" | "));
       }
 
       @Override
       public T unpack(Object value) {
-        final AlgebraicValue algebraicValue = (AlgebraicValue) value;
+        final var algebraicValue = (AlgebraicValue) value;
         return processors.get(algebraicValue.name()).unpack(algebraicValue);
       }
     };
@@ -138,7 +134,7 @@ public abstract class GenericTypeGuarantee<T> {
    * @param inner the type of the contents of the list
    */
   public static <T> GenericTypeGuarantee<Set<T>> genericList(GenericTypeGuarantee<T> inner) {
-    return new GenericTypeGuarantee<Set<T>>() {
+    return new GenericTypeGuarantee<>() {
 
       @Override
       public <R> R apply(GenericTransformer<R> transformer) {
@@ -176,7 +172,7 @@ public abstract class GenericTypeGuarantee<T> {
    */
   public static <K, V> GenericTypeGuarantee<Map<K, V>> genericMap(
       GenericTypeGuarantee<K> key, GenericTypeGuarantee<V> value) {
-    return new GenericTypeGuarantee<Map<K, V>>() {
+    return new GenericTypeGuarantee<>() {
 
       @Override
       public <R> R apply(GenericTransformer<R> transformer) {
@@ -203,10 +199,9 @@ public abstract class GenericTypeGuarantee<T> {
       @Override
       public Map<K, V> unpack(Object object) {
         return ((Map<?, ?>) object)
-            .entrySet()
-            .stream()
-            .collect(
-                Collectors.toMap(e -> key.unpack(e.getKey()), e -> value.unpack(e.getValue())));
+            .entrySet().stream()
+                .collect(
+                    Collectors.toMap(e -> key.unpack(e.getKey()), e -> value.unpack(e.getValue())));
       }
     };
   }
@@ -218,7 +213,7 @@ public abstract class GenericTypeGuarantee<T> {
    */
   public static <T> GenericTypeGuarantee<Optional<T>> genericOptional(
       GenericTypeGuarantee<T> inner) {
-    return new GenericTypeGuarantee<Optional<T>>() {
+    return new GenericTypeGuarantee<>() {
 
       @Override
       public <R> R apply(GenericTransformer<R> transformer) {
@@ -263,7 +258,7 @@ public abstract class GenericTypeGuarantee<T> {
       TypeGuarantee.Pack2<? super T, ? super U, ? extends R> pack,
       GenericTypeGuarantee<T> first,
       GenericTypeGuarantee<U> second) {
-    return new GenericTypeGuarantee<R>() {
+    return new GenericTypeGuarantee<>() {
       @Override
       public <O> O apply(GenericTransformer<O> transformer) {
         return transformer.genericTuple(Stream.of(first, second));
@@ -272,7 +267,7 @@ public abstract class GenericTypeGuarantee<T> {
       @Override
       public boolean check(Map<String, Imyhat> variables, Imyhat reference) {
         if (reference instanceof Imyhat.TupleImyhat) {
-          Imyhat.TupleImyhat tuple = (Imyhat.TupleImyhat) reference;
+          var tuple = (Imyhat.TupleImyhat) reference;
           return first.check(variables, tuple.get(0)) && second.check(variables, tuple.get(1));
         }
         return false;
@@ -293,7 +288,7 @@ public abstract class GenericTypeGuarantee<T> {
 
       @Override
       public R unpack(Object object) {
-        final Tuple tuple = (Tuple) object;
+        final var tuple = (Tuple) object;
         return pack.pack(first.unpack(tuple.get(0)), second.unpack(tuple.get(1)));
       }
     };
@@ -316,7 +311,7 @@ public abstract class GenericTypeGuarantee<T> {
       GenericTypeGuarantee<T> first,
       GenericTypeGuarantee<U> second,
       GenericTypeGuarantee<V> third) {
-    return new GenericTypeGuarantee<R>() {
+    return new GenericTypeGuarantee<>() {
       @Override
       public <O> O apply(GenericTransformer<O> transformer) {
         return transformer.genericTuple(Stream.of(first, second, third));
@@ -325,7 +320,7 @@ public abstract class GenericTypeGuarantee<T> {
       @Override
       public boolean check(Map<String, Imyhat> variables, Imyhat reference) {
         if (reference instanceof Imyhat.TupleImyhat) {
-          Imyhat.TupleImyhat tuple = (Imyhat.TupleImyhat) reference;
+          var tuple = (Imyhat.TupleImyhat) reference;
           return first.check(variables, tuple.get(0))
               && second.check(variables, tuple.get(1))
               && third.check(variables, tuple.get(2));
@@ -348,7 +343,7 @@ public abstract class GenericTypeGuarantee<T> {
 
       @Override
       public R unpack(Object object) {
-        final Tuple tuple = (Tuple) object;
+        final var tuple = (Tuple) object;
         return pack.pack(
             first.unpack(tuple.get(0)), second.unpack(tuple.get(1)), third.unpack(tuple.get(2)));
       }
@@ -375,7 +370,7 @@ public abstract class GenericTypeGuarantee<T> {
       GenericTypeGuarantee<U> second,
       GenericTypeGuarantee<V> third,
       GenericTypeGuarantee<W> fourth) {
-    return new GenericTypeGuarantee<R>() {
+    return new GenericTypeGuarantee<>() {
       @Override
       public <O> O apply(GenericTransformer<O> transformer) {
         return transformer.genericTuple(Stream.of(first, second, third, fourth));
@@ -384,7 +379,7 @@ public abstract class GenericTypeGuarantee<T> {
       @Override
       public boolean check(Map<String, Imyhat> variables, Imyhat reference) {
         if (reference instanceof Imyhat.TupleImyhat) {
-          Imyhat.TupleImyhat tuple = (Imyhat.TupleImyhat) reference;
+          var tuple = (Imyhat.TupleImyhat) reference;
           return first.check(variables, tuple.get(0))
               && second.check(variables, tuple.get(1))
               && third.check(variables, tuple.get(2))
@@ -410,7 +405,7 @@ public abstract class GenericTypeGuarantee<T> {
 
       @Override
       public R unpack(Object object) {
-        final Tuple tuple = (Tuple) object;
+        final var tuple = (Tuple) object;
         return pack.pack(
             first.unpack(tuple.get(0)),
             second.unpack(tuple.get(1)),

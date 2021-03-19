@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.plugin.action;
 
 import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
-import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -71,7 +71,7 @@ public abstract class ActionCommand<A extends Action> {
     this.command = command;
     this.icon = icon;
     this.buttonText = buttonText;
-    this.preferences.addAll(Arrays.asList(preferences));
+    this.preferences.addAll(List.of(preferences));
   }
 
   /** The text that the user sees */

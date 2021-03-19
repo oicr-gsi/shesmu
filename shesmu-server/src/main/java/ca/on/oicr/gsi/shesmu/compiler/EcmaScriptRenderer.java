@@ -147,7 +147,7 @@ public final class EcmaScriptRenderer {
 
                 @Override
                 public String apply(Imyhat imyhat) {
-                  final CompareTransformer inner =
+                  final var inner =
                       new CompareTransformer(left + "[" + index + "]", right + "[" + index + "]");
                   index++;
                   return imyhat.apply(inner);
@@ -160,7 +160,7 @@ public final class EcmaScriptRenderer {
   public static final ImyhatTransformer<String> COMPARATOR = new CompareTransformer("a", "b");
 
   public static ImyhatTransformer<String> isEqual(String left, String right) {
-    return new ImyhatTransformer<String>() {
+    return new ImyhatTransformer<>() {
       @Override
       public String algebraic(Stream<AlgebraicTransformer> contents) {
         return String.format(
@@ -206,7 +206,7 @@ public final class EcmaScriptRenderer {
 
                                               @Override
                                               public String apply(Imyhat imyhat) {
-                                                final int current = index++;
+                                                final var current = index++;
                                                 return imyhat.apply(
                                                     isEqual(
                                                         left + ".contents[" + current + "]",
@@ -300,7 +300,7 @@ public final class EcmaScriptRenderer {
 
                   @Override
                   public String apply(Imyhat imyhat) {
-                    final int current = index++;
+                    final var current = index++;
                     return imyhat.apply(
                         isEqual(left + "[" + current + "]", right + "[" + current + "]"));
                   }
@@ -311,7 +311,7 @@ public final class EcmaScriptRenderer {
   }
 
   public static String regexFlagsToString(int flags) {
-    final StringBuilder builder = new StringBuilder();
+    final var builder = new StringBuilder();
     if ((flags & Pattern.CASE_INSENSITIVE) != 0) {
       builder.append("i");
     }
@@ -329,8 +329,8 @@ public final class EcmaScriptRenderer {
   }
 
   public static String root(String sourcePath, String hash, Consumer<EcmaScriptRenderer> render) {
-    final StringBuilder output = new StringBuilder();
-    final EcmaScriptRenderer renderer =
+    final var output = new StringBuilder();
+    final var renderer =
         new EcmaScriptRenderer(sourcePath, hash, new AtomicInteger(), output, new TreeMap<>());
     render.accept(renderer);
     return output.toString();
@@ -389,17 +389,17 @@ public final class EcmaScriptRenderer {
   }
 
   public String lambda(int args, LambdaRender body) {
-    final StringBuilder functionBuilder = new StringBuilder();
-    final int offset = id.getAndAdd(args);
+    final var functionBuilder = new StringBuilder();
+    final var offset = id.getAndAdd(args);
     functionBuilder.append("function(");
-    for (int i = 0; i < args; i++) {
+    for (var i = 0; i < args; i++) {
       if (i > 0) {
         functionBuilder.append(", ");
       }
       functionBuilder.append(" _").append(i + offset);
     }
     functionBuilder.append(") {");
-    final EcmaScriptRenderer block =
+    final var block =
         new EcmaScriptRenderer(sourcePath, hash, id, functionBuilder, new TreeMap<>(targets));
     block.statement(
         String.format(
@@ -438,27 +438,27 @@ public final class EcmaScriptRenderer {
   }
 
   public final String newConst(String value) {
-    final int newId = id.getAndIncrement();
+    final var newId = id.getAndIncrement();
     builder.append(String.format("const _%d = %s;\n", newId, value));
     return "_" + newId;
   }
 
   public final String newLet(String value) {
-    final int newId = id.getAndIncrement();
+    final var newId = id.getAndIncrement();
     builder.append(String.format("let _%d = %s;\n", newId, value));
     return "_" + newId;
   }
 
   public final String newLet() {
-    final int newId = id.getAndIncrement();
+    final var newId = id.getAndIncrement();
     builder.append(String.format("let _%d;\n", newId));
     return "_" + newId;
   }
 
   public String selfInvoke(Function<EcmaScriptRenderer, String> expression) {
-    final StringBuilder functionBuilder = new StringBuilder();
+    final var functionBuilder = new StringBuilder();
     functionBuilder.append("(function() {");
-    final EcmaScriptRenderer block =
+    final var block =
         new EcmaScriptRenderer(sourcePath, hash, id, functionBuilder, new TreeMap<>(targets));
     block.statement(String.format("return %s", expression.apply(block)));
     functionBuilder.append("})()");

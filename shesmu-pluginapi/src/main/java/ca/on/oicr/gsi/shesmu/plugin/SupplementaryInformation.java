@@ -2,9 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin;
 
 import ca.on.oicr.gsi.Pair;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.stream.Stream;
 
 /** A list of table rows that can be inserted into definitions pages and the olive dashboard */
@@ -19,7 +17,7 @@ public interface SupplementaryInformation {
     return new DisplayElement() {
       @Override
       public JsonNode toJson() {
-        final ObjectNode node = JsonNodeFactory.instance.objectNode();
+        final var node = JsonNodeFactory.instance.objectNode();
         node.put("type", "b");
         node.put("contents", text);
         return node;
@@ -31,7 +29,7 @@ public interface SupplementaryInformation {
     return new DisplayElement() {
       @Override
       public JsonNode toJson() {
-        final ObjectNode node = JsonNodeFactory.instance.objectNode();
+        final var node = JsonNodeFactory.instance.objectNode();
         node.put("type", "icon");
         node.put("icon", icon.icon());
         return node;
@@ -43,7 +41,7 @@ public interface SupplementaryInformation {
     return new DisplayElement() {
       @Override
       public JsonNode toJson() {
-        final ObjectNode node = JsonNodeFactory.instance.objectNode();
+        final var node = JsonNodeFactory.instance.objectNode();
         node.put("type", "i");
         node.put("contents", text);
         return node;
@@ -55,10 +53,10 @@ public interface SupplementaryInformation {
     return new DisplayElement() {
       @Override
       public JsonNode toJson() {
-        final ObjectNode node = JsonNodeFactory.instance.objectNode();
+        final var node = JsonNodeFactory.instance.objectNode();
         node.put("type", "a");
         node.put("url", url);
-        node.put("contents", text.toJson());
+        node.set("contents", text.toJson());
         node.put("title", title);
         return node;
       }
@@ -69,7 +67,7 @@ public interface SupplementaryInformation {
     return new DisplayElement() {
       @Override
       public JsonNode toJson() {
-        final ObjectNode node = JsonNodeFactory.instance.objectNode();
+        final var node = JsonNodeFactory.instance.objectNode();
         node.put("type", "tt");
         node.put("contents", text);
         return node;
@@ -81,8 +79,8 @@ public interface SupplementaryInformation {
     return new DisplayElement() {
       @Override
       public JsonNode toJson() {
-        final ArrayNode node = JsonNodeFactory.instance.arrayNode();
-        for (final DisplayElement element : elements) {
+        final var node = JsonNodeFactory.instance.arrayNode();
+        for (final var element : elements) {
           node.add(element.toJson());
         }
         return node;

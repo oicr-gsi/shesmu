@@ -122,10 +122,10 @@ public class ExpressionNodeContains extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    final boolean ok = needle.typeCheck(errorHandler) & haystack.typeCheck(errorHandler);
+    final var ok = needle.typeCheck(errorHandler) & haystack.typeCheck(errorHandler);
     if (ok) {
       if (haystack.type() instanceof Imyhat.ListImyhat) {
-        final Imyhat inner = ((Imyhat.ListImyhat) haystack.type()).inner();
+        final var inner = ((Imyhat.ListImyhat) haystack.type()).inner();
         if (inner.isAssignableFrom(needle.type())) {
           mode = Mode.LIST;
           keyType = needle.type().unify(inner);
@@ -135,7 +135,7 @@ public class ExpressionNodeContains extends ExpressionNode {
         return false;
       }
       if (haystack.type() instanceof Imyhat.DictionaryImyhat) {
-        final Imyhat.DictionaryImyhat haystackType = (Imyhat.DictionaryImyhat) haystack.type();
+        final var haystackType = (Imyhat.DictionaryImyhat) haystack.type();
         if (haystackType.key().isAssignableFrom(needle.type())) {
           mode = Mode.MAP;
           keyType = haystackType.key().unify(needle.type());

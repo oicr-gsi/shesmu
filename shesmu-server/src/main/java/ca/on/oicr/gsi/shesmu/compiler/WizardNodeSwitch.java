@@ -22,14 +22,14 @@ public class WizardNodeSwitch extends WizardNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    final String testValue = renderer.newConst(test.renderEcma(renderer));
-    final String testLambda =
+    final var testValue = renderer.newConst(test.renderEcma(renderer));
+    final var testLambda =
         renderer.newConst(
             renderer.lambda(
                 1,
                 (rr, args) ->
                     test.type().apply(EcmaScriptRenderer.isEqual(args.apply(0), testValue))));
-    final String result = renderer.newLet();
+    final var result = renderer.newLet();
     renderer.mapIf(
         cases.stream(),
         p -> String.format("%s(%s)", testLambda, p.first().renderEcma(renderer)),
@@ -82,7 +82,7 @@ public class WizardNodeSwitch extends WizardNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok =
+    var ok =
         test.typeCheck(errorHandler)
             & cases.stream()
                     .filter(

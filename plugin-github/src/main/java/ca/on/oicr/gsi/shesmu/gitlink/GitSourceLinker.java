@@ -9,7 +9,6 @@ import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 import org.kohsuke.MetaInfServices;
 
 @MetaInfServices
@@ -20,14 +19,14 @@ public class GitSourceLinker extends PluginFileType<GitSourceLinker.GitLinkerFil
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  class GitLinkerFile extends JsonPluginFile<GitConfiguration> {
+  static class GitLinkerFile extends JsonPluginFile<GitConfiguration> {
     Optional<GitConfiguration> config = Optional.empty();
 
     public GitLinkerFile(Path fileName, String instanceName) {
       super(fileName, instanceName, MAPPER, GitConfiguration.class);
     }
 
-    public void configuration(SectionRenderer renderer) throws XMLStreamException {
+    public void configuration(SectionRenderer renderer) {
       config.ifPresent(
           c -> {
             renderer.line("Prefix", c.getPrefix());
@@ -47,7 +46,7 @@ public class GitSourceLinker extends PluginFileType<GitSourceLinker.GitLinkerFil
       return config
           .<Stream<String>>map(
               c -> {
-                final String prefix = c.getPrefix() + (c.getPrefix().endsWith("/") ? "" : "/");
+                final var prefix = c.getPrefix() + (c.getPrefix().endsWith("/") ? "" : "/");
                 if (localFilePath.startsWith(prefix)) {
                   return Stream.of(
                       c.getType()
@@ -60,7 +59,7 @@ public class GitSourceLinker extends PluginFileType<GitSourceLinker.GitLinkerFil
   }
 
   @Override
-  public GitLinkerFile create(Path filePath, String instanceName, Definer definer) {
+  public GitLinkerFile create(Path filePath, String instanceName, Definer<GitLinkerFile> definer) {
     return new GitLinkerFile(filePath, instanceName);
   }
 }

@@ -12,13 +12,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 
 public class GuanyinRemote extends JsonPluginFile<Configuration> {
@@ -31,16 +28,16 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
 
     @Override
     protected Stream<GuanyinReportValue> fetch(Instant lastUpdated) throws Exception {
-      if (!configuration.isPresent()) {
+      if (configuration.isEmpty()) {
         return Stream.empty();
       }
-      try (CloseableHttpResponse reportsResponse =
+      try (var reportsResponse =
               RunReport.HTTP_CLIENT.execute(
                   new HttpGet(configuration.get().getGuanyin() + "/reportdb/reports"));
-          CloseableHttpResponse recordsResponse =
+          var recordsResponse =
               RunReport.HTTP_CLIENT.execute(
                   new HttpGet(configuration.get().getGuanyin() + "/reportdb/records"))) {
-        final Map<Long, ReportDto> reports =
+        final var reports =
             Stream.of(
                     RunReport.MAPPER.readValue(
                         reportsResponse.getEntity().getContent(), ReportDto[].class))
@@ -66,7 +63,7 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) {
     configuration.ifPresent(
         configuration -> {
           renderer.link("观音", configuration.getGuanyin(), configuration.getGuanyin());
@@ -98,33 +95,31 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
 
   @Override
   protected Optional<Integer> update(Configuration configuration) {
-    try (CloseableHttpResponse response =
+    try (var response =
         RunReport.HTTP_CLIENT.execute(
             new HttpGet(configuration.getGuanyin() + "/reportdb/reports"))) {
       definer.clearActions();
-      for (final ReportDto report :
+      for (final var report :
           RunReport.MAPPER.readValue(response.getEntity().getContent(), ReportDto[].class)) {
         if (!report.isValid()) {
           continue;
         }
-        final long reportId = report.getId();
-        final String actionName =
+        final var reportId = report.getId();
+        final var actionName =
             report.getName() + "_" + report.getVersion().replaceAll("[^A-Za-z0-9_]", "_");
-        final String description =
+        final var description =
             String.format(
                 "Runs report %s-%s (%d) on Guanyin instance defined in %s.",
                 report.getName(), report.getVersion(), report.getId(), fileName());
-        final String reportName =
+        final var reportName =
             String.format("%s %s[%s]", report.getName(), report.getVersion(), report.getCategory());
         definer.defineAction(
             actionName,
             description,
             RunReport.class,
             () -> new RunReport(definer, reportId, reportName), //
-            report
-                .getPermittedParameters() //
-                .entrySet()
-                .stream() //
+            report.getPermittedParameters() //
+                .entrySet().stream() //
                 .map(
                     e ->
                         new JsonParameter<>(

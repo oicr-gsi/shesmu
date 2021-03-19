@@ -48,8 +48,7 @@ public final class FormNodeSubset extends FormNode {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    return label
-                .stream()
+    return label.stream()
                 .filter(
                     l ->
                         l.resolveDefinitions(
@@ -64,7 +63,7 @@ public final class FormNodeSubset extends FormNode {
   }
 
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = values.typeCheck(errorHandler);
+    var ok = values.typeCheck(errorHandler);
     if (ok) {
       if (!Imyhat.STRING.asList().isAssignableFrom(values.type())) {
         values.typeError(Imyhat.STRING.asList(), values.type(), errorHandler);

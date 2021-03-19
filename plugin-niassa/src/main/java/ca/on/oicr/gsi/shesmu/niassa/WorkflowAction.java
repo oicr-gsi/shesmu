@@ -486,18 +486,17 @@ public final class WorkflowAction extends Action {
                   workflowAccession,
                   annotations,
                   limsKeys,
-                  (key, message) -> {
-                    server.log(
-                        String.format(
-                            "%s for %s/%s/%s[%s] for %s",
-                            message,
-                            key.getProvider(),
-                            key.getId(),
-                            key.getVersion(),
-                            key.getLastModified(),
-                            actionId),
-                        Collections.emptyMap());
-                  })) {
+                  (key, message) ->
+                      server.log(
+                          String.format(
+                              "%s for %s/%s/%s[%s] for %s",
+                              message,
+                              key.getProvider(),
+                              key.getId(),
+                              key.getVersion(),
+                              key.getLastModified(),
+                              actionId),
+                          Collections.emptyMap()))) {
         // We need to check if the lock is live, but we need to trigger the cache to refresh first,
         // or it will enter a deadlocked state where a LIMS key is locked and the cache isn't going
         // to refresh which is what clears those keys.
@@ -732,9 +731,8 @@ public final class WorkflowAction extends Action {
           supplementalAnnotations.remove(MAJOR_OLIVE_VERSION);
           supplementalAnnotations.remove("skip");
           supplementalAnnotations.remove("deleted");
-          for (final Map<String, String> annotations :
-              Arrays.asList(this.annotations, supplementalAnnotations)) {
-            for (final Map.Entry<String, String> annotation : annotations.entrySet()) {
+          for (final var annotations : List.of(this.annotations, supplementalAnnotations)) {
+            for (final var annotation : annotations.entrySet()) {
               WorkflowRunAttribute userAttribute = new WorkflowRunAttribute();
               userAttribute.setTag(annotation.getKey());
               userAttribute.setValue(annotation.getValue());

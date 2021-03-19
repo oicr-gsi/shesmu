@@ -16,10 +16,10 @@ import java.util.stream.Stream;
 public interface ActionFilterBuilder<F, T, S, I, O> {
   /** Do a "transformation" of the JSON representation to an exact copy. */
   ActionFilterBuilder<ActionFilter, ActionState, String, Instant, Long> JSON =
-      new ActionFilterBuilder<ActionFilter, ActionState, String, Instant, Long>() {
+      new ActionFilterBuilder<>() {
         @Override
         public ActionFilter added(Optional<Instant> start, Optional<Instant> end) {
-          final ActionFilterAdded result = new ActionFilterAdded();
+          final var result = new ActionFilterAdded();
           result.setStart(start.map(Instant::getEpochSecond).orElse(null));
           result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
           return result;
@@ -27,21 +27,21 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
 
         @Override
         public ActionFilter addedAgo(Long offset) {
-          final ActionFilterAddedAgo result = new ActionFilterAddedAgo();
+          final var result = new ActionFilterAddedAgo();
           result.setOffset(offset);
           return result;
         }
 
         @Override
         public ActionFilter and(Stream<ActionFilter> filters) {
-          final ActionFilterAnd result = new ActionFilterAnd();
+          final var result = new ActionFilterAnd();
           result.setFilters(filters.toArray(ActionFilter[]::new));
           return result;
         }
 
         @Override
         public ActionFilter checked(Optional<Instant> start, Optional<Instant> end) {
-          final ActionFilterChecked result = new ActionFilterChecked();
+          final var result = new ActionFilterChecked();
           result.setStart(start.map(Instant::getEpochSecond).orElse(null));
           result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
           return result;
@@ -49,14 +49,14 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
 
         @Override
         public ActionFilter checkedAgo(Long offset) {
-          final ActionFilterCheckedAgo result = new ActionFilterCheckedAgo();
+          final var result = new ActionFilterCheckedAgo();
           result.setOffset(offset);
           return result;
         }
 
         @Override
         public ActionFilter external(Optional<Instant> start, Optional<Instant> end) {
-          final ActionFilterExternal result = new ActionFilterExternal();
+          final var result = new ActionFilterExternal();
           result.setStart(start.map(Instant::getEpochSecond).orElse(null));
           result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
           return result;
@@ -64,14 +64,14 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
 
         @Override
         public ActionFilter externalAgo(Long offset) {
-          final ActionFilterExternalAgo result = new ActionFilterExternalAgo();
+          final var result = new ActionFilterExternalAgo();
           result.setOffset(offset);
           return result;
         }
 
         @Override
         public ActionFilter fromFile(Stream<String> files) {
-          final ActionFilterSourceFile result = new ActionFilterSourceFile();
+          final var result = new ActionFilterSourceFile();
           result.setFiles(files.toArray(String[]::new));
           return result;
         }
@@ -83,7 +83,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
 
         @Override
         public ActionFilter fromSourceLocation(Stream<SourceOliveLocation> locations) {
-          final ActionFilterSourceLocation result = new ActionFilterSourceLocation();
+          final var result = new ActionFilterSourceLocation();
           result.setLocations(
               locations.map(SourceOliveLocation::new).toArray(SourceOliveLocation[]::new));
           return result;
@@ -91,14 +91,14 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
 
         @Override
         public ActionFilter ids(List<String> ids) {
-          final ActionFilterIds result = new ActionFilterIds();
+          final var result = new ActionFilterIds();
           result.setIds(ids);
           return result;
         }
 
         @Override
         public ActionFilter isState(Stream<ActionState> states) {
-          final ActionFilterStatus result = new ActionFilterStatus();
+          final var result = new ActionFilterStatus();
           result.setState(states.toArray(ActionState[]::new));
           return result;
         }
@@ -109,21 +109,21 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
           // logical not of the provided filter. In the case of JSON objects, the negation is a
           // field in the object. So, we copy the object and then negate it. Since it may already
           // have been negated, we flip the negation bit rather than setting it.
-          final ActionFilter copy = filter.convert(this);
+          final var copy = filter.convert(this);
           copy.setNegate(!copy.isNegate());
           return copy;
         }
 
         @Override
         public ActionFilter or(Stream<ActionFilter> filters) {
-          final ActionFilterOr result = new ActionFilterOr();
+          final var result = new ActionFilterOr();
           result.setFilters(filters.toArray(ActionFilter[]::new));
           return result;
         }
 
         @Override
         public ActionFilter statusChanged(Optional<Instant> start, Optional<Instant> end) {
-          final ActionFilterStatusChanged result = new ActionFilterStatusChanged();
+          final var result = new ActionFilterStatusChanged();
           result.setStart(start.map(Instant::getEpochSecond).orElse(null));
           result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
           return result;
@@ -131,14 +131,14 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
 
         @Override
         public ActionFilter statusChangedAgo(Long offset) {
-          final ActionFilterStatusChangedAgo result = new ActionFilterStatusChangedAgo();
+          final var result = new ActionFilterStatusChangedAgo();
           result.setOffset(offset);
           return result;
         }
 
         @Override
         public ActionFilter tag(Pattern pattern) {
-          final ActionFilterTagRegex result = new ActionFilterTagRegex();
+          final var result = new ActionFilterTagRegex();
           result.setPattern(pattern.pattern());
           result.setMatchCase((pattern.flags() & Pattern.CASE_INSENSITIVE) == 0);
           return result;
@@ -146,14 +146,14 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
 
         @Override
         public ActionFilter tags(Stream<String> tags) {
-          final ActionFilterTag result = new ActionFilterTag();
+          final var result = new ActionFilterTag();
           result.setTags(tags.toArray(String[]::new));
           return result;
         }
 
         @Override
         public ActionFilter textSearch(Pattern pattern) {
-          final ActionFilterRegex result = new ActionFilterRegex();
+          final var result = new ActionFilterRegex();
           result.setPattern(pattern.pattern());
           result.setMatchCase((pattern.flags() & Pattern.CASE_INSENSITIVE) == 0);
           return result;
@@ -161,7 +161,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
 
         @Override
         public ActionFilter textSearch(String text, boolean matchCase) {
-          final ActionFilterRegex result = new ActionFilterRegex();
+          final var result = new ActionFilterRegex();
           result.setPattern(Pattern.quote(text));
           result.setMatchCase(matchCase);
           return result;
@@ -169,7 +169,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
 
         @Override
         public ActionFilter type(Stream<String> types) {
-          final ActionFilterType result = new ActionFilterType();
+          final var result = new ActionFilterType();
           result.setTypes(types.toArray(String[]::new));
           return result;
         }
@@ -183,7 +183,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    * is 3.
    */
   ActionFilterBuilder<Pair<String, Integer>, ActionState, String, Instant, Long> QUERY =
-      new ActionFilterBuilder<Pair<String, Integer>, ActionState, String, Instant, Long>() {
+      new ActionFilterBuilder<>() {
         private final DateTimeFormatter FORMATTER =
             DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.systemDefault());
 
@@ -249,7 +249,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
         }
 
         private Pair<String, Integer> formatSet(String name, Stream<String> stream) {
-          final List<String> items = stream.collect(Collectors.toList());
+          final var items = stream.collect(Collectors.toList());
           if (items.size() == 1) {
             return new Pair<>(String.format("%s = %s", name, quote(items.get(0))), 0);
           } else {
@@ -273,7 +273,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
 
         @Override
         public Pair<String, Integer> fromSourceLocation(Stream<SourceOliveLocation> locations) {
-          final List<SourceOliveLocation> locationList = locations.collect(Collectors.toList());
+          final var locationList = locations.collect(Collectors.toList());
           if (locationList.size() == 1) {
             return new Pair<>("source = " + locationList.get(0), 0);
           }

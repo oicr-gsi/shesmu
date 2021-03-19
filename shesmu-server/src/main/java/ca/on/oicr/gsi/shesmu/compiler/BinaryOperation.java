@@ -12,7 +12,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
@@ -92,7 +91,7 @@ public abstract class BinaryOperation {
                       Renderer renderer,
                       Renderable leftValue,
                       Renderable rightValue) {
-                    final Imyhat inner = ((Imyhat.ListImyhat) left).inner();
+                    final var inner = ((Imyhat.ListImyhat) left).inner();
                     renderer.loadImyhat(inner.descriptor());
                     leftValue.render(renderer);
                     rightValue.render(renderer);
@@ -141,7 +140,7 @@ public abstract class BinaryOperation {
   public static Definition listAndItemStaticMethod(Type owner, String method, String esMethod) {
     return (left, right) -> {
       if (left instanceof Imyhat.ListImyhat) {
-        final Imyhat inner = ((Imyhat.ListImyhat) left).inner();
+        final var inner = ((Imyhat.ListImyhat) left).inner();
         if (inner.isSame(right)) {
           return Optional.of(
               new BinaryOperation(left) {
@@ -182,8 +181,8 @@ public abstract class BinaryOperation {
 
   public static Optional<BinaryOperation> objectConcat(Imyhat left, Imyhat right) {
     if (left instanceof Imyhat.ObjectImyhat && right instanceof Imyhat.ObjectImyhat) {
-      final Imyhat.ObjectImyhat leftType = (Imyhat.ObjectImyhat) left;
-      final Imyhat.ObjectImyhat rightType = (Imyhat.ObjectImyhat) right;
+      final var leftType = (Imyhat.ObjectImyhat) left;
+      final var rightType = (Imyhat.ObjectImyhat) right;
       Map<String, ConcatenatedObjectField> newFields =
           Stream.of(new Pair<>(true, leftType), new Pair<>(false, rightType))
               .flatMap(
@@ -215,8 +214,8 @@ public abstract class BinaryOperation {
                   Renderer renderer,
                   Renderable leftValue,
                   Renderable rightValue) {
-                int leftVariable = renderer.methodGen().newLocal(A_TUPLE_TYPE);
-                int rightVariable = renderer.methodGen().newLocal(A_TUPLE_TYPE);
+                var leftVariable = renderer.methodGen().newLocal(A_TUPLE_TYPE);
+                var rightVariable = renderer.methodGen().newLocal(A_TUPLE_TYPE);
                 leftValue.render(renderer);
                 renderer.methodGen().storeLocal(leftVariable);
                 rightValue.render(renderer);
@@ -226,8 +225,8 @@ public abstract class BinaryOperation {
                 renderer.methodGen().dup();
                 renderer.methodGen().push(newFields.size());
                 renderer.methodGen().newArray(A_OBJECT_TYPE);
-                int targetIndex = 0;
-                for (ConcatenatedObjectField field : newFields.values()) {
+                var targetIndex = 0;
+                for (var field : newFields.values()) {
                   field.copy(renderer.methodGen(), targetIndex++, leftVariable, rightVariable);
                 }
                 renderer.methodGen().invokeConstructor(A_TUPLE_TYPE, TUPLE__CTOR);
@@ -236,12 +235,12 @@ public abstract class BinaryOperation {
               @Override
               public String render(
                   EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
-                final String leftValue = renderer.newConst(left.renderEcma(renderer));
-                final String rightValue = renderer.newConst(right.renderEcma(renderer));
-                final String result =
+                final var leftValue = renderer.newConst(left.renderEcma(renderer));
+                final var rightValue = renderer.newConst(right.renderEcma(renderer));
+                final var result =
                     renderer.newConst(String.format("new Array(%d)", newFields.size()));
-                int targetIndex = 0;
-                for (ConcatenatedObjectField field : newFields.values()) {
+                var targetIndex = 0;
+                for (var field : newFields.values()) {
                   field.copy(renderer, result, targetIndex++, leftValue, rightValue);
                 }
                 return result;
@@ -274,7 +273,7 @@ public abstract class BinaryOperation {
               Renderable rightValue) {
             final Set<String> captures = new HashSet<>();
             rightValue.collectFreeVariables(captures, Target.Flavour::needsCapture);
-            final LambdaBuilder supplier =
+            final var supplier =
                 new LambdaBuilder(
                     renderer.root(),
                     String.format("Coalesce %d:%d", line, column),
@@ -284,7 +283,7 @@ public abstract class BinaryOperation {
                         .allValues()
                         .filter(v -> captures.contains(v.name()))
                         .toArray(LoadableValue[]::new));
-            final Renderer orElseMethod = supplier.renderer(renderer.signerEmitter());
+            final var orElseMethod = supplier.renderer(renderer.signerEmitter());
             orElseMethod.methodGen().visitCode();
             rightValue.render(orElseMethod);
             orElseMethod.methodGen().returnValue();
@@ -298,7 +297,7 @@ public abstract class BinaryOperation {
           @Override
           public String render(
               EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
-            final String result = renderer.newLet(left.renderEcma(renderer));
+            final var result = renderer.newLet(left.renderEcma(renderer));
             renderer.conditional(
                 String.format("%s === null", result),
                 r -> r.statement(String.format("%s = %s", result, right.renderEcma(r))));
@@ -309,8 +308,8 @@ public abstract class BinaryOperation {
 
   public static Optional<BinaryOperation> optionalMerge(Imyhat left, Imyhat right) {
     if (left instanceof Imyhat.OptionalImyhat && right instanceof Imyhat.OptionalImyhat) {
-      final Imyhat leftInner = ((Imyhat.OptionalImyhat) left).inner();
-      final Imyhat rightInner = ((Imyhat.OptionalImyhat) right).inner();
+      final var leftInner = ((Imyhat.OptionalImyhat) left).inner();
+      final var rightInner = ((Imyhat.OptionalImyhat) right).inner();
       if (leftInner.isSame(rightInner)) {
         return Optional.of(
             new BinaryOperation(left.unify(right)) {
@@ -323,7 +322,7 @@ public abstract class BinaryOperation {
                   Renderable rightValue) {
                 final Set<String> captures = new HashSet<>();
                 rightValue.collectFreeVariables(captures, Target.Flavour::needsCapture);
-                final LambdaBuilder supplier =
+                final var supplier =
                     new LambdaBuilder(
                         renderer.root(),
                         String.format("Merge %d:%d", line, column),
@@ -332,7 +331,7 @@ public abstract class BinaryOperation {
                             .allValues()
                             .filter(v -> captures.contains(v.name()))
                             .toArray(LoadableValue[]::new));
-                final Renderer orElseMethod =
+                final var orElseMethod =
                     supplier.renderer(renderer.streamType(), renderer.signerEmitter());
                 orElseMethod.methodGen().visitCode();
                 rightValue.render(orElseMethod);
@@ -346,7 +345,7 @@ public abstract class BinaryOperation {
               @Override
               public String render(
                   EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
-                final String result = renderer.newLet(left.renderEcma(renderer));
+                final var result = renderer.newLet(left.renderEcma(renderer));
                 renderer.conditional(
                     String.format("%s === null", result),
                     r -> r.statement(String.format("%s = %s", result, right.renderEcma(r))));
@@ -441,8 +440,8 @@ public abstract class BinaryOperation {
     return new Definition() {
       @Override
       public Optional<BinaryOperation> match(Imyhat left, Imyhat right) {
-        final boolean leftIsInt = left.isSame(Imyhat.INTEGER);
-        final boolean rightIsInt = right.isSame(Imyhat.INTEGER);
+        final var leftIsInt = left.isSame(Imyhat.INTEGER);
+        final var rightIsInt = right.isSame(Imyhat.INTEGER);
         if ((leftIsInt || left.isSame(Imyhat.FLOAT))
             && (rightIsInt || right.isSame(Imyhat.FLOAT))) {
           return Optional.of(
@@ -496,7 +495,7 @@ public abstract class BinaryOperation {
               Renderable leftValue,
               Renderable rightValue) {
             leftValue.render(renderer);
-            final Label end = renderer.methodGen().newLabel();
+            final var end = renderer.methodGen().newLabel();
             renderer.methodGen().dup();
             renderer.methodGen().ifZCmp(condition, end);
             renderer.methodGen().pop();
@@ -609,7 +608,7 @@ public abstract class BinaryOperation {
    */
   public static Definition virtualMethod(
       Imyhat leftType, Imyhat rightType, Imyhat returnType, String methodName, String esMethod) {
-    final Method method =
+    final var method =
         new Method(methodName, returnType.apply(TO_ASM), new Type[] {rightType.apply(TO_ASM)});
     return exact(
         leftType,

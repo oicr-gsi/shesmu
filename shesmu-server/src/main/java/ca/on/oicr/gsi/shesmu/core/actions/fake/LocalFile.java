@@ -9,7 +9,6 @@ import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
 import java.util.Optional;
-import javax.xml.stream.XMLStreamException;
 
 public class LocalFile extends JsonPluginFile<ObjectNode[]> {
 
@@ -20,13 +19,13 @@ public class LocalFile extends JsonPluginFile<ObjectNode[]> {
     this.definer = definer;
   }
 
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {}
+  public void configuration(SectionRenderer renderer) {}
 
   @Override
   protected Optional<Integer> update(ObjectNode[] configuration) {
     definer.clearActions();
-    for (final ObjectNode obj : configuration) {
-      String name = obj.get("name").asText();
+    for (final var obj : configuration) {
+      var name = obj.get("name").asText();
       definer.defineAction(
           name,
           "Fake version of: " + obj.get("description").asText(),

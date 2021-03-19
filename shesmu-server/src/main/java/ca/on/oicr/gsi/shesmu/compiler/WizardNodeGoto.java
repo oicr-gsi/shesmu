@@ -67,7 +67,6 @@ public class WizardNodeGoto extends WizardNode {
           arguments.stream().map(ExpressionNode::type).collect(Collectors.toList()),
           errorHandler);
     }
-    ;
     return false;
   }
 }

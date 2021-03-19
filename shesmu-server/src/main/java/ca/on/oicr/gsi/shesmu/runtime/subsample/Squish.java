@@ -14,12 +14,12 @@ public class Squish<T> extends Subsampler<T> {
 
   @Override
   protected int subsample(List<T> input, List<T> output) {
-    final int position = parent.subsample(input, output);
+    final var position = parent.subsample(input, output);
     if (input.size() - position <= numberOfItems) {
       output.addAll(input.subList(position, input.size()));
       return input.size();
     }
-    final int step = (int) ((input.size() - position) / numberOfItems);
+    final var step = (int) ((input.size() - position) / numberOfItems);
     int counter;
     for (counter = 0;
         position + counter * step < input.size() && counter < numberOfItems;

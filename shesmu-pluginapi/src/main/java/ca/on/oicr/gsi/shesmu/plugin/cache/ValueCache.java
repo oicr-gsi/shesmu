@@ -61,7 +61,7 @@ public abstract class ValueCache<I, V> implements Owner {
     this.ttl = ttl;
     this.value =
         recordCtor.create(
-            new Updater<I>() {
+            new Updater<>() {
 
               @Override
               public Stream<Pair<String, String>> identifiers() {
@@ -75,8 +75,8 @@ public abstract class ValueCache<I, V> implements Owner {
 
               @Override
               public I update(Instant lastModifed) throws Exception {
-                double cpuStart = Owner.CPU_TIME.getAsDouble();
-                try (final AutoCloseable _ignored = fetchTime.start(name)) {
+                var cpuStart = Owner.CPU_TIME.getAsDouble();
+                try (final var _ignored = fetchTime.start(name)) {
                   return fetch(lastModifed);
                 } finally {
                   fetchCpuTime.labels(name).observe(Owner.CPU_TIME.getAsDouble() - cpuStart);
@@ -106,7 +106,7 @@ public abstract class ValueCache<I, V> implements Owner {
    *     is in an error state
    */
   public V get() {
-    final V item = value.refresh(name);
+    final var item = value.refresh(name);
     innerCount.labels(name).set(value.collectionSize());
     return item;
   }

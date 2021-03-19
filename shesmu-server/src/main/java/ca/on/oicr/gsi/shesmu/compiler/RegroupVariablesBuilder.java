@@ -79,7 +79,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
     @Override
     public final Regrouper addObject(String fieldName, Stream<Pair<String, Imyhat>> fields) {
-      final NamedTuple namedTuple = new NamedTuple(prefix + fieldName, fields);
+      final var namedTuple = new NamedTuple(prefix + fieldName, fields);
       elements.add(namedTuple);
       return namedTuple;
     }
@@ -131,15 +131,14 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
     @Override
     public final Regrouper addWhere(Consumer<Renderer> condition) {
-      final Conditional c = new Conditional(condition, prefix);
+      final var c = new Conditional(condition, prefix);
       elements.add(c);
       return c;
     }
 
     @Override
     public final int buildConstructor(GeneratorAdapter ctor, int index) {
-      return elements
-          .stream()
+      return elements.stream()
           .reduce(
               index,
               (i, element) -> element.buildConstructor(ctor, i),
@@ -263,7 +262,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
     @Override
     public void buildCollect() {
-      final Label skip = collectRenderer.methodGen().newLabel();
+      final var skip = collectRenderer.methodGen().newLabel();
       condition.accept(collectRenderer);
       collectRenderer.methodGen().ifZCmp(GeneratorAdapter.EQ, skip);
       buildInnerCollect();
@@ -469,7 +468,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
   }
 
-  private abstract class Element {
+  private abstract static class Element {
 
     public abstract void buildCollect();
 
@@ -507,7 +506,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     public void buildCollect() {
       collectRenderer.methodGen().loadArg(collectedSelfArgument);
       collectRenderer.methodGen().getField(self, fieldName + "$ok", BOOLEAN_TYPE);
-      final Label skip = collectRenderer.methodGen().newLabel();
+      final var skip = collectRenderer.methodGen().newLabel();
       collectRenderer.methodGen().ifZCmp(GeneratorAdapter.NE, skip);
 
       collectRenderer.methodGen().loadArg(collectedSelfArgument);
@@ -543,7 +542,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     public void failIfBad(GeneratorAdapter okMethod) {
       okMethod.loadThis();
       okMethod.getField(self, fieldName + "$ok", BOOLEAN_TYPE);
-      final Label next = okMethod.newLabel();
+      final var next = okMethod.newLabel();
       okMethod.ifZCmp(GeneratorAdapter.NE, next);
       okMethod.push(false);
       okMethod.returnValue();
@@ -580,7 +579,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     public void buildCollect() {
       collectRenderer.methodGen().loadArg(collectedSelfArgument);
       collectRenderer.methodGen().getField(self, fieldName + "$ok", BOOLEAN_TYPE);
-      final Label skip = collectRenderer.methodGen().newLabel();
+      final var skip = collectRenderer.methodGen().newLabel();
       collectRenderer.methodGen().ifZCmp(GeneratorAdapter.NE, skip);
 
       collectRenderer.methodGen().loadArg(collectedSelfArgument);
@@ -656,7 +655,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
           .visitField(
               Opcodes.ACC_PUBLIC, fieldName + "$delim", A_STRING_TYPE.getDescriptor(), null, null)
           .visitEnd();
-      final GeneratorAdapter getMethod =
+      final var getMethod =
           new GeneratorAdapter(
               Opcodes.ACC_PUBLIC,
               new Method(fieldName, A_STRING_TYPE, new Type[] {}),
@@ -739,7 +738,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
     @Override
     public void buildCollect() {
-      final Label skip = collectRenderer.methodGen().newLabel();
+      final var skip = collectRenderer.methodGen().newLabel();
       collectRenderer.methodGen().loadArg(collectedSelfArgument);
       collectRenderer.methodGen().getField(self, fieldName + "$stop", BOOLEAN_TYPE);
       collectRenderer.methodGen().ifZCmp(GeneratorAdapter.NE, skip);
@@ -829,7 +828,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
       name.targets()
           .forEach(
               target -> {
-                final Type fieldType = target.type().apply(TO_ASM);
+                final var fieldType = target.type().apply(TO_ASM);
                 method.loadThis();
                 method.getField(self, target.name(), fieldType);
                 method.loadLocal(otherLocal);
@@ -851,7 +850,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
       name.targets()
           .forEach(
               target -> {
-                final Type fieldType = target.type().apply(TO_ASM);
+                final var fieldType = target.type().apply(TO_ASM);
                 method.push(31);
                 method.math(GeneratorAdapter.MUL, INT_TYPE);
                 method.loadThis();
@@ -889,9 +888,9 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
     public NamedTuple(String prefix, Stream<Pair<String, Imyhat>> fields) {
       super(prefix + " ");
-      final List<Pair<String, Imyhat>> fieldInfo =
+      final var fieldInfo =
           fields.sorted(Comparator.comparing(Pair::first)).collect(Collectors.toList());
-      final GeneratorAdapter getMethod =
+      final var getMethod =
           new GeneratorAdapter(
               Opcodes.ACC_PUBLIC,
               new Method(prefix, A_TUPLE_TYPE, new Type[] {}),
@@ -904,11 +903,11 @@ public final class RegroupVariablesBuilder implements Regrouper {
       getMethod.dup();
       getMethod.push(fieldInfo.size());
       getMethod.newArray(A_OBJECT_TYPE);
-      for (int i = 0; i < fieldInfo.size(); i++) {
+      for (var i = 0; i < fieldInfo.size(); i++) {
         getMethod.dup();
         getMethod.push(i);
         getMethod.loadThis();
-        final Type type = fieldInfo.get(i).second().apply(TO_ASM);
+        final var type = fieldInfo.get(i).second().apply(TO_ASM);
         getMethod.invokeVirtual(
             self, new Method(prefix + " " + fieldInfo.get(i).first(), type, new Type[] {}));
         getMethod.valueOf(type);
@@ -939,7 +938,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
       classVisitor
           .visitField(Opcodes.ACC_PUBLIC, fieldName, A_SET_TYPE.getDescriptor(), null, null)
           .visitEnd();
-      final GeneratorAdapter getMethod =
+      final var getMethod =
           new GeneratorAdapter(
               Opcodes.ACC_PUBLIC,
               new Method(fieldName, valueType.apply(TO_ASM), new Type[] {}),
@@ -1000,7 +999,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
       okMethod.getField(self, fieldName, A_SET_TYPE);
       okMethod.invokeInterface(A_SET_TYPE, SET__SIZE);
       okMethod.push(1);
-      final Label next = okMethod.newLabel();
+      final var next = okMethod.newLabel();
       okMethod.ifICmp(GeneratorAdapter.EQ, next);
       okMethod.push(0);
       okMethod.returnValue();
@@ -1034,14 +1033,14 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
     @Override
     public void buildCollect() {
-      final int local = collectRenderer.methodGen().newLocal(fieldType);
+      final var local = collectRenderer.methodGen().newLocal(fieldType);
       loader.accept(collectRenderer);
       collectRenderer.methodGen().storeLocal(local);
 
       collectRenderer.methodGen().loadArg(collectedSelfArgument);
       collectRenderer.methodGen().getField(self, fieldName + "$ok", BOOLEAN_TYPE);
-      final Label store = collectRenderer.methodGen().newLabel();
-      final Label end = collectRenderer.methodGen().newLabel();
+      final var store = collectRenderer.methodGen().newLabel();
+      final var end = collectRenderer.methodGen().newLabel();
       collectRenderer.methodGen().ifZCmp(GeneratorAdapter.EQ, store);
 
       collectRenderer.methodGen().loadArg(collectedSelfArgument);
@@ -1094,7 +1093,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     public void failIfBad(GeneratorAdapter okMethod) {
       okMethod.loadThis();
       okMethod.getField(self, fieldName + "$ok", BOOLEAN_TYPE);
-      final Label next = okMethod.newLabel();
+      final var next = okMethod.newLabel();
       okMethod.ifZCmp(GeneratorAdapter.NE, next);
       okMethod.push(false);
       okMethod.returnValue();
@@ -1131,11 +1130,11 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
     @Override
     public void buildCollect() {
-      final int local = collectRenderer.methodGen().newLocal(fieldType);
+      final var local = collectRenderer.methodGen().newLocal(fieldType);
       loader.accept(collectRenderer);
       collectRenderer.methodGen().storeLocal(local);
 
-      final Label end = collectRenderer.methodGen().newLabel();
+      final var end = collectRenderer.methodGen().newLabel();
 
       collectRenderer.methodGen().loadArg(collectedSelfArgument);
       collectRenderer.methodGen().getField(self, fieldName, fieldType);
@@ -1198,7 +1197,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
           .visitField(
               Opcodes.ACC_PUBLIC, fieldName, A_PARTITION_COUNT_TYPE.getDescriptor(), null, null)
           .visitEnd();
-      final GeneratorAdapter getMethod =
+      final var getMethod =
           new GeneratorAdapter(
               Opcodes.ACC_PUBLIC,
               new Method(fieldName, A_TUPLE_TYPE, new Type[] {}),
@@ -1327,7 +1326,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
       classVisitor
           .visitField(Opcodes.ACC_PUBLIC, fieldName, A_SET_TYPE.getDescriptor(), null, null)
           .visitEnd();
-      final GeneratorAdapter getMethod =
+      final var getMethod =
           new GeneratorAdapter(
               Opcodes.ACC_PUBLIC,
               new Method(fieldName, valueType.apply(TO_ASM), new Type[] {}),
@@ -1385,7 +1384,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
       okMethod.getField(self, fieldName, A_SET_TYPE);
       okMethod.invokeInterface(A_SET_TYPE, SET__SIZE);
       okMethod.push(1);
-      final Label next = okMethod.newLabel();
+      final var next = okMethod.newLabel();
       okMethod.ifICmp(GeneratorAdapter.EQ, next);
       okMethod.push(0);
       okMethod.returnValue();
@@ -1422,7 +1421,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
               null,
               null)
           .visitEnd();
-      final GeneratorAdapter getMethod =
+      final var getMethod =
           new GeneratorAdapter(
               Opcodes.ACC_PUBLIC,
               new Method(fieldName, valueType.apply(TO_ASM), new Type[] {}),
@@ -1623,7 +1622,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
   @Override
   public Regrouper addObject(String fieldName, Stream<Pair<String, Imyhat>> fields) {
-    final NamedTuple namedTuple = new NamedTuple(fieldName, fields);
+    final var namedTuple = new NamedTuple(fieldName, fields);
     elements.add(namedTuple);
     return namedTuple;
   }
@@ -1674,7 +1673,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
   @Override
   public Regrouper addWhere(Consumer<Renderer> condition) {
-    final Conditional c = new Conditional(condition, "");
+    final var c = new Conditional(condition, "");
     elements.add(c);
     return c;
   }
@@ -1683,7 +1682,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     classVisitor
         .visitField(Opcodes.ACC_PUBLIC, fieldName, fieldType.getDescriptor(), null, null)
         .visitEnd();
-    final GeneratorAdapter getMethod =
+    final var getMethod =
         new GeneratorAdapter(
             Opcodes.ACC_PUBLIC,
             new Method(fieldName, fieldType, new Type[] {}),
@@ -1700,25 +1699,24 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
   /** Generate the class completely */
   public void finish() {
-    final Method ctorType =
+    final var ctorType =
         new Method(
             "<init>",
             VOID_TYPE,
             elements.stream().flatMap(Element::constructorType).toArray(Type[]::new));
-    final GeneratorAdapter ctor =
-        new GeneratorAdapter(Opcodes.ACC_PUBLIC, ctorType, null, null, classVisitor);
+    final var ctor = new GeneratorAdapter(Opcodes.ACC_PUBLIC, ctorType, null, null, classVisitor);
     ctor.visitCode();
     ctor.loadThis();
     ctor.invokeConstructor(A_OBJECT_TYPE, CTOR_DEFAULT);
-    int index = 0;
-    for (final Element element : elements) {
+    var index = 0;
+    for (final var element : elements) {
       index = element.buildConstructor(ctor, index);
     }
     ctor.visitInsn(Opcodes.RETURN);
     ctor.visitMaxs(0, 0);
     ctor.visitEnd();
 
-    final GeneratorAdapter hashMethod =
+    final var hashMethod =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, METHOD_HASH_CODE, null, null, classVisitor);
     hashMethod.visitCode();
     hashMethod.push(0);
@@ -1728,14 +1726,14 @@ public final class RegroupVariablesBuilder implements Regrouper {
     hashMethod.visitMaxs(0, 0);
     hashMethod.visitEnd();
 
-    final GeneratorAdapter equalsMethod =
+    final var equalsMethod =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, METHOD_EQUALS, null, null, classVisitor);
     equalsMethod.visitCode();
     equalsMethod.loadArg(0);
     equalsMethod.instanceOf(self);
-    final Label equalsFalse = equalsMethod.newLabel();
+    final var equalsFalse = equalsMethod.newLabel();
     equalsMethod.ifZCmp(GeneratorAdapter.EQ, equalsFalse);
-    final int equalsOtherLocal = equalsMethod.newLocal(self);
+    final var equalsOtherLocal = equalsMethod.newLocal(self);
     equalsMethod.loadArg(0);
     equalsMethod.checkCast(self);
     equalsMethod.storeLocal(equalsOtherLocal);
@@ -1763,7 +1761,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     collectRenderer.methodGen().visitMaxs(0, 0);
     collectRenderer.methodGen().visitEnd();
 
-    final GeneratorAdapter okMethod =
+    final var okMethod =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, METHOD_IS_OK, null, null, classVisitor);
     okMethod.visitCode();
     elements.forEach(element -> element.failIfBad(okMethod));

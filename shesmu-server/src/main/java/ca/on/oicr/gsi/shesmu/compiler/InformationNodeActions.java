@@ -236,12 +236,7 @@ public class InformationNodeActions extends InformationNode {
     return filter
         .generate(
             name -> Optional.of(true),
-            new ActionFilterBuilder<
-                Boolean,
-                InformationParameterNode<ActionState>,
-                InformationParameterNode<String>,
-                InformationParameterNode<Instant>,
-                InformationParameterNode<Long>>() {
+            new ActionFilterBuilder<>() {
               @Override
               public Boolean added(
                   Optional<InformationParameterNode<Instant>> start,
@@ -393,12 +388,7 @@ public class InformationNodeActions extends InformationNode {
     return filter
         .generate(
             name -> Optional.of(true),
-            new ActionFilterBuilder<
-                Boolean,
-                InformationParameterNode<ActionState>,
-                InformationParameterNode<String>,
-                InformationParameterNode<Instant>,
-                InformationParameterNode<Long>>() {
+            new ActionFilterBuilder<>() {
               @Override
               public Boolean added(
                   Optional<InformationParameterNode<Instant>> start,
@@ -532,12 +522,7 @@ public class InformationNodeActions extends InformationNode {
     return filter
         .generate(
             name -> Optional.of(true),
-            new ActionFilterBuilder<
-                Boolean,
-                InformationParameterNode<ActionState>,
-                InformationParameterNode<String>,
-                InformationParameterNode<Instant>,
-                InformationParameterNode<Long>>() {
+            new ActionFilterBuilder<>() {
               @Override
               public Boolean added(
                   Optional<InformationParameterNode<Instant>> start,

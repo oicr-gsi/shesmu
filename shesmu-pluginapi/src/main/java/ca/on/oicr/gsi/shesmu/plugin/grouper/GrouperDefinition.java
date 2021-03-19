@@ -1,9 +1,10 @@
 package ca.on.oicr.gsi.shesmu.plugin.grouper;
 
 import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee;
+import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee.Pack3;
+import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee.Pack4;
+import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee.Pack5;
 import java.lang.invoke.*;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,7 +42,7 @@ public abstract class GrouperDefinition {
     MethodHandle mh_pack5__pack;
 
     try {
-      MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+      var lookup = MethodHandles.publicLookup();
       mh_function__apply =
           lookup.findVirtual(
               Function.class, "apply", MethodType.methodType(Object.class, Object.class));
@@ -103,7 +104,7 @@ public abstract class GrouperDefinition {
       String name, GrouperOutputs<I, O, C> outputs, Function<? super C, G> factory) {
     this.name = name;
     HANDLES.put(name, MH_FUNCTION__APPLY.bindTo(factory));
-    this.inputs = Collections.emptyList();
+    this.inputs = List.of();
     this.outputs = outputs;
   }
 
@@ -131,13 +132,10 @@ public abstract class GrouperDefinition {
     HANDLES.put(
         name,
         MH_BIFUNCTION_APPLY.bindTo(
-            new BiFunction<Object, C, Grouper<?, ?>>() {
-              @Override
-              public Grouper<?, ?> apply(Object first, C outputGenerator) {
-                return factory.apply(parameter.unpack(first), outputGenerator);
-              }
-            }));
-    this.inputs = Collections.singletonList(parameter);
+            (BiFunction<Object, C, Grouper<?, ?>>)
+                (first, outputGenerator) ->
+                    factory.apply(parameter.unpack(first), outputGenerator)));
+    this.inputs = List.of(parameter);
     this.outputs = outputs;
   }
 
@@ -167,14 +165,11 @@ public abstract class GrouperDefinition {
     HANDLES.put(
         name,
         MH_PACK3__PACK.bindTo(
-            new TypeGuarantee.Pack3<Object, Object, C, Grouper<I, O>>() {
-              @Override
-              public Grouper<I, O> pack(Object first, Object second, C outputGenerator) {
-                return factory.pack(
-                    parameter1.unpack(first), parameter2.unpack(second), outputGenerator);
-              }
-            }));
-    this.inputs = Arrays.asList(parameter1, parameter2);
+            (Pack3<Object, Object, C, Grouper<I, O>>)
+                (first, second, outputGenerator) ->
+                    factory.pack(
+                        parameter1.unpack(first), parameter2.unpack(second), outputGenerator)));
+    this.inputs = List.of(parameter1, parameter2);
     this.outputs = outputs;
   }
 
@@ -208,18 +203,14 @@ public abstract class GrouperDefinition {
     HANDLES.put(
         name,
         MH_PACK4__PACK.bindTo(
-            new TypeGuarantee.Pack4<Object, Object, Object, C, Grouper<I, O>>() {
-              @Override
-              public Grouper<I, O> pack(
-                  Object first, Object second, Object third, C outputGenerator) {
-                return factory.pack(
-                    parameter1.unpack(first),
-                    parameter2.unpack(second),
-                    parameter3.unpack(third),
-                    outputGenerator);
-              }
-            }));
-    this.inputs = Arrays.asList(parameter1, parameter2, parameter3);
+            (Pack4<Object, Object, Object, C, Grouper<I, O>>)
+                (first, second, third, outputGenerator) ->
+                    factory.pack(
+                        parameter1.unpack(first),
+                        parameter2.unpack(second),
+                        parameter3.unpack(third),
+                        outputGenerator)));
+    this.inputs = List.of(parameter1, parameter2, parameter3);
     this.outputs = outputs;
   }
 
@@ -256,19 +247,15 @@ public abstract class GrouperDefinition {
     HANDLES.put(
         name,
         MH_PACK5__PACK.bindTo(
-            new TypeGuarantee.Pack5<Object, Object, Object, Object, C, Grouper<I, O>>() {
-              @Override
-              public Grouper<I, O> pack(
-                  Object first, Object second, Object third, Object fourth, C outputGenerator) {
-                return factory.pack(
-                    parameter1.unpack(first),
-                    parameter2.unpack(second),
-                    parameter3.unpack(third),
-                    parameter4.unpack(fourth),
-                    outputGenerator);
-              }
-            }));
-    this.inputs = Arrays.asList(parameter1, parameter2, parameter3, parameter4);
+            (Pack5<Object, Object, Object, Object, C, Grouper<I, O>>)
+                (first, second, third, fourth, outputGenerator) ->
+                    factory.pack(
+                        parameter1.unpack(first),
+                        parameter2.unpack(second),
+                        parameter3.unpack(third),
+                        parameter4.unpack(fourth),
+                        outputGenerator)));
+    this.inputs = List.of(parameter1, parameter2, parameter3, parameter4);
     this.outputs = outputs;
   }
 

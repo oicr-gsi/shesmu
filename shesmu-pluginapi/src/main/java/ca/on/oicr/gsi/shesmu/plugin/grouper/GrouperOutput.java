@@ -21,7 +21,7 @@ public abstract class GrouperOutput<I, T> {
    */
   public static <I, T> GrouperOutput<I, Function<I, T>> dynamic(
       String name, GenericReturnTypeGuarantee<T> type, String description) {
-    return new GrouperOutput<I, Function<I, T>>() {
+    return new GrouperOutput<>() {
       @Override
       public String defaultName() {
         return name;
@@ -55,7 +55,7 @@ public abstract class GrouperOutput<I, T> {
    */
   public static <I, T> GrouperOutput<I, T> fixed(
       String name, GenericReturnTypeGuarantee<T> type, String description) {
-    return new GrouperOutput<I, T>() {
+    return new GrouperOutput<>() {
       @Override
       public String defaultName() {
         return name;

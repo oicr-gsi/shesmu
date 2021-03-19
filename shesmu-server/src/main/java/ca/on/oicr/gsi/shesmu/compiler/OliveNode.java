@@ -43,10 +43,10 @@ public abstract class OliveNode {
     TERMINAL.addKeyword(
         "Run",
         (input, output) -> {
-          final AtomicReference<String> name = new AtomicReference<>();
-          final AtomicReference<List<VariableTagNode>> variableTags = new AtomicReference<>();
-          final AtomicReference<List<OliveArgumentNode>> arguments = new AtomicReference<>();
-          final Parser result =
+          final var name = new AtomicReference<String>();
+          final var variableTags = new AtomicReference<List<VariableTagNode>>();
+          final var arguments = new AtomicReference<List<OliveArgumentNode>>();
+          final var result =
               input
                   .whitespace()
                   .qualifiedIdentifier(name::set)
@@ -76,10 +76,10 @@ public abstract class OliveNode {
     TERMINAL.addKeyword(
         "Refill",
         (input, output) -> {
-          final AtomicReference<String> name = new AtomicReference<>();
-          final AtomicReference<List<Pair<DestructuredArgumentNode, ExpressionNode>>> arguments =
-              new AtomicReference<>();
-          final Parser result =
+          final var name = new AtomicReference<String>();
+          final var arguments =
+              new AtomicReference<List<Pair<DestructuredArgumentNode, ExpressionNode>>>();
+          final var result =
               input
                   .whitespace()
                   .qualifiedIdentifier(name::set)
@@ -89,10 +89,9 @@ public abstract class OliveNode {
                   .list(
                       arguments::set,
                       (ap, ao) -> {
-                        final AtomicReference<DestructuredArgumentNode> argName =
-                            new AtomicReference<>();
-                        final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-                        final Parser argResult =
+                        final var argName = new AtomicReference<DestructuredArgumentNode>();
+                        final var expression = new AtomicReference<ExpressionNode>();
+                        final var argResult =
                             ap.whitespace()
                                 .then(DestructuredArgumentNode::parse, argName::set)
                                 .whitespace()
@@ -119,12 +118,11 @@ public abstract class OliveNode {
     ROOTS.addKeyword(
         "Olive",
         (input, output) -> {
-          final AtomicReference<String> description =
-              new AtomicReference<>("No documentation provided.");
-          final AtomicReference<List<String>> tags = new AtomicReference<>(Collections.emptyList());
-          final AtomicReference<List<OliveClauseNode>> clauses = new AtomicReference<>();
-          final AtomicReference<OliveConstructor> terminal = new AtomicReference<>();
-          final Parser result =
+          final var description = new AtomicReference<>("No documentation provided.");
+          final var tags = new AtomicReference<List<String>>(List.of());
+          final var clauses = new AtomicReference<List<OliveClauseNode>>();
+          final var terminal = new AtomicReference<OliveConstructor>();
+          final var result =
               input
                   .whitespace()
                   .keyword(
@@ -175,13 +173,11 @@ public abstract class OliveNode {
   }
 
   public static Parser parseAlert(Parser input, Consumer<OliveAlertConstructor> output) {
-    final AtomicReference<List<OliveArgumentNode>> labels = new AtomicReference<>();
-    final AtomicReference<List<OliveArgumentNode>> annotations =
-        new AtomicReference<>(Collections.emptyList());
-    final AtomicReference<ExpressionNode> ttl = new AtomicReference<>();
-    Parser result =
-        input.whitespace().list(labels::set, OliveArgumentNode::parse, ',').whitespace();
-    final Parser annotationsParser = result.keyword("Annotations");
+    final var labels = new AtomicReference<List<OliveArgumentNode>>();
+    final var annotations = new AtomicReference<List<OliveArgumentNode>>(Collections.emptyList());
+    final var ttl = new AtomicReference<ExpressionNode>();
+    var result = input.whitespace().list(labels::set, OliveArgumentNode::parse, ',').whitespace();
+    final var annotationsParser = result.keyword("Annotations");
     if (annotationsParser.isGood()) {
       result =
           annotationsParser
@@ -207,9 +203,9 @@ public abstract class OliveNode {
   }
 
   private static Parser parseConstant(Parser input, boolean exported, Consumer<OliveNode> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
-    final AtomicReference<ExpressionNode> body = new AtomicReference<>();
-    final Parser result =
+    final var name = new AtomicReference<String>();
+    final var body = new AtomicReference<ExpressionNode>();
+    final var result =
         input
             .whitespace()
             .identifier(name::set)
@@ -228,10 +224,10 @@ public abstract class OliveNode {
   }
 
   private static Parser parseDefine(Parser input, boolean export, Consumer<OliveNode> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
-    final AtomicReference<List<OliveParameter>> params = new AtomicReference<>();
-    final AtomicReference<List<OliveClauseNode>> clauses = new AtomicReference<>();
-    final Parser result =
+    final var name = new AtomicReference<String>();
+    final var params = new AtomicReference<List<OliveParameter>>();
+    final var clauses = new AtomicReference<List<OliveClauseNode>>();
+    final var result =
         input
             .whitespace()
             .identifier(name::set)
@@ -253,10 +249,10 @@ public abstract class OliveNode {
   }
 
   private static Parser parseFunction(boolean exported, Parser input, Consumer<OliveNode> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
-    final AtomicReference<List<OliveParameter>> params = new AtomicReference<>();
-    final AtomicReference<ExpressionNode> body = new AtomicReference<>();
-    final Parser result =
+    final var name = new AtomicReference<String>();
+    final var params = new AtomicReference<List<OliveParameter>>();
+    final var body = new AtomicReference<ExpressionNode>();
+    final var result =
         input
             .whitespace()
             .identifier(name::set)

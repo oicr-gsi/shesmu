@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -30,14 +29,13 @@ public abstract class ObjectElementNode {
   }
 
   public static Parser parse(Parser parser, Consumer<ObjectElementNode> output) {
-    final Parser restResult = parser.whitespace().symbol("...");
+    final var restResult = parser.whitespace().symbol("...");
     if (restResult.isGood()) {
-      final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-      final AtomicReference<List<String>> exceptions =
-          new AtomicReference<>(Collections.emptyList());
-      Parser result =
+      final var expression = new AtomicReference<ExpressionNode>();
+      final var exceptions = new AtomicReference<List<String>>(List.of());
+      var result =
           restResult.whitespace().then(ExpressionNode::parse, expression::set).whitespace();
-      Parser exceptionResult =
+      var exceptionResult =
           result
               .keyword("Without")
               .whitespace()
@@ -50,9 +48,9 @@ public abstract class ObjectElementNode {
       }
       return result;
     } else {
-      final AtomicReference<String> name = new AtomicReference<>();
-      final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-      final Parser result =
+      final var name = new AtomicReference<String>();
+      final var expression = new AtomicReference<ExpressionNode>();
+      final var result =
           parser
               .whitespace()
               .identifier(name::set)

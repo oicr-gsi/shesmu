@@ -52,12 +52,12 @@ public class ExpressionNodeTupleGet extends ExpressionNode {
     LIFTED_TUPLE {
       @Override
       public void render(int line, int column, Renderer renderer, Imyhat type, int index) {
-        final LambdaBuilder lambda =
+        final var lambda =
             new LambdaBuilder(
                 renderer.root(),
                 String.format("Optional Getter %d:%d %d", line, column, index),
                 LambdaBuilder.function(A_OBJECT_TYPE, A_TUPLE_TYPE));
-        final GeneratorAdapter method = lambda.methodGen();
+        final var method = lambda.methodGen();
         method.visitCode();
         method.loadArg(0);
         renderLoad(method, index);
@@ -109,7 +109,7 @@ public class ExpressionNodeTupleGet extends ExpressionNode {
     LIFTED_MAP {
       @Override
       public void render(int line, int column, Renderer renderer, Imyhat type, int index) {
-        final LambdaBuilder builder =
+        final var builder =
             new LambdaBuilder(
                 renderer.root(),
                 String.format("Dictionary Access %d:%d", line, column),
@@ -117,7 +117,7 @@ public class ExpressionNodeTupleGet extends ExpressionNode {
         builder.push(renderer);
         renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__FLAT_MAP);
 
-        final GeneratorAdapter lambdaBody = builder.methodGen();
+        final var lambdaBody = builder.methodGen();
         lambdaBody.visitCode();
         lambdaBody.loadArg(0);
         lambdaBody.push(index);
@@ -136,8 +136,10 @@ public class ExpressionNodeTupleGet extends ExpressionNode {
 
       @Override
       public String render(EcmaScriptRenderer renderer, String value, int index) {
-        return String.format("$runtime.mapNull(%s, v => $runtime.nullifyUndefined(v.get(%d)))", value, index);
+        return String.format(
+            "$runtime.mapNull(%s, v => $runtime.nullifyUndefined(v.get(%d)))", value, index);
       }
+
       @Override
       public Imyhat output(Imyhat type) {
         return type.asOptional();
@@ -232,16 +234,16 @@ public class ExpressionNodeTupleGet extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = expression.typeCheck(errorHandler);
+    var ok = expression.typeCheck(errorHandler);
     if (ok) {
-      Imyhat expressionType = expression.type();
-      boolean lifted = false;
+      var expressionType = expression.type();
+      var lifted = false;
       if (expressionType instanceof Imyhat.OptionalImyhat) {
         lifted = true;
         expressionType = ((Imyhat.OptionalImyhat) expressionType).inner();
       }
       if (expressionType instanceof Imyhat.TupleImyhat) {
-        final Imyhat.TupleImyhat tupleType = (Imyhat.TupleImyhat) expressionType;
+        final var tupleType = (Imyhat.TupleImyhat) expressionType;
         type = tupleType.get(index);
         if (type.isBad()) {
           errorHandler.accept(
@@ -250,7 +252,7 @@ public class ExpressionNodeTupleGet extends ExpressionNode {
         }
         access = lifted ? Access.LIFTED_TUPLE : Access.TUPLE;
       } else if (expressionType instanceof Imyhat.DictionaryImyhat) {
-        final Imyhat.DictionaryImyhat mapType = (Imyhat.DictionaryImyhat) expressionType;
+        final var mapType = (Imyhat.DictionaryImyhat) expressionType;
         if (mapType.key().isSame(Imyhat.INTEGER)) {
           type = mapType.value();
           access = lifted ? Access.LIFTED_MAP : Access.MAP;

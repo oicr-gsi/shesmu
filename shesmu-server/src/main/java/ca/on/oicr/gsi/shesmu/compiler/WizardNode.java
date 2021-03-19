@@ -23,10 +23,10 @@ public abstract class WizardNode {
     WIZARD.addKeyword(
         "Stop",
         (p, o) -> {
-          final Parser withResult = p.whitespace().keyword("With");
+          final var withResult = p.whitespace().keyword("With");
           if (withResult.isGood()) {
-            final AtomicReference<ExpressionNode> status = new AtomicReference<>();
-            final Parser result =
+            final var status = new AtomicReference<ExpressionNode>();
+            final var result =
                 withResult.whitespace().then(ExpressionNode::parse, status::set).whitespace();
             if (result.isGood()) {
               o.accept(information -> new WizardNodeEndWithStatus(information, status.get()));
@@ -39,9 +39,9 @@ public abstract class WizardNode {
     WIZARD.addKeyword(
         "Form",
         (p, o) -> {
-          final AtomicReference<List<FormNode>> entries = new AtomicReference<>();
-          final AtomicReference<WizardNode> next = new AtomicReference<>();
-          final Parser result =
+          final var entries = new AtomicReference<List<FormNode>>();
+          final var next = new AtomicReference<WizardNode>();
+          final var result =
               p.whitespace()
                   .list(entries::set, FormNode::parse, ',')
                   .whitespace()
@@ -60,15 +60,15 @@ public abstract class WizardNode {
     WIZARD.addKeyword(
         "Choice",
         (p, o) -> {
-          final AtomicReference<List<Pair<String, WizardNode>>> choices = new AtomicReference<>();
-          final Parser result =
+          final var choices = new AtomicReference<List<Pair<String, WizardNode>>>();
+          final var result =
               p.whitespace()
                   .list(
                       choices::set,
                       (cp, co) -> {
-                        final AtomicReference<String> name = new AtomicReference<>();
-                        final AtomicReference<WizardNode> next = new AtomicReference<>();
-                        final Parser cr =
+                        final var name = new AtomicReference<String>();
+                        final var next = new AtomicReference<WizardNode>();
+                        final var cr =
                             cp.whitespace()
                                 .keyword("When")
                                 .whitespace()
@@ -95,20 +95,19 @@ public abstract class WizardNode {
     FLOW.addKeyword(
         "Switch",
         (p, o) -> {
-          final AtomicReference<List<Pair<ExpressionNode, WizardNode>>> cases =
-              new AtomicReference<>();
-          final AtomicReference<ExpressionNode> test = new AtomicReference<>();
-          final AtomicReference<WizardNode> alternative = new AtomicReference<>();
-          final Parser result =
+          final var cases = new AtomicReference<List<Pair<ExpressionNode, WizardNode>>>();
+          final var test = new AtomicReference<ExpressionNode>();
+          final var alternative = new AtomicReference<WizardNode>();
+          final var result =
               p.whitespace()
                   .then(ExpressionNode::parse, test::set)
                   .whitespace()
                   .list(
                       cases::set,
                       (cp, co) -> {
-                        final AtomicReference<ExpressionNode> condition = new AtomicReference<>();
-                        final AtomicReference<WizardNode> value = new AtomicReference<>();
-                        final Parser cresult =
+                        final var condition = new AtomicReference<ExpressionNode>();
+                        final var value = new AtomicReference<WizardNode>();
+                        final var cresult =
                             cp.whitespace()
                                 .keyword("When")
                                 .whitespace()
@@ -135,10 +134,10 @@ public abstract class WizardNode {
     FLOW.addKeyword(
         "Match",
         (p, o) -> {
-          final AtomicReference<List<WizardMatchBranchNode>> cases = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> test = new AtomicReference<>();
-          final AtomicReference<WizardMatchAlternativeNode> alternative = new AtomicReference<>();
-          final Parser result =
+          final var cases = new AtomicReference<List<WizardMatchBranchNode>>();
+          final var test = new AtomicReference<ExpressionNode>();
+          final var alternative = new AtomicReference<WizardMatchAlternativeNode>();
+          final var result =
               p.whitespace()
                   .then(ExpressionNode::parse, test::set)
                   .whitespace()
@@ -156,10 +155,10 @@ public abstract class WizardNode {
     FLOW.addKeyword(
         "If",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> test = new AtomicReference<>();
-          final AtomicReference<WizardNode> trueStep = new AtomicReference<>();
-          final AtomicReference<WizardNode> falseStep = new AtomicReference<>();
-          final Parser result =
+          final var test = new AtomicReference<ExpressionNode>();
+          final var trueStep = new AtomicReference<WizardNode>();
+          final var falseStep = new AtomicReference<WizardNode>();
+          final var result =
               p.whitespace()
                   .then(ExpressionNode::parse, test::set)
                   .whitespace()
@@ -181,19 +180,18 @@ public abstract class WizardNode {
     DISPATCH.addKeyword(
         "Let",
         (p, o) -> {
-          final AtomicReference<List<Pair<DestructuredArgumentNode, ExpressionNode>>> entries =
-              new AtomicReference<>();
-          final AtomicReference<WizardNode> step = new AtomicReference<>();
-          final Parser result =
+          final var entries =
+              new AtomicReference<List<Pair<DestructuredArgumentNode, ExpressionNode>>>();
+          final var step = new AtomicReference<WizardNode>();
+          final var result =
               p.whitespace()
                   .whitespace()
                   .list(
                       entries::set,
                       (pe, oe) -> {
-                        final AtomicReference<DestructuredArgumentNode> name =
-                            new AtomicReference<>();
-                        final AtomicReference<ExpressionNode> expr = new AtomicReference<>();
-                        final Parser entryResult =
+                        final var name = new AtomicReference<DestructuredArgumentNode>();
+                        final var expr = new AtomicReference<ExpressionNode>();
+                        final var entryResult =
                             pe.whitespace()
                                 .then(DestructuredArgumentNode::parse, name::set)
                                 .whitespace()
@@ -218,9 +216,9 @@ public abstract class WizardNode {
     DISPATCH.addKeyword(
         "GoTo",
         (p, o) -> {
-          final AtomicReference<String> name = new AtomicReference<>();
-          final AtomicReference<List<ExpressionNode>> arguments = new AtomicReference<>();
-          final Parser result =
+          final var name = new AtomicReference<String>();
+          final var arguments = new AtomicReference<List<ExpressionNode>>();
+          final var result =
               p.whitespace()
                   .identifier(name::set)
                   .whitespace()
@@ -236,9 +234,9 @@ public abstract class WizardNode {
     DISPATCH.addKeyword(
         "Fetch",
         (p, o) -> {
-          final AtomicReference<List<FetchNode>> entries = new AtomicReference<>();
-          final AtomicReference<WizardNode> next = new AtomicReference<>();
-          final Parser result =
+          final var entries = new AtomicReference<List<FetchNode>>();
+          final var next = new AtomicReference<WizardNode>();
+          final var result =
               p.whitespace()
                   .list(entries::set, FetchNode::parse, ',')
                   .whitespace()
@@ -254,12 +252,12 @@ public abstract class WizardNode {
     DISPATCH.addKeyword(
         "Fork",
         (p, o) -> {
-          final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
-          final AtomicReference<SourceNode> source = new AtomicReference<>();
-          final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> title = new AtomicReference<>();
-          final AtomicReference<WizardNode> step = new AtomicReference<>();
-          final Parser result =
+          final var name = new AtomicReference<DestructuredArgumentNode>();
+          final var source = new AtomicReference<SourceNode>();
+          final var transforms = new AtomicReference<List<ListNode>>();
+          final var title = new AtomicReference<ExpressionNode>();
+          final var step = new AtomicReference<WizardNode>();
+          final var result =
               p.whitespace()
                   .then(DestructuredArgumentNode::parse, name::set)
                   .whitespace()
@@ -284,7 +282,7 @@ public abstract class WizardNode {
     DISPATCH.addRaw(
         "display information and next step",
         (p, o) -> {
-          final AtomicReference<List<InformationNode>> information = new AtomicReference<>();
+          final var information = new AtomicReference<List<InformationNode>>();
           return p.whitespace()
               .list(information::set, InformationNode::parse)
               .whitespace()

@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 /** One of the <tt>By</tt> clauses in <tt>Group</tt> clause */
 public abstract class DiscriminatorNode {
   private static final Parser.ParseDispatch<ComplexConstructor> COMPLEX =
-      new Parser.ParseDispatch<ComplexConstructor>();
+      new Parser.ParseDispatch<>();
 
   private interface ComplexConstructor {
     DiscriminatorNode create(
@@ -26,17 +26,17 @@ public abstract class DiscriminatorNode {
   }
 
   public static Parser parse(Parser input, Consumer<DiscriminatorNode> output) {
-    final Parser groupParser = input.whitespace().symbol("@");
+    final var groupParser = input.whitespace().symbol("@");
     if (groupParser.isGood()) {
-      final AtomicReference<String> name = new AtomicReference<>();
-      final Parser groupResult = groupParser.whitespace().identifier(name::set).whitespace();
+      final var name = new AtomicReference<String>();
+      final var groupResult = groupParser.whitespace().identifier(name::set).whitespace();
       if (groupResult.isGood()) {
         output.accept(new DiscriminatorNodeGang(input.line(), input.column(), name.get()));
       }
       return groupResult;
     }
-    final AtomicReference<DestructuredArgumentNode> complexName = new AtomicReference<>();
-    final Parser complexParser =
+    final var complexName = new AtomicReference<DestructuredArgumentNode>();
+    final var complexParser =
         input
             .whitespace()
             .then(DestructuredArgumentNode::parse, complexName::set)
@@ -44,9 +44,9 @@ public abstract class DiscriminatorNode {
             .symbol("=")
             .whitespace();
     if (complexParser.isGood()) {
-      final AtomicReference<ComplexConstructor> constructor = new AtomicReference<>();
-      final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-      final Parser result =
+      final var constructor = new AtomicReference<ComplexConstructor>();
+      final var expression = new AtomicReference<ExpressionNode>();
+      final var result =
           complexParser
               .dispatch(COMPLEX, constructor::set)
               .whitespace()
@@ -60,8 +60,8 @@ public abstract class DiscriminatorNode {
       }
       return result;
     } else {
-      final AtomicReference<String> name = new AtomicReference<>();
-      final Parser result = input.whitespace().identifier(name::set).whitespace();
+      final var name = new AtomicReference<String>();
+      final var result = input.whitespace().identifier(name::set).whitespace();
       if (result.isGood()) {
         output.accept(new DiscriminatorNodeSimple(input.line(), input.column(), name.get()));
       }

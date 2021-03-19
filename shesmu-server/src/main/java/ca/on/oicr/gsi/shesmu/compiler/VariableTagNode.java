@@ -20,8 +20,8 @@ public abstract class VariableTagNode {
     DISPATCH.addKeyword(
         "Tags",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser result =
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace().then(ExpressionNode::parse, expression::set).whitespace();
           if (result.isGood()) {
             o.accept(new VariableTagNodeMultiple(expression.get()));
@@ -31,8 +31,8 @@ public abstract class VariableTagNode {
     DISPATCH.addKeyword(
         "Tag",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser result =
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace().then(ExpressionNode::parse, expression::set).whitespace();
           if (result.isGood()) {
             o.accept(new VariableTagNodeSingle(expression.get()));

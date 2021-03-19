@@ -11,7 +11,6 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
@@ -55,7 +54,7 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
       if (expression.resolveDefinitions(
           new OptionalCaptureCompilerServices(expressionCompilerServices, errorHandler, layer - 1),
           errorHandler)) {
-        final UnboxableExpression target = new UnboxableExpression(expression);
+        final var target = new UnboxableExpression(expression);
         captures.computeIfAbsent(layer, k -> new ArrayList<>()).add(target);
         return Optional.of(target);
       } else {
@@ -143,8 +142,8 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
-    for (final List<UnboxableExpression> layer : captures.values()) {
-      for (final UnboxableExpression capture : layer) {
+    for (final var layer : captures.values()) {
+      for (final var capture : layer) {
         capture.expression.collectFreeVariables(names, predicate);
       }
     }
@@ -153,8 +152,8 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
 
   @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
-    for (final List<UnboxableExpression> layer : captures.values()) {
-      for (final UnboxableExpression capture : layer) {
+    for (final var layer : captures.values()) {
+      for (final var capture : layer) {
         capture.expression.collectPlugins(pluginFileNames);
       }
     }
@@ -178,7 +177,7 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
             iterator.next().stream()
                 .map(
                     capture -> {
-                      final String capturedValue =
+                      final var capturedValue =
                           renderer.newConst(capture.expression.renderEcma(renderer));
                       renderer.define(
                           new EcmaLoadableValue() {
@@ -207,7 +206,7 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
     if (captures.isEmpty()) {
       return item.renderEcma(renderer);
     } else {
-      final String result = renderer.newLet("null");
+      final var result = renderer.newLet("null");
       new LayerUnNester(captures.values().iterator(), result).accept(renderer);
       return result;
     }
@@ -230,18 +229,18 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
     } else {
       // If we have captures, we need to unbox all of them, store their guts, compute the result,
       // and then wrap it all back up in an optional (if the inner result isn't already)
-      final Label end = renderer.methodGen().newLabel();
-      final Label empty = renderer.methodGen().newLabel();
-      for (final List<UnboxableExpression> layer : captures.values()) {
-        for (final UnboxableExpression capture : layer) {
+      final var end = renderer.methodGen().newLabel();
+      final var empty = renderer.methodGen().newLabel();
+      for (final var layer : captures.values()) {
+        for (final var capture : layer) {
           capture.expression.render(renderer);
           renderer.methodGen().dup();
           renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__IS_PRESENT);
           renderer.methodGen().ifZCmp(GeneratorAdapter.EQ, empty);
           renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__GET);
-          final Type type = capture.type().apply(TO_ASM);
+          final var type = capture.type().apply(TO_ASM);
           renderer.methodGen().unbox(type);
-          final int local = renderer.methodGen().newLocal(type);
+          final var local = renderer.methodGen().newLocal(type);
           renderer.methodGen().storeLocal(local);
           renderer.define(
               capture.name(),
@@ -320,7 +319,7 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
     if (captures.isEmpty()) {
-      boolean ok = item.typeCheck(errorHandler);
+      var ok = item.typeCheck(errorHandler);
       type = item.type();
       if (type.isSame(type.asOptional())) {
         item.typeError("non-optional", item.type(), errorHandler);
@@ -328,15 +327,14 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
       }
       return ok;
     } else {
-      boolean ok =
+      var ok =
           captures.values().stream()
                   .allMatch(
                       layer ->
                           layer.stream()
                                   .filter(
                                       capture -> {
-                                        boolean captureOk =
-                                            capture.expression.typeCheck(errorHandler);
+                                        var captureOk = capture.expression.typeCheck(errorHandler);
                                         if (!capture
                                             .expression
                                             .type()

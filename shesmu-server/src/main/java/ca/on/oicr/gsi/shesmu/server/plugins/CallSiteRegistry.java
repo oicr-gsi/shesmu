@@ -17,11 +17,11 @@ public final class CallSiteRegistry<K> {
   }
 
   public MutableCallSite get(K name) {
-    final SoftReference<MutableCallSite> reference = registry.get(name);
+    final var reference = registry.get(name);
     if (reference == null) {
       return null;
     }
-    final MutableCallSite callsite = reference.get();
+    final var callsite = reference.get();
     if (callsite == null) {
       throw new IllegalStateException(
           String.format("Call site for %s has been garbage collected.", name));
@@ -30,17 +30,13 @@ public final class CallSiteRegistry<K> {
   }
 
   public Stream<Pair<K, MethodType>> stream() {
-    return registry
-        .entrySet()
-        .stream()
+    return registry.entrySet().stream()
         .filter(e -> e.getValue().get() != null)
         .map(e -> new Pair<>(e.getKey(), e.getValue().get().type()));
   }
 
   public Stream<Pair<K, MutableCallSite>> streamSites() {
-    return registry
-        .entrySet()
-        .stream()
+    return registry.entrySet().stream()
         .filter(e -> e.getValue().get() != null)
         .map(e -> new Pair<>(e.getKey(), e.getValue().get()));
   }
@@ -51,7 +47,7 @@ public final class CallSiteRegistry<K> {
     // we've done this before, but then the file and any olives using it were
     // deleted, so we'll end up with a dead reference. Either way, if there's no
     // useful call site, create one.
-    MutableCallSite callsite =
+    var callsite =
         registry
             .compute(
                 name,

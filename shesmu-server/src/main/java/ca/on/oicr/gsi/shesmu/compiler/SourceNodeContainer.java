@@ -170,8 +170,7 @@ public class SourceNodeContainer extends SourceNode {
   public JavaStreamBuilder render(Renderer renderer) {
     expression.render(renderer);
     mode.render(renderer);
-    final JavaStreamBuilder builder = renderer.buildStream(initialType);
-    return builder;
+    return renderer.buildStream(initialType);
   }
 
   @Override
@@ -200,7 +199,7 @@ public class SourceNodeContainer extends SourceNode {
     if (!expression.typeCheck(errorHandler)) {
       return false;
     }
-    Imyhat type = expression.type();
+    var type = expression.type();
     if (type == Imyhat.EMPTY) {
       errorHandler.accept(
           String.format(
@@ -234,7 +233,7 @@ public class SourceNodeContainer extends SourceNode {
       mode = lifted ? Mode.LIFTED_LIST : Mode.LIST;
       return true;
     } else if (type instanceof Imyhat.DictionaryImyhat) {
-      final Imyhat.DictionaryImyhat inner = ((Imyhat.DictionaryImyhat) type);
+      final var inner = ((Imyhat.DictionaryImyhat) type);
       initialType = Imyhat.tuple(inner.key(), inner.value());
       mode = lifted ? Mode.LIFTED_MAP : Mode.MAP;
       return true;

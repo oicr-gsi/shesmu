@@ -1,10 +1,9 @@
 package ca.on.oicr.gsi.shesmu.mongo;
 
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import com.mongodb.Block;
 import com.mongodb.client.MongoIterable;
 import java.util.Optional;
-import java.util.Set;
+import java.util.function.Consumer;
 import org.bson.Document;
 
 public enum ResultSelector {
@@ -27,8 +26,8 @@ public enum ResultSelector {
 
     @Override
     public Object process(MongoIterable<Document> iterable, ReturnConverter converter) {
-      final Set<Object> set = converter.type().newSet();
-      iterable.map(converter::unpackRoot).forEach((Block<Object>) set::add);
+      final var set = converter.type().newSet();
+      iterable.map(converter::unpackRoot).forEach((Consumer<Object>) set::add);
       return set;
     }
   };

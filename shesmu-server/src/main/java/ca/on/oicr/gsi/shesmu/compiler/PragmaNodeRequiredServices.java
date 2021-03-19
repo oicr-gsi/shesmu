@@ -37,7 +37,7 @@ public class PragmaNodeRequiredServices extends PragmaNode {
           methodGen.loadArg(0);
           methodGen.push(services.size());
           methodGen.newArray(A_STRING_TYPE);
-          for (int i = 0; i < services.size(); i++) {
+          for (var i = 0; i < services.size(); i++) {
             methodGen.dup();
             methodGen.push(i);
             methodGen.push(services.get(i));

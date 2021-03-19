@@ -1,9 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 public class ImyhatNodeInputVariable extends ImyhatNode {
@@ -22,19 +20,19 @@ public class ImyhatNodeInputVariable extends ImyhatNode {
   @Override
   public Imyhat render(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    final InputFormatDefinition definition = expressionCompilerServices.inputFormat(inputFormat);
+    final var definition = expressionCompilerServices.inputFormat(inputFormat);
     if (definition == null) {
       errorHandler.accept(
           String.format("%d:%d: Unknown input format %s.", line, column, inputFormat));
       return Imyhat.BAD;
     }
-    final Optional<Imyhat> varType =
+    final var varType =
         definition
             .baseStreamVariables()
             .filter(v -> v.name().equals(variable))
             .map(InputVariable::type)
             .findAny();
-    if (!varType.isPresent()) {
+    if (varType.isEmpty()) {
       errorHandler.accept(
           String.format(
               "%d:%d: Input format %s has no variable %s.", line, column, inputFormat, variable));

@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.runtime;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -29,7 +28,7 @@ public final class TableCollector<T> implements Collector<T, List<String>, Strin
   @SafeVarargs
   @RuntimeInterop
   public TableCollector(Tuple separators, Pair<String, Function<T, String>>... columns) {
-    this.columns = Arrays.asList(columns);
+    this.columns = List.of(columns);
     this.dataEnd = (String) separators.get(0);
     this.dataSeparator = (String) separators.get(1);
     this.dataStart = (String) separators.get(2);
@@ -48,8 +47,7 @@ public final class TableCollector<T> implements Collector<T, List<String>, Strin
   public BiConsumer<List<String>, T> accumulator() {
     return (list, item) ->
         list.add(
-            columns
-                .stream()
+            columns.stream()
                 .map(c -> c.second().apply(item))
                 .collect(Collectors.joining(dataSeparator, dataStart, dataEnd)));
   }
@@ -65,8 +63,7 @@ public final class TableCollector<T> implements Collector<T, List<String>, Strin
   @Override
   public Function<List<String>, String> finisher() {
     return l ->
-        columns
-                .stream()
+        columns.stream()
                 .map(Pair::first)
                 .collect(Collectors.joining(headerSeparator, headerStart, headerEnd))
             + "\n"

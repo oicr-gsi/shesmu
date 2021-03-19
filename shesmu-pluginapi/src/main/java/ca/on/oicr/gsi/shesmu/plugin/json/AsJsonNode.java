@@ -4,9 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatFunction;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
@@ -23,7 +21,7 @@ public class AsJsonNode implements ImyhatFunction<JsonNode> {
 
   @Override
   public JsonNode apply(String name, AccessContents accessor) {
-    final ObjectNode objectNode = FACTORY.objectNode();
+    final var objectNode = FACTORY.objectNode();
     objectNode.put("type", name);
     objectNode.set("value", accessor.apply(this));
     return objectNode;
@@ -51,7 +49,7 @@ public class AsJsonNode implements ImyhatFunction<JsonNode> {
 
   @Override
   public JsonNode apply(Stream<Object> values, Imyhat inner) {
-    final ArrayNode arrayNode = FACTORY.arrayNode();
+    final var arrayNode = FACTORY.arrayNode();
     values.forEach(v -> arrayNode.add(inner.apply(this, v)));
     return arrayNode;
   }
@@ -79,13 +77,13 @@ public class AsJsonNode implements ImyhatFunction<JsonNode> {
   @Override
   public JsonNode applyMap(Map<?, ?> map, Imyhat key, Imyhat value) {
     if (key.isSame(Imyhat.STRING)) {
-      final ObjectNode objectNode = FACTORY.objectNode();
-      map.forEach((k, v) -> objectNode.put((String) k, value.apply(this, v)));
+      final var objectNode = FACTORY.objectNode();
+      map.forEach((k, v) -> objectNode.set((String) k, value.apply(this, v)));
       return objectNode;
     }
-    final ArrayNode mapNode = FACTORY.arrayNode();
+    final var mapNode = FACTORY.arrayNode();
     for (final Map.Entry<?, ?> entry : map.entrySet()) {
-      final ArrayNode pairNode = mapNode.addArray();
+      final var pairNode = mapNode.addArray();
       pairNode.add(key.apply(this, entry.getKey()));
       pairNode.add(value.apply(this, entry.getValue()));
     }
@@ -94,7 +92,7 @@ public class AsJsonNode implements ImyhatFunction<JsonNode> {
 
   @Override
   public JsonNode applyObject(Stream<Field<String>> contents) {
-    final ObjectNode objectNode = FACTORY.objectNode();
+    final var objectNode = FACTORY.objectNode();
     contents.forEach(
         field -> objectNode.set(field.index(), field.type().apply(this, field.value())));
     return objectNode;
@@ -102,7 +100,7 @@ public class AsJsonNode implements ImyhatFunction<JsonNode> {
 
   @Override
   public JsonNode applyTuple(Stream<Field<Integer>> contents) {
-    final ArrayNode tupleNode = FACTORY.arrayNode();
+    final var tupleNode = FACTORY.arrayNode();
     contents
         .sorted(Comparator.comparing(Field::index))
         .forEach(field -> tupleNode.add(field.type().apply(this, field.value())));

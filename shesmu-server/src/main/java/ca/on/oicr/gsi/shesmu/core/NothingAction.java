@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 public class NothingAction extends Action {
 
   private static final ActionCommand<NothingAction> COMPLAIN =
-      new ActionCommand<NothingAction>(
+      new ActionCommand<>(
           NothingAction.class,
           "NOTHING-COMPLAIN",
           FrontEndIcon.TERMINAL,
@@ -32,7 +32,7 @@ public class NothingAction extends Action {
         }
       };
   private static final ActionCommand<NothingAction> SCREAM_TO_DEATH =
-      new ActionCommand<NothingAction>(
+      new ActionCommand<>(
           NothingAction.class,
           "NOTHING-SCREAM-TO-DEATH",
           FrontEndIcon.TRASH_FILL,
@@ -45,7 +45,10 @@ public class NothingAction extends Action {
           return Response.PURGE;
         }
       };
-  @RuntimeInterop public String value = "";
+
+  @SuppressWarnings("CanBeFinal")
+  @RuntimeInterop
+  public String value = "";
 
   public NothingAction() {
     super("nothing");
@@ -67,15 +70,10 @@ public class NothingAction extends Action {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final NothingAction other = (NothingAction) obj;
+    final var other = (NothingAction) obj;
     if (value == null) {
-      if (other.value != null) {
-        return false;
-      }
-    } else if (!value.equals(other.value)) {
-      return false;
-    }
-    return true;
+      return other.value == null;
+    } else return value.equals(other.value);
   }
 
   @Override
@@ -85,8 +83,8 @@ public class NothingAction extends Action {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
+    final var prime = 31;
+    var result = 1;
     result = prime * result + (value == null ? 0 : value.hashCode());
     return result;
   }
@@ -113,7 +111,7 @@ public class NothingAction extends Action {
 
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
-    final ObjectNode node = mapper.createObjectNode();
+    final var node = mapper.createObjectNode();
     node.put("value", value);
     return node;
   }

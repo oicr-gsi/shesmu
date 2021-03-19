@@ -28,7 +28,7 @@ public class VariableTagNodeMultiple extends VariableTagNode {
   public Optional<IntConsumer> renderDynamicSize(Renderer renderer) {
     render(renderer);
     renderer.methodGen().dup();
-    final int listLocal = renderer.methodGen().newLocal(A_SET_TYPE);
+    final var listLocal = renderer.methodGen().newLocal(A_SET_TYPE);
     renderer.methodGen().storeLocal(listLocal);
     renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__SIZE);
     renderer.methodGen().math(GeneratorAdapter.ADD, Type.INT_TYPE);

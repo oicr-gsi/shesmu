@@ -42,7 +42,7 @@ public class LetBuilder {
   }
 
   public void add(Type fieldType, String name, Consumer<Renderer> loadValue) {
-    final int ctorIndex = ctorArgs.size();
+    final var ctorIndex = ctorArgs.size();
     ctorArgs.add(fieldType);
     ctorWrites.add(
         ctorMethod -> {
@@ -53,7 +53,7 @@ public class LetBuilder {
     classVisitor
         .visitField(Opcodes.ACC_PRIVATE, name, fieldType.getDescriptor(), null, null)
         .visitEnd();
-    final GeneratorAdapter getter =
+    final var getter =
         new GeneratorAdapter(
             Opcodes.ACC_PUBLIC,
             new Method(name, fieldType, new Type[] {}),
@@ -70,7 +70,7 @@ public class LetBuilder {
   }
 
   public void checkAndSkip(BiConsumer<Renderer, Label> doCheck) {
-    final Label end = createMethodGen.methodGen().newLabel();
+    final var end = createMethodGen.methodGen().newLabel();
     doCheck.accept(createMethodGen, end);
     createMethodGen.methodGen().visitInsn(Opcodes.ACONST_NULL);
     createMethodGen.methodGen().returnValue();
@@ -79,16 +79,14 @@ public class LetBuilder {
 
   public Consumer<Renderer> createLocal(Type localType, Consumer<Renderer> loadValue) {
     loadValue.accept(createMethodGen);
-    final int local = createMethodGen.methodGen().newLocal(localType);
+    final var local = createMethodGen.methodGen().newLocal(localType);
     createMethodGen.methodGen().storeLocal(local);
     return r -> r.methodGen().loadLocal(local);
   }
 
   public void finish() {
-    final Method ctorType =
-        new Method("<init>", Type.VOID_TYPE, ctorArgs.stream().toArray(Type[]::new));
-    final GeneratorAdapter ctor =
-        new GeneratorAdapter(Opcodes.ACC_PUBLIC, ctorType, null, null, classVisitor);
+    final var ctorType = new Method("<init>", Type.VOID_TYPE, ctorArgs.toArray(Type[]::new));
+    final var ctor = new GeneratorAdapter(Opcodes.ACC_PUBLIC, ctorType, null, null, classVisitor);
     ctor.visitCode();
     ctor.loadThis();
     ctor.invokeConstructor(A_OBJECT_TYPE, DEFAULT_CTOR);

@@ -26,7 +26,7 @@ public final class SimpleRecord<V> extends BaseRecord<Optional<V>, Optional<V>> 
 
   @Override
   protected Optional<V> update(Optional<V> oldstate, Instant fetchTime) throws Exception {
-    final Optional<V> buffer = fetcher.update(fetchTime);
+    final var buffer = fetcher.update(fetchTime);
     return buffer.isPresent() ? buffer : null;
   }
 

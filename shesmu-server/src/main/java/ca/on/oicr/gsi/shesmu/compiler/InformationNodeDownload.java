@@ -19,7 +19,7 @@ public class InformationNodeDownload extends InformationNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    final boolean isJson = contents.type().isSame(Imyhat.JSON);
+    final var isJson = contents.type().isSame(Imyhat.JSON);
     return String.format(
         "{ type: \"download\", isJson: %s, file: %s, mimetype: %s, contents: %s }",
         isJson,
@@ -51,7 +51,7 @@ public class InformationNodeDownload extends InformationNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = true;
+    var ok = true;
     if (contents.typeCheck(errorHandler)) {
       if (!contents.type().isSame(Imyhat.STRING) && !contents.type().isSame(Imyhat.JSON)) {
         ok = false;

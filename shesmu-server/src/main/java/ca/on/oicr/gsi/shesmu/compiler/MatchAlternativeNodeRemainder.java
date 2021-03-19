@@ -51,7 +51,7 @@ public class MatchAlternativeNodeRemainder extends MatchAlternativeNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
-    final boolean remove = !names.contains(name);
+    final var remove = !names.contains(name);
     expression.collectFreeVariables(names, predicate);
     if (remove) {
       names.remove(name);
@@ -65,7 +65,7 @@ public class MatchAlternativeNodeRemainder extends MatchAlternativeNode {
 
   @Override
   public void render(Renderer renderer, Label end, int local) {
-    final Renderer result = renderer.duplicate();
+    final var result = renderer.duplicate();
     result.define(
         name,
         new LoadableValue() {
@@ -107,7 +107,7 @@ public class MatchAlternativeNodeRemainder extends MatchAlternativeNode {
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    boolean ok = expression.resolve(defs.bind(target), errorHandler);
+    var ok = expression.resolve(defs.bind(target), errorHandler);
     if (ok && !read) {
       errorHandler.accept(
           String.format(
@@ -211,7 +211,7 @@ public class MatchAlternativeNodeRemainder extends MatchAlternativeNode {
                             }))
             .reduce(Imyhat::unify)
             .get();
-    boolean ok = expression.typeCheck(errorHandler);
+    var ok = expression.typeCheck(errorHandler);
     if (ok) {
       if (expression.type().isSame(resultType)) {
         return expression.type().unify(resultType);

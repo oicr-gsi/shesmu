@@ -34,8 +34,8 @@ public final class SimulateRequest extends BaseSimulateRequest {
 
   private boolean allowUnused;
   private boolean dryRun;
-  private Map<String, Map<String, FakeActionParameter>> fakeActions = Collections.emptyMap();
-  private Map<String, Map<String, Imyhat>> fakeRefillers = Collections.emptyMap();
+  private Map<String, Map<String, FakeActionParameter>> fakeActions = Map.of();
+  private Map<String, Map<String, Imyhat>> fakeRefillers = Map.of();
   private String script;
 
   @Override
@@ -50,18 +50,14 @@ public final class SimulateRequest extends BaseSimulateRequest {
 
   @Override
   protected Stream<FakeActionDefinition> fakeActions() {
-    return fakeActions
-        .entrySet()
-        .stream()
+    return fakeActions.entrySet().stream()
         .map(
             e ->
                 new FakeActionDefinition(
                     e.getKey(),
                     "Provided in simulation request",
                     null,
-                    e.getValue()
-                        .entrySet()
-                        .stream()
+                    e.getValue().entrySet().stream()
                         .map(
                             pe ->
                                 new JsonActionParameterDefinition(
@@ -72,18 +68,14 @@ public final class SimulateRequest extends BaseSimulateRequest {
 
   @Override
   protected Stream<FakeRefillerDefinition> fakeRefillers() {
-    return fakeRefillers
-        .entrySet()
-        .stream()
+    return fakeRefillers.entrySet().stream()
         .map(
             e ->
                 new FakeRefillerDefinition(
                     e.getKey(),
                     "Fake refiller",
                     null,
-                    e.getValue()
-                        .entrySet()
-                        .stream()
+                    e.getValue().entrySet().stream()
                         .map(p -> new JsonRefillerParameterDefinition(p.getKey(), p.getValue()))));
   }
 

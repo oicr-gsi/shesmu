@@ -38,10 +38,10 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
     }
 
     @Override
-    protected Optional<FileProvenanceOutput> fetch(Instant lastUpdated) throws Exception {
+    protected Optional<FileProvenanceOutput> fetch(Instant lastUpdated) {
       final List<CerberusFileProvenanceValue> output = new ArrayList<>();
       final List<CerberusErrorValue> errors = new ArrayList<>();
-      final AtomicInteger staleCount = new AtomicInteger();
+      final var staleCount = new AtomicInteger();
       JoinSource.join(
           vidarrData,
           limsData,

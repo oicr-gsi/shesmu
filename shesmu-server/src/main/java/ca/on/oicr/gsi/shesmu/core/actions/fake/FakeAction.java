@@ -37,7 +37,7 @@ public class FakeAction extends JsonParameterisedAction {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final FakeAction other = (FakeAction) obj;
+    final var other = (FakeAction) obj;
     if (name == null) {
       if (other.name != null) {
         return false;
@@ -46,13 +46,8 @@ public class FakeAction extends JsonParameterisedAction {
       return false;
     }
     if (parameters == null) {
-      if (other.parameters != null) {
-        return false;
-      }
-    } else if (!parameters.equals(other.parameters)) {
-      return false;
-    }
-    return true;
+      return other.parameters == null;
+    } else return parameters.equals(other.parameters);
   }
 
   @Override
@@ -67,8 +62,8 @@ public class FakeAction extends JsonParameterisedAction {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
+    final var prime = 31;
+    var result = 1;
     result = prime * result + (name == null ? 0 : name.hashCode());
     result = prime * result + (parameters == null ? 0 : parameters.hashCode());
     return result;
@@ -96,7 +91,7 @@ public class FakeAction extends JsonParameterisedAction {
 
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
-    final ObjectNode node = mapper.createObjectNode();
+    final var node = mapper.createObjectNode();
     node.put("name", name);
     node.set("parameters", parameters);
     return node;

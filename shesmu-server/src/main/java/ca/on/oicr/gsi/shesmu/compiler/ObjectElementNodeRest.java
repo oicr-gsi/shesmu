@@ -33,7 +33,7 @@ public class ObjectElementNodeRest extends ObjectElementNode {
 
   @Override
   public Stream<String> render(EcmaScriptRenderer renderer) {
-    final String expressionResult = expression.renderEcma(renderer);
+    final var expressionResult = expression.renderEcma(renderer);
     return tuple
         .fields()
         .filter(field -> !exceptions.contains(field.getKey()))
@@ -43,7 +43,7 @@ public class ObjectElementNodeRest extends ObjectElementNode {
   @Override
   public void render(Renderer renderer, ToIntFunction<String> indexOf) {
     expression.render(renderer);
-    final int local = renderer.methodGen().newLocal(A_TUPLE_TYPE);
+    final var local = renderer.methodGen().newLocal(A_TUPLE_TYPE);
     renderer.methodGen().storeLocal(local);
     tuple
         .fields()
@@ -61,7 +61,7 @@ public class ObjectElementNodeRest extends ObjectElementNode {
 
   @Override
   public Stream<String> renderConstant(EcmaScriptRenderer renderer) {
-    final String expressionResult = expression.renderEcma(renderer);
+    final var expressionResult = expression.renderEcma(renderer);
     return tuple
         .fields()
         .filter(field -> !exceptions.contains(field.getKey()))

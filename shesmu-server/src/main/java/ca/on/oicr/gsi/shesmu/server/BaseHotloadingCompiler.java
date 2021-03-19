@@ -47,7 +47,7 @@ public abstract class BaseHotloadingCompiler {
         @Override
         protected Class<?> findClass(String name) throws ClassNotFoundException {
           if (bytecode.containsKey(name)) {
-            final byte[] contents = bytecode.get(name);
+            final var contents = bytecode.get(name);
             return defineClass(name, contents, 0, contents.length);
           }
           return super.findClass(name);

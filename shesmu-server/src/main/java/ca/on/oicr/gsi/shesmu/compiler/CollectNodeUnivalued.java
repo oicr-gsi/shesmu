@@ -18,7 +18,7 @@ public class CollectNodeUnivalued extends CollectNodeOptional {
       LoadableConstructor name,
       Imyhat returnType,
       LoadableValue[] loadables) {
-    final Renderer map = builder.map(line(), column(), name, returnType, loadables);
+    final var map = builder.map(line(), column(), name, returnType, loadables);
     builder.univalued();
     return map;
   }

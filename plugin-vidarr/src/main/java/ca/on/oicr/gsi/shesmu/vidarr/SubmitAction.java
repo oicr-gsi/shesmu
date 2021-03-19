@@ -161,7 +161,7 @@ public final class SubmitAction extends Action {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    SubmitAction that = (SubmitAction) o;
+    var that = (SubmitAction) o;
     return stale == that.stale && request.equalsIgnoreAttempt(that.request);
   }
 

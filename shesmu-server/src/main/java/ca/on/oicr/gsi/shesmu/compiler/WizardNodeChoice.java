@@ -28,7 +28,7 @@ public class WizardNodeChoice extends WizardNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    final String choiceObject =
+    final var choiceObject =
         choices.stream()
             .map(
                 c -> {
@@ -51,8 +51,8 @@ public class WizardNodeChoice extends WizardNode {
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final Map.Entry<String, Long> choice :
+    var ok = true;
+    for (final var choice :
         choices.stream()
             .collect(Collectors.groupingBy(Pair::first, Collectors.counting()))
             .entrySet()) {

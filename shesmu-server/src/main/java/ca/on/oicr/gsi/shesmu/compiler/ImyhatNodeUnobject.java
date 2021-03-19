@@ -16,9 +16,9 @@ public class ImyhatNodeUnobject extends ImyhatNode {
   @Override
   public Imyhat render(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    final Imyhat type = outer.render(expressionCompilerServices, errorHandler);
+    final var type = outer.render(expressionCompilerServices, errorHandler);
     if (type instanceof Imyhat.ObjectImyhat) {
-      final Imyhat inner = ((Imyhat.ObjectImyhat) type).get(field);
+      final var inner = ((Imyhat.ObjectImyhat) type).get(field);
       if (inner.isBad()) {
         errorHandler.accept(
             String.format("Object type %s does not contain an field %s.", type.name(), field));

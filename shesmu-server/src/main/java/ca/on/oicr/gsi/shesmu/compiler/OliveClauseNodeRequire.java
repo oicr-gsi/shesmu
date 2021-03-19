@@ -15,7 +15,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
@@ -83,8 +82,7 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
             true,
             false,
             Stream.concat(
-                inputs
-                    .stream()
+                inputs.stream()
                     .map(
                         n ->
                             new VariableInformation(
@@ -127,7 +125,7 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
     final Set<String> freeVariables = new HashSet<>();
     expression.collectFreeVariables(freeVariables, Flavour::needsCapture);
     handlers.forEach(handler -> handler.collectFreeVariables(freeVariables));
-    final FlattenBuilder flattenBuilder =
+    final var flattenBuilder =
         oliveBuilder.flatten(
             line,
             column,
@@ -167,7 +165,7 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
         .explodeMethod()
         .methodGen()
         .invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__IS_PRESENT);
-    final Label end = flattenBuilder.explodeMethod().methodGen().newLabel();
+    final var end = flattenBuilder.explodeMethod().methodGen().newLabel();
     flattenBuilder.explodeMethod().methodGen().ifZCmp(GeneratorAdapter.NE, end);
     handlers.forEach(handler -> handler.render(builder, flattenBuilder.explodeMethod()));
     flattenBuilder.explodeMethod().methodGen().mark(end);
@@ -189,22 +187,21 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
       Consumer<String> errorHandler) {
-    final Set<String> definedNames = name.targets().map(Target::name).collect(Collectors.toSet());
-    final Set<String> duplicates =
+    final var definedNames = name.targets().map(Target::name).collect(Collectors.toSet());
+    final var duplicates =
         defs.stream()
             .filter(t -> t.flavour().isStream() && definedNames.contains(t.name()))
             .map(Target::name)
             .collect(Collectors.toSet());
-    for (final String duplicate : duplicates) {
+    for (final var duplicate : duplicates) {
       errorHandler.accept(
           String.format("%d:%d: Name %s duplicates existing name.", line, column, duplicate));
     }
     incoming = defs.stream().filter(t -> t.flavour().isStream()).collect(Collectors.toList());
-    final boolean good =
+    final var good =
         duplicates.isEmpty()
             & expression.resolve(defs, errorHandler)
-            & handlers
-                    .stream()
+            & handlers.stream()
                     .filter(
                         handler ->
                             handler.resolve(oliveCompilerServices, defs, errorHandler).isGood())
@@ -225,8 +222,7 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
   public boolean resolveDefinitions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     return expression.resolveDefinitions(oliveCompilerServices, errorHandler)
-        & handlers
-                .stream()
+        & handlers.stream()
                 .filter(handler -> handler.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == handlers.size()
@@ -235,7 +231,7 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean success = expression.typeCheck(errorHandler);
+    var success = expression.typeCheck(errorHandler);
     if (success) {
       if (expression.type() instanceof Imyhat.OptionalImyhat) {
         type = ((Imyhat.OptionalImyhat) expression.type()).inner();

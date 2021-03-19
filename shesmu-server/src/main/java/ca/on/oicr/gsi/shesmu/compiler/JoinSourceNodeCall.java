@@ -52,9 +52,9 @@ public class JoinSourceNodeCall extends JoinSourceNode {
       String variablePrefix,
       Predicate<String> signatureUsed,
       Predicate<String> signableUsed) {
-    final Type accessorType =
+    final var accessorType =
         Type.getObjectType(String.format("shesmu/dyn/Join Signer Accessor %d:%d", line, column));
-    final Set<String> signablesAlwaysUsed =
+    final var signablesAlwaysUsed =
         format
             .baseStreamVariables()
             .filter(v -> v.flavour() == Target.Flavour.STREAM_SIGNABLE)
@@ -63,7 +63,7 @@ public class JoinSourceNodeCall extends JoinSourceNode {
             .collect(Collectors.toSet());
     final List<SignableVariableCheck> checks = new ArrayList<>();
     target.collectSignables(signablesAlwaysUsed, checks::add);
-    final List<SignableRenderer> signables =
+    final var signables =
         format
             .baseStreamVariables()
             .filter(v -> v.flavour() == Target.Flavour.STREAM_SIGNABLE)
@@ -73,8 +73,7 @@ public class JoinSourceNodeCall extends JoinSourceNode {
                         ? SignableRenderer.always(v)
                         : SignableRenderer.conditional(
                             v,
-                            checks
-                                .stream()
+                            checks.stream()
                                 .filter(c -> c.name().equals(v.name()))
                                 .collect(Collectors.toList())))
             .collect(Collectors.toList());
@@ -114,7 +113,7 @@ public class JoinSourceNodeCall extends JoinSourceNode {
         renderer.methodGen().newInstance(accessorType);
         renderer.methodGen().dup();
         renderer.methodGen().invokeConstructor(accessorType, CTOR_DEFAULT);
-        for (final ExpressionNode rendererConsumer : arguments) {
+        for (final var rendererConsumer : arguments) {
           rendererConsumer.render(renderer);
         }
         defineOlive.generateCall(renderer.methodGen());
@@ -133,7 +132,7 @@ public class JoinSourceNodeCall extends JoinSourceNode {
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
       Consumer<String> errorHandler) {
-    final NameDefinitions limitedDefs = defs.replaceStream(Stream.empty(), true);
+    final var limitedDefs = defs.replaceStream(Stream.empty(), true);
     if (arguments.stream().filter(argument -> argument.resolve(limitedDefs, errorHandler)).count()
         != arguments.size()) {
       return null;
@@ -144,9 +143,8 @@ public class JoinSourceNodeCall extends JoinSourceNode {
   @Override
   public boolean resolveDefinitions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    final boolean ok =
-        arguments
-                .stream()
+    final var ok =
+        arguments.stream()
                 .filter(
                     argument -> argument.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
@@ -176,7 +174,7 @@ public class JoinSourceNodeCall extends JoinSourceNode {
                   if (!arguments.get(index).typeCheck(errorHandler)) {
                     return false;
                   }
-                  final boolean isSame =
+                  final var isSame =
                       arguments.get(index).type().isSame(target.parameterType(index));
                   if (!isSame) {
                     errorHandler.accept(

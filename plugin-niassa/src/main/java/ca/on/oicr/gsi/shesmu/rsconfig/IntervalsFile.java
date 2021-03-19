@@ -7,12 +7,11 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.pde.deciders.Rsconfig;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
-import javax.xml.stream.XMLStreamException;
 
 public class IntervalsFile extends PluginFile {
   private static final Pattern COMMA = Pattern.compile(",");
@@ -24,7 +23,7 @@ public class IntervalsFile extends PluginFile {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) {
     renderer.line("Config Good", configGood ? "Yes" : "No");
   }
 
@@ -44,7 +43,7 @@ public class IntervalsFile extends PluginFile {
       @ShesmuParameter(description = "The the resequencing type (kit).") String resequencingType) {
     return config
         .map(r -> r.get(templateType, resequencingType, "chromosomes"))
-        .map(s -> new TreeSet<>(Arrays.asList(COMMA.split(s))));
+        .map(s -> new TreeSet<>(List.of(COMMA.split(s))));
   }
 
   @Override

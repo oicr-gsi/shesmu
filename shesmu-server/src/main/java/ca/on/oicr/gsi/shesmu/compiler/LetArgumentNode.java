@@ -13,20 +13,20 @@ import java.util.stream.Stream;
 
 public abstract class LetArgumentNode implements UndefinedVariableProvider {
   public static Parser parse(Parser input, Consumer<LetArgumentNode> output) {
-    final Parser gangParser = input.whitespace().symbol("@");
+    final var gangParser = input.whitespace().symbol("@");
     if (gangParser.isGood()) {
-      final AtomicReference<String> name = new AtomicReference<>();
-      final Parser gangResult = gangParser.whitespace().identifier(name::set).whitespace();
+      final var name = new AtomicReference<String>();
+      final var gangResult = gangParser.whitespace().identifier(name::set).whitespace();
       if (gangResult.isGood()) {
         output.accept(new LetArgumentNodeGang(input.line(), input.column(), name.get()));
       }
       return gangResult;
     }
-    final Parser prefixParser = input.whitespace().keyword("Prefix");
+    final var prefixParser = input.whitespace().keyword("Prefix");
     if (prefixParser.isGood()) {
-      final AtomicReference<String> prefix = new AtomicReference<>();
-      final AtomicReference<List<String>> names = new AtomicReference<>();
-      final Parser prefixResult =
+      final var prefix = new AtomicReference<String>();
+      final var names = new AtomicReference<List<String>>();
+      final var prefixResult =
           prefixParser
               .whitespace()
               .list(names::set, (p, o) -> p.whitespace().identifier(o).whitespace(), ',')
@@ -43,11 +43,12 @@ public abstract class LetArgumentNode implements UndefinedVariableProvider {
       return prefixResult;
     }
 
-    final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
-    final AtomicReference<BiFunction<DestructuredArgumentNode, ExpressionNode, LetArgumentNode>>
-        unwrap = new AtomicReference<>();
-    final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-    final Parser result =
+    final var name = new AtomicReference<DestructuredArgumentNode>();
+    final var unwrap =
+        new AtomicReference<
+            BiFunction<DestructuredArgumentNode, ExpressionNode, LetArgumentNode>>();
+    final var expression = new AtomicReference<ExpressionNode>();
+    final var result =
         input
             .whitespace()
             .then(DestructuredArgumentNode::parse, name::set)
@@ -77,8 +78,8 @@ public abstract class LetArgumentNode implements UndefinedVariableProvider {
       output.accept(unwrap.get().apply(name.get(), expression.get()));
       return result;
     } else {
-      final AtomicReference<String> loneName = new AtomicReference<>();
-      final Parser justName = input.whitespace().identifier(loneName::set).whitespace();
+      final var loneName = new AtomicReference<String>();
+      final var justName = input.whitespace().identifier(loneName::set).whitespace();
       if (justName.isGood()) {
         output.accept(
             new LetArgumentNodeSimple(

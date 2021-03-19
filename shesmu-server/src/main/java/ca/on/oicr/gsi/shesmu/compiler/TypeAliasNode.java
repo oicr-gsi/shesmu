@@ -8,9 +8,9 @@ import java.util.function.Consumer;
 public class TypeAliasNode {
 
   public static Parser parse(Parser input, Consumer<TypeAliasNode> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
-    final AtomicReference<ImyhatNode> type = new AtomicReference<>();
-    final Parser result =
+    final var name = new AtomicReference<String>();
+    final var type = new AtomicReference<ImyhatNode>();
+    final var result =
         input
             .whitespace()
             .keyword("TypeAlias")

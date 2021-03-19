@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.function.Consumer;
 
@@ -18,7 +17,7 @@ public class ImyhatNodeReturn extends ImyhatNode {
   @Override
   public Imyhat render(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    final FunctionDefinition definition = expressionCompilerServices.function(function);
+    final var definition = expressionCompilerServices.function(function);
     if (definition == null) {
       errorHandler.accept(
           String.format("%d:%d: Unknown function %s for return type.", line, column, function));

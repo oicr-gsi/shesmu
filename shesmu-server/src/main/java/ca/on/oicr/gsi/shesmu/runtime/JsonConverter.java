@@ -27,8 +27,8 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
       return Optional.empty();
     }
     if (input.has("type") && input.get("type").isTextual() && input.has("contents")) {
-      final String type = input.get("type").asText();
-      final JsonNode arguments = input.get("contents");
+      final var type = input.get("type").asText();
+      final var arguments = input.get("contents");
       return contents
           .filter(t -> t.name().equals(type))
           .findFirst()
@@ -95,9 +95,9 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
     if (!input.isArray()) {
       return Optional.empty();
     }
-    final Set<Object> output = inner.newSet();
-    for (final JsonNode element : input) {
-      final Optional<Object> outputElement = inner.apply(new JsonConverter(element));
+    final var output = inner.newSet();
+    for (final var element : input) {
+      final var outputElement = inner.apply(new JsonConverter(element));
       if (outputElement.isPresent()) {
         outputElement.ifPresent(output::add);
       } else {
@@ -110,14 +110,14 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
   @Override
   public Optional<Object> map(Imyhat key, Imyhat value) {
     @SuppressWarnings("unchecked")
-    final Comparator<Object> comparator = (Comparator<Object>) key.comparator();
+    final var comparator = (Comparator<Object>) key.comparator();
     final SortedMap<Object, Object> map = new TreeMap<>(comparator);
     if (key.isSame(Imyhat.STRING) && input.isObject()) {
-      final Iterator<Map.Entry<String, JsonNode>> fields = input.fields();
+      final var fields = input.fields();
       while (fields.hasNext()) {
-        final Map.Entry<String, JsonNode> field = fields.next();
-        final Optional<Object> result = value.apply(new JsonConverter(field.getValue()));
-        if (!result.isPresent()) {
+        final var field = fields.next();
+        final var result = value.apply(new JsonConverter(field.getValue()));
+        if (result.isEmpty()) {
           return Optional.empty();
         }
         map.put(field.getKey(), result.get());
@@ -127,12 +127,12 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
     if (!input.isArray()) {
       return Optional.empty();
     }
-    for (final JsonNode element : input) {
+    for (final var element : input) {
       if (!element.isArray() || element.size() != 2) {
         return Optional.empty();
       }
-      final Optional<Object> keyResult = key.apply(new JsonConverter(element.get(0)));
-      final Optional<Object> valueResult = value.apply(new JsonConverter(element.get(1)));
+      final var keyResult = key.apply(new JsonConverter(element.get(0)));
+      final var valueResult = value.apply(new JsonConverter(element.get(1)));
       if (keyResult.isPresent() && valueResult.isPresent()) {
         map.put(keyResult.get(), valueResult.get());
       } else {
@@ -155,9 +155,9 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
       contents.close();
       return Optional.empty();
     }
-    final Object[] output = new Object[input.size()];
+    final var output = new Object[input.size()];
     if (contents.allMatch(
-        new Predicate<Pair<String, Imyhat>>() {
+        new Predicate<>() {
           private int index;
 
           @Override
@@ -165,8 +165,7 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
             if (!input.has(field.first())) {
               return false;
             }
-            final Optional<Object> element =
-                field.second().apply(new JsonConverter(input.get(field.first())));
+            final var element = field.second().apply(new JsonConverter(input.get(field.first())));
             element.ifPresent(v -> output[index++] = v);
             return element.isPresent();
           }
@@ -202,9 +201,9 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
       contents.close();
       return Optional.empty();
     }
-    final Object[] output = new Object[input.size()];
+    final var output = new Object[input.size()];
     if (contents.allMatch(
-        new Predicate<Imyhat>() {
+        new Predicate<>() {
           private int index;
 
           @Override
@@ -212,7 +211,7 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
             if (input.size() >= index) {
               return false;
             }
-            final Optional<Object> element = imyhat.apply(new JsonConverter(input.get(index)));
+            final var element = imyhat.apply(new JsonConverter(input.get(index)));
             element.ifPresent(v -> output[index] = v);
             index++;
             return element.isPresent();

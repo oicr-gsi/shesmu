@@ -31,7 +31,7 @@ public final class AutoUpdatingDirectory<T extends WatchedFileListener> {
     watcher.register(
         extension,
         path -> {
-          final T inner = ctor.apply(path);
+          final var inner = ctor.apply(path);
           return new WatchedFileListener() {
 
             @Override
@@ -50,7 +50,7 @@ public final class AutoUpdatingDirectory<T extends WatchedFileListener> {
 
             @Override
             public Optional<Integer> update() {
-              final Optional<Integer> delay = inner.update();
+              final var delay = inner.update();
               subscribers.values().forEach(Runnable::run);
               return delay;
             }
@@ -77,7 +77,7 @@ public final class AutoUpdatingDirectory<T extends WatchedFileListener> {
   }
 
   public Runnable subscribe(Runnable callback) {
-    final int id = idGen.getAndIncrement();
+    final var id = idGen.getAndIncrement();
     subscribers.put(id, callback);
     return () -> subscribers.remove(id);
   }

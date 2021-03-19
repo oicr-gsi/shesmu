@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -20,7 +19,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 import org.kohsuke.MetaInfServices;
 
 /**
@@ -32,7 +30,7 @@ public class MaintenanceSchedule extends PluginFileType<MaintenanceSchedule.Sche
 
   static class ScheduleReader extends PluginFile {
 
-    private List<Instant[]> windows = Collections.emptyList();
+    private List<Instant[]> windows = List.of();
 
     public ScheduleReader(Path fileName, String instanceName) {
       super(fileName, instanceName);
@@ -40,15 +38,14 @@ public class MaintenanceSchedule extends PluginFileType<MaintenanceSchedule.Sche
 
     @ShesmuMethod(description = "Check if a particular date was in maintenance.")
     public boolean check(Instant date) {
-      return windows
-          .stream()
+      return windows.stream()
           .anyMatch(window -> date.isAfter(window[0]) && date.isBefore(window[1]));
     }
 
     @Override
-    public void configuration(SectionRenderer renderer) throws XMLStreamException {
+    public void configuration(SectionRenderer renderer) {
       renderer.line("Current State", inMaintenanceWindow() ? "Throttled" : "Permit");
-      for (int i = 0; i < windows.size(); i++) {
+      for (var i = 0; i < windows.size(); i++) {
         renderer.line(
             String.format("Window %d", i),
             String.format("%s - %s", windows.get(i)[0], windows.get(i)[1]));
@@ -56,7 +53,7 @@ public class MaintenanceSchedule extends PluginFileType<MaintenanceSchedule.Sche
     }
 
     public boolean inMaintenanceWindow() {
-      final Instant now = Instant.now();
+      final var now = Instant.now();
       return check(now);
     }
 
@@ -71,8 +68,7 @@ public class MaintenanceSchedule extends PluginFileType<MaintenanceSchedule.Sche
     public Optional<Integer> update() {
       try {
         windows =
-            Files.readAllLines(fileName())
-                .stream()
+            Files.readAllLines(fileName()).stream()
                 .map(
                     line ->
                         BLANK

@@ -16,7 +16,6 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -82,7 +81,7 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
   }
 
   public FunctionRunner compile() {
-    final ClassVisitor classVisitor = createClassVisitor();
+    final var classVisitor = createClassVisitor();
     classVisitor.visit(
         Opcodes.V1_8,
         Opcodes.ACC_PUBLIC,
@@ -91,7 +90,7 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
         A_OBJECT_TYPE.getInternalName(),
         new String[] {A_FUNCTION_RUNNER_TYPE.getInternalName()});
 
-    final GeneratorAdapter ctor =
+    final var ctor =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, DEFAULT_CTOR, null, null, classVisitor);
     ctor.visitCode();
     ctor.loadThis();
@@ -100,7 +99,7 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
     ctor.visitMaxs(0, 0);
     ctor.visitEnd();
 
-    final GeneratorAdapter handle =
+    final var handle =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, LOAD_METHOD, null, null, classVisitor);
     handle.visitCode();
     handle.invokeDynamic(function.returnType().descriptor(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);

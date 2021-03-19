@@ -106,7 +106,7 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    boolean ok = true;
+    var ok = true;
     function = expressionCompilerServices.function(name);
     if (function == null) {
       function = BROKEN_FUNCTION;
@@ -115,8 +115,7 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
     }
     function.read();
     return ok
-        & arguments
-                .stream()
+        & arguments.stream()
                 .filter(
                     argument ->
                         argument.resolveDefinitions(expressionCompilerServices, errorHandler))
@@ -131,11 +130,11 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok =
+    var ok =
         arguments.stream().filter(argument -> argument.typeCheck(errorHandler)).count()
             == arguments.size();
     if (ok) {
-      final List<Imyhat> argumentTypes =
+      final var argumentTypes =
           function.parameters().map(FunctionParameter::type).collect(Collectors.toList());
       if (arguments.size() != argumentTypes.size()) {
         errorHandler.accept(
@@ -147,7 +146,7 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
       return IntStream.range(0, argumentTypes.size())
               .filter(
                   index -> {
-                    final boolean isAssignable =
+                    final var isAssignable =
                         argumentTypes.get(index).isAssignableFrom(arguments.get(index).type());
                     if (!isAssignable) {
                       arguments

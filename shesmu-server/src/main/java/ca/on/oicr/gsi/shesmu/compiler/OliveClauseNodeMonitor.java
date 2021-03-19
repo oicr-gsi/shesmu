@@ -10,7 +10,6 @@ import io.prometheus.client.Gauge;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -81,8 +80,7 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
             column,
             false,
             false,
-            labels
-                .stream()
+            labels.stream()
                 .flatMap(
                     label -> {
                       final Set<String> inputs = new TreeSet<>();
@@ -109,8 +107,7 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
   }
 
   private List<String> labelNames() {
-    return labels
-        .stream()
+    return labels.stream()
         .flatMap(MonitorArgumentNode::target)
         .map(Target::name)
         .collect(Collectors.toList());
@@ -124,8 +121,7 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
   private void render(Renderer renderer) {
     renderer.methodGen().push((int) labels.stream().flatMap(MonitorArgumentNode::target).count());
     renderer.methodGen().newArray(A_STRING_TYPE);
-    labels
-        .stream()
+    labels.stream()
         .flatMap(MonitorArgumentNode::target)
         .forEach(
             new Consumer<Target>() {
@@ -133,7 +129,7 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 
               @Override
               public void accept(Target target) {
-                final int i = index++;
+                final var i = index++;
                 renderer.methodGen().dup();
                 renderer.methodGen().push(i);
                 labels.get(i).render(renderer);
@@ -151,7 +147,7 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
     labels.forEach(arg -> arg.collectFreeVariables(freeVariables, Flavour::needsCapture));
 
     oliveBuilder.line(line);
-    final Renderer renderer =
+    final var renderer =
         oliveBuilder.monitor(
             line,
             column,
@@ -208,13 +204,12 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
       return false;
     }
 
-    final Map<String, Long> labelNames =
-        labels
-            .stream()
+    final var labelNames =
+        labels.stream()
             .flatMap(MonitorArgumentNode::target)
             .collect(Collectors.groupingBy(Target::name, Collectors.counting()));
-    boolean ok = true;
-    for (final Map.Entry<String, Long> labelName : labelNames.entrySet()) {
+    var ok = true;
+    for (final var labelName : labelNames.entrySet()) {
       if (labelName.getValue() == 1) {
         continue;
       }
@@ -223,8 +218,7 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
       ok = false;
     }
     return ok
-        && labels
-                .stream()
+        && labels.stream()
                 .filter(n -> n.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == labels.size();
@@ -232,8 +226,7 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    return labels
-            .stream()
+    return labels.stream()
             .filter(arg -> arg.typeCheck(errorHandler) && arg.ensureType(errorHandler))
             .count()
         == labels.size();

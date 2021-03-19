@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.prometheus.client.Gauge;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandles;
@@ -28,6 +27,7 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -56,7 +56,7 @@ public final class RuntimeSupport {
     public boolean equals(Object obj) {
       if (obj instanceof Holder) {
         @SuppressWarnings("unchecked")
-        final Holder<T> other = (Holder<T>) obj;
+        final var other = (Holder<T>) obj;
         return equals.test(other.unbox(), item);
       }
       return false;
@@ -77,13 +77,10 @@ public final class RuntimeSupport {
 
   @RuntimeInterop
   public static final BinaryOperator<?> USELESS_BINARY_OPERATOR =
-      new BinaryOperator<Object>() {
-
-        @Override
-        public Object apply(Object t, Object u) {
-          throw new UnsupportedOperationException();
-        }
-      };
+      (BinaryOperator<Object>)
+          (t, u) -> {
+            throw new UnsupportedOperationException();
+          };
 
   private static final Map<Pair<String, Integer>, CallSite> callsites = new HashMap<>();
 
@@ -110,10 +107,8 @@ public final class RuntimeSupport {
    */
   @RuntimeInterop
   public static StringBuilder appendFormatted(StringBuilder builder, long value, int width) {
-    final String result = Long.toString(value);
-    for (int padding = width - result.length(); padding > 0; padding--) {
-      builder.append("0");
-    }
+    final var result = Long.toString(value);
+    builder.append("0".repeat(Math.max(0, width - result.length())));
     return builder.append(result);
   }
 
@@ -127,9 +122,9 @@ public final class RuntimeSupport {
    */
   @RuntimeInterop
   public static Path changePrefix(Path target, Map<Path, Path> prefixes) {
-    int length = 0;
-    Path result = target;
-    for (final Entry<Path, Path> prefix : prefixes.entrySet()) {
+    var length = 0;
+    var result = target;
+    for (final var prefix : prefixes.entrySet()) {
       if (target.startsWith(prefix.getKey()) && length < prefix.getKey().getNameCount()) {
         length = prefix.getKey().getNameCount();
         result =
@@ -144,7 +139,7 @@ public final class RuntimeSupport {
   @RuntimeInterop
   @SafeVarargs
   public static <T> Tuple collect(Stream<T> items, Function<Stream<T>, Object>... processors) {
-    final List<T> data = items.collect(Collectors.toList());
+    final var data = items.collect(Collectors.toList());
     return new Tuple(Stream.of(processors).map(p -> p.apply(data.stream())).toArray());
   }
 
@@ -174,7 +169,7 @@ public final class RuntimeSupport {
   @RuntimeInterop
   public static <I, O> O everything(
       Stream<I> input, BiConsumer<O, I> collect, Supplier<O> makeKey) {
-    final O output = makeKey.get();
+    final var output = makeKey.get();
     input.forEach(i -> collect.accept(output, i));
     input.close();
     return output;
@@ -187,7 +182,7 @@ public final class RuntimeSupport {
   }
 
   public static JsonNode getJson(JsonNode node, String name) {
-    final JsonNode result = node.get(name);
+    final var result = node.get(name);
     return result == null ? JsonNodeFactory.instance.nullNode() : result;
   }
 
@@ -198,18 +193,14 @@ public final class RuntimeSupport {
       Function<I, K> makeOuterKey,
       Function<N, K> makeInnerKey,
       BiFunction<I, N, O> joiner) {
-    final Map<K, List<I>> inputGroups = input.collect(Collectors.groupingBy(makeOuterKey));
+    final var inputGroups = input.collect(Collectors.groupingBy(makeOuterKey));
     input.close();
-    final Map<K, List<N>> innerGroups = inner.collect(Collectors.groupingBy(makeInnerKey));
+    final var innerGroups = inner.collect(Collectors.groupingBy(makeInnerKey));
     inner.close();
-    return inputGroups
-        .entrySet()
-        .stream()
+    return inputGroups.entrySet().stream()
         .flatMap(
             e ->
-                innerGroups
-                    .getOrDefault(e.getKey(), Collections.emptyList())
-                    .stream()
+                innerGroups.getOrDefault(e.getKey(), List.of()).stream()
                     .flatMap(n -> e.getValue().stream().map(i -> joiner.apply(i, n))));
   }
 
@@ -220,29 +211,28 @@ public final class RuntimeSupport {
       Function<I, Set<K>> makeOuterKey,
       Function<N, Set<K>> makeInnerKey,
       BiFunction<I, N, O> joiner) {
-    final List<I> inputs = input.collect(Collectors.toList());
+    final var inputs = input.collect(Collectors.toList());
     input.close();
     final Map<K, Set<Integer>> inputGroups = new HashMap<>();
-    for (int i = 0; i < inputs.size(); i++) {
-      for (final K key : makeOuterKey.apply(inputs.get(i))) {
+    for (var i = 0; i < inputs.size(); i++) {
+      for (final var key : makeOuterKey.apply(inputs.get(i))) {
         inputGroups.computeIfAbsent(key, k -> new TreeSet<>()).add(i);
       }
     }
 
-    final List<N> inners = inner.collect(Collectors.toList());
+    final var inners = inner.collect(Collectors.toList());
     inner.close();
     final Map<K, Set<Integer>> innerGroups = new HashMap<>();
-    for (int i = 0; i < inners.size(); i++) {
-      for (final K key : makeInnerKey.apply(inners.get(i))) {
+    for (var i = 0; i < inners.size(); i++) {
+      for (final var key : makeInnerKey.apply(inners.get(i))) {
         innerGroups.computeIfAbsent(key, k -> new TreeSet<>()).add(i);
       }
     }
 
     final Set<Pair<Integer, Integer>> joins = new HashSet<>();
-    for (final Entry<K, Set<Integer>> entry : inputGroups.entrySet()) {
-      for (final Integer innerId :
-          innerGroups.getOrDefault(entry.getKey(), Collections.emptySet())) {
-        for (final Integer inputId : entry.getValue()) {
+    for (final var entry : inputGroups.entrySet()) {
+      for (final var innerId : innerGroups.getOrDefault(entry.getKey(), Set.of())) {
+        for (final var inputId : entry.getValue()) {
           joins.add(new Pair<>(inputId, innerId));
         }
       }
@@ -255,8 +245,8 @@ public final class RuntimeSupport {
   public static CallSite jsonBootstrap(
       MethodHandles.Lookup lookup, String descriptor, MethodType type, String json)
       throws JsonProcessingException {
-    final Imyhat imyhat = Imyhat.parse(descriptor);
-    final Object value = imyhat.apply(new UnpackJson(MAPPER.readTree(json)));
+    final var imyhat = Imyhat.parse(descriptor);
+    final var value = imyhat.apply(new UnpackJson(MAPPER.readTree(json)));
     return new ConstantCallSite(MethodHandles.constant(imyhat.javaType(), value).asType(type));
   }
 
@@ -282,9 +272,9 @@ public final class RuntimeSupport {
 
   @RuntimeInterop
   public static JsonNode jsonMap(Map<String, JsonNode> map) {
-    final ArrayNode array = MAPPER.createArrayNode();
-    for (final Map.Entry<String, JsonNode> entry : map.entrySet()) {
-      final ArrayNode row = array.addArray();
+    final var array = MAPPER.createArrayNode();
+    for (final var entry : map.entrySet()) {
+      final var row = array.addArray();
       row.add(entry.getKey());
       row.add(entry.getValue());
     }
@@ -313,22 +303,20 @@ public final class RuntimeSupport {
       BiFunction<I, N, J> joiner,
       Function<J, O> makeOutput,
       BiConsumer<O, J> collector) {
-    final List<N> inners = inner.collect(Collectors.toList());
+    final var inners = inner.collect(Collectors.toList());
     inner.close();
     final Map<K, Set<Integer>> innerGroups = new HashMap<>();
-    for (int i = 0; i < inners.size(); i++) {
-      for (final K key : makeInnerKey.apply(inners.get(i))) {
+    for (var i = 0; i < inners.size(); i++) {
+      for (final var key : makeInnerKey.apply(inners.get(i))) {
         innerGroups.computeIfAbsent(key, k -> new TreeSet<>()).add(i);
       }
     }
 
     return input.map(
         outer -> {
-          final O output = makeOutput.apply(joiner.apply(outer, null));
-          makeOuterKey
-              .apply(outer)
-              .stream()
-              .flatMap(k -> innerGroups.getOrDefault(k, Collections.emptySet()).stream())
+          final var output = makeOutput.apply(joiner.apply(outer, null));
+          makeOuterKey.apply(outer).stream()
+              .flatMap(k -> innerGroups.getOrDefault(k, Set.of()).stream())
               .distinct()
               .map(inners::get)
               .forEach(right -> collector.accept(output, joiner.apply(outer, right)));
@@ -358,23 +346,19 @@ public final class RuntimeSupport {
       BiFunction<I, N, J> joiner,
       Function<J, O> makeOutput,
       BiConsumer<O, J> collector) {
-    final Map<K, List<I>> inputGroups = input.collect(Collectors.groupingBy(makeOuterKey));
+    final var inputGroups = input.collect(Collectors.groupingBy(makeOuterKey));
     input.close();
-    final Map<K, List<N>> innerGroups = inner.collect(Collectors.groupingBy(makeInnerKey));
+    final var innerGroups = inner.collect(Collectors.groupingBy(makeInnerKey));
 
-    return inputGroups
-        .entrySet()
-        .stream()
+    return inputGroups.entrySet().stream()
         .flatMap(
             e -> {
-              final List<N> innerData =
-                  innerGroups.getOrDefault(e.getKey(), Collections.emptyList());
+              final var innerData = innerGroups.getOrDefault(e.getKey(), List.of());
 
-              return e.getValue()
-                  .stream()
+              return e.getValue().stream()
                   .map(
                       left -> {
-                        final O output = makeOutput.apply(joiner.apply(left, null));
+                        final var output = makeOutput.apply(joiner.apply(left, null));
                         innerData.forEach(
                             right -> collector.accept(output, joiner.apply(left, right)));
                         return output;
@@ -528,7 +512,7 @@ public final class RuntimeSupport {
       ToIntFunction<T> hashCode,
       BiPredicate<T, T> equals,
       Comparator<T> comparator) {
-    final Map<Holder<T>, List<T>> groups =
+    final var groups =
         input.collect(
             Collectors.groupingBy(item -> new Holder<>(equals, hashCode.applyAsInt(item), item)));
     input.close();
@@ -537,7 +521,7 @@ public final class RuntimeSupport {
 
   @RuntimeInterop
   public static int populateArray(String[] array, Set<String> items, int index) {
-    for (final String item : items) {
+    for (final var item : items) {
       array[index++] = item;
     }
     return index;
@@ -549,19 +533,18 @@ public final class RuntimeSupport {
    */
   @RuntimeInterop
   public static CallSite regexBootstrap(
-      Lookup lookup, String signature, MethodType type, String regex, int flags)
-      throws NoSuchMethodException, IllegalAccessException {
+      Lookup lookup, String signature, MethodType type, String regex, int flags) {
     if (!type.returnType().equals(Pattern.class)) {
       throw new IllegalArgumentException("Method cannot return non-Pattern type.");
     }
     if (type.parameterCount() != 0) {
       throw new IllegalArgumentException("Method must take exactly no arguments.");
     }
-    final Pair<String, Integer> id = new Pair<>(regex, flags);
+    final var id = new Pair<>(regex, flags);
     if (callsites.containsKey(id)) {
       return callsites.get(id);
     }
-    final Pattern pattern = Pattern.compile(regex, flags);
+    final var pattern = Pattern.compile(regex, flags);
     final CallSite callsite = new ConstantCallSite(MethodHandles.constant(Pattern.class, pattern));
     callsites.put(id, callsite);
     return callsite;
@@ -579,7 +562,7 @@ public final class RuntimeSupport {
   @RuntimeInterop
   public static <I, O> Stream<O> regroup(
       Stream<I> input, Grouper<I, O> grouper, Function<I, O> makeKey) {
-    final Map<O, List<I>> groups =
+    final var groups =
         input
             .map(i -> new Pair<>(makeKey.apply(i), i))
             .filter(p -> p.first() != null)
@@ -587,9 +570,7 @@ public final class RuntimeSupport {
                 Collectors.groupingBy(
                     Pair::first, Collectors.mapping(Pair::second, Collectors.toList())));
     input.close();
-    return groups
-        .values()
-        .stream()
+    return groups.values().stream()
         .flatMap(
             list ->
                 grouper
@@ -619,7 +600,7 @@ public final class RuntimeSupport {
   @RuntimeInterop
   public static <I, O> Stream<O> regroup(
       Stream<I> input, Function<I, O> makeKey, BiConsumer<O, I> collector) {
-    final Map<O, List<I>> groups =
+    final var groups =
         input
             .map(i -> new Pair<>(makeKey.apply(i), i))
             .filter(p -> p.first() != null)
@@ -627,16 +608,14 @@ public final class RuntimeSupport {
                 Collectors.groupingBy(
                     Pair::first, Collectors.mapping(Pair::second, Collectors.toList())));
     input.close();
-    return groups
-        .entrySet()
-        .stream()
+    return groups.entrySet().stream()
         .peek(e -> e.getValue().forEach(x -> collector.accept(e.getKey(), x)))
         .map(Entry::getKey);
   }
 
   /** Clip the extension off a file path and return just the filename */
   public static String removeExtension(Path fileName, String extension) {
-    final String fileNamePart = fileName.getFileName().toString();
+    final var fileNamePart = fileName.getFileName().toString();
     return fileNamePart.substring(0, fileNamePart.length() - extension.length());
   }
 
@@ -655,7 +634,7 @@ public final class RuntimeSupport {
   }
 
   public static <T> Stream<T> reverse(Stream<T> input) {
-    final List<T> data = input.collect(Collectors.toList());
+    final var data = input.collect(Collectors.toList());
     Collections.reverse(data);
     return data.stream();
   }
@@ -663,7 +642,7 @@ public final class RuntimeSupport {
   /** Stream an optional */
   @RuntimeInterop
   public static <T> Stream<T> stream(Optional<T> optional) {
-    return optional.map(Stream::of).orElseGet(Stream::empty);
+    return optional.stream();
   }
 
   /** Stream a map */
@@ -674,10 +653,7 @@ public final class RuntimeSupport {
 
   @RuntimeInterop
   public static Stream<Tuple> streamMap(Optional<Map<?, ?>> map) {
-    return map.orElse(Collections.emptyMap())
-        .entrySet()
-        .stream()
-        .map(e -> new Tuple(e.getKey(), e.getValue()));
+    return map.orElse(Map.of()).entrySet().stream().map(e -> new Tuple(e.getKey(), e.getValue()));
   }
 
   @RuntimeInterop
@@ -694,7 +670,7 @@ public final class RuntimeSupport {
       case "START":
         return input.substring(0, (int) maxLength);
       case "START_ELLIPSIS":
-        final String startEllipsis = (String) where.get(0);
+        final var startEllipsis = (String) where.get(0);
         if (startEllipsis.length() >= maxLength) {
           return startEllipsis;
         }
@@ -703,11 +679,11 @@ public final class RuntimeSupport {
         return input.substring(0, (int) (maxLength / 2))
             + input.substring((int) (input.length() - maxLength / 2));
       case "MIDDLE_ELLIPSIS":
-        final String middleEllipsis = (String) where.get(0);
+        final var middleEllipsis = (String) where.get(0);
         if (middleEllipsis.length() >= maxLength) {
           return middleEllipsis;
         }
-        final int firstLength = (int) Math.ceil(maxLength / 2.0 - middleEllipsis.length() / 2.0);
+        final var firstLength = (int) Math.ceil(maxLength / 2.0 - middleEllipsis.length() / 2.0);
         return input.substring(0, firstLength)
             + middleEllipsis
             + input.substring(
@@ -715,7 +691,7 @@ public final class RuntimeSupport {
       case "END":
         return input.substring((int) (input.length() - maxLength));
       case "END_ELLIPSIS":
-        final String endEllipsis = (String) where.get(0);
+        final var endEllipsis = (String) where.get(0);
         if (endEllipsis.length() >= maxLength) {
           return endEllipsis;
         }
@@ -742,16 +718,12 @@ public final class RuntimeSupport {
 
   @RuntimeInterop
   public static Optional<String> urlDecode(String input) {
-    try {
-      return Optional.of(URLDecoder.decode(input, "UTF-8"));
-    } catch (UnsupportedEncodingException e) {
-      return Optional.empty();
-    }
+    return Optional.of(URLDecoder.decode(input, StandardCharsets.UTF_8));
   }
 
   @RuntimeInterop
-  public static String urlEncode(String input) throws UnsupportedEncodingException {
-    return URLEncoder.encode(input, "UTF-8").replace("*", "%2A");
+  public static String urlEncode(String input) {
+    return URLEncoder.encode(input, StandardCharsets.UTF_8).replace("*", "%2A");
   }
 
   public static Optional<Instant> utcDate(long year, long month, long day) {
@@ -824,9 +796,9 @@ public final class RuntimeSupport {
 
   @RuntimeInterop
   public static Stream<Tuple> zip(Set<Tuple> left, Set<Tuple> right, CopySemantics... semantics) {
-    final Map<Object, Tuple> leftMap =
+    final var leftMap =
         left.stream().collect(Collectors.toMap(t -> t.get(0), Function.identity(), (a, b) -> a));
-    final Map<Object, Tuple> rightMap =
+    final var rightMap =
         right.stream().collect(Collectors.toMap(t -> t.get(0), Function.identity(), (a, b) -> a));
     final Set<Object> keys = new HashSet<>();
     keys.addAll(leftMap.keySet());
@@ -834,11 +806,11 @@ public final class RuntimeSupport {
     return keys.stream()
         .map(
             k -> {
-              final Object[] output = new Object[semantics.length + 1];
+              final var output = new Object[semantics.length + 1];
               output[0] = k;
-              final Tuple leftTuple = leftMap.getOrDefault(k, null);
-              final Tuple rightTuple = rightMap.getOrDefault(k, null);
-              for (int i = 0; i < semantics.length; i++) {
+              final var leftTuple = leftMap.getOrDefault(k, null);
+              final var rightTuple = rightMap.getOrDefault(k, null);
+              for (var i = 0; i < semantics.length; i++) {
                 output[i + 1] = semantics[i].apply(leftTuple, rightTuple);
               }
               return new Tuple(output);

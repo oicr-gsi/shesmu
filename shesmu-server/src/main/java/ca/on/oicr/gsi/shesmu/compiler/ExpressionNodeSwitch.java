@@ -15,7 +15,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 public class ExpressionNodeSwitch extends ExpressionNode {
 
   private interface CompareBrancher {
-    public void branch(Label target, GeneratorAdapter methodGen);
+    void branch(Label target, GeneratorAdapter methodGen);
   }
 
   private final ExpressionNode alternative;
@@ -60,14 +60,14 @@ public class ExpressionNodeSwitch extends ExpressionNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    final String testValue = renderer.newConst(test.renderEcma(renderer));
-    final String testLambda =
+    final var testValue = renderer.newConst(test.renderEcma(renderer));
+    final var testLambda =
         renderer.newConst(
             renderer.lambda(
                 1,
                 (r, args) ->
                     test.type().apply(EcmaScriptRenderer.isEqual(args.apply(0), testValue))));
-    final String result = renderer.newLet();
+    final var result = renderer.newLet();
     renderer.mapIf(
         cases.stream(),
         p -> String.format("%s(%s)", testLambda, p.first().renderEcma(renderer)),
@@ -88,17 +88,16 @@ public class ExpressionNodeSwitch extends ExpressionNode {
       compare = Comparison.EQ::branchObject;
     }
     test.render(renderer);
-    final int local = renderer.methodGen().newLocal(test.type().apply(TypeUtils.TO_ASM));
+    final var local = renderer.methodGen().newLocal(test.type().apply(TypeUtils.TO_ASM));
     renderer.methodGen().storeLocal(local);
-    final Label end = renderer.methodGen().newLabel();
-    final List<Runnable> createValues =
-        cases
-            .stream()
+    final var end = renderer.methodGen().newLabel();
+    final var createValues =
+        cases.stream()
             .<Runnable>map(
                 c -> {
                   renderer.methodGen().loadLocal(local);
                   c.first().render(renderer);
-                  final Label emit = renderer.methodGen().newLabel();
+                  final var emit = renderer.methodGen().newLabel();
                   compare.branch(emit, renderer.methodGen());
                   return () -> {
                     renderer.methodGen().mark(emit);
@@ -116,8 +115,7 @@ public class ExpressionNodeSwitch extends ExpressionNode {
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return test.resolve(defs, errorHandler)
-        & cases
-                .stream()
+        & cases.stream()
                 .filter(
                     c ->
                         c.first().resolve(defs, errorHandler)
@@ -131,8 +129,7 @@ public class ExpressionNodeSwitch extends ExpressionNode {
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return test.resolveDefinitions(expressionCompilerServices, errorHandler)
-        & cases
-                .stream()
+        & cases.stream()
                 .filter(
                     c ->
                         c.first().resolveDefinitions(expressionCompilerServices, errorHandler)
@@ -150,10 +147,9 @@ public class ExpressionNodeSwitch extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok =
+    var ok =
         test.typeCheck(errorHandler)
-            & cases
-                    .stream()
+            & cases.stream()
                     .filter(
                         c -> c.first().typeCheck(errorHandler) & c.second().typeCheck(errorHandler))
                     .count()
@@ -162,11 +158,10 @@ public class ExpressionNodeSwitch extends ExpressionNode {
     if (ok) {
       type = alternative.type();
       ok =
-          cases
-                  .stream()
+          cases.stream()
                   .filter(
                       c -> {
-                        boolean isSame = true;
+                        var isSame = true;
                         if (!c.first().type().isSame(test.type())) {
                           c.first().typeError(test.type(), c.first().type(), errorHandler);
                           isSame = false;

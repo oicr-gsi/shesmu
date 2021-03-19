@@ -46,9 +46,9 @@ public class MasterRunner {
 
   private void run() {
     lastRun.setToCurrentTime();
-    try (AutoCloseable timer = runTime.start()) {
-      final AtomicInteger currentActionDuplicates = new AtomicInteger();
-      final AtomicInteger currentAlertDuplicates = new AtomicInteger();
+    try (var timer = runTime.start()) {
+      final var currentActionDuplicates = new AtomicInteger();
+      final var currentAlertDuplicates = new AtomicInteger();
       generator.run(
           new OliveServices() {
 
@@ -56,8 +56,7 @@ public class MasterRunner {
             public boolean accept(
                 Action action, String filename, int line, int column, String hash, String[] tags) {
 
-              final boolean isDuplicated =
-                  services.accept(action, filename, line, column, hash, tags);
+              final var isDuplicated = services.accept(action, filename, line, column, hash, tags);
               if (isDuplicated) {
                 currentActionDuplicates.incrementAndGet();
               }
@@ -74,7 +73,7 @@ public class MasterRunner {
                 int column,
                 String hash)
                 throws Exception {
-              final boolean isDuplicated =
+              final var isDuplicated =
                   services.accept(labels, annotation, ttl, filename, line, column, hash);
               if (isDuplicated) {
                 currentAlertDuplicates.incrementAndGet();

@@ -42,7 +42,7 @@ public class Barcode {
     } else if (barcodeTwo == null) {
       return Integer.toString(barcodeOne.length());
     } else {
-      return Integer.toString(barcodeOne.length()) + "x" + Integer.toString(barcodeTwo.length());
+      return barcodeOne.length() + "x" + barcodeTwo.length();
     }
   }
 
@@ -78,10 +78,7 @@ public class Barcode {
     if (!Objects.equals(this.barcodeOne, other.barcodeOne)) {
       return false;
     }
-    if (!Objects.equals(this.barcodeTwo, other.barcodeTwo)) {
-      return false;
-    }
-    return true;
+    return Objects.equals(this.barcodeTwo, other.barcodeTwo);
   }
 
   private static final Pattern SINGLE_BARCODE_PATTERN =

@@ -30,9 +30,9 @@ public abstract class CollectNode {
     DISPATCH.addKeyword(
         "Dict",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> key = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> value = new AtomicReference<>();
-          final Parser result =
+          final var key = new AtomicReference<ExpressionNode>();
+          final var value = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace()
                   .then(ExpressionNode::parse0, key::set)
                   .symbol("=")
@@ -46,8 +46,8 @@ public abstract class CollectNode {
     DISPATCH.addKeyword(
         "List",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser result = p.whitespace().then(ExpressionNode::parse0, expression::set);
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var result = p.whitespace().then(ExpressionNode::parse0, expression::set);
           if (result.isGood()) {
             o.accept(new CollectNodeList(p.line(), p.column(), expression.get()));
           }
@@ -56,8 +56,8 @@ public abstract class CollectNode {
     DISPATCH.addKeyword(
         "PartitionCount",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser result = p.whitespace().then(ExpressionNode::parse0, expression::set);
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var result = p.whitespace().then(ExpressionNode::parse0, expression::set);
           if (result.isGood()) {
             o.accept(new CollectNodePartitionCount(p.line(), p.column(), expression.get()));
           }
@@ -66,8 +66,8 @@ public abstract class CollectNode {
     DISPATCH.addKeyword(
         "Sum",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser result = p.whitespace().then(ExpressionNode::parse0, expression::set);
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var result = p.whitespace().then(ExpressionNode::parse0, expression::set);
           if (result.isGood()) {
             o.accept(new CollectNodeSum(p.line(), p.column(), expression.get()));
           }
@@ -86,10 +86,10 @@ public abstract class CollectNode {
     DISPATCH.addKeyword(
         "Reduce",
         (p, o) -> {
-          final AtomicReference<DestructuredArgumentNode> accumulatorName = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> defaultExpression = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> initialExpression = new AtomicReference<>();
-          final Parser result =
+          final var accumulatorName = new AtomicReference<DestructuredArgumentNode>();
+          final var defaultExpression = new AtomicReference<ExpressionNode>();
+          final var initialExpression = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace()
                   .symbol("(")
                   .whitespace()
@@ -115,16 +115,15 @@ public abstract class CollectNode {
     DISPATCH.addKeyword(
         "Table",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> format = new AtomicReference<>();
-          final AtomicReference<List<Pair<ExpressionNode, ExpressionNode>>> columns =
-              new AtomicReference<>();
-          final Parser result =
+          final var format = new AtomicReference<ExpressionNode>();
+          final var columns = new AtomicReference<List<Pair<ExpressionNode, ExpressionNode>>>();
+          final var result =
               p.list(
                       columns::set,
                       (cp, co) -> {
-                        final AtomicReference<ExpressionNode> header = new AtomicReference<>();
-                        final AtomicReference<ExpressionNode> data = new AtomicReference<>();
-                        final Parser columnResult =
+                        final var header = new AtomicReference<ExpressionNode>();
+                        final var data = new AtomicReference<ExpressionNode>();
+                        final var columnResult =
                             cp.whitespace()
                                 .then(ExpressionNode::parse, header::set)
                                 .whitespace()
@@ -148,12 +147,12 @@ public abstract class CollectNode {
           }
           return result;
         });
-    for (final Match matchType : Match.values()) {
+    for (final var matchType : Match.values()) {
       DISPATCH.addKeyword(
           matchType.syntax(),
           (p, o) -> {
-            final AtomicReference<ExpressionNode> selectExpression = new AtomicReference<>();
-            final Parser result =
+            final var selectExpression = new AtomicReference<ExpressionNode>();
+            final var result =
                 p.whitespace().then(ExpressionNode::parse0, selectExpression::set).whitespace();
             if (result.isGood()) {
               o.accept(
@@ -162,13 +161,13 @@ public abstract class CollectNode {
             return result;
           });
     }
-    for (final ConcatentationType concatType : ConcatentationType.values()) {
+    for (final var concatType : ConcatentationType.values()) {
       DISPATCH.addKeyword(
           concatType.syntax(),
           (p, o) -> {
-            final AtomicReference<ExpressionNode> getterExpression = new AtomicReference<>();
-            final AtomicReference<ExpressionNode> delimiterExpression = new AtomicReference<>();
-            final Parser result =
+            final var getterExpression = new AtomicReference<ExpressionNode>();
+            final var delimiterExpression = new AtomicReference<ExpressionNode>();
+            final var result =
                 p.whitespace()
                     .then(ExpressionNode::parse, getterExpression::set)
                     .keyword("With")
@@ -189,8 +188,8 @@ public abstract class CollectNode {
     DISPATCH.addSymbol(
         "{",
         (p, o) -> {
-          final AtomicReference<List<CollectFieldNode>> fields = new AtomicReference<>();
-          final Parser result =
+          final var fields = new AtomicReference<List<CollectFieldNode>>();
+          final var result =
               p.list(fields::set, CollectFieldNode::parse, ',').symbol("}").whitespace();
           if (result.isGood()) {
             o.accept(new CollectNodeObject(p.line(), p.column(), fields.get()));
@@ -209,8 +208,8 @@ public abstract class CollectNode {
 
   private static Rule<CollectNode> optional(OptionalConstructor optionalConstructor) {
     return (p, o) -> {
-      final AtomicReference<ExpressionNode> selectExpression = new AtomicReference<>();
-      Parser result = p.whitespace().then(ExpressionNode::parse0, selectExpression::set);
+      final var selectExpression = new AtomicReference<ExpressionNode>();
+      var result = p.whitespace().then(ExpressionNode::parse0, selectExpression::set);
       if (result.isGood()) {
         o.accept(optionalConstructor.create(p.line(), p.column(), selectExpression.get()));
       }

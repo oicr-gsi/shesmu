@@ -10,7 +10,6 @@ import ca.on.oicr.gsi.vidarr.api.ProvenanceWorkflowRun;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -141,7 +140,7 @@ abstract class BaseCerberusFileProvenanceRecord<T extends LimsProvenance>
 
   @Override
   public final Map<String, Set<String>> workflow_run_attributes() {
-    return Collections.emptyMap();
+    return Map.of();
   }
 
   @Override

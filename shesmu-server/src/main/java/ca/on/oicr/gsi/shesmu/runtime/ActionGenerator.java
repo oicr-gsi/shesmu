@@ -48,7 +48,7 @@ public abstract class ActionGenerator implements RequiredServices {
    */
   @RuntimeInterop
   protected final Gauge buildGauge(String metricName, String help, String[] labelNames) {
-    final Gauge g = Gauge.build("shesmu_user_" + metricName, help).labelNames(labelNames).create();
+    final var g = Gauge.build("shesmu_user_" + metricName, help).labelNames(labelNames).create();
     collectors.add(g);
     return g;
   }

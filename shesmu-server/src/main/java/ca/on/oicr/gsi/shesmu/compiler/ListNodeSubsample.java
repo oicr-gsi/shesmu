@@ -55,7 +55,7 @@ public class ListNodeSubsample extends ListNode {
   @Override
   public final Optional<DestructuredArgumentNode> resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
-    final boolean ok =
+    final var ok =
         samplers.stream().filter(sampler -> sampler.resolve(name, defs, errorHandler)).count()
             == samplers.size();
     return ok ? Optional.of(name) : Optional.empty();
@@ -64,8 +64,7 @@ public class ListNodeSubsample extends ListNode {
   @Override
   public final boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return samplers
-            .stream()
+    return samplers.stream()
             .filter(sampler -> sampler.resolveDefinitions(expressionCompilerServices, errorHandler))
             .count()
         == samplers.size();
@@ -73,11 +72,11 @@ public class ListNodeSubsample extends ListNode {
 
   @Override
   public final Optional<Imyhat> typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
-    final boolean ok =
+    final var ok =
         samplers.stream().filter(sampler -> sampler.typeCheck(incoming, errorHandler)).count()
             == samplers.size();
-    Consumption consumption = Consumption.LIMITED;
-    for (final SampleNode sampler : samplers) {
+    var consumption = Consumption.LIMITED;
+    for (final var sampler : samplers) {
       consumption = sampler.consumptionCheck(consumption, errorHandler);
     }
     return ok && consumption != Consumption.BAD ? Optional.of(incoming) : Optional.empty();

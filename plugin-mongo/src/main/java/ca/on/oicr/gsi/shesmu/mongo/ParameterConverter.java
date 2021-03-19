@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -23,7 +22,7 @@ public abstract class ParameterConverter {
 
     private ParameterConverter deserialize(JsonNode node) {
       if (node.isTextual()) {
-        final String str = node.asText();
+        final var str = node.asText();
         switch (str) {
           case "boolean":
             return BOOLEAN;
@@ -43,7 +42,7 @@ public abstract class ParameterConverter {
         }
       }
       if (node.isObject()) {
-        final String type = node.get("is").asText();
+        final var type = node.get("is").asText();
         switch (type) {
           case "list":
             return list(deserialize(node.get("of")));
@@ -51,9 +50,9 @@ public abstract class ParameterConverter {
             return deserialize(node.get("of")).asOptional();
           case "object":
             final Map<String, ParameterConverter> elements = new TreeMap<>();
-            final Iterator<Map.Entry<String, JsonNode>> iterator = node.get("of").fields();
+            final var iterator = node.get("of").fields();
             while (iterator.hasNext()) {
-              final Map.Entry<String, JsonNode> current = iterator.next();
+              final var current = iterator.next();
               elements.put(current.getKey(), deserialize(current.getValue()));
             }
             return object(elements);
@@ -67,7 +66,7 @@ public abstract class ParameterConverter {
     @Override
     public ParameterConverter deserialize(JsonParser parser, DeserializationContext context)
         throws IOException {
-      final ObjectCodec oc = parser.getCodec();
+      final var oc = parser.getCodec();
       final JsonNode node = oc.readTree(parser);
       return deserialize(node);
     }
@@ -93,21 +92,17 @@ public abstract class ParameterConverter {
     return new ParameterConverter() {
       private final Imyhat type =
           new Imyhat.ObjectImyhat(
-              elements
-                  .entrySet()
-                  .stream()
+              elements.entrySet().stream()
                   .map(element -> new Pair<>(element.getKey(), element.getValue().type())));
 
       @Override
       BsonValue pack(Object value) {
-        final Tuple tuple = (Tuple) value;
-        final BsonDocument result = new BsonDocument();
-        elements
-            .entrySet()
-            .stream()
-            .sorted(Comparator.comparing(Map.Entry::getKey))
+        final var tuple = (Tuple) value;
+        final var result = new BsonDocument();
+        elements.entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
             .forEach(
-                new Consumer<Map.Entry<String, ParameterConverter>>() {
+                new Consumer<>() {
                   private int index;
 
                   @Override
@@ -189,7 +184,7 @@ public abstract class ParameterConverter {
           return Imyhat.PATH;
         }
       };
-  public static ParameterConverter STRING =
+  public static final ParameterConverter STRING =
       new ParameterConverter() {
 
         @Override
@@ -204,7 +199,7 @@ public abstract class ParameterConverter {
       };
 
   public ParameterConverter asOptional() {
-    final ParameterConverter inner = this;
+    final var inner = this;
     return new ParameterConverter() {
       public ParameterConverter asOptional() {
         return this;

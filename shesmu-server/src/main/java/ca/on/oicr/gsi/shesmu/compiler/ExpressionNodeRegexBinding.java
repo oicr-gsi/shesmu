@@ -12,7 +12,6 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
@@ -84,19 +83,19 @@ public class ExpressionNodeRegexBinding extends ExpressionNode {
     // Check if it matches
     renderer.methodGen().invokeVirtual(A_MATCHER_TYPE, METHOD_MATCHER__MATCHES);
 
-    final Label empty = renderer.methodGen().newLabel();
-    final Label end = renderer.methodGen().newLabel();
+    final var empty = renderer.methodGen().newLabel();
+    final var end = renderer.methodGen().newLabel();
     renderer.methodGen().ifZCmp(GeneratorAdapter.EQ, empty);
 
     // If it matches, convert the capture groups
-    final int matcher = renderer.methodGen().newLocal(A_MATCHER_TYPE);
+    final var matcher = renderer.methodGen().newLocal(A_MATCHER_TYPE);
     renderer.methodGen().storeLocal(matcher);
 
     renderer.methodGen().newInstance(A_TUPLE_TYPE);
     renderer.methodGen().dup();
     renderer.methodGen().push(captureCount);
     renderer.methodGen().newArray(A_OBJECT_TYPE);
-    for (int i = 0; i < captureCount; i++) {
+    for (var i = 0; i < captureCount; i++) {
       renderer.methodGen().dup();
       renderer.methodGen().push(i);
       renderer.methodGen().loadLocal(matcher);
@@ -132,7 +131,6 @@ public class ExpressionNodeRegexBinding extends ExpressionNode {
     return captureCount > 0
         ? Imyhat.tuple(
                 Collections.nCopies(captureCount, Imyhat.STRING.asOptional())
-                    .stream()
                     .toArray(Imyhat[]::new))
             .asOptional()
         : Imyhat.BAD;
@@ -140,7 +138,7 @@ public class ExpressionNodeRegexBinding extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean patternOk = true;
+    var patternOk = true;
     try {
       captureCount = Pattern.compile(regex).matcher("").groupCount();
       if (captureCount == 0) {
@@ -153,7 +151,7 @@ public class ExpressionNodeRegexBinding extends ExpressionNode {
       patternOk = false;
     }
 
-    final boolean ok = expression.typeCheck(errorHandler);
+    final var ok = expression.typeCheck(errorHandler);
     if (ok) {
       if (expression.type().isSame(Imyhat.STRING)) {
         return patternOk;

@@ -111,16 +111,15 @@ public class ExpressionNodeList extends ExpressionNode {
       type = Imyhat.EMPTY;
       return true;
     }
-    boolean ok =
-        items.stream().filter(item -> item.typeCheck(errorHandler)).count() == items.size();
+    var ok = items.stream().filter(item -> item.typeCheck(errorHandler)).count() == items.size();
     if (ok) {
-      final AtomicReference<Imyhat> resultType = new AtomicReference<>(items.get(0).type());
+      final var resultType = new AtomicReference<>(items.get(0).type());
       ok =
           items.stream()
                   .skip(1)
                   .filter(
                       item -> {
-                        final boolean isSame = item.type().isSame(resultType.get());
+                        final var isSame = item.type().isSame(resultType.get());
                         if (isSame) {
                           resultType.updateAndGet(item.type()::unify);
                           return true;

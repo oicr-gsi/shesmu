@@ -14,7 +14,6 @@ import io.prometheus.client.Gauge;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.WorkflowIdAndStatus;
 import io.swagger.client.model.WorkflowQueryResponse;
 import java.nio.file.Path;
 import java.util.*;
@@ -22,11 +21,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 
 public class OnlineReport extends JsonPluginFile<Configuration> {
   static final ObjectMapper MAPPER = new ObjectMapper();
-  private Optional<Configuration> configuration = Optional.empty();
+  private final Optional<Configuration> configuration = Optional.empty();
   private static final Gauge reportOk =
       Gauge.build("shesmu_onlinereport_ok", "Whether the report launched everything successfully.")
           .labelNames("filename")
@@ -43,7 +41,7 @@ public class OnlineReport extends JsonPluginFile<Configuration> {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) {
     configuration.ifPresent(
         configuration -> {
           renderer.link("Cromwell", configuration.getCromwell(), configuration.getCromwell());
@@ -55,9 +53,9 @@ public class OnlineReport extends JsonPluginFile<Configuration> {
   void processInput(Stream<Pair<String, ObjectNode>> input) {
     WorkflowQueryResponse workflowQueryResponse;
     // https://github.com/broadinstitute/cromwell/blob/develop/core/src/main/scala/cromwell/core/WorkflowState.scala
-    List<String> status = Arrays.asList("Running", "On Hold", "Submitted");
-    List<String> names = Collections.singletonList(workflowName);
-    AtomicBoolean ok = new AtomicBoolean(true);
+    var status = List.of("Running", "On Hold", "Submitted");
+    var names = List.of(workflowName);
+    var ok = new AtomicBoolean(true);
 
     // Query for all workflows that are Running with "workflowName"
     try {
@@ -71,10 +69,8 @@ public class OnlineReport extends JsonPluginFile<Configuration> {
     }
 
     // Retrieve label value for "labelKey" for all Running workflows with "workflowName"
-    Set<String> runningJobs =
-        workflowQueryResponse
-            .getResults()
-            .stream()
+    var runningJobs =
+        workflowQueryResponse.getResults().stream()
             .map(
                 r -> {
                   try {
@@ -93,10 +89,10 @@ public class OnlineReport extends JsonPluginFile<Configuration> {
       return;
     }
 
-    ObjectNode labels = MAPPER.createObjectNode();
+    var labels = MAPPER.createObjectNode();
 
     // Re-run everything not in runningJobs set
-    List<WorkflowIdAndStatus> result =
+    var result =
         input
             .filter(i -> !runningJobs.contains(i.first()))
             .map(
@@ -133,7 +129,7 @@ public class OnlineReport extends JsonPluginFile<Configuration> {
 
   @Override
   protected Optional<Integer> update(Configuration configuration) {
-    ApiClient apiClient = new ApiClient();
+    var apiClient = new ApiClient();
     apiClient.setBasePath(configuration.getCromwell());
     wfApi = new WorkflowsApi(apiClient);
     labelKey = configuration.getLabelKey();
@@ -146,21 +142,18 @@ public class OnlineReport extends JsonPluginFile<Configuration> {
         new Definer.RefillDefiner() {
           @Override
           public <I> Definer.RefillInfo<I, OnlineReportRefiller<I>> info(Class<I> rowType) {
-            return new Definer.RefillInfo<I, OnlineReportRefiller<I>>() {
+            return new Definer.RefillInfo<>() {
               @Override
               public OnlineReportRefiller<I> create() {
-                return new OnlineReportRefiller<I>(definer);
+                return new OnlineReportRefiller<>(definer);
               }
 
               @Override
               public Stream<CustomRefillerParameter<OnlineReportRefiller<I>, I>> parameters() {
-                return configuration
-                    .getParameters()
-                    .entrySet()
-                    .stream()
+                return configuration.getParameters().entrySet().stream()
                     .map(
                         parameter ->
-                            new CustomRefillerParameter<OnlineReportRefiller<I>, I>(
+                            new CustomRefillerParameter<>(
                                 parameter.getKey().replace(".", "_"),
                                 WdlInputType.parseString(
                                     parameter.getValue(), configuration.isPairsAsObjects())) {

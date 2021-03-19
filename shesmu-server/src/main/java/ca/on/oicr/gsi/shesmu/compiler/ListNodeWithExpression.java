@@ -20,12 +20,10 @@ public abstract class ListNodeWithExpression extends ListNode {
     this.expression = expression;
   }
 
-  /**
-   * Add all free variable names to the set provided.
-   */
+  /** Add all free variable names to the set provided. */
   @Override
   public final void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
-    final Set<String> remove =
+    final var remove =
         definedNames.stream().filter(name -> !names.contains(name)).collect(Collectors.toSet());
     expression.collectFreeVariables(names, predicate);
     names.removeAll(remove);
@@ -50,7 +48,7 @@ public abstract class ListNodeWithExpression extends ListNode {
   public final LoadableConstructor render(JavaStreamBuilder builder, LoadableConstructor name) {
     final Set<String> freeVariables = new HashSet<>();
     collectFreeVariables(freeVariables, Flavour::needsCapture);
-    final Pair<Renderer, LoadableConstructor> result =
+    final var result =
         makeMethod(
             builder,
             name,
@@ -75,7 +73,7 @@ public abstract class ListNodeWithExpression extends ListNode {
   public final Optional<DestructuredArgumentNode> resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     if (expression.resolve(defs.bind(name), errorHandler)) {
-      final DestructuredArgumentNode nextNames = nextName(name);
+      final var nextNames = nextName(name);
       definedNames = nextNames.targets().map(Target::name).collect(Collectors.toSet());
       return Optional.of(nextNames);
 

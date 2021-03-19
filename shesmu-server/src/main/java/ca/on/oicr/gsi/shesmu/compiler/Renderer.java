@@ -91,7 +91,7 @@ public abstract class Renderer {
 
   /** Find a known variable by name and load it on the stack. */
   public final void emitNamed(String name) {
-    final LoadableValue value = loadables.get(name);
+    final var value = loadables.get(name);
     if (value == null) {
       throw new IllegalStateException(
           String.format("Attempt to emit “%s”, but this is an unknown name in this context", name));

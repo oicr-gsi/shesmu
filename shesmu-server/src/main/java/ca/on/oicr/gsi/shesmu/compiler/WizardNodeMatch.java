@@ -9,7 +9,6 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,8 +36,8 @@ public class WizardNodeMatch extends WizardNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    final String testValue = renderer.newConst(test.renderEcma(renderer));
-    final String result = renderer.newLet();
+    final var testValue = renderer.newConst(test.renderEcma(renderer));
+    final var result = renderer.newLet();
     renderer.mapIf(
         cases.stream(),
         m -> {
@@ -74,11 +73,11 @@ public class WizardNodeMatch extends WizardNode {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    boolean ok = true;
-    final Map<String, Long> caseCounts =
+    var ok = true;
+    final var caseCounts =
         cases.stream()
             .collect(Collectors.groupingBy(WizardMatchBranchNode::name, Collectors.counting()));
-    for (final Entry<String, Long> entry : caseCounts.entrySet()) {
+    for (final var entry : caseCounts.entrySet()) {
       if (entry.getValue() > 1) {
         errorHandler.accept(
             String.format(
@@ -103,7 +102,7 @@ public class WizardNodeMatch extends WizardNode {
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
     if (test.typeCheck(errorHandler)) {
-      final Map<String, Imyhat> requiredBranches =
+      final var requiredBranches =
           test.type()
               .apply(
                   new ImyhatTransformer<Map<String, Imyhat>>() {
@@ -213,7 +212,7 @@ public class WizardNodeMatch extends WizardNode {
       return cases.stream()
                   .filter(
                       c -> {
-                        final Imyhat branchType = requiredBranches.get(c.name());
+                        final var branchType = requiredBranches.get(c.name());
                         if (branchType == null) {
                           errorHandler.accept(
                               String.format(

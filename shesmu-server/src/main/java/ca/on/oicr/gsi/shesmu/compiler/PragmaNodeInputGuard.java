@@ -8,7 +8,6 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -17,7 +16,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
@@ -56,13 +54,13 @@ public class PragmaNodeInputGuard extends PragmaNode {
       errorHandler.accept(String.format("%d:%d: Unknown input format “%s”.", line, column, input));
       return false;
     }
-    final NameDefinitions outerDefs =
+    final var outerDefs =
         new NameDefinitions(
             services.constants(false).collect(Collectors.toMap(Target::name, Function.identity())),
             true);
-    final NameDefinitions collectorDefs =
+    final var collectorDefs =
         NameDefinitions.root(inputFormatDefinition, Stream.empty(), services.signatures());
-    final NameDefinitions checkDefs = outerDefs.bind(collector);
+    final var checkDefs = outerDefs.bind(collector);
     if (check.resolveDefinitions(services, errorHandler)
         && collector.resolveDefinitions(services, errorHandler)
         && collector.resolve(collectorDefs, outerDefs, errorHandler)
@@ -94,54 +92,54 @@ public class PragmaNodeInputGuard extends PragmaNode {
     final Set<String> freeVariables = new HashSet<>();
     collector.collectFreeVariables(freeVariables, Flavour::needsCapture);
 
-    final String className = String.format("shesmu/dyn/Guard_%d_%d", line, column);
+    final var className = String.format("shesmu/dyn/Guard_%d_%d", line, column);
 
-    final Type newType = Type.getObjectType(className);
-    final LoadableValue[] capturedVariables =
+    final var newType = Type.getObjectType(className);
+    final var capturedVariables =
         root.constants(false)
             .filter(c -> freeVariables.contains(c.name()))
             .toArray(LoadableValue[]::new);
 
-    final LambdaBuilder newLambda =
+    final var newLambda =
         new LambdaBuilder(
             root,
             String.format("Group %d:%d ✨", line, column),
             LambdaBuilder.supplier(newType),
             capturedVariables);
-    final LambdaBuilder collectLambda =
+    final var collectLambda =
         new LambdaBuilder(
             root,
             String.format("Group %d:%d 🧲", line, column),
             LambdaBuilder.biconsumer(newType, A_OBJECT_TYPE),
             capturedVariables);
 
-    final List<SignableRenderer> signables =
+    final var signables =
         inputFormatDefinition
             .baseStreamVariables()
             .filter(t -> t.flavour() == Flavour.STREAM_SIGNABLE && signableNames.contains(t.name()))
             .map(SignableRenderer::always)
             .collect(Collectors.toList());
-    final String prefix = String.format("Guard %d:%d ", line, column);
+    final var prefix = String.format("Guard %d:%d ", line, column);
     root.signatureVariables()
         .forEach(
             signer ->
                 BaseOliveBuilder.createSignatureInfrastructure(
                     root, prefix, inputFormatDefinition, signables, signer));
 
-    final Renderer newRenderer =
+    final var newRenderer =
         newLambda.renderer(
             A_OBJECT_TYPE,
             (signatureDefinition, renderer) ->
                 OliveBuilder.renderSigner(
                     root, inputFormatDefinition, prefix, signatureDefinition, renderer));
-    final Renderer collectedRenderer =
+    final var collectedRenderer =
         collectLambda.renderer(
             A_OBJECT_TYPE,
             1,
             (signatureDefinition, renderer) ->
                 OliveBuilder.renderSigner(
                     root, inputFormatDefinition, prefix, signatureDefinition, renderer));
-    final RegroupVariablesBuilder regrouper =
+    final var regrouper =
         new RegroupVariablesBuilder(
             root, className, newRenderer, collectedRenderer, capturedVariables.length);
 
@@ -150,7 +148,7 @@ public class PragmaNodeInputGuard extends PragmaNode {
 
     root.addGuard(
         methodGen -> {
-          final int local = methodGen.newLocal(newType);
+          final var local = methodGen.newLocal(newType);
           final Renderer runMethod =
               new RendererLocalStream(
                   root,
@@ -172,8 +170,8 @@ public class PragmaNodeInputGuard extends PragmaNode {
 
           runMethod.methodGen().loadLocal(local);
           runMethod.methodGen().invokeVirtual(newType, RegroupVariablesBuilder.METHOD_IS_OK);
-          final Label end = runMethod.methodGen().newLabel();
-          final Label skip = runMethod.methodGen().newLabel();
+          final var end = runMethod.methodGen().newLabel();
+          final var skip = runMethod.methodGen().newLabel();
           runMethod.methodGen().ifZCmp(GeneratorAdapter.EQ, skip);
 
           check.render(runMethod);

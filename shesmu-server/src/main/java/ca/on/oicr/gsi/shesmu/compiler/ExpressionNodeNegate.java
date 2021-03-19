@@ -57,7 +57,7 @@ public class ExpressionNodeNegate extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = inner.typeCheck(errorHandler);
+    var ok = inner.typeCheck(errorHandler);
     if (ok) {
       ok = inner.type().isSame(Imyhat.INTEGER) || inner.type().isSame(Imyhat.FLOAT);
       if (!ok) {

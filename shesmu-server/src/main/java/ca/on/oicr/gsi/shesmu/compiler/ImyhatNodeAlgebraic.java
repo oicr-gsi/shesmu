@@ -21,16 +21,15 @@ public class ImyhatNodeAlgebraic extends ImyhatNode {
   @Override
   public Imyhat render(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    final List<Imyhat> types =
-        unions
-            .stream()
+    final var types =
+        unions.stream()
             .map(n -> n.render(expressionCompilerServices, errorHandler))
             .collect(Collectors.toList());
     if (types.isEmpty() || types.stream().anyMatch(Imyhat::isBad)) {
       return Imyhat.BAD;
     }
-    Imyhat result = types.get(0);
-    for (int i = 1; i < types.size(); i++) {
+    var result = types.get(0);
+    for (var i = 1; i < types.size(); i++) {
       if (result.isSame(types.get(i))) {
         result = result.unify(types.get(i));
       } else {

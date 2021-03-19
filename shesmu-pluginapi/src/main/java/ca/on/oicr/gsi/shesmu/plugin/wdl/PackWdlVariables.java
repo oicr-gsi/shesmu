@@ -35,22 +35,22 @@ public class PackWdlVariables implements ImyhatConsumer {
       Function<I, Imyhat> typeGetter,
       Stream<Pair<String[], I>> input,
       int index) {
-    final Map<String, List<Pair<String[], I>>> groups =
+    final var groups =
         input.collect(Collectors.groupingBy(p -> p.first()[index], Collectors.toList()));
     final List<Pair<String, Imyhat>> fields = new ArrayList<>();
     final Map<String, T> handlers = new HashMap<>();
 
-    for (final Map.Entry<String, List<Pair<String[], I>>> group : groups.entrySet()) {
+    for (final var group : groups.entrySet()) {
       // If we've hit the end of this nested structure
       if (index + 1 == group.getValue().stream().mapToInt(x -> x.first().length).max().getAsInt()) {
-        for (final Pair<String[], I> field : group.getValue()) {
-          final String fieldName = field.first()[index];
-          final String propertyName = String.join(".", field.first());
+        for (final var field : group.getValue()) {
+          final var fieldName = field.first()[index];
+          final var propertyName = String.join(".", field.first());
           handlers.put(fieldName, propertyCreator.apply(propertyName, field.second()));
           fields.add(new Pair<>(fieldName, typeGetter.apply(field.second())));
         }
       } else {
-        final Pair<T, Imyhat> inner =
+        final var inner =
             create(propertyCreator, aggregator, typeGetter, group.getValue().stream(), index + 1);
         handlers.put(group.getKey(), inner.first());
         fields.add(new Pair<>(group.getKey(), inner.second()));

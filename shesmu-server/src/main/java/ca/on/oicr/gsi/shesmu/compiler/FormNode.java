@@ -46,22 +46,21 @@ public abstract class FormNode implements Target {
   private static final Parser.ParseDispatch<FormConstructor> UPLOAD_TYPE = new ParseDispatch<>();
 
   static {
-    for (final FormType type : FormType.values()) {
+    for (final var type : FormType.values()) {
       FORM_TYPE.addKeyword(type.keyword(), Parser.just(type));
     }
     FORM_TYPE.addKeyword(
         "Select",
         (p, o) -> {
-          final AtomicReference<List<Pair<DisplayNode, ExpressionNode>>> options =
-              new AtomicReference<>();
-          final Parser result =
+          final var options = new AtomicReference<List<Pair<DisplayNode, ExpressionNode>>>();
+          final var result =
               p.whitespace()
                   .list(
                       options::set,
                       (po, oo) -> {
-                        final AtomicReference<DisplayNode> label = new AtomicReference<>();
-                        final AtomicReference<ExpressionNode> value = new AtomicReference<>();
-                        final Parser oResult =
+                        final var label = new AtomicReference<DisplayNode>();
+                        final var value = new AtomicReference<ExpressionNode>();
+                        final var oResult =
                             po.whitespace()
                                 .then(ExpressionNode::parse, value::set)
                                 .whitespace()
@@ -83,10 +82,10 @@ public abstract class FormNode implements Target {
     FORM_TYPE.addKeyword(
         "Dropdown",
         (p, o) -> {
-          final AtomicReference<DestructuredArgumentNode> itemName = new AtomicReference<>();
-          final AtomicReference<DisplayNode> itemLabel = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> values = new AtomicReference<>();
-          final Parser result =
+          final var itemName = new AtomicReference<DestructuredArgumentNode>();
+          final var itemLabel = new AtomicReference<DisplayNode>();
+          final var values = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace()
                   .keyword("Show")
                   .whitespace()
@@ -111,9 +110,8 @@ public abstract class FormNode implements Target {
     FORM_TYPE.addKeyword(
         "Subset",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> values = new AtomicReference<>();
-          final Parser result =
-              p.whitespace().then(ExpressionNode::parse, values::set).whitespace();
+          final var values = new AtomicReference<ExpressionNode>();
+          final var result = p.whitespace().then(ExpressionNode::parse, values::set).whitespace();
           if (result.isGood()) {
             o.accept((label, name) -> new FormNodeSubset(label, name, values.get()));
           }
@@ -125,8 +123,8 @@ public abstract class FormNode implements Target {
     UPLOAD_TYPE.addKeyword(
         "Table",
         (p, o) -> {
-          final AtomicReference<List<String>> columns = new AtomicReference<>();
-          final Parser result =
+          final var columns = new AtomicReference<List<String>>();
+          final var result =
               p.whitespace()
                   .symbol("(")
                   .whitespace()
@@ -143,10 +141,10 @@ public abstract class FormNode implements Target {
   }
 
   public static Parser parse(Parser parser, Consumer<FormNode> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
-    final AtomicReference<List<DisplayNode>> label = new AtomicReference<>();
-    final AtomicReference<FormConstructor> type = new AtomicReference<>();
-    final Parser result =
+    final var name = new AtomicReference<String>();
+    final var label = new AtomicReference<List<DisplayNode>>();
+    final var type = new AtomicReference<FormConstructor>();
+    final var result =
         parser
             .whitespace()
             .identifier(name::set)

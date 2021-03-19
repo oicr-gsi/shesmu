@@ -1,15 +1,12 @@
 package ca.on.oicr.gsi.shesmu.mongo;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.bson.*;
@@ -21,9 +18,8 @@ public interface QueryBuilder {
 
     @Override
     public QueryBuilder deserialize(
-        JsonParser parser, DeserializationContext deserializationContext)
-        throws IOException, JsonProcessingException {
-      final ObjectCodec oc = parser.getCodec();
+        JsonParser parser, DeserializationContext deserializationContext) throws IOException {
+      final var oc = parser.getCodec();
       final JsonNode node = oc.readTree(parser);
       return deserialize(node);
     }
@@ -31,9 +27,9 @@ public interface QueryBuilder {
     private QueryBuilder deserialize(JsonNode node) {
       switch (node.getNodeType()) {
         case ARRAY:
-          final QueryBuilder[] builders = new QueryBuilder[node.size()];
-          int index = 0;
-          for (final JsonNode inner : node) {
+          final var builders = new QueryBuilder[node.size()];
+          var index = 0;
+          for (final var inner : node) {
             builders[index++] = deserialize(inner);
           }
           return list(builders);
@@ -49,9 +45,9 @@ public interface QueryBuilder {
             return parameter(node.get("$$parameter").asInt());
           }
           final Map<String, QueryBuilder> fields = new TreeMap<>();
-          final Iterator<Map.Entry<String, JsonNode>> iterator = node.fields();
+          final var iterator = node.fields();
           while (iterator.hasNext()) {
-            final Map.Entry<String, JsonNode> entry = iterator.next();
+            final var entry = iterator.next();
             fields.put(entry.getKey(), deserialize(entry.getValue()));
           }
           return object(fields);
@@ -68,15 +64,7 @@ public interface QueryBuilder {
       @Override
       public BsonValue build(BsonValue... args) {
         return new BsonArray(
-            Stream.of(builders)
-                .map(
-                    new Function<QueryBuilder, BsonValue>() {
-                      @Override
-                      public BsonValue apply(QueryBuilder builder) {
-                        return builder.build(args);
-                      }
-                    })
-                .collect(Collectors.toList()));
+            Stream.of(builders).map(builder -> builder.build(args)).collect(Collectors.toList()));
       }
 
       @Override
@@ -114,8 +102,8 @@ public interface QueryBuilder {
       }
 
       BsonDocument prepare(BsonValue... args) {
-        final BsonDocument document = new BsonDocument();
-        for (final Map.Entry<String, QueryBuilder> builder : builders.entrySet()) {
+        final var document = new BsonDocument();
+        for (final var builder : builders.entrySet()) {
           document.put(builder.getKey(), builder.getValue().build(args));
         }
         return document;

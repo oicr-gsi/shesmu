@@ -18,10 +18,10 @@ import java.util.function.Predicate;
 public class CollectFieldNode {
 
   public static Parser parse(Parser parser, Consumer<CollectFieldNode> output) {
-    final AtomicReference<String> fieldName = new AtomicReference<>();
-    final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
-    final AtomicReference<CollectNode> collector = new AtomicReference<>();
-    final Parser result =
+    final var fieldName = new AtomicReference<String>();
+    final var transforms = new AtomicReference<List<ListNode>>();
+    final var collector = new AtomicReference<CollectNode>();
+    final var result =
         parser
             .whitespace()
             .identifier(fieldName::set)
@@ -67,9 +67,8 @@ public class CollectFieldNode {
   }
 
   public boolean orderingCheck(Ordering initialOrder, Consumer<String> errorHandler) {
-    final Ordering ordering =
-        transforms
-            .stream()
+    final var ordering =
+        transforms.stream()
             .reduce(
                 initialOrder,
                 (order, transform) -> transform.order(order, errorHandler),
@@ -83,8 +82,7 @@ public class CollectFieldNode {
   public void render(JavaStreamBuilder builder, LoadableConstructor initial) {
     collector.render(
         builder,
-        transforms
-            .stream()
+        transforms.stream()
             .reduce(
                 initial,
                 (n, transform) -> transform.render(builder, n),
@@ -97,8 +95,8 @@ public class CollectFieldNode {
   }
 
   public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor initial) {
-    EcmaLoadableConstructor name = initial;
-    for (final ListNode node : transforms) {
+    var name = initial;
+    for (final var node : transforms) {
       name = node.render(builder, name);
     }
 
@@ -107,9 +105,8 @@ public class CollectFieldNode {
 
   public boolean resolve(
       NameDefinitions defs, DestructuredArgumentNode initial, Consumer<String> errorHandler) {
-    final Optional<DestructuredArgumentNode> nextName =
-        transforms
-            .stream()
+    final var nextName =
+        transforms.stream()
             .reduce(
                 Optional.of(initial),
                 (n, t) -> n.flatMap(name -> t.resolve(name, defs, errorHandler)),
@@ -123,8 +120,7 @@ public class CollectFieldNode {
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return collector.resolveDefinitions(expressionCompilerServices, errorHandler)
-        & transforms
-                .stream()
+        & transforms.stream()
                 .filter(t -> t.resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
             == transforms.size();
@@ -136,18 +132,14 @@ public class CollectFieldNode {
 
   public boolean typeCheck(Imyhat sourceType, Consumer<String> errorHandler) {
 
-    final Optional<Imyhat> resultType =
-        transforms
-            .stream()
+    final var resultType =
+        transforms.stream()
             .reduce(
                 Optional.of(sourceType),
                 (t, transform) -> t.flatMap(tt -> transform.typeCheck(tt, errorHandler)),
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
-    if (resultType.map(incoming -> collector.typeCheck(incoming, errorHandler)).orElse(false)) {
-      return true;
-    }
-    return false;
+    return resultType.map(incoming -> collector.typeCheck(incoming, errorHandler)).orElse(false);
   }
 }

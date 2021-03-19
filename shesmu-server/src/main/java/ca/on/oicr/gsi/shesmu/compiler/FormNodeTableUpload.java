@@ -7,7 +7,6 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -60,10 +59,10 @@ public final class FormNodeTableUpload extends FormNode {
   }
 
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    boolean ok = true;
-    final Map<String, Long> duplicates =
+    var ok = true;
+    final var duplicates =
         columns.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-    for (final Map.Entry<String, Long> entry : duplicates.entrySet()) {
+    for (final var entry : duplicates.entrySet()) {
       if (entry.getValue() > 1) {
         errorHandler.accept(
             String.format(

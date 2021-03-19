@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.List;
@@ -31,22 +30,21 @@ public class ExpressionNodeDictionary extends ExpressionNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
-    for (final DictionaryElementNode entry : entries) {
+    for (final var entry : entries) {
       entry.collectFreeVariables(names, predicate);
     }
   }
 
   @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
-    for (final DictionaryElementNode entry : entries) {
+    for (final var entry : entries) {
       entry.collectPlugins(pluginFileNames);
     }
   }
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    return entries
-        .stream()
+    return entries.stream()
         .map(entry -> entry.render(renderer))
         .collect(
             Collectors.joining(
@@ -60,7 +58,7 @@ public class ExpressionNodeDictionary extends ExpressionNode {
   public void render(Renderer renderer) {
     renderer.loadImyhat(key.descriptor());
     renderer.methodGen().invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_MAP);
-    for (final DictionaryElementNode entry : entries) {
+    for (final var entry : entries) {
       renderer.methodGen().dup();
       entry.render(renderer);
     }
@@ -74,8 +72,7 @@ public class ExpressionNodeDictionary extends ExpressionNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return entries
-            .stream()
+    return entries.stream()
             .filter(e -> e.resolveDefinitions(expressionCompilerServices, errorHandler))
             .count()
         == entries.size();
@@ -88,16 +85,16 @@ public class ExpressionNodeDictionary extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final DictionaryElementNode entry : entries) {
+    var ok = true;
+    for (final var entry : entries) {
       if (!entry.typeCheck(errorHandler)) {
         ok = false;
       }
     }
     if (ok) {
-      boolean first = true;
-      for (final DictionaryElementNode entry : entries) {
-        final Pair<Imyhat, Imyhat> type = entry.type();
+      var first = true;
+      for (final var entry : entries) {
+        final var type = entry.type();
         if (first) {
           key = type.first();
           value = type.second();

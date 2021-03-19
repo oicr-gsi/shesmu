@@ -33,7 +33,7 @@ public abstract class JsonPluginFile<T> extends PluginFile {
   @Override
   public final Optional<Integer> update() {
     try {
-      final T value = mapper.readValue(Files.readAllBytes(fileName()), clazz);
+      final var value = mapper.readValue(Files.readAllBytes(fileName()), clazz);
       GOOD_JSON.labels(fileName().toString()).set(1);
       return update(value);
     } catch (final Exception e) {

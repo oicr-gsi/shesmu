@@ -129,7 +129,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
     // access to that type information
     variables.forEach(
         variable -> {
-          final GeneratorAdapter getter =
+          final var getter =
               new GeneratorAdapter(
                   Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
                   new Method(
@@ -156,7 +156,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
         .baseStreamVariables()
         .forEach(
             variable -> {
-              final GeneratorAdapter signerCheck =
+              final var signerCheck =
                   new GeneratorAdapter(
                       Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
                       new Method(
@@ -230,7 +230,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
 
   @Override
   protected void loadSigner(SignatureDefinition signer, Renderer renderer) {
-    final String name = signerPrefix + signer.name();
+    final var name = signerPrefix + signer.name();
     renderer.methodGen().loadThis();
     renderer.methodGen().getField(owner.selfType(), name, signer.storageType());
   }

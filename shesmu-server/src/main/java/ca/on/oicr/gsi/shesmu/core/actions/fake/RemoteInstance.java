@@ -14,8 +14,6 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -34,7 +32,7 @@ public class RemoteInstance extends JsonPluginFile<Configuration> {
     this.definer = definer;
   }
 
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) {
     renderer.line("Allow RegEx", allow);
     renderer.link("URL", url, url);
   }
@@ -43,13 +41,13 @@ public class RemoteInstance extends JsonPluginFile<Configuration> {
   protected Optional<Integer> update(Configuration configuration) {
     url = configuration.getUrl();
     allow = configuration.getAllow();
-    final Pattern allow = Pattern.compile(configuration.getAllow());
+    final var allow = Pattern.compile(configuration.getAllow());
     definer.clearActions();
-    final HttpGet request = new HttpGet(String.format("%s/actions", url));
-    try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
-      for (final ObjectNode obj :
+    final var request = new HttpGet(String.format("%s/actions", url));
+    try (var response = HTTP_CLIENT.execute(request)) {
+      for (final var obj :
           RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), ObjectNode[].class)) {
-        String name = obj.get("name").asText();
+        var name = obj.get("name").asText();
         if (name.equals("nothing") || !allow.matcher(name).matches()) continue;
         definer.defineAction(
             configuration.getPrefix() + name,

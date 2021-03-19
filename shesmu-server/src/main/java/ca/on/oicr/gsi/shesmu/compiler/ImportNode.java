@@ -2,7 +2,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.Parser.ParseDispatch;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -15,7 +14,7 @@ public abstract class ImportNode {
     DISPATCH.addSymbol(
         "*",
         Parser.justWhiteSpace(
-            Collections.singletonList(
+            List.of(
                 new ImportNode() {
                   @Override
                   public ImportRewriter prepare(String prefix) {
@@ -56,17 +55,16 @@ public abstract class ImportNode {
   }
 
   private static Parser tail(Parser parse, Consumer<List<ImportNode>> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
-    Parser result = parse.identifier(name::set).whitespace();
+    final var name = new AtomicReference<String>();
+    var result = parse.identifier(name::set).whitespace();
     if (result.isGood()) {
-      final AtomicReference<String> alias = new AtomicReference<>();
-      final Parser aliasResult =
-          result.keyword("As").whitespace().identifier(alias::set).whitespace();
+      final var alias = new AtomicReference<String>();
+      final var aliasResult = result.keyword("As").whitespace().identifier(alias::set).whitespace();
       if (aliasResult.isGood()) {
-        output.accept(Collections.singletonList(new ImportNodeRename(name.get(), alias.get())));
+        output.accept(List.of(new ImportNodeRename(name.get(), alias.get())));
         result = aliasResult;
       } else {
-        output.accept(Collections.singletonList(new ImportNodeSingle(name.get())));
+        output.accept(List.of(new ImportNodeSingle(name.get())));
       }
     }
     return result;
