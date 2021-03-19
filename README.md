@@ -43,7 +43,7 @@ commands.
 
 Build dependencies:
 
-- Java 8 or later
+- Java 14 or later
 - Maven 3.5 or later
 - TypeScript 3.9 or later (the version supplied with Ubuntu and Debian in
   `node-typescript` is too old. Use `sudo npm -g i typescript` to install a
