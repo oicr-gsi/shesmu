@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Scanner;
 import org.kohsuke.MetaInfServices;
@@ -40,7 +41,9 @@ public class WorkflowActionRepository extends PluginFileType<NiassaServer> {
       e.printStackTrace();
     }
     try (final Scanner input =
-        new Scanner(WorkflowActionRepository.class.getResourceAsStream("renderer.js"), "UTF-8")) {
+        new Scanner(
+            WorkflowActionRepository.class.getResourceAsStream("renderer.js"),
+            StandardCharsets.UTF_8)) {
       writer.print(input.useDelimiter("\\Z").next());
     }
   }

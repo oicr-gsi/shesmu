@@ -7,6 +7,11 @@ import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.prometheus.client.Gauge;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -18,15 +23,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.regex.Pattern;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 
 public class LokiPlugin extends JsonPluginFile<Configuration> {
 
-  private static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+  private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final Gauge error =
       Gauge.build(
@@ -104,26 +104,29 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
                 record.add(value.second().replace('\n', ' '));
               }
             }
-            final var request = new HttpPost(c.getUrl());
+            final HttpRequest request;
             try {
               // This doesn't use the built-in constant for JSON because that one includes a charset
               // and Loki then thinks the request is a protobuf
-              request.setEntity(
-                  new StringEntity(
-                      MAPPER.writeValueAsString(body), ContentType.create("application/json")));
+              request =
+                  HttpRequest.newBuilder(URI.create(c.getUrl()))
+                      .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(body)))
+                      .header("Content-type", "application/json")
+                      .build();
             } catch (final Exception e) {
               e.printStackTrace();
               error.labels(fileName().toString()).set(1);
+              return;
             }
             writeTime.labels(fileName().toString()).setToCurrentTime();
-            try (final var timer = writeLatency.start(fileName().toString());
-                final var response = HTTP_CLIENT.execute(request)) {
-              final var success = response.getStatusLine().getStatusCode() / 100 == 2;
+            try (final var timer = writeLatency.start(fileName().toString())) {
+              final var response = HTTP_CLIENT.send(request, BodyHandlers.ofString());
+              final var success = response.statusCode() / 100 == 2;
               if (success) {
                 buffer.clear();
                 error.labels(fileName().toString()).set(0);
               } else {
-                try (final var s = new Scanner(response.getEntity().getContent())) {
+                try (final var s = new Scanner(response.body())) {
                   s.useDelimiter("\\A");
                   if (s.hasNext()) {
                     final var message = s.next();

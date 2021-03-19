@@ -9,10 +9,17 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
-import ca.on.oicr.gsi.shesmu.plugin.cache.*;
+import ca.on.oicr.gsi.shesmu.plugin.cache.InitialCachePopulationException;
+import ca.on.oicr.gsi.shesmu.plugin.cache.InvalidatableRecord;
+import ca.on.oicr.gsi.shesmu.plugin.cache.LabelledKeyValueCache;
+import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
+import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
-import ca.on.oicr.gsi.shesmu.plugin.input.*;
+import ca.on.oicr.gsi.shesmu.plugin.input.InputFormat;
+import ca.on.oicr.gsi.shesmu.plugin.input.JsonInputSource;
+import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
+import ca.on.oicr.gsi.shesmu.plugin.input.TimeFormat;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackStreaming;
 import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
@@ -35,13 +42,24 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.ServiceLoader;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.http.client.methods.HttpGet;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -291,11 +309,11 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
       protected Stream<Object> fetch(Instant lastUpdated) throws Exception {
         if (config.isEmpty()) return Stream.empty();
         final var url = config.get().getUrl();
-        try (var response = Server.HTTP_CLIENT.execute(new HttpGet(url));
-            var parser =
-                RuntimeSupport.MAPPER
-                    .getFactory()
-                    .createParser(response.getEntity().getContent())) {
+        var response =
+            Server.HTTP_CLIENT.send(
+                HttpRequest.newBuilder(URI.create(url)).GET().build(),
+                BodyHandlers.ofInputStream());
+        try (var parser = RuntimeSupport.MAPPER.getFactory().createParser(response.body())) {
           final List<Object> results = new ArrayList<>();
           if (parser.nextToken() != JsonToken.START_ARRAY) {
             throw new IllegalStateException("Expected an array");

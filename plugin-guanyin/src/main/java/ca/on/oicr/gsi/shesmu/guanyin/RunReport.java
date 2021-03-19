@@ -1,30 +1,41 @@
 package ca.on.oicr.gsi.shesmu.guanyin;
 
-import ca.on.oicr.gsi.prometheus.*;
-import ca.on.oicr.gsi.shesmu.plugin.*;
-import ca.on.oicr.gsi.shesmu.plugin.action.*;
+import ca.on.oicr.gsi.prometheus.LatencyHistogram;
+import ca.on.oicr.gsi.shesmu.cromwell.WorkflowIdAndStatus;
+import ca.on.oicr.gsi.shesmu.plugin.Definer;
+import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
+import ca.on.oicr.gsi.shesmu.plugin.MultiPartBodyPublisher;
+import ca.on.oicr.gsi.shesmu.plugin.Utils;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
+import ca.on.oicr.gsi.shesmu.plugin.action.JsonParameterisedAction;
+import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
-import io.swagger.client.ApiClient;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.WorkflowIdAndStatus;
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 
 /**
  * Action to query/launch a report using Guanyin and Cromwell
@@ -50,7 +61,7 @@ public class RunReport extends JsonParameterisedAction {
           return Response.IGNORED;
         }
       };
-  static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+  static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   static final ObjectMapper MAPPER = new ObjectMapper();
   private static final String WDL =
       "version 1.0\n"
@@ -198,10 +209,9 @@ public class RunReport extends JsonParameterisedAction {
     }
 
     // Query Guanyin to see if the record already exists
-    StringEntity body;
+    BodyPublisher body;
     try {
-      body =
-          new StringEntity(MAPPER.writeValueAsString(rootParameters), ContentType.APPLICATION_JSON);
+      body = BodyPublishers.ofString(MAPPER.writeValueAsString(rootParameters));
     } catch (final Exception e) {
       e.printStackTrace();
       this.errors = Collections.singletonList(e.getMessage());
@@ -210,19 +220,21 @@ public class RunReport extends JsonParameterisedAction {
 
     var create = false;
     final var request =
-        new HttpPost(
-            String.format(
-                "%s/reportdb/record_parameters?report=%d", owner.get().观音Url(), reportId));
-    request.addHeader("Accept", ContentType.APPLICATION_JSON.getMimeType());
-    request.setEntity(body);
-    try (var timer = 观音RequestTime.start(owner.get().观音Url());
-        var response = HTTP_CLIENT.execute(request)) {
-      if (response.getStatusLine().getStatusCode() / 100 != 2) {
-        showError(response, request.getURI());
+        HttpRequest.newBuilder(
+                URI.create(
+                    String.format(
+                        "%s/reportdb/record_parameters?report=%d", owner.get().观音Url(), reportId)))
+            .header("Accept", "application/json")
+            .POST(body)
+            .build();
+    try (var timer = 观音RequestTime.start(owner.get().观音Url())) {
+      var response = HTTP_CLIENT.send(request, new JsonBodyHandler<>(MAPPER, RecordDto[].class));
+      if (response.statusCode() / 100 != 2) {
+        showError(response, request.uri());
         观音RequestErrors.labels(owner.get().观音Url()).inc();
         return ActionState.FAILED;
       }
-      final var results = MAPPER.readValue(response.getEntity().getContent(), RecordDto[].class);
+      final var results = response.body().get();
       if (results.length > 0) {
         final var record =
             Stream.of(results).max(Comparator.comparing(RecordDto::getGenerated)).get();
@@ -244,20 +256,22 @@ public class RunReport extends JsonParameterisedAction {
     // Create it if it doesn't exist
     if (create) {
       final var createRequest =
-          new HttpPost(
-              String.format("%s/reportdb/record_start?report=%d", owner.get().观音Url(), reportId));
-      createRequest.addHeader("Accept", ContentType.APPLICATION_JSON.getMimeType());
-      createRequest.setEntity(body);
-      try (var timer = 观音RequestTime.start(owner.get().观音Url());
-          var response = HTTP_CLIENT.execute(createRequest)) {
-        if (response.getStatusLine().getStatusCode() / 100 != 2) {
-          showError(response, request.getURI());
+          HttpRequest.newBuilder(
+                  URI.create(
+                      String.format(
+                          "%s/reportdb/record_start?report=%d", owner.get().观音Url(), reportId)))
+              .header("Accept", "application/json")
+              .POST(body)
+              .build();
+      try (var timer = 观音RequestTime.start(owner.get().观音Url())) {
+        var response =
+            HTTP_CLIENT.send(createRequest, new JsonBodyHandler<>(MAPPER, CreateDto.class));
+        if (response.statusCode() / 100 != 2) {
+          showError(response, request.uri());
           观音RequestErrors.labels(owner.get().观音Url()).inc();
           return ActionState.FAILED;
         }
-        reportRecordId =
-            OptionalLong.of(
-                MAPPER.readValue(response.getEntity().getContent(), CreateDto.class).getId());
+        reportRecordId = OptionalLong.of(response.body().get().getId());
         externalTimestamp = Optional.of(Instant.now());
       } catch (final Exception e) {
         e.printStackTrace();
@@ -268,9 +282,6 @@ public class RunReport extends JsonParameterisedAction {
     }
     // Now that exists, try to run it via Cromwell if configured
     try {
-      var apiClient = new ApiClient();
-      apiClient.setBasePath(owner.get().cromwellUrl());
-      var wfApi = new WorkflowsApi(apiClient);
       if (cromwellId == null && create || forceRelaunch) {
         forceRelaunch = false;
         var inputs = MAPPER.createObjectNode();
@@ -285,26 +296,43 @@ public class RunReport extends JsonParameterisedAction {
             String.format(
                 "%s/reportdb/record/%d", owner.get().观音Url(), reportRecordId.getAsLong()));
         labels.put("type", reportName);
+
+        final var cromwellBody =
+            new MultiPartBodyPublisher()
+                .addPart("workflowSource", WDL)
+                .addPart("workflowInputs", MAPPER.writeValueAsString(inputs))
+                .addPart("workflowType", "WDL")
+                .addPart("workflowTypeVersion", "1.0")
+                .addPart("labels", MAPPER.writeValueAsString(labels));
+
         cromwellId =
-            wfApi.submit(
-                "v1",
-                WDL,
-                null,
-                false,
-                MAPPER.writeValueAsString(inputs),
-                null,
-                null,
-                null,
-                null,
-                null,
-                "WDL",
-                null,
-                "1.0",
-                MAPPER.writeValueAsString(labels),
-                null);
+            HTTP_CLIENT
+                .send(
+                    HttpRequest.newBuilder()
+                        .uri(
+                            URI.create(
+                                String.format("%s/api/workflows/v1", owner.get().cromwellUrl())))
+                        .header("Content-Type", cromwellBody.getContentType())
+                        .POST(cromwellBody.build())
+                        .build(),
+                    new JsonBodyHandler<>(MAPPER, WorkflowIdAndStatus.class))
+                .body()
+                .get();
         this.errors = Collections.emptyList();
       } else if (cromwellId != null) {
-        cromwellId = wfApi.status("v1", cromwellId.getId());
+        cromwellId =
+            HTTP_CLIENT
+                .send(
+                    HttpRequest.newBuilder(
+                            URI.create(
+                                String.format(
+                                    "%s/api/workflows/v1/%s/status",
+                                    owner.get().cromwellUrl(), cromwellId.getId())))
+                        .GET()
+                        .build(),
+                    new JsonBodyHandler<>(MAPPER, WorkflowIdAndStatus.class))
+                .body()
+                .get();
         this.errors = Collections.emptyList();
       } else {
         this.errors =
@@ -328,19 +356,13 @@ public class RunReport extends JsonParameterisedAction {
     return 10;
   }
 
-  private void showError(CloseableHttpResponse response, URI url)
+  private void showError(HttpResponse<?> response, URI url)
       throws UnsupportedOperationException, IOException {
     final List<String> errors = new ArrayList<>();
-    try (var s = new Scanner(response.getEntity().getContent())) {
-      s.useDelimiter("\\A");
-      if (s.hasNext()) {
-        final var message = s.next();
-        final Map<String, String> labels = new TreeMap<>();
-        labels.put("url", url.getHost());
-        owner.log(message, labels);
-        errors.add(message);
-      }
-    }
+    final Map<String, String> labels = new TreeMap<>();
+    labels.put("url", url.getHost());
+    owner.log("HTTP error: " + response.statusCode(), labels);
+    errors.add("HTTP error: " + response.statusCode());
     this.errors = errors;
   }
 

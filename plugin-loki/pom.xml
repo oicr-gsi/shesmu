@@ -39,12 +39,6 @@
       <artifactId>metainf-services</artifactId>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-      <version>4.5.5</version>
-      <scope>compile</scope>
-    </dependency>
   </dependencies>
   <build>
     <finalName>shesmu-plugin-loki</finalName>

@@ -17,6 +17,7 @@ import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
+import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
@@ -26,6 +27,9 @@ import io.seqware.common.model.WorkflowRunStatus;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
@@ -38,11 +42,6 @@ import java.util.stream.Stream;
 import net.sourceforge.seqware.common.metadata.Metadata;
 import net.sourceforge.seqware.common.metadata.MetadataWS;
 import net.sourceforge.seqware.common.model.*;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 
 class NiassaServer extends JsonPluginFile<Configuration> {
   private interface MaxCheck {
@@ -182,15 +181,18 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                           root -> String.format("%s/api/workflows/v1/%s/metadata", root, id)))
               .flatMap(
                   url -> {
-                    final HttpGet request = new HttpGet(url);
-                    request.addHeader("Accept", ContentType.APPLICATION_JSON.getMimeType());
-                    try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
-                      if (response.getStatusLine().getStatusCode() / 100 != 2) {
+                    try {
+                      final var response =
+                          HTTP_CLIENT.send(
+                              HttpRequest.newBuilder(URI.create(url))
+                                  .GET()
+                                  .header("Accept", "application/json")
+                                  .build(),
+                              new JsonBodyHandler<>(MAPPER, CromwellMetadataResponse.class));
+                      if (response.statusCode() / 100 != 2) {
                         return Optional.empty();
                       }
-                      final CromwellMetadataResponse results =
-                          MAPPER.readValue(
-                              response.getEntity().getContent(), CromwellMetadataResponse.class);
+                      final var results = response.body().get();
                       return Optional.of(new Pair<>(results.getWorkflowRoot(), results.getCalls()));
                     } catch (Exception e) {
                       e.printStackTrace();
@@ -443,7 +445,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
           metadata.annotateFile(accession, attribute, null);
         }
       };
-  static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+  static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private static final AnnotationType<IUSAttribute> IUS =
       new AnnotationType<IUSAttribute>() {
         @Override
