@@ -20,7 +20,9 @@ public abstract class ListNodeWithExpression extends ListNode {
     this.expression = expression;
   }
 
-  /** Add all free variable names to the set provided. */
+  /**
+   * Add all free variable names to the set provided.
+   */
   @Override
   public final void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     final var remove =
@@ -73,9 +75,8 @@ public abstract class ListNodeWithExpression extends ListNode {
   public final Optional<DestructuredArgumentNode> resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     if (expression.resolve(defs.bind(name), errorHandler)) {
-      final var nextNames = nextName(name);
-      definedNames = nextNames.targets().map(Target::name).collect(Collectors.toSet());
-      return Optional.of(nextNames);
+      definedNames = name.targets().map(Target::name).collect(Collectors.toSet());
+      return Optional.of(nextName(name));
 
     } else {
       return Optional.empty();

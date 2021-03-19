@@ -1,0 +1,7 @@
+Version 1;
+Input test;
+Olive
+	Run ok With ok =
+		(For {key, values} In Dict { "ok" = [True], "whatever" = [False] }:
+      Flatten (value In values Let {key, value} = {key, value})
+      Dict key = value)["ok"] Default False;
