@@ -206,7 +206,7 @@ public final class JavaStreamBuilder {
     renderer
         .methodGen()
         .getStatic(A_RUNTIME_SUPPORT_TYPE, "USELESS_BINARY_OPERATOR", A_BINARY_OPERATOR_TYPE);
-    renderer.loadImyhat(currentType.descriptor());
+    renderer.loadImyhat(keyType.descriptor());
     LambdaBuilder.pushVirtual(
         renderer, "newMap", LambdaBuilder.supplier(A_MAP_TYPE), A_IMYHAT_TYPE);
     renderer.methodGen().invokeStatic(A_COLLECTORS_TYPE, METHOD_COLLECTORS__TO_MAP);
