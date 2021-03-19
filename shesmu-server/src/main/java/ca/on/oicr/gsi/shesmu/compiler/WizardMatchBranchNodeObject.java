@@ -20,7 +20,7 @@ public class WizardMatchBranchNodeObject extends WizardMatchBranchNode {
       List<Pair<String, DestructuredArgumentNode>> fields) {
     super(line, column, name, value);
     this.fields = fields;
-    for (final Pair<String, DestructuredArgumentNode> field : fields) {
+    for (final var field : fields) {
       field.second().setFlavour(Flavour.LAMBDA);
     }
   }

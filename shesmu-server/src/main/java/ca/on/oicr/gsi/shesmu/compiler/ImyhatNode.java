@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -13,12 +12,11 @@ import java.util.function.Consumer;
 public abstract class ImyhatNode {
 
   public static Parser parse(Parser input, Consumer<ImyhatNode> output) {
-    final AtomicReference<ImyhatNode> type = new AtomicReference<>();
-    final Parser result = parse0(input, type::set);
+    final var type = new AtomicReference<ImyhatNode>();
+    final var result = parse0(input, type::set);
     if (result.isGood()) {
-      final AtomicReference<ImyhatNode> right = new AtomicReference<>();
-      final Parser rightResult =
-          result.symbol("->").whitespace().then(ImyhatNode::parse, right::set);
+      final var right = new AtomicReference<ImyhatNode>();
+      final var rightResult = result.symbol("->").whitespace().then(ImyhatNode::parse, right::set);
       if (rightResult.isGood()) {
         output.accept(new ImyhatNodeMap(type.get(), right.get()));
         return rightResult;
@@ -29,10 +27,10 @@ public abstract class ImyhatNode {
   }
 
   private static Parser parse0(Parser input, Consumer<ImyhatNode> output) {
-    final AtomicReference<ImyhatNode> type = new AtomicReference<>();
-    final Parser result = parse1(input, type::set);
+    final var type = new AtomicReference<ImyhatNode>();
+    final var result = parse1(input, type::set);
     if (result.isGood()) {
-      final Parser optionalResult = result.symbol("?").whitespace();
+      final var optionalResult = result.symbol("?").whitespace();
       if (optionalResult.isGood()) {
         output.accept(new ImyhatNodeOptional(type.get()));
         return optionalResult;
@@ -43,11 +41,11 @@ public abstract class ImyhatNode {
   }
 
   private static Parser parse1(Parser input, Consumer<ImyhatNode> output) {
-    final AtomicReference<ImyhatNode> type = new AtomicReference<>();
-    Parser result = parse2(input, type::set);
+    final var type = new AtomicReference<ImyhatNode>();
+    var result = parse2(input, type::set);
     while (result.isGood()) {
-      final AtomicLong index = new AtomicLong();
-      final Parser nextTuple =
+      final var index = new AtomicLong();
+      final var nextTuple =
           result
               .symbol("[")
               .whitespace()
@@ -59,9 +57,8 @@ public abstract class ImyhatNode {
         type.set(new ImyhatNodeUntuple(type.get(), (int) index.get()));
         result = nextTuple;
       } else {
-        final AtomicReference<String> name = new AtomicReference<>();
-        final Parser nextObject =
-            result.symbol(".").whitespace().identifier(name::set).whitespace();
+        final var name = new AtomicReference<String>();
+        final var nextObject = result.symbol(".").whitespace().identifier(name::set).whitespace();
         if (nextObject.isGood()) {
           type.set(new ImyhatNodeUnobject(type.get(), name.get()));
           result = nextObject;
@@ -75,10 +72,10 @@ public abstract class ImyhatNode {
   }
 
   private static Parser parse2(Parser input, Consumer<ImyhatNode> output) {
-    final Parser listParser = input.symbol("[");
+    final var listParser = input.symbol("[");
     if (listParser.isGood()) {
-      final AtomicReference<ImyhatNode> inner = new AtomicReference<>();
-      final Parser result =
+      final var inner = new AtomicReference<ImyhatNode>();
+      final var result =
           listParser
               .whitespace()
               .then(ImyhatNode::parse, inner::set)
@@ -91,18 +88,18 @@ public abstract class ImyhatNode {
       return result;
     }
 
-    final Parser tupleParser = input.symbol("{");
+    final var tupleParser = input.symbol("{");
     if (tupleParser.isGood()) {
-      final AtomicReference<List<Pair<String, ImyhatNode>>> fields = new AtomicReference<>();
-      final Parser objectParser =
+      final var fields = new AtomicReference<List<Pair<String, ImyhatNode>>>();
+      final var objectParser =
           tupleParser
               .whitespace()
-              .<Pair<String, ImyhatNode>>list(
+              .list(
                   fields::set,
                   (fp, fo) -> {
-                    final AtomicReference<String> name = new AtomicReference<>();
-                    final AtomicReference<ImyhatNode> value = new AtomicReference<>();
-                    final Parser fresult =
+                    final var name = new AtomicReference<String>();
+                    final var value = new AtomicReference<ImyhatNode>();
+                    final var fresult =
                         fp.whitespace()
                             .identifier(name::set)
                             .whitespace()
@@ -123,9 +120,8 @@ public abstract class ImyhatNode {
         return objectParser;
       }
 
-      final AtomicReference<List<ImyhatNode>> inner =
-          new AtomicReference<>(Collections.emptyList());
-      final Parser result =
+      final var inner = new AtomicReference<List<ImyhatNode>>(List.of());
+      final var result =
           tupleParser
               .whitespace()
               .list(inner::set, (p, o) -> parse(p.whitespace(), o).whitespace(), ',')
@@ -134,11 +130,11 @@ public abstract class ImyhatNode {
       output.accept(new ImyhatNodeTuple(inner.get()));
       return result;
     }
-    final Parser inputVariableParser = input.keyword("InputType");
+    final var inputVariableParser = input.keyword("InputType");
     if (inputVariableParser.isGood()) {
-      final AtomicReference<String> inputFormat = new AtomicReference<>();
-      final AtomicReference<String> variable = new AtomicReference<>();
-      final Parser result =
+      final var inputFormat = new AtomicReference<String>();
+      final var variable = new AtomicReference<String>();
+      final var result =
           inputVariableParser
               .whitespace()
               .qualifiedIdentifier(inputFormat::set)
@@ -150,28 +146,26 @@ public abstract class ImyhatNode {
               input.line(), input.column(), inputFormat.get(), variable.get()));
       return result;
     }
-    final Parser unlistParser = input.keyword("In");
+    final var unlistParser = input.keyword("In");
     if (unlistParser.isGood()) {
-      final AtomicReference<ImyhatNode> inner = new AtomicReference<>();
-      final Parser result =
-          unlistParser.whitespace().then(ImyhatNode::parse, inner::set).whitespace();
+      final var inner = new AtomicReference<ImyhatNode>();
+      final var result = unlistParser.whitespace().then(ImyhatNode::parse, inner::set).whitespace();
       output.accept(new ImyhatNodeUncontainer(inner.get()));
       return result;
     }
-    final Parser returnParser = input.keyword("ReturnType");
+    final var returnParser = input.keyword("ReturnType");
     if (returnParser.isGood()) {
-      final AtomicReference<String> function = new AtomicReference<>();
-      final Parser result =
-          returnParser.whitespace().qualifiedIdentifier(function::set).whitespace();
+      final var function = new AtomicReference<String>();
+      final var result = returnParser.whitespace().qualifiedIdentifier(function::set).whitespace();
       output.accept(new ImyhatNodeReturn(input.line(), input.column(), function.get()));
       return result;
     }
 
-    final Parser argumentParser = input.keyword("ArgumentType");
+    final var argumentParser = input.keyword("ArgumentType");
     if (argumentParser.isGood()) {
-      final AtomicReference<String> function = new AtomicReference<>();
-      final AtomicLong index = new AtomicLong();
-      final Parser result =
+      final var function = new AtomicReference<String>();
+      final var index = new AtomicLong();
+      final var result =
           argumentParser
               .whitespace()
               .qualifiedIdentifier(function::set)
@@ -187,7 +181,7 @@ public abstract class ImyhatNode {
       return result;
     }
 
-    final Parser nestedParser = input.symbol("(");
+    final var nestedParser = input.symbol("(");
     if (nestedParser.isGood()) {
       return nestedParser
           .whitespace()
@@ -197,9 +191,8 @@ public abstract class ImyhatNode {
           .whitespace();
     }
 
-    final AtomicReference<List<AlgebraicImyhatNode>> unions =
-        new AtomicReference<>(Collections.emptyList());
-    final Parser algebraicParser = input.listEmpty(unions::set, AlgebraicImyhatNode::parse, '|');
+    final var unions = new AtomicReference<List<AlgebraicImyhatNode>>(List.of());
+    final var algebraicParser = input.listEmpty(unions::set, AlgebraicImyhatNode::parse, '|');
     if (!unions.get().isEmpty()) {
       if (algebraicParser.isGood()) {
         output.accept(new ImyhatNodeAlgebraic(input.line(), input.column(), unions.get()));
@@ -207,8 +200,8 @@ public abstract class ImyhatNode {
       return algebraicParser;
     }
 
-    final AtomicReference<String> name = new AtomicReference<>();
-    final Parser result = input.identifier(name::set).whitespace();
+    final var name = new AtomicReference<String>();
+    final var result = input.identifier(name::set).whitespace();
     if (!result.isGood()) {
       return result;
     }

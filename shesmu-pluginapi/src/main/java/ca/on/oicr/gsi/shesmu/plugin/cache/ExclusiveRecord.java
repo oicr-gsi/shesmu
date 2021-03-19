@@ -34,7 +34,7 @@ public class ExclusiveRecord<T> implements Record<ExclusiveRecord<T>.Lifetime> {
 
   public static <V> RecordFactory<V, ExclusiveRecord<V>.Lifetime> wrap(
       RecordFactory<V, V> recordCtor) {
-    return updater -> new ExclusiveRecord<V>(recordCtor.create(updater));
+    return updater -> new ExclusiveRecord<>(recordCtor.create(updater));
   }
 
   private final Record<T> inner;
@@ -61,14 +61,14 @@ public class ExclusiveRecord<T> implements Record<ExclusiveRecord<T>.Lifetime> {
 
   @Override
   public Lifetime readStale() {
-    final T value = inner.readStale();
+    final var value = inner.readStale();
     lock.acquireUninterruptibly();
     return new Lifetime(value);
   }
 
   @Override
   public Lifetime refresh(String context) {
-    final T value = inner.refresh(context);
+    final var value = inner.refresh(context);
     lock.acquireUninterruptibly();
     return new Lifetime(value);
   }

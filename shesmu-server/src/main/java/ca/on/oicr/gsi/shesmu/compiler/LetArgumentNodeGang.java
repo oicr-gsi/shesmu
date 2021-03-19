@@ -35,7 +35,7 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
 
   @Override
   public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
-    for (final String name : unusedNames) {
+    for (final var name : unusedNames) {
       errorHandler.accept(
           String.format(
               "%d:%d: Gang “@%s” contains “%s”, but this is never used.",
@@ -51,7 +51,7 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
-    for (final Pair<Target, DefinedTarget> target : targets) {
+    for (final var target : targets) {
       if (predicate.test(target.first().flavour())) {
         names.add(target.first().name());
       }
@@ -75,7 +75,7 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
 
   @Override
   public void render(LetBuilder let) {
-    for (final Pair<Target, DefinedTarget> target : targets) {
+    for (final var target : targets) {
       let.add(
           target.first().type().apply(TO_ASM),
           target.first().name(),
@@ -137,14 +137,14 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
   @Override
   public boolean resolveFunctions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    final Optional<? extends GangDefinition> gang =
+    final var gang =
         expressionCompilerServices
             .inputFormat()
             .gangs()
             .filter(g -> g.name().equals(gangName))
             .findAny();
     gang.ifPresent(g -> definition = g);
-    if (!gang.isPresent()) {
+    if (gang.isEmpty()) {
       errorHandler.accept(String.format("%d:%d: Unknown gang “%s”.", line, column, gangName));
     }
     return gang.isPresent();
@@ -157,8 +157,7 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    return targets
-            .stream()
+    return targets.stream()
             .filter(
                 p -> {
                   if (p.first().type().isSame(p.second().type())) {

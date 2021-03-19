@@ -62,7 +62,7 @@ public abstract class DiscriminatorNodeBaseManipulated extends DiscriminatorNode
 
   @Override
   public final boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    boolean ok = expression.resolve(defs, errorHandler);
+    var ok = expression.resolve(defs, errorHandler);
     if (ok) {
       final Set<String> freeStreamVariables = new HashSet<>();
       expression.collectFreeVariables(freeStreamVariables, Target.Flavour::isStream);

@@ -9,9 +9,9 @@ import java.util.function.Consumer;
 public class OliveParameter implements Target {
 
   public static Parser parse(Parser parser, Consumer<OliveParameter> output) {
-    final AtomicReference<ImyhatNode> type = new AtomicReference<>();
-    final AtomicReference<String> name = new AtomicReference<>();
-    final Parser result =
+    final var type = new AtomicReference<ImyhatNode>();
+    final var name = new AtomicReference<String>();
+    final var result =
         parser
             .whitespace()
             .then(ImyhatNode::parse, type::set)

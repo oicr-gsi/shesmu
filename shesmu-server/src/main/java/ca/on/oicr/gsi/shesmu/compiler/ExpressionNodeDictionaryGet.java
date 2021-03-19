@@ -63,7 +63,7 @@ public class ExpressionNodeDictionaryGet extends ExpressionNode {
           int line, int column, Renderer renderer, ExpressionNode index, boolean resultIsOptional) {
         final Set<String> captures = new HashSet<>();
         index.collectFreeVariables(captures, Flavour::needsCapture);
-        final LambdaBuilder builder =
+        final var builder =
             new LambdaBuilder(
                 renderer.root(),
                 String.format("Dictionary Access %d:%d", line, column),
@@ -76,7 +76,7 @@ public class ExpressionNodeDictionaryGet extends ExpressionNode {
         builder.push(renderer);
         renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__FLAT_MAP);
 
-        final Renderer lambdaBody = builder.renderer(renderer.signerEmitter());
+        final var lambdaBody = builder.renderer(renderer.signerEmitter());
         lambdaBody.methodGen().visitCode();
         lambdaBody.methodGen().loadArg(builder.trueArgument(0));
         index.render(lambdaBody);
@@ -185,10 +185,10 @@ public class ExpressionNodeDictionaryGet extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = expression.typeCheck(errorHandler) & index.typeCheck(errorHandler);
+    var ok = expression.typeCheck(errorHandler) & index.typeCheck(errorHandler);
     if (ok) {
-      Imyhat expressionType = expression.type();
-      boolean lifted = false;
+      var expressionType = expression.type();
+      var lifted = false;
       if (expressionType instanceof Imyhat.OptionalImyhat) {
         lifted = true;
         expressionType = ((Imyhat.OptionalImyhat) expressionType).inner();
@@ -200,7 +200,7 @@ public class ExpressionNodeDictionaryGet extends ExpressionNode {
                 line(), column()));
         ok = false;
       } else if (expressionType instanceof Imyhat.DictionaryImyhat) {
-        final Imyhat.DictionaryImyhat mapType = (Imyhat.DictionaryImyhat) expressionType;
+        final var mapType = (Imyhat.DictionaryImyhat) expressionType;
         if (mapType.key().isSame(index.type())) {
           type = mapType.value();
           access = lifted ? Access.LIFTED_MAP : Access.MAP;

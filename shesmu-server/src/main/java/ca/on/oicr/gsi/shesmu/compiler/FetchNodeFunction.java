@@ -7,7 +7,6 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -49,11 +48,11 @@ public class FetchNodeFunction extends FetchNode {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    final Optional<FunctionDefinition> funcDef =
+    final var funcDef =
         nativeDefinitions.functions().filter(f -> f.name().equals(funcName)).findAny();
     if (funcDef.isPresent()) {
       this.funcDef = funcDef.get();
-      final long argsCount = this.funcDef.parameters().count();
+      final var argsCount = this.funcDef.parameters().count();
       final long argsSize = args.size();
       if (argsCount != argsSize) {
         errorHandler.accept(
@@ -78,12 +77,12 @@ public class FetchNodeFunction extends FetchNode {
       return funcDef
               .parameters()
               .filter(
-                  new Predicate<FunctionParameter>() {
+                  new Predicate<>() {
                     private int index = 0;
 
                     @Override
                     public boolean test(FunctionParameter p) {
-                      ExpressionNode argAtIndex = args.get(index++);
+                      var argAtIndex = args.get(index++);
                       if (p.type().isAssignableFrom(argAtIndex.type())) {
                         return true;
                       } else {

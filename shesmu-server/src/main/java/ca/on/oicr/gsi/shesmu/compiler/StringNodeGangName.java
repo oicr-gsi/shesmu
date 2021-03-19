@@ -4,12 +4,9 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.GangDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -116,7 +113,7 @@ public class StringNodeGangName extends StringNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
-    for (final Element element : elements) {
+    for (final var element : elements) {
       if (predicate.test(element.source.flavour())) {
         names.add(element.source.name());
       }
@@ -135,10 +132,10 @@ public class StringNodeGangName extends StringNode {
 
   @Override
   public void render(Renderer renderer) {
-    boolean underscore = false;
-    for (final Element element : elements) {
+    var underscore = false;
+    for (final var element : elements) {
       if (element.dropIfDefault) {
-        final Label skip = renderer.methodGen().newLabel();
+        final var skip = renderer.methodGen().newLabel();
         renderer.loadTarget(element.source);
         element.type.check(renderer.methodGen(), skip);
         if (underscore) {
@@ -167,7 +164,7 @@ public class StringNodeGangName extends StringNode {
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    final Optional<List<Element>> result =
+    final var result =
         TypeUtils.matchGang(line, column, defs, definition, Element::new, errorHandler);
     result.ifPresent(x -> elements = x);
     return result.isPresent();
@@ -176,7 +173,7 @@ public class StringNodeGangName extends StringNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    final Optional<? extends GangDefinition> gangDefinition =
+    final var gangDefinition =
         expressionCompilerServices
             .inputFormat()
             .gangs()
@@ -197,8 +194,8 @@ public class StringNodeGangName extends StringNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final Element element : elements) {
+    var ok = true;
+    for (final var element : elements) {
       ok &= element.typeCheck(errorHandler);
     }
     return ok;

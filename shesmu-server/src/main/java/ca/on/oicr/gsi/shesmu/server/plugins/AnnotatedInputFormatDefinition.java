@@ -24,11 +24,9 @@ import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.gsi.status.TableRowWriter;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
@@ -43,8 +41,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
@@ -140,14 +136,12 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     public DynamicInputDataSourceFromJsonStream(
         String name, int ttl, DynamicInputJsonSource source) {
       cache =
-          new LabelledKeyValueCache<Object, String, Stream<Object>, Stream<Object>>(
-              name() + " " + name, ttl, ReplacingRecord::new) {
+          new LabelledKeyValueCache<>(name() + " " + name, ttl, ReplacingRecord::new) {
             @Override
             protected Stream<Object> fetch(Object key, String label, Instant lastUpdated)
                 throws Exception {
-              try (final InputStream input = source.fetch(key);
-                  final JsonParser parser =
-                      RuntimeSupport.MAPPER.getFactory().createParser(input)) {
+              try (final var input = source.fetch(key);
+                  final var parser = RuntimeSupport.MAPPER.getFactory().createParser(input)) {
                 final List<Object> results = new ArrayList<>();
                 if (parser.nextToken() != JsonToken.START_ARRAY) {
                   throw new IllegalStateException("Expected an array");
@@ -185,14 +179,12 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
 
     public InputDataSourceFromJsonStream(String name, int ttl, JsonInputSource source) {
       cache =
-          new ValueCache<Stream<Object>, Stream<Object>>(
-              name() + " " + name, ttl, ReplacingRecord::new) {
+          new ValueCache<>(name() + " " + name, ttl, ReplacingRecord::new) {
             @Override
             protected Stream<Object> fetch(Instant lastUpdated) throws Exception {
               source.ttl().ifPresent(cache::ttl);
-              try (final InputStream input = source.fetch();
-                  final JsonParser parser =
-                      RuntimeSupport.MAPPER.getFactory().createParser(input)) {
+              try (final var input = source.fetch();
+                  final var parser = RuntimeSupport.MAPPER.getFactory().createParser(input)) {
                 final List<Object> results = new ArrayList<>();
                 if (parser.nextToken() != JsonToken.START_ARRAY) {
                   throw new IllegalStateException("Expected an array");
@@ -223,13 +215,13 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   private class LocalJsonFile implements WatchedFileListener {
     private final ConfigurationSection configuration;
     private volatile boolean dirty = true;
-    private String fileName;
+    private final String fileName;
     private final ValueCache<Optional<List<Object>>, Optional<List<Object>>> values;
 
     public LocalJsonFile(Path fileName) {
       this.fileName = fileName.toString();
       values =
-          new ValueCache<Optional<List<Object>>, Optional<List<Object>>>(
+          new ValueCache<>(
               format.name() + " " + fileName,
               Integer.MAX_VALUE,
               InvalidatableRecord.checking(l -> dirty, x -> {})) {
@@ -253,7 +245,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
       configuration =
           new ConfigurationSection(fileName.toString()) {
             @Override
-            public void emit(SectionRenderer sectionRenderer) throws XMLStreamException {
+            public void emit(SectionRenderer sectionRenderer) {
               try {
                 sectionRenderer.line(
                     "Count", values.get().map(l -> Integer.toString(l.size())).orElse("Invalid"));
@@ -285,7 +277,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     }
 
     public Stream<Object> variables() {
-      return values.get().map(List::stream).orElseGet(Stream::empty);
+      return values.get().stream().flatMap(Collection::stream);
     }
   }
 
@@ -297,10 +289,10 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
 
       @Override
       protected Stream<Object> fetch(Instant lastUpdated) throws Exception {
-        if (!config.isPresent()) return Stream.empty();
-        final String url = config.get().getUrl();
-        try (CloseableHttpResponse response = Server.HTTP_CLIENT.execute(new HttpGet(url));
-            JsonParser parser =
+        if (config.isEmpty()) return Stream.empty();
+        final var url = config.get().getUrl();
+        try (var response = Server.HTTP_CLIENT.execute(new HttpGet(url));
+            var parser =
                 RuntimeSupport.MAPPER
                     .getFactory()
                     .createParser(response.getEntity().getContent())) {
@@ -331,7 +323,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     public ConfigurationSection configuration() {
       return new ConfigurationSection(fileName.toString()) {
         @Override
-        public void emit(SectionRenderer sectionRenderer) throws XMLStreamException {
+        public void emit(SectionRenderer sectionRenderer) {
           sectionRenderer.line("Input Format", format.name());
           config.ifPresent(
               c -> {
@@ -427,7 +419,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     MH_TUPLE_IS_INSTANCE = mh_tuple_is_instance;
     MH_PACK_STREAMING__CTOR = mh_pack_streaming__ctor;
     MH_IMYHAT__ACCEPT = mh_imyhat__accept;
-    for (final InputFormat format : ServiceLoader.load(InputFormat.class)) {
+    for (final var format : ServiceLoader.load(InputFormat.class)) {
       try {
         INPUT_FORMAT_HASHES.add(format);
         FORMATS.add(new AnnotatedInputFormatDefinition(format));
@@ -457,27 +449,27 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     this.format = format;
     // Get all the candidate methods in this class and sort them alphabetically
     final SortedMap<String, Pair<ShesmuVariable, Method>> sortedMethods = new TreeMap<>();
-    for (final Method method : format.type().getMethods()) {
-      final ShesmuVariable info = method.getAnnotation(ShesmuVariable.class);
+    for (final var method : format.type().getMethods()) {
+      final var info = method.getAnnotation(ShesmuVariable.class);
       if (info == null) {
         continue;
       }
       sortedMethods.put(method.getName(), new Pair<>(info, method));
     }
     final Map<String, List<Pair<Integer, GangElement>>> gangs = new HashMap<>();
-    for (final Pair<ShesmuVariable, Method> entry : sortedMethods.values()) {
+    for (final var entry : sortedMethods.values()) {
       // Create a target for each method for the compiler to use
-      final String name = entry.second().getName();
-      final Imyhat type =
+      final var name = entry.second().getName();
+      final var type =
           Imyhat.convert(
               String.format(
                   "Return type of %s in %s", name, entry.second().getDeclaringClass().getName()),
               entry.first().type(),
               entry.second().getGenericReturnType());
-      final Flavour flavour = entry.first().signable() ? Flavour.STREAM_SIGNABLE : Flavour.STREAM;
-      final MethodType methodType = MethodType.methodType(type.javaType(), Object.class);
+      final var flavour = entry.first().signable() ? Flavour.STREAM_SIGNABLE : Flavour.STREAM;
+      final var methodType = MethodType.methodType(type.javaType(), Object.class);
       // Register this variable with the compiler
-      final AnnotatedInputVariable variable =
+      final var variable =
           new AnnotatedInputVariable(
               name, methodType, format, flavour, type, entry.first().timeFormat());
       variables.add(variable);
@@ -485,8 +477,8 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
       // cases: either we have an instance of the real type and we should call the
       // method on it, or we have a Tuple that was generated generically by one of our
       // JSON readers
-      final MethodHandle getter = LOOKUP.unreflect(entry.second()).asType(methodType);
-      final MethodHandle handle =
+      final var getter = LOOKUP.unreflect(entry.second()).asType(methodType);
+      final var handle =
           MethodHandles.guardWithTest(
               MH_TUPLE_IS_INSTANCE,
               MethodHandles.insertArguments(MH_TUPLE_GET, 1, variables.size() - 1)
@@ -510,7 +502,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
                       handle.asType(MethodType.methodType(Object.class, Object.class))))));
 
       // Now, prepare any gangs
-      for (final Gang gang : entry.first().gangs()) {
+      for (final var gang : entry.first().gangs()) {
         gangs
             .computeIfAbsent(gang.name(), k -> new ArrayList<>())
             .add(
@@ -522,15 +514,12 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     local = new AutoUpdatingDirectory<>("." + format.name() + "-input", LocalJsonFile::new);
     remotes = new AutoUpdatingDirectory<>("." + format.name() + "-remote", RemoteJsonSource::new);
     this.gangs =
-        gangs
-            .entrySet()
-            .stream()
+        gangs.entrySet().stream()
             .map(
                 e ->
                     new GangDefinition() {
                       final List<GangElement> elements =
-                          e.getValue()
-                              .stream()
+                          e.getValue().stream()
                               .sorted(
                                   Comparator.<Pair<Integer, GangElement>, Integer>comparing(
                                           Pair::first)
@@ -566,8 +555,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
 
   public void dumpPluginConfig(TableRowWriter row) {
     local.stream().forEach(l -> row.write(false, l.fileName(), "Input Source", format.name()));
-    remotes
-        .stream()
+    remotes.stream()
         .forEach(r -> row.write(false, r.fileName.toString(), "Input Source", format.name()));
   }
 
@@ -605,8 +593,8 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   }
 
   private Tuple readJson(ObjectNode node) {
-    final Object[] values = new Object[variables.size()];
-    for (int i = 0; i < values.length; i++) {
+    final var values = new Object[variables.size()];
+    for (var i = 0; i < values.length; i++) {
       values[i] = variables.get(i).read(node);
     }
     return new Tuple(values);
@@ -632,7 +620,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
             value -> {
               try {
                 generator.writeStartObject();
-                for (Pair<String, JsonFieldWriter> fieldWriter : fieldWriters) {
+                for (var fieldWriter : fieldWriters) {
                   generator.writeFieldName(fieldWriter.first());
                   fieldWriter.second().write(generator, value);
                 }

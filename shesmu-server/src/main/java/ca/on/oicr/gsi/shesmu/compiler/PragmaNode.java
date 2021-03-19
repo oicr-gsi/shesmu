@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -16,9 +15,9 @@ public abstract class PragmaNode {
     DISPATCH.addKeyword(
         "Timeout",
         (p, o) -> {
-          final AtomicLong timeout = new AtomicLong();
-          final AtomicInteger multiplier = new AtomicInteger();
-          final Parser result =
+          final var timeout = new AtomicLong();
+          final var multiplier = new AtomicInteger();
+          final var result =
               p.whitespace()
                   .integer(timeout::set, 10)
                   .dispatch(ExpressionNode.INT_SUFFIX, multiplier::set)
@@ -34,9 +33,8 @@ public abstract class PragmaNode {
     DISPATCH.addKeyword(
         "RequiredServices",
         (input, output) -> {
-          final AtomicReference<List<String>> services =
-              new AtomicReference<>(Collections.emptyList());
-          final Parser result =
+          final var services = new AtomicReference<List<String>>(List.of());
+          final var result =
               input
                   .whitespace()
                   .list(services::set, (p, o) -> p.whitespace().identifier(o).whitespace(), ',')
@@ -53,9 +51,9 @@ public abstract class PragmaNode {
     DISPATCH.addKeyword(
         "Frequency",
         (p, o) -> {
-          final AtomicLong frequency = new AtomicLong();
-          final AtomicInteger multiplier = new AtomicInteger();
-          final Parser result =
+          final var frequency = new AtomicLong();
+          final var multiplier = new AtomicInteger();
+          final var result =
               p.whitespace()
                   .integer(frequency::set, 10)
                   .dispatch(ExpressionNode.INT_SUFFIX, multiplier::set)
@@ -71,15 +69,15 @@ public abstract class PragmaNode {
     DISPATCH.addKeyword(
         "Import",
         (p, o) -> {
-          final AtomicReference<List<String>> namespaces = new AtomicReference<>();
-          final AtomicReference<List<ImportNode>> import_ = new AtomicReference<>();
-          final Parser result =
+          final var namespaces = new AtomicReference<List<String>>();
+          final var import_ = new AtomicReference<List<ImportNode>>();
+          final var result =
               p.whitespace()
                   .list(
                       namespaces::set,
                       (partParser, partOutput) -> {
-                        final AtomicReference<String> part = new AtomicReference<>();
-                        final Parser partResult =
+                        final var part = new AtomicReference<String>();
+                        final var partResult =
                             partParser
                                 .whitespace()
                                 .identifier(part::set)
@@ -106,10 +104,10 @@ public abstract class PragmaNode {
     DISPATCH.addKeyword(
         "Check",
         (p, o) -> {
-          final AtomicReference<String> format = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> check = new AtomicReference<>();
-          final AtomicReference<GroupNode> collect = new AtomicReference<>();
-          final Parser result =
+          final var format = new AtomicReference<String>();
+          final var check = new AtomicReference<ExpressionNode>();
+          final var collect = new AtomicReference<GroupNode>();
+          final var result =
               p.whitespace()
                   .identifier(format::set)
                   .whitespace()

@@ -18,7 +18,7 @@ public interface UndefinedVariableProvider {
   static UndefinedVariableProvider listen(
       UndefinedVariableProvider input, Consumer<Target> consumer) {
     return name -> {
-      final Optional<Target> result = input.handleUndefinedVariable(name);
+      final var result = input.handleUndefinedVariable(name);
       result.ifPresent(consumer);
       return result;
     };
@@ -28,8 +28,8 @@ public interface UndefinedVariableProvider {
   static UndefinedVariableProvider combine(
       UndefinedVariableProvider first, UndefinedVariableProvider second) {
     return name -> {
-      final Optional<Target> result = first.handleUndefinedVariable(name);
-      if (!result.isPresent()) {
+      final var result = first.handleUndefinedVariable(name);
+      if (result.isEmpty()) {
         return second.handleUndefinedVariable(name);
       }
       return result;

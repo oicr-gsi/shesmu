@@ -31,7 +31,7 @@ public final class SourceOliveLocation implements Predicate<SourceLocation> {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final SourceOliveLocation other = (SourceOliveLocation) obj;
+    final var other = (SourceOliveLocation) obj;
     if (column == null) {
       if (other.column != null) {
         return false;
@@ -54,13 +54,8 @@ public final class SourceOliveLocation implements Predicate<SourceLocation> {
       return false;
     }
     if (hash == null) {
-      if (other.hash != null) {
-        return false;
-      }
-    } else if (!hash.equals(other.hash)) {
-      return false;
-    }
-    return true;
+      return other.hash == null;
+    } else return hash.equals(other.hash);
   }
 
   public Integer getColumn() {
@@ -81,8 +76,8 @@ public final class SourceOliveLocation implements Predicate<SourceLocation> {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
+    final var prime = 31;
+    var result = 1;
     result = prime * result + (column == null ? 0 : column.hashCode());
     result = prime * result + (file == null ? 0 : file.hashCode());
     result = prime * result + (line == null ? 0 : line.hashCode());
@@ -132,7 +127,7 @@ public final class SourceOliveLocation implements Predicate<SourceLocation> {
 
   @Override
   public String toString() {
-    final StringBuilder buffer = new StringBuilder();
+    final var buffer = new StringBuilder();
     buffer.append("\"").append(file).append("\"");
     if (line != null && line != 0) {
       buffer.append(":").append(line);

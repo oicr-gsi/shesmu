@@ -18,8 +18,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +32,8 @@ import org.objectweb.asm.Type;
 public final class InvokeDynamicActionParameterDescriptor implements ActionParameterDefinition {
   private static final Type A_ACTION_TYPE = Type.getType(Action.class);
 
-  private static Map<Class<? extends Action>, List<ActionParameterDefinition>> ACTION_PARAMETERS =
-      new ConcurrentHashMap<>();
+  private static final Map<Class<? extends Action>, List<ActionParameterDefinition>>
+      ACTION_PARAMETERS = new ConcurrentHashMap<>();
 
   private static final Handle BSM_HANDLE =
       new Handle(
@@ -84,11 +82,10 @@ public final class InvokeDynamicActionParameterDescriptor implements ActionParam
             actionType -> {
               try {
                 final List<ActionParameterDefinition> parameters = new ArrayList<>();
-                final String actionName = clazz.getName().replace(".", "·");
+                final var actionName = clazz.getName().replace(".", "·");
 
-                for (final Field field : actionType.getFields()) {
-                  final ActionParameter fieldAnnotation =
-                      field.getAnnotation(ActionParameter.class);
+                for (final var field : actionType.getFields()) {
+                  final var fieldAnnotation = field.getAnnotation(ActionParameter.class);
                   if (fieldAnnotation == null) {
                     continue;
                   }
@@ -98,9 +95,9 @@ public final class InvokeDynamicActionParameterDescriptor implements ActionParam
                             "Field %s in %s is annotated with ShesmuParameter, but not a public instance field.",
                             field.getName(), field.getDeclaringClass().getName()));
                   }
-                  final String fieldName = AnnotationUtils.checkName(fieldAnnotation.name(), field);
+                  final var fieldName = AnnotationUtils.checkName(fieldAnnotation.name(), field);
 
-                  final Imyhat fieldType =
+                  final var fieldType =
                       Imyhat.convert(
                           String.format(
                               "Field %s in %s",
@@ -116,9 +113,8 @@ public final class InvokeDynamicActionParameterDescriptor implements ActionParam
                           lookup.unreflectSetter(field)));
                 }
 
-                for (final Method setter : actionType.getMethods()) {
-                  final ActionParameter setterAnnotation =
-                      setter.getAnnotation(ActionParameter.class);
+                for (final var setter : actionType.getMethods()) {
+                  final var setterAnnotation = setter.getAnnotation(ActionParameter.class);
                   if (setterAnnotation == null) {
                     continue;
                   }
@@ -130,9 +126,8 @@ public final class InvokeDynamicActionParameterDescriptor implements ActionParam
                             "Setter %s in %s is annotated with ShesmuParameter, but not a public instance method with no return type and one parameter.",
                             setter.getName(), setter.getDeclaringClass().getName()));
                   }
-                  final String setterName =
-                      AnnotationUtils.checkName(setterAnnotation.name(), setter);
-                  final Imyhat setterType =
+                  final var setterName = AnnotationUtils.checkName(setterAnnotation.name(), setter);
+                  final var setterType =
                       Imyhat.convert(
                           String.format(
                               "Setter %s in %s",
@@ -148,7 +143,7 @@ public final class InvokeDynamicActionParameterDescriptor implements ActionParam
                           lookup.unreflect(setter)));
                 }
 
-                final JsonActionParameter[] jsonParameters =
+                final var jsonParameters =
                     actionType.getAnnotationsByType(JsonActionParameter.class);
                 if (jsonParameters.length > 0) {
                   if (!JsonParameterisedAction.class.isAssignableFrom(actionType)) {
@@ -157,7 +152,7 @@ public final class InvokeDynamicActionParameterDescriptor implements ActionParam
                             "Action class %s is annotated with JSON parameters but doesn't extend JsonParameterisedAction.",
                             actionType.getName()));
                   }
-                  for (final JsonActionParameter jsonParameter : jsonParameters) {
+                  for (final var jsonParameter : jsonParameters) {
                     parameters.add(
                         new InvokeDynamicActionParameterDescriptor(
                             actionName,

@@ -30,11 +30,11 @@ public class ProgramNode {
     VERSIONS.put(
         1L,
         (parser, output) -> {
-          final AtomicReference<String> inputFormat = new AtomicReference<>();
-          final AtomicReference<List<PragmaNode>> pragmas = new AtomicReference<>();
-          final AtomicReference<List<TypeAliasNode>> typeAliases = new AtomicReference<>();
-          final AtomicReference<List<OliveNode>> olives = new AtomicReference<>();
-          final Parser result =
+          final var inputFormat = new AtomicReference<String>();
+          final var pragmas = new AtomicReference<List<PragmaNode>>();
+          final var typeAliases = new AtomicReference<List<TypeAliasNode>>();
+          final var olives = new AtomicReference<List<OliveNode>>();
+          final var result =
               parser
                   .keyword("Input")
                   .whitespace()
@@ -65,9 +65,9 @@ public class ProgramNode {
 
     // This is a bit weird; we want to support multiple versions of the olive language in the
     // future, so we parse the version and the version gives us the parser for the rest of the file.
-    final AtomicReference<Pair<Integer, Integer>> start = new AtomicReference<>();
-    final AtomicLong version = new AtomicLong();
-    Parser result =
+    final var start = new AtomicReference<Pair<Integer, Integer>>();
+    final var version = new AtomicLong();
+    var result =
         input
             .whitespace()
             .location(start::set)
@@ -157,7 +157,7 @@ public class ProgramNode {
   }
 
   public int timeout() {
-    AtomicInteger timeout = new AtomicInteger(20 * 60);
+    var timeout = new AtomicInteger(20 * 60);
     pragmas.forEach(pragma -> pragma.timeout(timeout));
     return timeout.get();
   }
@@ -189,16 +189,16 @@ public class ProgramNode {
               "%d:%d: No input format of data named “%s” is available.", line, column, input));
       return false;
     }
-    final Map<String, Imyhat> userDefinedTypes =
+    final var userDefinedTypes =
         InputFormatDefinition.predefinedTypes(signatures.get(), inputFormatDefinition);
     final Map<String, CallableDefinition> userDefinedOlives = new HashMap<>();
     final Map<String, FunctionDefinition> userDefinedFunctions = new HashMap<>();
     final Map<String, Target> userDefinedConstants = new HashMap<>();
-    final List<ImportRewriter> importRewriters =
+    final var importRewriters =
         Stream.concat(Stream.of(ImportRewriter.NULL), pragmas.stream().flatMap(PragmaNode::imports))
             .collect(Collectors.toList());
     // Find and resolve olive “Define” and “Matches”
-    final OliveCompilerServices compilerServices =
+    final var compilerServices =
         new OliveCompilerServices() {
           final Map<String, DumperDefinition> dumpers = new HashMap<>();
           final Set<String> metricNames = new HashSet<>();
@@ -216,10 +216,10 @@ public class ProgramNode {
           }
 
           private <T> T checkImports(Function<String, T> getter, String name) {
-            for (final ImportRewriter importRewriter : importRewriters) {
-              final String original = importRewriter.rewrite(name);
+            for (final var importRewriter : importRewriters) {
+              final var original = importRewriter.rewrite(name);
               if (original == null) continue;
-              final T result = getter.apply(original);
+              final var result = getter.apply(original);
               if (result != null) {
                 return result;
               }
@@ -256,7 +256,7 @@ public class ProgramNode {
 
           @Override
           public FunctionDefinition function(String name) {
-            final FunctionDefinition external = checkImports(definedFunctions, name);
+            final var external = checkImports(definedFunctions, name);
             return external == null ? userDefinedFunctions.get(name) : external;
           }
 
@@ -277,7 +277,7 @@ public class ProgramNode {
 
           @Override
           public CallableDefinition olive(String name) {
-            final CallableDefinition external = checkImports(definedOlives, name);
+            final var external = checkImports(definedOlives, name);
             return external == null ? userDefinedOlives.get(name) : external;
           }
 
@@ -297,15 +297,15 @@ public class ProgramNode {
           }
         };
 
-    for (final TypeAliasNode alias : typeAliases) {
-      final Imyhat type = alias.resolve(compilerServices, errorHandler);
+    for (final var alias : typeAliases) {
+      final var type = alias.resolve(compilerServices, errorHandler);
       if (type.isBad()) {
         return false;
       }
       userDefinedTypes.put(alias.name(), type);
     }
 
-    boolean ok =
+    var ok =
         pragmas.stream().filter(pragma -> pragma.check(compilerServices, errorHandler)).count()
                 == pragmas.size()
             & olives.stream()

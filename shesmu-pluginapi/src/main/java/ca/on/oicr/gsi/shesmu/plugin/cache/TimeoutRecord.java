@@ -34,16 +34,14 @@ public class TimeoutRecord<V> implements Record<V> {
           @Override
           public void run() {
             while (true) {
-              final Instant now = Instant.now();
+              final var now = Instant.now();
               LOCK.acquireUninterruptibly();
-              for (final Thread deadThread :
-                  TIMEOUTS
-                      .entrySet()
-                      .stream()
+              for (final var deadThread :
+                  TIMEOUTS.entrySet().stream()
                       .filter(e -> e.getValue().first().isBefore(now))
                       .peek(
                           e -> {
-                            final Updater<?> updater = e.getValue().second().inner.updater();
+                            final var updater = e.getValue().second().inner.updater();
                             deadlineExceeded.labels(updater.owner().name()).inc();
                             System.err.println(
                                 String.format(
@@ -119,7 +117,7 @@ public class TimeoutRecord<V> implements Record<V> {
           Thread.currentThread(),
           new Pair<>(Instant.now().plus(maxRuntime, ChronoUnit.MINUTES), this));
       LOCK.release();
-      final V result = inner.refresh(context);
+      final var result = inner.refresh(context);
       LOCK.acquire();
       TIMEOUTS.remove(Thread.currentThread());
       LOCK.release();

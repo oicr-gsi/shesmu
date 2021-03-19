@@ -77,19 +77,16 @@ public abstract class FileWatcher {
       watchThread.start();
       Runtime.getRuntime()
           .addShutdownHook(
-              new Thread() {
-
-                @Override
-                public void run() {
-                  running = false;
-                  try {
-                    watchThread.interrupt();
-                    watchThread.join();
-                  } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                  }
-                }
-              });
+              new Thread(
+                  () -> {
+                    running = false;
+                    try {
+                      watchThread.interrupt();
+                      watchThread.join();
+                    } catch (final InterruptedException e) {
+                      Thread.currentThread().interrupt();
+                    }
+                  }));
     }
 
     @Override
@@ -99,10 +96,8 @@ public abstract class FileWatcher {
 
     @Override
     public void trigger(Path path) {
-      final Instant now = Instant.now();
-      active
-          .getOrDefault(path, Collections.emptyList())
-          .stream()
+      final var now = Instant.now();
+      active.getOrDefault(path, List.of()).stream()
           .map(listener -> new RetryProcess(now, listener, path))
           .forEach(retry::add);
     }
@@ -117,17 +112,17 @@ public abstract class FileWatcher {
         holder = ctors.get(extension);
       }
       holder.add(ctor);
-      for (final Path directory : directories) {
-        try (Stream<Path> stream = Files.walk(directory, 1)) {
+      for (final var directory : directories) {
+        try (var stream = Files.walk(directory, 1)) {
           stream
               .filter(
                   path -> {
-                    final String fileName = path.getFileName().toString();
+                    final var fileName = path.getFileName().toString();
                     return fileName.endsWith(extension) && !fileName.startsWith(".");
                   })
               .forEach(
                   path -> {
-                    final WatchedFileListener file = ctor.apply(path);
+                    final var file = ctor.apply(path);
                     List<WatchedFileListener> fileHolder;
                     if (active.containsKey(path)) {
                       fileHolder = active.get(path);
@@ -146,8 +141,8 @@ public abstract class FileWatcher {
     }
 
     private void run() {
-      try (final WatchService watchService = FileSystems.getDefault().newWatchService()) {
-        for (final Path directory : directories) {
+      try (final var watchService = FileSystems.getDefault().newWatchService()) {
+        for (final var directory : directories) {
           directory.register(
               watchService,
               StandardWatchEventKinds.ENTRY_MODIFY,
@@ -156,19 +151,19 @@ public abstract class FileWatcher {
         }
         while (running) {
           try {
-            final Instant now = Instant.now();
+            final var now = Instant.now();
             final long timeout =
                 Optional.ofNullable(retry.peek())
                     .map(p -> Duration.between(now, p.time()).toMillis())
                     .orElse(60_000L);
-            final WatchKey wk =
+            final var wk =
                 timeout < 0
                     ? null
                     : watchService.poll(Math.min(timeout, 60_000), TimeUnit.MILLISECONDS);
             if (wk == null) {
               final List<RetryProcess> retryOutput = new ArrayList<>();
               while (true) {
-                final RetryProcess current = retry.poll();
+                final var current = retry.poll();
                 if (current == null) break;
                 if (Duration.between(now, current.time()).toMillis() <= 0) {
                   // Since we might be externally triggered on an already retrying file, there might
@@ -187,19 +182,17 @@ public abstract class FileWatcher {
               }
               retry.addAll(retryOutput);
             } else {
-              for (final WatchEvent<?> event : wk.pollEvents()) {
-                final Path path = ((Path) wk.watchable()).resolve((Path) event.context());
+              for (final var event : wk.pollEvents()) {
+                final var path = ((Path) wk.watchable()).resolve((Path) event.context());
                 if (path.getFileName().toString().startsWith(".")) {
                   continue;
                 }
                 if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
                   System.out.printf("New file %s detected.\n", path.toString());
-                  final String fileName = path.getFileName().toString();
+                  final var fileName = path.getFileName().toString();
                   active.put(
                       path,
-                      ctors
-                          .entrySet()
-                          .stream()
+                      ctors.entrySet().stream()
                           .filter(entry -> fileName.endsWith(entry.getKey()))
                           .flatMap(entry -> entry.getValue().stream())
                           .map(ctor -> ctor.apply(path))
@@ -208,7 +201,7 @@ public abstract class FileWatcher {
                   updateTime.labels(path.toString()).setToCurrentTime();
                 } else if (event.kind() == StandardWatchEventKinds.ENTRY_DELETE) {
                   System.out.printf("File %s deleted.\n", path.toString());
-                  final List<WatchedFileListener> listeners = active.remove(path);
+                  final var listeners = active.remove(path);
                   if (listeners != null) {
                     retry.removeIf(e -> listeners.contains(e.listener));
                     listeners.forEach(WatchedFileListener::stop);
@@ -216,11 +209,10 @@ public abstract class FileWatcher {
                   }
                 } else if (event.kind() == StandardWatchEventKinds.ENTRY_MODIFY) {
                   System.out.printf("File %s updated.\n", path.toString());
-                  final List<WatchedFileListener> listeners = active.get(path);
+                  final var listeners = active.get(path);
                   if (listeners != null) {
                     retry.removeIf(e -> listeners.contains(e.listener));
-                    listeners
-                        .stream()
+                    listeners.stream()
                         .<Optional<RetryProcess>>map(
                             listener -> {
                               try (AutoCloseable timer =
@@ -309,7 +301,6 @@ public abstract class FileWatcher {
   public static FileWatcher of(Stream<String> paths) {
     return new RealFileWatcher(paths);
   }
-
 
   /** The directories being monitored */
   public abstract Stream<Path> paths();

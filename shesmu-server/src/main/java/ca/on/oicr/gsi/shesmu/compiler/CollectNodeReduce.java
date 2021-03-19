@@ -37,7 +37,7 @@ public class CollectNodeReduce extends CollectNode {
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     initial.collectFreeVariables(names, predicate);
-    final List<String> remove =
+    final var remove =
         Stream.concat(accumulatorName.targets().map(Target::name), definedNames.stream())
             .filter(name -> !names.contains(name))
             .collect(Collectors.toList());
@@ -57,7 +57,7 @@ public class CollectNodeReduce extends CollectNode {
     reducer.collectFreeVariables(capturedNames, Flavour::needsCapture);
     accumulatorName.targets().map(Target::name).forEach(capturedNames::remove);
     capturedNames.removeAll(definedNames);
-    final Renderer reducerRenderer =
+    final var reducerRenderer =
         builder.reduce(
             line(),
             column(),
@@ -97,7 +97,7 @@ public class CollectNodeReduce extends CollectNode {
   @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
-    final boolean ok =
+    final var ok =
         initial.resolve(defs, errorHandler)
             & reducer.resolve(defs.bind(name).bind(accumulatorName), errorHandler);
     definedNames =
@@ -124,7 +124,7 @@ public class CollectNodeReduce extends CollectNode {
   @Override
   public boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
     type = incoming;
-    boolean ok =
+    var ok =
         initial.typeCheck(errorHandler)
             && accumulatorName.typeCheck(initial.type(), errorHandler)
             && reducer.typeCheck(errorHandler);

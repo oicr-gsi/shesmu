@@ -3,14 +3,12 @@ package ca.on.oicr.gsi.shesmu.mongo;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoIterable;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.bson.BsonValue;
 import org.bson.Document;
-import org.bson.conversions.Bson;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -32,9 +30,8 @@ public abstract class MongoFunction {
 
     @Override
     protected MongoIterable<Document> run(MongoClient client, BsonValue... arguments) {
-      final List<Bson> operations =
-          this.operations
-              .stream()
+      final var operations =
+          this.operations.stream()
               .map(operation -> operation.buildRoot(arguments))
               .collect(Collectors.toList());
       return getCollection() == null
@@ -70,12 +67,12 @@ public abstract class MongoFunction {
 
     @Override
     protected MongoIterable<Document> run(MongoClient client, BsonValue... arguments) {
-      FindIterable<Document> iterable =
+      var iterable =
           client
               .getDatabase(getDatabase())
               .getCollection(getCollection())
               .find(criteria.buildRoot(arguments));
-      for (final OperationBuilder operation : operations) {
+      for (final var operation : operations) {
         iterable = operation.apply(iterable, arguments);
       }
       return iterable;
@@ -102,8 +99,8 @@ public abstract class MongoFunction {
   private int ttl;
 
   public final Object apply(MongoClient client, Tuple arguments) {
-    final BsonValue[] values = new BsonValue[parameters.size()];
-    for (int i = 0; i < parameters.size(); i++) {
+    final var values = new BsonValue[parameters.size()];
+    for (var i = 0; i < parameters.size(); i++) {
       values[i] = parameters.get(i).pack(arguments.get(i));
     }
     return selector.process(run(client, values), resultType);

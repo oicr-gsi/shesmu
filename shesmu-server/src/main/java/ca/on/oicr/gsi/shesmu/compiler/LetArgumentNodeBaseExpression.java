@@ -62,8 +62,7 @@ public abstract class LetArgumentNodeBaseExpression extends LetArgumentNode {
 
   @Override
   public final void render(LetBuilder let) {
-    final Consumer<Renderer> loadLocal =
-        let.createLocal(expression.type().apply(TO_ASM), expression::render);
+    final var loadLocal = let.createLocal(expression.type().apply(TO_ASM), expression::render);
     name.render(render(let, expression.type(), loadLocal))
         .forEach(value -> let.add(value.type(), value.name(), value));
   }

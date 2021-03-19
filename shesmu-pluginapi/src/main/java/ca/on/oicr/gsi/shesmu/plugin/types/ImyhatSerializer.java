@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -34,7 +33,7 @@ public class ImyhatSerializer extends JsonSerializer<Imyhat> {
             new ImyhatTransformer<Generator>() {
               @Override
               public Generator algebraic(Stream<AlgebraicTransformer> contents) {
-                final List<Generator> generators =
+                final var generators =
                     contents
                         .map(
                             t ->
@@ -48,7 +47,7 @@ public class ImyhatSerializer extends JsonSerializer<Imyhat> {
                                       @Override
                                       public Generator object(
                                           String name, Stream<Pair<String, Imyhat>> contents) {
-                                        final List<Generator> members =
+                                        final var members =
                                             contents
                                                 .<Generator>map(
                                                     p ->
@@ -60,7 +59,7 @@ public class ImyhatSerializer extends JsonSerializer<Imyhat> {
                                                 .collect(Collectors.toList());
                                         return g -> {
                                           g.writeObjectFieldStart(name);
-                                          for (final Generator member : members) {
+                                          for (final var member : members) {
                                             member.generate(g);
                                           }
                                           g.writeEndObject();
@@ -69,11 +68,10 @@ public class ImyhatSerializer extends JsonSerializer<Imyhat> {
 
                                       @Override
                                       public Generator tuple(String name, Stream<Imyhat> contents) {
-                                        final List<Imyhat> members =
-                                            contents.collect(Collectors.toList());
+                                        final var members = contents.collect(Collectors.toList());
                                         return g -> {
                                           g.writeArrayFieldStart(name);
-                                          for (final Imyhat member : members) {
+                                          for (final var member : members) {
                                             serialize(member, g, serializerProvider);
                                           }
                                           g.writeEndArray();
@@ -85,7 +83,7 @@ public class ImyhatSerializer extends JsonSerializer<Imyhat> {
                   g.writeStartObject();
                   g.writeStringField("is", "algebraic");
                   g.writeObjectFieldStart("union");
-                  for (final Generator union : generators) {
+                  for (final var union : generators) {
                     union.generate(g);
                   }
                   g.writeEndObject();
@@ -125,8 +123,8 @@ public class ImyhatSerializer extends JsonSerializer<Imyhat> {
 
               @Override
               public Generator map(Imyhat key, Imyhat value) {
-                final Generator keyGenerator = key.apply(this);
-                final Generator valueGenerator = value.apply(this);
+                final var keyGenerator = key.apply(this);
+                final var valueGenerator = value.apply(this);
                 return g -> {
                   g.writeStartObject();
                   g.writeStringField("is", "dictionary");
@@ -140,7 +138,7 @@ public class ImyhatSerializer extends JsonSerializer<Imyhat> {
 
               @Override
               public Generator object(Stream<Pair<String, Imyhat>> contents) {
-                final List<Generator> fields =
+                final var fields =
                     contents
                         .map(p -> field(p.first(), p.second().apply(this)))
                         .collect(Collectors.toList());
@@ -149,7 +147,7 @@ public class ImyhatSerializer extends JsonSerializer<Imyhat> {
                   g.writeStringField("is", "object");
                   g.writeFieldName("fields");
                   g.writeStartObject();
-                  for (final Generator field : fields) {
+                  for (final var field : fields) {
                     field.generate(g);
                   }
                   g.writeEndObject();
@@ -169,7 +167,7 @@ public class ImyhatSerializer extends JsonSerializer<Imyhat> {
 
               private Generator single(Imyhat inner, String name, Imyhat whenNull) {
                 if (inner == null) return just(whenNull);
-                final Generator generator = inner.apply(this);
+                final var generator = inner.apply(this);
                 return g -> {
                   g.writeStartObject();
                   g.writeStringField("is", name);
@@ -186,11 +184,10 @@ public class ImyhatSerializer extends JsonSerializer<Imyhat> {
 
               @Override
               public Generator tuple(Stream<Imyhat> contents) {
-                final List<Generator> elements =
-                    contents.map(e -> e.apply(this)).collect(Collectors.toList());
+                final var elements = contents.map(e -> e.apply(this)).collect(Collectors.toList());
                 return g -> {
                   g.writeStartArray();
-                  for (final Generator element : elements) {
+                  for (final var element : elements) {
                     element.generate(g);
                   }
                   g.writeEndArray();

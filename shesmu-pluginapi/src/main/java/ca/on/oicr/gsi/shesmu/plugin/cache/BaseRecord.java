@@ -49,7 +49,7 @@ public abstract class BaseRecord<R, S> implements Record<R> {
     final boolean doRefresh;
     boolean shouldThrow;
     synchronized (this) {
-      final Instant now = Instant.now();
+      final var now = Instant.now();
       doRefresh =
           Duration.between(fetchTime, now).toMinutes() > fetcher.owner().ttl() && !regenerating;
       shouldThrow = initialState;
@@ -58,8 +58,8 @@ public abstract class BaseRecord<R, S> implements Record<R> {
       }
     }
     if (doRefresh) {
-      try (AutoCloseable timer = refreshLatency.start(fetcher.owner().name())) {
-        S result = update(value, fetchTime);
+      try (var timer = refreshLatency.start(fetcher.owner().name())) {
+        var result = update(value, fetchTime);
         if (result != null) {
           synchronized (this) {
             value = result;

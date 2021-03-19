@@ -10,7 +10,7 @@ import java.util.concurrent.Semaphore;
  */
 public class ConcurrencyLimitedRecord<V> implements Record<V> {
   public static <I, V> RecordFactory<I, V> limit(int maximum, RecordFactory<I, V> factory) {
-    return new RecordFactory<I, V>() {
+    return new RecordFactory<>() {
       private final Semaphore lock = new Semaphore(maximum);
 
       @Override

@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -21,7 +20,7 @@ public abstract class ReturnConverter {
 
     private ReturnConverter deserialize(JsonNode node) {
       if (node.isTextual()) {
-        final String str = node.asText();
+        final var str = node.asText();
         switch (str) {
           case "boolean":
             return BOOLEAN;
@@ -43,7 +42,7 @@ public abstract class ReturnConverter {
         }
       }
       if (node.isObject()) {
-        final String type = node.get("is").asText();
+        final var type = node.get("is").asText();
         switch (type) {
           case "list":
             return list(deserialize(node));
@@ -63,16 +62,16 @@ public abstract class ReturnConverter {
     @Override
     public ReturnConverter deserialize(JsonParser parser, DeserializationContext context)
         throws IOException {
-      final ObjectCodec oc = parser.getCodec();
+      final var oc = parser.getCodec();
       final JsonNode node = oc.readTree(parser);
       return deserialize(node);
     }
 
     private Map<String, ReturnConverter> elements(JsonNode node) {
       final Map<String, ReturnConverter> elements = new TreeMap<>();
-      final Iterator<Map.Entry<String, JsonNode>> iterator = node.get("of").fields();
+      final var iterator = node.get("of").fields();
       while (iterator.hasNext()) {
-        final Map.Entry<String, JsonNode> current = iterator.next();
+        final var current = iterator.next();
         elements.put(current.getKey(), deserialize(current.getValue()));
       }
       return elements;
@@ -92,9 +91,7 @@ public abstract class ReturnConverter {
       @Override
       Object unpack(Document document, String name) {
         return ((List<Document>) document.get(name))
-            .stream()
-            .map(inner::unpackRoot)
-            .collect(Collectors.toSet());
+            .stream().map(inner::unpackRoot).collect(Collectors.toSet());
       }
     };
   }
@@ -116,10 +113,8 @@ public abstract class ReturnConverter {
       @Override
       Object unpackRoot(Document document) {
         return new Tuple(
-            elements
-                .entrySet()
-                .stream()
-                .sorted(Comparator.comparing(Map.Entry::getKey))
+            elements.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
                 .map(element -> element.getValue().unpack(document, element.getKey()))
                 .toArray());
       }
@@ -128,9 +123,7 @@ public abstract class ReturnConverter {
 
   public static Imyhat typeFrom(Map<String, ReturnConverter> elements) {
     return new Imyhat.ObjectImyhat(
-        elements
-            .entrySet()
-            .stream()
+        elements.entrySet().stream()
             .map(element -> new Pair<>(element.getKey(), element.getValue().type())));
   }
 
@@ -215,9 +208,7 @@ public abstract class ReturnConverter {
 
         @Override
         Object unpackRoot(Document document) {
-          return document
-              .entrySet()
-              .stream()
+          return document.entrySet().stream()
               .map(e -> new Tuple(e.getKey(), Objects.toString(e.getValue())))
               .collect(Collectors.toCollection(ATTR::newSet));
         }
@@ -231,11 +222,11 @@ public abstract class ReturnConverter {
 
         @Override
         Object unpack(Document document, String name) {
-          final String path = document.getString(name);
+          final var path = document.getString(name);
           return path == null ? null : Paths.get(path);
         }
       };
-  public static ReturnConverter STRING =
+  public static final ReturnConverter STRING =
       new ReturnConverter() {
 
         @Override
@@ -250,7 +241,7 @@ public abstract class ReturnConverter {
       };
 
   public ReturnConverter asOptional() {
-    final ReturnConverter inner = this;
+    final var inner = this;
     return new ReturnConverter() {
       public ReturnConverter asOptional() {
         return this;

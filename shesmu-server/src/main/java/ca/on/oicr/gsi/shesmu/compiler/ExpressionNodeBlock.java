@@ -24,7 +24,7 @@ public class ExpressionNodeBlock extends ExpressionNode {
     super(line, column);
     this.definitions = definitions;
     this.result = result;
-    for (final Pair<DestructuredArgumentNode, ExpressionNode> definition : definitions) {
+    for (final var definition : definitions) {
       definition.first().setFlavour(Target.Flavour.LAMBDA);
     }
   }
@@ -32,7 +32,7 @@ public class ExpressionNodeBlock extends ExpressionNode {
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
     final Set<String> removeNames = new TreeSet<>();
-    for (final Pair<DestructuredArgumentNode, ExpressionNode> definition : definitions) {
+    for (final var definition : definitions) {
       definition
           .first()
           .targets()
@@ -49,16 +49,16 @@ public class ExpressionNodeBlock extends ExpressionNode {
   @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
     result.collectPlugins(pluginFileNames);
-    for (final Pair<DestructuredArgumentNode, ExpressionNode> definition : definitions) {
+    for (final var definition : definitions) {
       definition.second().collectPlugins(pluginFileNames);
     }
   }
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    final EcmaScriptRenderer inner = renderer.duplicate();
-    for (final Pair<DestructuredArgumentNode, ExpressionNode> definition : definitions) {
-      final String value = renderer.newConst(definition.second().renderEcma(inner));
+    final var inner = renderer.duplicate();
+    for (final var definition : definitions) {
+      final var value = renderer.newConst(definition.second().renderEcma(inner));
       definition.first().renderEcma(value).forEach(inner::define);
     }
     return result.renderEcma(inner);
@@ -66,10 +66,10 @@ public class ExpressionNodeBlock extends ExpressionNode {
 
   @Override
   public void render(Renderer renderer) {
-    Renderer current = renderer.duplicate();
-    for (final Pair<DestructuredArgumentNode, ExpressionNode> definition : definitions) {
+    var current = renderer.duplicate();
+    for (final var definition : definitions) {
       definition.second().render(current);
-      final int local = current.methodGen().newLocal(definition.second().type().apply(TO_ASM));
+      final var local = current.methodGen().newLocal(definition.second().type().apply(TO_ASM));
       current.methodGen().storeLocal(local);
       definition
           .first()
@@ -81,8 +81,8 @@ public class ExpressionNodeBlock extends ExpressionNode {
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    NameDefinitions current = defs;
-    for (final Pair<DestructuredArgumentNode, ExpressionNode> definition : definitions) {
+    var current = defs;
+    for (final var definition : definitions) {
       if (!definition.second().resolve(current, errorHandler)) {
         return false;
       }
@@ -116,7 +116,7 @@ public class ExpressionNodeBlock extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    for (final Pair<DestructuredArgumentNode, ExpressionNode> definition : definitions) {
+    for (final var definition : definitions) {
       if (!definition.second().typeCheck(errorHandler)) {
         return false;
       }

@@ -23,9 +23,9 @@ public class TupleElementNodeRest extends TupleElementNode {
   @Override
   public int render(Renderer renderer, int start) {
     expression.render(renderer);
-    final int local = renderer.methodGen().newLocal(A_TUPLE_TYPE);
+    final var local = renderer.methodGen().newLocal(A_TUPLE_TYPE);
     renderer.methodGen().storeLocal(local);
-    for (int index = 0; index < tuple.count(); index++) {
+    for (var index = 0; index < tuple.count(); index++) {
       renderer.methodGen().dup();
       renderer.methodGen().push(start + index);
       renderer.methodGen().loadLocal(local);
@@ -38,8 +38,10 @@ public class TupleElementNodeRest extends TupleElementNode {
 
   @Override
   public String render(EcmaScriptRenderer renderer) {
-    final String value = expression.renderEcma(renderer);
-    return IntStream.range(0, tuple.count()).mapToObj(i -> value + "[" + i + "]").collect(Collectors.joining(", "));
+    final var value = expression.renderEcma(renderer);
+    return IntStream.range(0, tuple.count())
+        .mapToObj(i -> value + "[" + i + "]")
+        .collect(Collectors.joining(", "));
   }
 
   @Override

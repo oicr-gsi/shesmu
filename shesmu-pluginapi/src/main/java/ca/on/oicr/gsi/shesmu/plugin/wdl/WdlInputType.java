@@ -11,7 +11,6 @@ import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -78,14 +77,14 @@ public final class WdlInputType {
     return flatToNested(
         inputs,
         (name, node) -> {
-          final Imyhat result = parseWdlJson(node, pairsAsObjects, errorHandler);
+          final var result = parseWdlJson(node, pairsAsObjects, errorHandler);
           return result.isBad() ? Optional.empty() : Optional.of(result);
         });
   }
 
   public static Parser parse(Parser parser, Consumer<Function<Boolean, Imyhat>> output) {
-    final AtomicReference<Function<Boolean, Imyhat>> value = new AtomicReference<>();
-    final Parser result =
+    final var value = new AtomicReference<Function<Boolean, Imyhat>>();
+    final var result =
         parser
             .whitespace()
             .dispatch(DISPATCH, value::set)
@@ -113,9 +112,9 @@ public final class WdlInputType {
     }
     if (node.isObject()) {
       final List<Pair<String, Imyhat>> fields = new ArrayList<>();
-      final Iterator<Entry<String, JsonNode>> entries = node.fields();
+      final var entries = node.fields();
       while (entries.hasNext()) {
-        final Entry<String, JsonNode> entry = entries.next();
+        final var entry = entries.next();
         fields.add(
             new Pair<>(
                 entry.getKey(), parseWdlJson(entry.getValue(), pairsAsObjects, errorHandler)));
@@ -132,8 +131,8 @@ public final class WdlInputType {
   }
 
   public static Imyhat parseRoot(String input, boolean pairsAsObjects, ErrorConsumer errorHandler) {
-    final AtomicReference<Function<Boolean, Imyhat>> type = new AtomicReference<>();
-    final Parser result =
+    final var type = new AtomicReference<Function<Boolean, Imyhat>>();
+    final var result =
         parse(Parser.start(input, errorHandler), type::set)
             .regex(
                 DEFAULT_PROVIDED,
@@ -156,7 +155,7 @@ public final class WdlInputType {
   private static final Pattern PERIOD = Pattern.compile("\\.");
   /** Convert a Shesmu type into its equivalent WDL type */
   public static final ImyhatTransformer<String> TO_WDL_TYPE =
-      new ImyhatTransformer<String>() {
+      new ImyhatTransformer<>() {
 
         @Override
         public String algebraic(Stream<AlgebraicTransformer> contents) {
@@ -202,18 +201,15 @@ public final class WdlInputType {
 
         @Override
         public String object(Stream<Pair<String, Imyhat>> contents) {
-          final List<Pair<String, Imyhat>> fields = contents.collect(Collectors.toList());
+          final var fields = contents.collect(Collectors.toList());
           if (fields.size() == 2
-              && fields
-                  .stream()
+              && fields.stream()
                   .allMatch(p -> p.first().equals("left") || p.first().equals("right"))) {
-            return fields
-                .stream()
+            return fields.stream()
                 .map(p -> p.second().apply(this))
                 .collect(Collectors.joining(", ", "Pair[", "]"));
           }
-          return fields
-              .stream()
+          return fields.stream()
               .map(field -> field.first() + " -> " + field.second().apply(this))
               .collect(Collectors.joining("\n", "WomCompositeType {\n", "}"));
         }
@@ -235,11 +231,10 @@ public final class WdlInputType {
 
         @Override
         public String tuple(Stream<Imyhat> contents) {
-          List<String> types = contents.map(type -> type.apply(this)).collect(Collectors.toList());
+          var types = contents.map(type -> type.apply(this)).collect(Collectors.toList());
           Collections.reverse(types);
 
-          return types
-              .stream()
+          return types.stream()
               .reduce((a, b) -> "Pair[" + a + "," + b + "]")
               .orElseThrow(() -> new IllegalArgumentException("Cannot cope with empty tuple."));
         }
@@ -254,8 +249,8 @@ public final class WdlInputType {
     DISPATCH.addKeyword(
         "Array",
         (p, o) -> {
-          final AtomicReference<Function<Boolean, Imyhat>> inner = new AtomicReference<>();
-          final Parser result =
+          final var inner = new AtomicReference<Function<Boolean, Imyhat>>();
+          final var result =
               p.whitespace()
                   .symbol("[")
                   .whitespace()
@@ -271,9 +266,9 @@ public final class WdlInputType {
     DISPATCH.addKeyword(
         "Map",
         (p, o) -> {
-          final AtomicReference<Function<Boolean, Imyhat>> key = new AtomicReference<>();
-          final AtomicReference<Function<Boolean, Imyhat>> value = new AtomicReference<>();
-          final Parser result =
+          final var key = new AtomicReference<Function<Boolean, Imyhat>>();
+          final var value = new AtomicReference<Function<Boolean, Imyhat>>();
+          final var result =
               p.whitespace()
                   .symbol("[")
                   .whitespace()
@@ -290,7 +285,7 @@ public final class WdlInputType {
         "Pair",
         (p, o) -> {
           final List<Function<Boolean, Imyhat>> inner = new ArrayList<>();
-          final Parser result =
+          final var result =
               p.whitespace()
                   .symbol("[")
                   .whitespace()
@@ -307,8 +302,7 @@ public final class WdlInputType {
                                 new Pair<>("left", inner.get(0).apply(pairsAsObjects)),
                                 new Pair<>("right", inner.get(1).apply(pairsAsObjects))))
                         : Imyhat.tuple(
-                            inner
-                                .stream()
+                            inner.stream()
                                 .map(e -> e.apply(pairsAsObjects))
                                 .toArray(Imyhat[]::new)));
           }
@@ -317,19 +311,17 @@ public final class WdlInputType {
     DISPATCH.addKeyword(
         "WomCompositeType",
         (p, o) -> {
-          final AtomicReference<List<Pair<String, Function<Boolean, Imyhat>>>> fields =
-              new AtomicReference<>();
-          final Parser result =
+          final var fields = new AtomicReference<List<Pair<String, Function<Boolean, Imyhat>>>>();
+          final var result =
               p.whitespace()
                   .symbol("{")
                   .whitespace()
                   .list(
                       fields::set,
                       (fp, fo) -> {
-                        final AtomicReference<String> name = new AtomicReference<>();
-                        final AtomicReference<Function<Boolean, Imyhat>> type =
-                            new AtomicReference<>();
-                        final Parser fieldResult =
+                        final var name = new AtomicReference<String>();
+                        final var type = new AtomicReference<Function<Boolean, Imyhat>>();
+                        final var fieldResult =
                             fp.whitespace()
                                 .identifier(name::set)
                                 .whitespace()
@@ -347,9 +339,7 @@ public final class WdlInputType {
             o.accept(
                 x ->
                     new Imyhat.ObjectImyhat(
-                        fields
-                            .get()
-                            .stream()
+                        fields.get().stream()
                             .map(f -> new Pair<>(f.first(), f.second().apply(x)))));
           }
           return result;

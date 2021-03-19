@@ -110,14 +110,14 @@ public class SshConnectionPool implements Supplier<PooledSshConnection>, AutoClo
   }
 
   public void configure(String host, int port, String user) {
-    final ConnectionInfo info = new ConnectionInfo(host, port, user);
+    final var info = new ConnectionInfo(host, port, user);
     connectionInfo.updateAndGet(i -> i != null && i.epoch > info.epoch ? i : info);
   }
 
   @Override
   public PooledSshConnection get() {
     int attempts = 100;
-    final ConnectionInfo info = connectionInfo.get();
+    final var info = connectionInfo.get();
     if (info == null) {
       throw new IllegalStateException("Connection pool is not initialised");
     }

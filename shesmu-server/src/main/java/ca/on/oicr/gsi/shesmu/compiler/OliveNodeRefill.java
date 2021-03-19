@@ -6,7 +6,6 @@ import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -35,7 +34,7 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
     Stream<RefillerParameterBuilder> render(OliveBuilder oliveBuilder) {
       final Set<String> captures = new HashSet<>();
       expression.collectFreeVariables(captures, Flavour::needsCapture);
-      final LoadableValue[] capturedValues =
+      final var capturedValues =
           oliveBuilder
               .loadableValues()
               .filter(v -> captures.contains(v.name()))
@@ -70,9 +69,9 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
   private final int column;
   private final String refillerName;
   private RefillerDefinition definition;
-  private String description;
+  private final String description;
   private final int line;
-  private Set<String> tags;
+  private final Set<String> tags;
 
   public OliveNodeRefill(
       int line,
@@ -135,8 +134,7 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
             description,
             definition.supplementaryInformation(),
             clauses().stream().flatMap(OliveClauseNode::dashboard),
-            arguments
-                .stream()
+            arguments.stream()
                 .flatMap(
                     arg -> {
                       final Set<String> inputs = new HashSet<>();
@@ -161,7 +159,7 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
   @Override
   public void render(
       RootBuilder builder, Function<String, CallableDefinitionRenderer> definitions) {
-    final OliveBuilder oliveBuilder =
+    final var oliveBuilder =
         builder.buildRunOlive(line, column, null, signableNames, signableVariableChecks);
     clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
     oliveBuilder.line(line);
@@ -174,9 +172,8 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
   @Override
   public boolean resolve(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    final NameDefinitions defs =
-        clauses()
-            .stream()
+    final var defs =
+        clauses().stream()
             .reduce(
                 NameDefinitions.root(
                     oliveCompilerServices.inputFormat(),
@@ -186,13 +183,12 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
-    boolean ok = true;
-    final Map<String, Long> argumentNames =
-        arguments
-            .stream()
+    var ok = true;
+    final var argumentNames =
+        arguments.stream()
             .flatMap(p -> p.first().targets())
             .collect(Collectors.groupingBy(Target::name, Collectors.counting()));
-    for (final Map.Entry<String, Long> argumentName : argumentNames.entrySet()) {
+    for (final var argumentName : argumentNames.entrySet()) {
       if (argumentName.getValue() > 1) {
         errorHandler.accept(
             String.format(
@@ -202,9 +198,9 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
       }
     }
 
-    final Set<String> definedArgumentNames =
+    final var definedArgumentNames =
         definition.parameters().map(RefillerParameterDefinition::name).collect(Collectors.toSet());
-    final Set<String> requiredArgumentNames =
+    final var requiredArgumentNames =
         definition.parameters().map(RefillerParameterDefinition::name).collect(Collectors.toSet());
     if (!definedArgumentNames.containsAll(argumentNames.keySet())) {
       ok = false;
@@ -215,8 +211,7 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
               "%d:%d: Extra arguments for refill %s: %s",
               line, column, refillerName, String.join(", ", badTerms)));
     }
-    switch (arguments
-        .stream()
+    switch (arguments.stream()
         .map(p -> p.first().checkWildcard(errorHandler))
         .reduce(WildcardCheck.NONE, WildcardCheck::combine)) {
       case NONE:
@@ -231,12 +226,11 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
         }
         break;
       case HAS_WILDCARD:
-        final UndefinedVariableProvider provider =
-            arguments
-                .stream()
+        final var provider =
+            arguments.stream()
                 .map(p -> (UndefinedVariableProvider) p.first())
                 .reduce(UndefinedVariableProvider.NONE, UndefinedVariableProvider::combine);
-        for (final String requiredName : requiredArgumentNames) {
+        for (final var requiredName : requiredArgumentNames) {
           if (!definedArgumentNames.contains(requiredName)) {
             provider.handleUndefinedVariable(requiredName);
           }
@@ -244,13 +238,13 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
         break;
       case BAD:
         ok = false;
+        break;
       default:
         throw new UnsupportedOperationException("Unknown wildcard result in refill.");
     }
     return defs.isGood()
         & ok
-        & arguments
-                .stream()
+        & arguments.stream()
                 .filter(argument -> argument.second().resolve(defs, errorHandler))
                 .count()
             == arguments.size();
@@ -259,9 +253,8 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
   @Override
   protected boolean resolveDefinitionsExtra(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    boolean ok =
-        arguments
-                .stream()
+    var ok =
+        arguments.stream()
                 .filter(
                     arg ->
                         arg.first().resolve(oliveCompilerServices, errorHandler)
@@ -297,17 +290,16 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
 
   @Override
   protected boolean typeCheckExtra(Consumer<String> errorHandler) {
-    boolean ok =
+    var ok =
         arguments.stream().filter(argument -> argument.second().typeCheck(errorHandler)).count()
             == arguments.size();
     if (ok) {
-      final Map<String, RefillerParameterDefinition> parameterInfo =
+      final var parameterInfo =
           definition
               .parameters()
               .collect(Collectors.toMap(RefillerParameterDefinition::name, Function.identity()));
       ok =
-          arguments
-                  .stream()
+          arguments.stream()
                   .filter(
                       argument ->
                           argument.second().typeCheck(errorHandler)
@@ -315,15 +307,14 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
                   .count()
               == arguments.size();
       ok &=
-          arguments
-                  .stream()
+          arguments.stream()
                   .flatMap(
                       p ->
                           p.first()
                               .targets()
                               .filter(
                                   t -> {
-                                    final Imyhat requiredType = parameterInfo.get(t.name()).type();
+                                    final var requiredType = parameterInfo.get(t.name()).type();
                                     if (requiredType.isAssignableFrom(t.type())) {
                                       return false;
                                     }
@@ -340,8 +331,7 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
               == 0;
       if (ok) {
         argumentBuilders =
-            arguments
-                .stream()
+            arguments.stream()
                 .map(arg -> new ArgBuilder(arg, parameterInfo))
                 .collect(Collectors.toList());
       }

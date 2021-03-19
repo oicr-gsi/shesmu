@@ -24,15 +24,15 @@ public @interface ShesmuMethod {
    * <p>Use <tt>{instance}</tt> and <tt>{file}</tt> to include the name of the instance and file
    * path.
    */
-  public String description() default "Too lazy to document.";
+  String description() default "Too lazy to document.";
 
   /**
    * The name of the method in Shesmu, if the Java name is not usable.
    *
    * <p>Use <tt>$</tt> to insert an instance name.
    */
-  public String name() default "";
+  String name() default "";
 
   /** The Shesmu type descriptor, if it cannot be inferred from the return type. */
-  public String type() default "";
+  String type() default "";
 }

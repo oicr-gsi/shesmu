@@ -5,7 +5,6 @@ import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -100,8 +99,8 @@ public class DiscriminatorNodeSimple extends DiscriminatorNode {
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    final Optional<Target> target = defs.get(outputTarget.name());
-    if (!target.isPresent()) {
+    final var target = defs.get(outputTarget.name());
+    if (target.isEmpty()) {
       errorHandler.accept(
           String.format(
               "%d:%d: Undefined variable “%s” in “By”.",

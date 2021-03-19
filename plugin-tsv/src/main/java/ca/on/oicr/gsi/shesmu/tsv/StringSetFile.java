@@ -6,15 +6,12 @@ import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Gauge;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 
 public final class StringSetFile extends PluginFile {
 
@@ -27,14 +24,14 @@ public final class StringSetFile extends PluginFile {
           .register();
   private boolean good;
 
-  private Set<String> values = Collections.emptySet();
+  private Set<String> values = Set.of();
 
   public StringSetFile(Path fileName, String instanceName) {
     super(fileName, instanceName);
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) {
     renderer.line("Count", values.size());
     renderer.line("Last read successful", good ? "Yes" : "No");
   }
@@ -46,7 +43,7 @@ public final class StringSetFile extends PluginFile {
 
   @Override
   public Optional<Integer> update() {
-    try (Stream<String> lines = Files.lines(fileName())) {
+    try (var lines = Files.lines(fileName())) {
       values = lines.filter(GOOD_LINE).collect(Collectors.toCollection(TreeSet::new));
       badFile.labels(fileName().toString()).set(0);
       good = true;

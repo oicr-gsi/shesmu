@@ -13,14 +13,11 @@ import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
@@ -53,7 +50,7 @@ public class PrometheusAlertManagerPluginType
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  class AlertManagerEndpoint extends JsonPluginFile<Configuration> {
+  static class AlertManagerEndpoint extends JsonPluginFile<Configuration> {
     private class AlertCache extends ValueCache<Stream<AlertDto>, Stream<AlertDto>> {
       public AlertCache(Path fileName) {
         super("alertmanager " + fileName.toString(), 5, ReplacingRecord::new);
@@ -61,13 +58,13 @@ public class PrometheusAlertManagerPluginType
 
       @Override
       protected Stream<AlertDto> fetch(Instant lastUpdated) throws Exception {
-        final String url = configuration.map(Configuration::getAlertmanager).orElse(null);
+        final var url = configuration.map(Configuration::getAlertmanager).orElse(null);
         if (url == null) {
           return Stream.empty();
         }
-        try (CloseableHttpResponse response =
+        try (var response =
             HTTP_CLIENT.execute(new HttpGet(String.format("%s/api/v1/alerts", url)))) {
-          final AlertResultDto result =
+          final var result =
               MAPPER.readValue(response.getEntity().getContent(), AlertResultDto.class);
           if (result == null || result.getData() == null) {
             return Stream.empty();
@@ -85,12 +82,12 @@ public class PrometheusAlertManagerPluginType
       cache = new AlertCache(fileName);
     }
 
-    public void configuration(SectionRenderer renderer) throws XMLStreamException {
+    public void configuration(SectionRenderer renderer) {
       configuration.ifPresent(
           c -> {
             renderer.link("Address", c.getAlertmanager(), c.getAlertmanager());
             renderer.line("Environment", c.getEnvironment());
-            for (final String label : c.getLabels()) {
+            for (final var label : c.getLabels()) {
               renderer.line("Inhibition Alert Label", label);
             }
           });
@@ -100,12 +97,11 @@ public class PrometheusAlertManagerPluginType
     public void pushAlerts(String alertJson) {
       configuration.ifPresent(
           config -> {
-            HttpPost request =
-                new HttpPost(String.format("%s/api/v1/alerts", config.getAlertmanager()));
+            var request = new HttpPost(String.format("%s/api/v1/alerts", config.getAlertmanager()));
             request.addHeader("Content-type", ContentType.APPLICATION_JSON.getMimeType());
             request.setEntity(new StringEntity(alertJson, StandardCharsets.UTF_8));
-            try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
-              boolean ok = response.getStatusLine().getStatusCode() != 200;
+            try (var response = HTTP_CLIENT.execute(request)) {
+              var ok = response.getStatusLine().getStatusCode() != 200;
               if (ok) {
                 System.err.printf(
                     "Failed to write alerts to %s: %d %s",
@@ -123,10 +119,9 @@ public class PrometheusAlertManagerPluginType
 
     @Override
     public Stream<String> isOverloaded(Set<String> services) {
-      final String environment = configuration.map(Configuration::getEnvironment).orElse("");
-      final List<String> labels =
-          configuration.map(Configuration::getLabels).orElse(Collections.singletonList("job"));
-      final Set<String> knownOverloads =
+      final var environment = configuration.map(Configuration::getEnvironment).orElse("");
+      final var labels = configuration.map(Configuration::getLabels).orElse(List.of("job"));
+      final var knownOverloads =
           cache
               .get()
               .flatMap(alert -> alert.matches(environment, labels))

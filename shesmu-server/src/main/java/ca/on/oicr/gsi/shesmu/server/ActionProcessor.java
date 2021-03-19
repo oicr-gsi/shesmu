@@ -181,7 +181,7 @@ public final class ActionProcessor
 
     /** Produce a filter that selects the opposite output of this filter. */
     public Filter negate() {
-      final Filter owner = this;
+      final var owner = this;
       return new Filter() {
 
         @Override
@@ -206,7 +206,7 @@ public final class ActionProcessor
     private Information(Action action) {
       String id;
       try {
-        final MessageDigest digest = MessageDigest.getInstance("SHA1");
+        final var digest = MessageDigest.getInstance("SHA1");
         digest.update(action.type().getBytes(StandardCharsets.UTF_8));
         action.generateUUID(digest::update);
         id = "shesmu:" + Utils.bytesToHex(digest.digest());
@@ -248,17 +248,16 @@ public final class ActionProcessor
   }
 
   static Function<String, String> commonPathPrefix(Stream<String> input) {
-    final List<String> items = input.collect(Collectors.toList());
+    final var items = input.collect(Collectors.toList());
     if (items.isEmpty()) {
       return Function.identity();
     }
 
-    final List<String> commonPrefix =
-        SLASH.splitAsStream(items.get(0)).collect(Collectors.toList());
+    final var commonPrefix = SLASH.splitAsStream(items.get(0)).collect(Collectors.toList());
     commonPrefix.remove(commonPrefix.size() - 1);
-    for (int i = 1; i < items.size(); i++) {
-      final List<String> parts = Arrays.asList(SLASH.split(items.get(i)));
-      int x = 0;
+    for (var i = 1; i < items.size(); i++) {
+      final var parts = List.of(SLASH.split(items.get(i)));
+      var x = 0;
       while (x < parts.size() - 1
           && x < commonPrefix.size()
           && parts.get(x).equals(commonPrefix.get(x))) x++;
@@ -269,7 +268,7 @@ public final class ActionProcessor
 
   private static <T extends Comparable<T>> void propertySummary(
       ArrayNode table, Property<T> property, List<Entry<Action, Information>> actions) {
-    final TreeMap<T, Set<Action>> states =
+    final var states =
         actions.stream()
             .flatMap(
                 action -> property.extract(action).map(prop -> new Pair<>(prop, action.getKey())))
@@ -279,9 +278,9 @@ public final class ActionProcessor
                     TreeMap::new,
                     Collectors.mapping(Pair::second, Collectors.toSet())));
 
-    final Function<T, String> namer = property.name(states.keySet().stream());
-    for (final Entry<T, Set<Action>> state : states.entrySet()) {
-      final ObjectNode row = table.addObject();
+    final var namer = property.name(states.keySet().stream());
+    for (final var state : states.entrySet()) {
+      final var row = table.addObject();
       row.put("title", "Total");
       row.put("value", state.getValue().size());
       row.put("kind", "property");
@@ -294,7 +293,7 @@ public final class ActionProcessor
   public static final int ACTION_PERFORM_THREADS =
       Math.max(1, Runtime.getRuntime().availableProcessors() * 5 - 1);
   private static final BinMember<Instant> ADDED =
-      new BinMember<Instant>() {
+      new BinMember<>() {
 
         @Override
         public Optional<Instant> extract(Entry<Action, Information> input) {
@@ -307,10 +306,10 @@ public final class ActionProcessor
         }
       };
   public static final AlertFilterBuilder<Predicate<Alert>, String> ALERT_FILTER_BUILDER =
-      new AlertFilterBuilder<Predicate<Alert>, String>() {
+      new AlertFilterBuilder<>() {
         @Override
         public Predicate<Alert> and(Stream<Predicate<Alert>> filters) {
-          final List<Predicate<Alert>> predicates = filters.collect(Collectors.toList());
+          final var predicates = filters.collect(Collectors.toList());
           return alert -> predicates.stream().allMatch(predicate -> predicate.test(alert));
         }
 
@@ -337,7 +336,7 @@ public final class ActionProcessor
         @Override
         public Predicate<Alert> hasLabelValue(String labelName, Pattern regex) {
           return alert -> {
-            final String value = alert.labels.get(labelName);
+            final var value = alert.labels.get(labelName);
             return value != null && regex.matcher(value).matches();
           };
         }
@@ -359,12 +358,12 @@ public final class ActionProcessor
 
         @Override
         public Predicate<Alert> or(Stream<Predicate<Alert>> filters) {
-          final List<Predicate<Alert>> predicates = filters.collect(Collectors.toList());
+          final var predicates = filters.collect(Collectors.toList());
           return alert -> predicates.stream().anyMatch(predicate -> predicate.test(alert));
         }
       };
   private static final BinMember<Instant> CHECKED =
-      new BinMember<Instant>() {
+      new BinMember<>() {
 
         @Override
         public Optional<Instant> extract(Entry<Action, Information> input) {
@@ -377,7 +376,7 @@ public final class ActionProcessor
         }
       };
   private static final BinMember<Instant> EXTERNAL =
-      new BinMember<Instant>() {
+      new BinMember<>() {
 
         @Override
         public Optional<Instant> extract(Entry<Action, Information> input) {
@@ -391,7 +390,7 @@ public final class ActionProcessor
       };
   private static final JsonNodeFactory JSON_FACTORY = JsonNodeFactory.withExactBigDecimals(false);
   private static final Bin<Instant> INSTANT_BIN =
-      new Bin<Instant>() {
+      new Bin<>() {
         @Override
         public final long bucket(Instant min, long width, Instant value) {
           return (value.toEpochMilli() - min.toEpochMilli()) / width;
@@ -418,7 +417,7 @@ public final class ActionProcessor
         }
       };
   private static final Property<ActionState> ACTION_STATE =
-      new Property<ActionState>() {
+      new Property<>() {
 
         @Override
         public Stream<ActionState> extract(Entry<Action, Information> input) {
@@ -460,7 +459,7 @@ public final class ActionProcessor
           .register();
   private static final Pattern SLASH = Pattern.compile("/");
   private static final Property<String> SOURCE_FILE =
-      new Property<String>() {
+      new Property<>() {
 
         @Override
         public Stream<String> extract(Entry<Action, Information> input) {
@@ -483,7 +482,7 @@ public final class ActionProcessor
         }
       };
   private static final BinMember<Instant> STATUS_CHANGED =
-      new BinMember<Instant>() {
+      new BinMember<>() {
 
         @Override
         public Optional<Instant> extract(Entry<Action, Information> input) {
@@ -496,7 +495,7 @@ public final class ActionProcessor
         }
       };
   private static final Property<String> TAG =
-      new Property<String>() {
+      new Property<>() {
 
         @Override
         public Stream<String> extract(Entry<Action, Information> input) {
@@ -520,7 +519,7 @@ public final class ActionProcessor
         }
       };
   private static final Property<String> TYPE =
-      new Property<String>() {
+      new Property<>() {
 
         @Override
         public Stream<String> extract(Entry<Action, Information> input) {
@@ -621,9 +620,9 @@ public final class ActionProcessor
       information.lastAdded = Instant.now();
       isDuplicate = true;
     }
-    final SourceLocation location = new SourceLocation(filename, line, column, hash);
+    final var location = new SourceLocation(filename, line, column, hash);
     information.locations.add(location);
-    information.tags.addAll(Arrays.asList(tags));
+    information.tags.addAll(List.of(tags));
     sourceLocations.add(location);
     lastAdd.setToCurrentTime();
     return isDuplicate;
@@ -639,20 +638,20 @@ public final class ActionProcessor
       int column,
       String hash)
       throws Exception {
-    final Map<String, String> labelMap = repack(labels, "Labels");
+    final var labelMap = repack(labels, "Labels");
     // Alert Manager doesn't officially require an instance, but it gets weird if not included, so
     // add one unless the olive supplied it.
     if (!labelMap.containsKey("instance")) {
       labelMap.put("instance", baseUri);
     }
-    try (AutoCloseable lock = alertLock.acquire()) {
+    try (var lock = alertLock.acquire()) {
       Alert alert;
-      final boolean duplicate = alerts.containsKey(labelMap);
+      final var duplicate = alerts.containsKey(labelMap);
       if (duplicate) {
         alert = alerts.get(labelMap);
       } else {
-        final MessageDigest digest = MessageDigest.getInstance("SHA1");
-        for (final Entry<String, String> entry : labelMap.entrySet()) {
+        final var digest = MessageDigest.getInstance("SHA1");
+        for (final var entry : labelMap.entrySet()) {
           digest.update(entry.getKey().getBytes(StandardCharsets.UTF_8));
           digest.update((byte) 0);
           digest.update(entry.getValue().getBytes(StandardCharsets.UTF_8));
@@ -662,7 +661,7 @@ public final class ActionProcessor
         alert.setLabels(labelMap);
         alert.setStartsAt(Instant.now());
         alerts.put(labelMap, alert);
-        final URIBuilder builder = new URIBuilder(baseUri);
+        final var builder = new URIBuilder(baseUri);
         builder.setFragment(alert.id());
         alert.setGeneratorURL(builder.build().toASCIIString());
       }
@@ -707,7 +706,7 @@ public final class ActionProcessor
 
   public void alerts(JsonGenerator output, Predicate<Alert> predicate) throws IOException {
     output.writeStartArray();
-    for (final Alert alert : alerts.values()) {
+    for (final var alert : alerts.values()) {
       if (predicate.test(alert)) {
         output.writeObject(alert);
       }
@@ -767,7 +766,7 @@ public final class ActionProcessor
   public long command(
       PluginManager pluginManager, String command, Optional<String> user, Filter... filters) {
     final List<Action> purge = new ArrayList<>();
-    final long count =
+    final var count =
         startStream(filters)
             .filter(
                 e -> {
@@ -780,8 +779,7 @@ public final class ActionProcessor
                       .reduce(
                           false,
                           (accumulator, c) -> {
-                            final ActionCommand.Response response =
-                                c.process(e.getKey(), command, user);
+                            final var response = c.process(e.getKey(), command, user);
                             if (response != Response.IGNORED) {
                               labels.put("command", c.command());
                               pluginManager.log("Performed command", labels);
@@ -833,8 +831,8 @@ public final class ActionProcessor
       List<Entry<Action, Information>> input,
       Property<T> row,
       Property<U> column) {
-    final Set<T> rows = input.stream().flatMap(row::extract).collect(Collectors.toSet());
-    final Set<U> columns = input.stream().flatMap(column::extract).collect(Collectors.toSet());
+    final var rows = input.stream().flatMap(row::extract).collect(Collectors.toSet());
+    final var columns = input.stream().flatMap(column::extract).collect(Collectors.toSet());
     // Rows and columns which are always present aren't interesting
     rows.removeIf(value -> input.stream().allMatch(e -> row.extract(e).anyMatch(value::equals)));
     columns.removeIf(
@@ -862,36 +860,36 @@ public final class ActionProcessor
       Property<U> column,
       Set<T> rows,
       Set<U> columns) {
-    final ObjectNode node = output.addObject();
+    final var node = output.addObject();
     node.put("type", "crosstab");
     node.put("column", column.name());
     node.put("row", row.name());
-    final ObjectNode rowsJson = node.putObject("rows");
-    final Function<T, String> rowNamer = row.name(rows.stream());
-    final Function<U, String> columnNamer = column.name(columns.stream());
-    final ArrayNode columnsJson = node.putArray("columns");
+    final var rowsJson = node.putObject("rows");
+    final var rowNamer = row.name(rows.stream());
+    final var columnNamer = column.name(columns.stream());
+    final var columnsJson = node.putArray("columns");
     columns.stream()
         .map(c -> new Pair<>(columnNamer.apply(c), column.json(c)))
         .sorted(Comparator.comparing(Pair::first))
         .forEach(
             colPair -> {
-              final ObjectNode columnJson = columnsJson.addObject();
+              final var columnJson = columnsJson.addObject();
               columnJson.put("name", colPair.first());
               columnJson.set("value", colPair.second());
             });
-    final Map<T, Set<Entry<Action, Information>>> map =
+    final var map =
         input.stream()
             .flatMap(e -> row.extract(e).map(t -> new Pair<>(t, e)))
             .collect(
                 Collectors.groupingBy(
                     Pair::first, Collectors.mapping(Pair::second, Collectors.toSet())));
-    final ObjectNode data = node.putObject("data");
-    for (final Entry<T, Set<Entry<Action, Information>>> entry : map.entrySet()) {
-      final String name = rowNamer.apply(entry.getKey());
-      final ObjectNode inner = data.putObject(name);
+    final var data = node.putObject("data");
+    for (final var entry : map.entrySet()) {
+      final var name = rowNamer.apply(entry.getKey());
+      final var inner = data.putObject(name);
       rowsJson.set(name, row.json(entry.getKey()));
 
-      for (final Entry<U, Long> i :
+      for (final var i :
           entry.getValue().stream()
               .filter(
                   c ->
@@ -986,7 +984,7 @@ public final class ActionProcessor
    */
   @Override
   public Filter fromFile(Stream<String> files) {
-    final Set<String> set = files.collect(Collectors.toSet());
+    final var set = files.collect(Collectors.toSet());
     return new Filter() {
 
       @Override
@@ -1029,31 +1027,27 @@ public final class ActionProcessor
   }
 
   public void getAlert(OutputStream output, String id) throws IOException {
-    final Alert alert =
-        alerts.values().stream().filter(a -> a.id.equals(id)).findAny().orElse(null);
+    final var alert = alerts.values().stream().filter(a -> a.id.equals(id)).findAny().orElse(null);
     RuntimeSupport.MAPPER.writeValue(output, alert);
   }
 
   @SafeVarargs
-  private final <T> void histogram(
+  private <T> void histogram(
       ArrayNode output,
       int count,
       List<Entry<Action, Information>> input,
       Bin<T> bin,
       BinMember<T>... members) {
-    final List<T> contents =
+    final var contents =
         Stream.of(members)
-            .flatMap(
-                member ->
-                    input.stream()
-                        .flatMap(v -> member.extract(v).map(Stream::of).orElseGet(Stream::empty)))
+            .flatMap(member -> input.stream().flatMap(v -> member.extract(v).stream()))
             .collect(Collectors.toList());
-    final Optional<T> min = contents.stream().min(bin);
-    final Optional<T> max = contents.stream().max(bin);
-    if (!min.isPresent() || !max.isPresent() || min.get().equals(max.get())) {
+    final var min = contents.stream().min(bin);
+    final var max = contents.stream().max(bin);
+    if (min.isEmpty() || max.isEmpty() || min.get().equals(max.get())) {
       return;
     }
-    long width = bin.span(min.get(), max.get()) / count;
+    var width = bin.span(min.get(), max.get()) / count;
     final int bucketsLength;
     if (width < bin.minWidth()) {
       // If the buckets are less than a minimum width, use buckets of the minimum width over the
@@ -1066,19 +1060,19 @@ public final class ActionProcessor
     if (bucketsLength < 2) {
       return;
     }
-    final long binWidth = width;
+    final var binWidth = width;
 
-    final ObjectNode node = output.addObject();
+    final var node = output.addObject();
     node.put("type", "histogram");
-    final ArrayNode boundaries = node.putArray("boundaries");
-    for (int i = 0; i < bucketsLength; i++) {
+    final var boundaries = node.putArray("boundaries");
+    for (var i = 0; i < bucketsLength; i++) {
       boundaries.add(bin.name(min.get(), i * width));
     }
     boundaries.add(bin.name(max.get(), 0));
-    final ObjectNode counts = node.putObject("counts");
-    for (final BinMember<T> member : members) {
-      int[] buckets = new int[bucketsLength];
-      for (final T value : contents) {
+    final var counts = node.putObject("counts");
+    for (final var member : members) {
+      var buckets = new int[bucketsLength];
+      for (final var value : contents) {
         buckets[Math.min((int) bin.bucket(min.get(), binWidth, value), buckets.length - 1)]++;
       }
       Arrays.stream(buckets).forEach(counts.putArray(member.name())::add);
@@ -1086,26 +1080,23 @@ public final class ActionProcessor
   }
 
   @SafeVarargs
-  private final <T, U> void histogramByProperty(
+  private <T, U> void histogramByProperty(
       ArrayNode output,
       int count,
       List<Entry<Action, Information>> input,
       Property<U> property,
       Bin<T> bin,
       BinMember<T>... members) {
-    final List<T> contents =
+    final var contents =
         Stream.of(members)
-            .flatMap(
-                member ->
-                    input.stream()
-                        .flatMap(v -> member.extract(v).map(Stream::of).orElseGet(Stream::empty)))
+            .flatMap(member -> input.stream().flatMap(v -> member.extract(v).stream()))
             .collect(Collectors.toList());
-    final Optional<T> min = contents.stream().min(bin);
-    final Optional<T> max = contents.stream().max(bin);
-    if (!min.isPresent() || !max.isPresent() || min.get().equals(max.get())) {
+    final var min = contents.stream().min(bin);
+    final var max = contents.stream().max(bin);
+    if (min.isEmpty() || max.isEmpty() || min.get().equals(max.get())) {
       return;
     }
-    final Set<U> properties = input.stream().flatMap(property::extract).collect(Collectors.toSet());
+    final var properties = input.stream().flatMap(property::extract).collect(Collectors.toSet());
     // Properties which are always present aren't interesting
     properties.removeIf(
         value -> input.stream().allMatch(e -> property.extract(e).anyMatch(value::equals)));
@@ -1113,7 +1104,7 @@ public final class ActionProcessor
       return;
     }
 
-    long width = bin.span(min.get(), max.get()) / count;
+    var width = bin.span(min.get(), max.get()) / count;
     final int bucketsLength;
     if (width < bin.minWidth()) {
       // If the buckets are less than a minimum width, use buckets of the minimum width over the
@@ -1126,20 +1117,20 @@ public final class ActionProcessor
     if (bucketsLength < 2) {
       return;
     }
-    final long binWidth = width;
+    final var binWidth = width;
 
-    final ObjectNode node = output.addObject();
+    final var node = output.addObject();
     node.put("type", "histogram-by-property");
     node.put("property", property.name());
     properties.stream().map(property::json).forEach(node.putArray("properties")::add);
-    final ArrayNode boundaries = node.putArray("boundaries");
-    for (int i = 0; i < bucketsLength; i++) {
+    final var boundaries = node.putArray("boundaries");
+    for (var i = 0; i < bucketsLength; i++) {
       boundaries.add(bin.name(min.get(), i * width));
     }
     boundaries.add(bin.name(max.get(), 0));
-    final ObjectNode counts = node.putObject("counts");
-    for (final BinMember<T> member : members) {
-      final Map<U, Map<Integer, Long>> counting =
+    final var counts = node.putObject("counts");
+    for (final var member : members) {
+      final var counting =
           input.stream()
               .flatMap(
                   v ->
@@ -1156,9 +1147,9 @@ public final class ActionProcessor
                                   (int) bin.bucket(min.get(), binWidth, v.second()),
                                   bucketsLength - 1),
                           Collectors.counting())));
-      final ArrayNode memberValues = counts.putArray(member.name());
-      for (final Map.Entry<U, Map<Integer, Long>> entry : counting.entrySet()) {
-        final ObjectNode propertyCount = memberValues.addObject();
+      final var memberValues = counts.putArray(member.name());
+      for (final var entry : counting.entrySet()) {
+        final var propertyCount = memberValues.addObject();
         propertyCount.set("value", property.json(entry.getKey()));
         IntStream.range(0, bucketsLength)
             .mapToLong(i -> entry.getValue().getOrDefault(i, 0L))
@@ -1203,7 +1194,7 @@ public final class ActionProcessor
    */
   @Override
   public Filter isState(Stream<ActionState> states) {
-    final EnumSet<ActionState> set =
+    final var set =
         states.collect(Collectors.toCollection(() -> EnumSet.noneOf(ActionState.class)));
     return new Filter() {
 
@@ -1227,7 +1218,7 @@ public final class ActionProcessor
       e.printStackTrace();
       actionNode = RuntimeSupport.MAPPER.createObjectNode();
     }
-    final ObjectNode node = actionNode;
+    final var node = actionNode;
     node.put("actionId", entry.getValue().id);
     node.put("updateInProgress", entry.getValue().updateInProgress);
     node.put("state", entry.getValue().lastState.name());
@@ -1240,7 +1231,7 @@ public final class ActionProcessor
         .getKey()
         .externalTimestamp()
         .ifPresent(external -> node.put("external", external.toEpochMilli()));
-    final String thrown = entry.getValue().thrown;
+    final var thrown = entry.getValue().thrown;
     if (thrown != null) {
       if (node.has("errors")) {
         ((ArrayNode) node.get("errors")).add(thrown);
@@ -1249,18 +1240,18 @@ public final class ActionProcessor
       }
     }
     node.put("type", entry.getKey().type());
-    final ArrayNode locations = node.putArray("locations");
+    final var locations = node.putArray("locations");
     entry.getValue().locations.stream()
         .sorted()
         .forEach(location -> location.toJson(locations, linker));
-    final ArrayNode commands = node.putArray("commands");
+    final var commands = node.putArray("commands");
     if (includeCommands) {
       entry
           .getKey()
           .commands()
           .forEach(
               c -> {
-                final ObjectNode command = commands.addObject();
+                final var command = commands.addObject();
                 command.put("command", c.command());
                 command.put("buttonText", c.buttonText());
                 command.put("icon", c.icon().icon());
@@ -1282,7 +1273,7 @@ public final class ActionProcessor
       int oliveLine,
       int oliveColumn,
       String oliveHash) {
-    final Gauge.Child child =
+    final var child =
         OLIVE_FLOW.labels(
             fileName,
             Integer.toString(line),
@@ -1292,7 +1283,7 @@ public final class ActionProcessor
             Integer.toString(oliveLine),
             Integer.toString(oliveColumn),
             oliveHash);
-    final AtomicLong counter = new AtomicLong();
+    final var counter = new AtomicLong();
     return input.peek(x -> counter.incrementAndGet()).onClose(() -> child.set(counter.get()));
   }
 
@@ -1338,7 +1329,7 @@ public final class ActionProcessor
   }
 
   public long purge(Filter... filters) {
-    final Set<Action> deadActions =
+    final var deadActions =
         startStream(filters)
             .peek(e -> stateCount.labels(e.getValue().lastState.name(), e.getKey().type()).dec())
             .map(Entry::getKey)
@@ -1377,7 +1368,7 @@ public final class ActionProcessor
       throw new IllegalArgumentException(name + " must be paired.");
     }
     final Map<String, String> output = new TreeMap<>();
-    for (int i = 0; i < input.length; i += 2) {
+    for (var i = 0; i < input.length; i += 2) {
       if (input[i + 1] != null) {
         output.put(input[i], input[i + 1]);
       }
@@ -1416,20 +1407,19 @@ public final class ActionProcessor
   }
 
   public ArrayNode stats(ObjectMapper mapper, boolean wait, Filter... filters) {
-    final List<Entry<Action, Information>> actions =
-        startStream(filters).collect(Collectors.toList());
-    final ArrayNode array = mapper.createArrayNode();
-    final ObjectNode message = array.addObject();
+    final var actions = startStream(filters).collect(Collectors.toList());
+    final var array = mapper.createArrayNode();
+    final var message = array.addObject();
     message.put("type", "table");
-    final ArrayNode table = message.putArray("table");
+    final var table = message.putArray("table");
 
-    final ObjectNode total = table.addObject();
+    final var total = table.addObject();
     total.put("title", "Total");
     total.put("value", actions.size());
     total.putNull("kind");
 
-    final Instant start = Instant.now();
-    for (final Runnable computeStat :
+    final var start = Instant.now();
+    for (final var computeStat :
         new Runnable[] {
           () -> propertySummary(table, ACTION_STATE, actions),
           () -> propertySummary(table, TYPE, actions),
@@ -1453,7 +1443,7 @@ public final class ActionProcessor
           () -> histogramByProperty(array, 100, actions, SOURCE_FILE, INSTANT_BIN, EXTERNAL),
         }) {
       if (!wait && Duration.between(start, Instant.now()).toMillis() >= 5000) {
-        final ObjectNode budget = array.addObject();
+        final var budget = array.addObject();
         budget.put("type", "text");
         budget.put("value", "Too many actions to compute all statistics.");
         break;
@@ -1528,7 +1518,7 @@ public final class ActionProcessor
    */
   @Override
   public Filter tags(Stream<String> tags) {
-    final Set<String> tagSet = tags.collect(Collectors.toSet());
+    final var tagSet = tags.collect(Collectors.toSet());
     return new Filter() {
       @Override
       protected boolean check(Action action, Information info) {
@@ -1567,7 +1557,7 @@ public final class ActionProcessor
   /** Check that an action has one of the types specified */
   @Override
   public Filter type(Stream<String> types) {
-    final Set<String> set = types.collect(Collectors.toSet());
+    final var set = types.collect(Collectors.toSet());
     return new Filter() {
 
       @Override
@@ -1579,8 +1569,8 @@ public final class ActionProcessor
 
   private void update() {
 
-    final Instant now = Instant.now();
-    final List<Entry<Action, Information>> candidates =
+    final var now = Instant.now();
+    final var candidates =
         actions.entrySet().stream()
             .sorted(Comparator.comparingInt(e -> e.getKey().priority()))
             .filter(
@@ -1590,39 +1580,39 @@ public final class ActionProcessor
                         && !entry.getValue().updateInProgress
                         && Duration.between(entry.getValue().lastChecked, now).toMinutes()
                             >= Math.max(10, entry.getKey().retryMinutes()))
-            .limit(1000 * ACTION_PERFORM_THREADS - currentRunningActions.get())
+            .limit(1000L * ACTION_PERFORM_THREADS - currentRunningActions.get())
             .collect(Collectors.toList());
     currentRunningActionsGauge.set(currentRunningActions.addAndGet(candidates.size()));
 
-    for (final Entry<Action, Information> entry : candidates) {
+    for (final var entry : candidates) {
       entry.getValue().updateInProgress = true;
-      final String location =
+      final var location =
           entry.getValue().locations.stream()
               .map(Object::toString)
               .sorted()
               .collect(Collectors.joining(" "));
-      final Runnable queuedInflight =
+      final var queuedInflight =
           Server.inflight(
               String.format(
                   "Waiting to perform %s action %s from %s",
                   entry.getKey().type(), entry.getValue().id, location));
-      final CompletableFuture<Boolean> timeoutFuture = new CompletableFuture<>();
-      final CompletableFuture<Boolean> workFuture =
+      final var timeoutFuture = new CompletableFuture<Boolean>();
+      final var workFuture =
           CompletableFuture.supplyAsync(
               () -> {
                 // We wait to schedule the timeout for when the action is actually
                 // starting
-                final Duration timeout = entry.getKey().performTimeout().abs();
+                final var timeout = entry.getKey().performTimeout().abs();
                 timeoutExecutor.schedule(
                     () -> timeoutFuture.complete(true),
                     Math.max(timeout.getSeconds(), 60),
                     TimeUnit.SECONDS);
                 entry.getValue().lastChecked = Instant.now();
-                final ActionState oldState = entry.getValue().lastState;
-                final boolean oldThrown = entry.getValue().thrown != null;
+                final var oldState = entry.getValue().lastState;
+                final var oldThrown = entry.getValue().thrown != null;
                 queuedInflight.run();
-                try (AutoCloseable timer = actionPerformTime.start(entry.getKey().type());
-                    AutoCloseable inflight =
+                try (var timer = actionPerformTime.start(entry.getKey().type());
+                    var inflight =
                         Server.inflightCloseable(
                             String.format(
                                 "Performing %s action %s from %s",
@@ -1664,7 +1654,7 @@ public final class ActionProcessor
     }
     scheduledInRound.set(candidates.size());
     lastRun.setToCurrentTime();
-    final Map<Pair<ActionState, String>, Optional<Instant>> lastTransitions =
+    final var lastTransitions =
         actions.entrySet().stream()
             .collect(
                 Collectors.groupingBy(
@@ -1673,9 +1663,9 @@ public final class ActionProcessor
                     Collectors.mapping(
                         (Entry<Action, Information> e) -> e.getValue().lastStateTransition,
                         Collectors.maxBy(Comparator.naturalOrder()))));
-    for (final String actionType : knownActionTypes) {
-      for (final ActionState state : ActionState.values()) {
-        final Instant time =
+    for (final var actionType : knownActionTypes) {
+      for (final var state : ActionState.values()) {
+        final var time =
             lastTransitions
                 .getOrDefault(new Pair<>(state, actionType), Optional.empty())
                 .orElse(null);
@@ -1689,8 +1679,8 @@ public final class ActionProcessor
   }
 
   private void updateAlerts() {
-    try (AutoCloseable lock = alertLock.acquire();
-        AutoCloseable inflight = Server.inflightCloseable("Push alerts")) {
+    try (var lock = alertLock.acquire();
+        var inflight = Server.inflightCloseable("Push alerts")) {
       currentAlerts =
           RuntimeSupport.MAPPER.writeValueAsString(
               alerts.values().stream().filter(Alert::isLive).collect(Collectors.toList()));

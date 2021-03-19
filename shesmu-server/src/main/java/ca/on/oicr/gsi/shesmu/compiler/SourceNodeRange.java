@@ -57,7 +57,10 @@ public class SourceNodeRange extends SourceNode {
 
   @Override
   public EcmaStreamBuilder render(EcmaScriptRenderer renderer) {
-    return renderer.buildStream(Imyhat.INTEGER, String.format("$runtime.range(%s, %s)", start.renderEcma(renderer), end.renderEcma(renderer)));
+    return renderer.buildStream(
+        Imyhat.INTEGER,
+        String.format(
+            "$runtime.range(%s, %s)", start.renderEcma(renderer), end.renderEcma(renderer)));
   }
 
   @Override
@@ -79,7 +82,7 @@ public class SourceNodeRange extends SourceNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = start.typeCheck(errorHandler) & end.typeCheck(errorHandler);
+    var ok = start.typeCheck(errorHandler) & end.typeCheck(errorHandler);
     if (ok) {
       if (!start.type().isSame(Imyhat.INTEGER)) {
         start.typeError(Imyhat.INTEGER, start.type(), errorHandler);

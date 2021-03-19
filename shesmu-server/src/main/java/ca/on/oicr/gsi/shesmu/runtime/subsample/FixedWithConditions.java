@@ -17,10 +17,10 @@ public class FixedWithConditions<T> extends Subsampler<T> {
 
   @Override
   protected int subsample(List<T> input, List<T> output) {
-    final int position = parent.subsample(input, output);
+    final var position = parent.subsample(input, output);
     int counter;
     for (counter = 0; position + counter < input.size() && counter < numberOfItems; counter++) {
-      final T item = input.get(position + counter);
+      final var item = input.get(position + counter);
       if (!condition.test(item)) {
         break;
       }

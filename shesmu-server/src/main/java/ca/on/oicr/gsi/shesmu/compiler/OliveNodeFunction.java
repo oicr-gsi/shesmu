@@ -150,7 +150,7 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   @Override
   public void render(
       RootBuilder builder, Function<String, CallableDefinitionRenderer> definitions) {
-    final GeneratorAdapter methodGen =
+    final var methodGen =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, method, null, null, builder.classVisitor);
     methodGen.visitCode();
     methodGen.visitLineNumber(line, methodGen.mark());
@@ -177,7 +177,7 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   @Override
   public boolean resolve(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    final NameDefinitions defs =
+    final var defs =
         new NameDefinitions(
             Stream.concat(parameters.stream(), oliveCompilerServices.constants(false))
                 .collect(Collectors.toMap(Target::name, Function.identity(), (a, b) -> a)),
@@ -194,8 +194,7 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   @Override
   public boolean resolveTypes(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    return parameters
-            .stream()
+    return parameters.stream()
             .filter(p -> p.resolveTypes(oliveCompilerServices, errorHandler))
             .count()
         == parameters.size();
@@ -208,8 +207,8 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final OliveParameter parameter : parameters) {
+    var ok = true;
+    for (final var parameter : parameters) {
       if (parameter.type() == Imyhat.EMPTY || parameter.type() == Imyhat.NOTHING) {
         errorHandler.accept(
             String.format(

@@ -12,7 +12,7 @@ public enum Match {
   private final boolean stopOnPredicateMatches;
   private final String syntax;
 
-  private Match(
+  Match(
       String methodName,
       String syntax,
       boolean stopOnPredicateMatches,

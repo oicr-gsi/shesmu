@@ -11,8 +11,8 @@ import java.lang.annotation.Target;
 @Target(PARAMETER)
 public @interface ShesmuParameter {
   /** The description of the parameter */
-  public String description();
+  String description();
 
   /** The Shesmu type descriptor if it cannot be inferred automatically. */
-  public String type() default "";
+  String type() default "";
 }

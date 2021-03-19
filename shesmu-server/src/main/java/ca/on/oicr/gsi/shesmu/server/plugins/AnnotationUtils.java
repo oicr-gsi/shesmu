@@ -3,13 +3,12 @@ package ca.on.oicr.gsi.shesmu.server.plugins;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.regex.Matcher;
 
 public final class AnnotationUtils {
 
   public static String checkName(String annotationName, Method method) {
-    final String name = annotationName.isEmpty() ? method.getName() : annotationName;
-    final Matcher m = Parser.IDENTIFIER.matcher(name);
+    final var name = annotationName.isEmpty() ? method.getName() : annotationName;
+    final var m = Parser.IDENTIFIER.matcher(name);
     if (!m.matches()) {
       throw new IllegalArgumentException(
           String.format(
@@ -20,8 +19,8 @@ public final class AnnotationUtils {
   }
 
   public static String checkName(String annotationName, Field field) {
-    final String name = annotationName.isEmpty() ? field.getName() : annotationName;
-    final Matcher m = Parser.IDENTIFIER.matcher(name);
+    final var name = annotationName.isEmpty() ? field.getName() : annotationName;
+    final var m = Parser.IDENTIFIER.matcher(name);
     if (!m.matches()) {
       throw new IllegalArgumentException(
           String.format(

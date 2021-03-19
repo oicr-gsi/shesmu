@@ -36,7 +36,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
       new JarHashRepository<>();
 
   static {
-    for (GrouperDefinition definition : ServiceLoader.load(GrouperDefinition.class)) {
+    for (var definition : ServiceLoader.load(GrouperDefinition.class)) {
       GROUPER_HASHES.add(definition);
       GROUPERS.put(definition.name(), definition);
     }
@@ -79,8 +79,8 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
 
   @Override
   public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final GroupNode child : children) {
+    var ok = true;
+    for (final var child : children) {
       if (!child.isRead()) {
         ok = false;
         errorHandler.accept(
@@ -110,7 +110,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     final Set<String> whereInputs = new TreeSet<>();
     where.ifPresent(w -> w.collectFreeVariables(whereInputs, Flavour::isStream));
     final List<VariableInformation> inputVariables = new ArrayList<>();
-    for (int i = 0; i < inputExpressions.size(); i++) {
+    for (var i = 0; i < inputExpressions.size(); i++) {
       final Set<String> inputs = new TreeSet<>();
       inputExpressions.get(i).collectFreeVariables(inputs, Flavour::isStream);
       inputVariables.add(
@@ -129,8 +129,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
             true,
             Stream.concat(
                 Stream.concat(
-                    children
-                        .stream()
+                    children.stream()
                         .map(
                             child -> {
                               final Set<String> inputs = new TreeSet<>(whereInputs);
@@ -185,9 +184,9 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     children.forEach(group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
     discriminators.forEach(
         group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
-    LoadableValue[] grouperCaptures = new LoadableValue[inputExpressions.size()];
-    for (int i = 0; i < grouperCaptures.length; i++) {
-      final int local = i;
+    var grouperCaptures = new LoadableValue[inputExpressions.size()];
+    for (var i = 0; i < grouperCaptures.length; i++) {
+      final var local = i;
       switch (grouper.input(i).kind()) {
         case STATIC:
           grouperCaptures[i] =
@@ -216,7 +215,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
           inputExpressions
               .get(i)
               .collectFreeVariables(freeVariablesForLambda, Flavour::needsCapture);
-          LambdaBuilder lambda =
+          var lambda =
               new LambdaBuilder(
                   builder,
                   String.format("Grouper Function %d:%d %d", line, column, i),
@@ -226,7 +225,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                       .loadableValues()
                       .filter(value -> freeVariablesForLambda.contains(value.name()))
                       .toArray(LoadableValue[]::new));
-          final Renderer lambdaRenderer =
+          final var lambdaRenderer =
               lambda.renderer(oliveBuilder.currentType(), oliveBuilder::emitSigner);
           lambdaRenderer.methodGen().visitCode();
           inputExpressions.get(i).render(lambdaRenderer);
@@ -261,20 +260,20 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     switch (grouper.outputs()) {
       case 0:
         lambdaType = LambdaBuilder.supplier(A_BICONSUMER_TYPE);
-        outputBindings = Collections.emptyList();
+        outputBindings = List.of();
         break;
       case 1:
         lambdaType = LambdaBuilder.function(A_BICONSUMER_TYPE, typeForOutput(0));
-        outputBindings = Collections.singletonList(pairForOutput(0));
+        outputBindings = List.of(pairForOutput(0));
         break;
       case 2:
         lambdaType =
             LambdaBuilder.bifunction(A_BICONSUMER_TYPE, typeForOutput(0), typeForOutput(1));
-        outputBindings = Arrays.asList(pairForOutput(0), pairForOutput(1));
+        outputBindings = List.of(pairForOutput(0), pairForOutput(1));
         break;
       case 3:
         lambdaType = LambdaBuilder.trigrouper(typeForOutput(0), typeForOutput(1), typeForOutput(2));
-        outputBindings = Arrays.asList(pairForOutput(0), pairForOutput(1), pairForOutput(2));
+        outputBindings = List.of(pairForOutput(0), pairForOutput(1), pairForOutput(2));
         break;
       default:
         throw new UnsupportedOperationException(
@@ -283,7 +282,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                 grouper.outputs(), grouper.name()));
     }
     oliveBuilder.line(line);
-    final RegroupVariablesBuilder regroup =
+    final var regroup =
         oliveBuilder.regroupWithGrouper(
             line,
             column,
@@ -297,8 +296,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                 .toArray(LoadableValue[]::new));
 
     discriminators.forEach(d -> d.render(regroup));
-    final Regrouper regrouperForChildren =
-        where.map(w -> regroup.addWhere(w::render)).orElse(regroup);
+    final var regrouperForChildren = where.map(w -> regroup.addWhere(w::render)).orElse(regroup);
     children.forEach(group -> group.render(regrouperForChildren, builder));
     regroup.finish();
 
@@ -306,15 +304,14 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     // We have now thoroughly hosed equals and hashCode in the output. If the next clause was
     // another grouper and it tried to stick things in a hashmap, everything might be endless
     // suffering. So, we make a hidden 1:1 let clause to stop the chaos.
-    final Type rowType = oliveBuilder.currentType();
-    final LetBuilder let = oliveBuilder.let(line, column);
-    discriminators
-        .stream()
+    final var rowType = oliveBuilder.currentType();
+    final var let = oliveBuilder.let(line, column);
+    discriminators.stream()
         .flatMap(DiscriminatorNode::targets)
         .forEach(
             discriminator -> {
-              final Type type = discriminator.type().apply(TO_ASM);
-              final Method method = new Method(discriminator.name(), type, new Type[] {});
+              final var type = discriminator.type().apply(TO_ASM);
+              final var method = new Method(discriminator.name(), type, new Type[] {});
               let.add(
                   type,
                   discriminator.name(),
@@ -323,9 +320,9 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                     r.methodGen().invokeVirtual(rowType, method);
                   });
             });
-    for (GroupNode child : children) {
-      final Type type = child.type().apply(TO_ASM);
-      final Method method = new Method(child.name(), type, new Type[] {});
+    for (var child : children) {
+      final var type = child.type().apply(TO_ASM);
+      final var method = new Method(child.name(), type, new Type[] {});
       let.add(
           type,
           child.name(),
@@ -342,7 +339,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
       Consumer<String> errorHandler) {
-    final NameDefinitions defsPlusOutput =
+    final var defsPlusOutput =
         defs.bind(
             IntStream.range(0, grouper.outputs())
                 .mapToObj(
@@ -369,9 +366,9 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                           }
                         })
                 .collect(Collectors.toList()));
-    boolean ok = true;
-    final NameDefinitions staticDefs = defs.replaceStream(Stream.empty(), true);
-    for (int i = 0; i < inputExpressions.size(); i++) {
+    var ok = true;
+    final var staticDefs = defs.replaceStream(Stream.empty(), true);
+    for (var i = 0; i < inputExpressions.size(); i++) {
       final NameDefinitions inputDefs;
       switch (grouper.input(i).kind()) {
         case STATIC:
@@ -389,25 +386,22 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     }
     ok =
         ok
-            && children
-                        .stream()
+            && children.stream()
                         .filter(
                             child -> child.resolve(defsPlusOutput, defsPlusOutput, errorHandler))
                         .count()
                     == children.size()
-                & discriminators
-                        .stream()
+                & discriminators.stream()
                         .filter(discriminator -> discriminator.resolve(defs, errorHandler))
                         .count()
                     == discriminators.size();
 
     ok =
         ok
-            && children
-                .stream()
+            && children.stream()
                 .noneMatch(
                     group -> {
-                      final boolean isDuplicate =
+                      final var isDuplicate =
                           defs.get(group.name())
                               .filter(variable -> !variable.flavour().isStream())
                               .isPresent();
@@ -425,9 +419,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
             && Stream.concat(
                             discriminators.stream().flatMap(DiscriminatorNode::targets),
                             children.stream())
-                        .collect(Collectors.groupingBy(DefinedTarget::name))
-                        .entrySet()
-                        .stream()
+                        .collect(Collectors.groupingBy(DefinedTarget::name)).entrySet().stream()
                         .filter(e -> e.getValue().size() > 1)
                         .peek(
                             e ->
@@ -437,8 +429,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                                         line,
                                         column,
                                         e.getKey(),
-                                        e.getValue()
-                                            .stream()
+                                        e.getValue().stream()
                                             .sorted(
                                                 Comparator.comparingInt(DefinedTarget::line)
                                                     .thenComparingInt(DefinedTarget::column))
@@ -486,8 +477,8 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     inputPositions =
         IntStream.range(0, grouper.inputs())
             .collect(TreeMap::new, (m, i) -> m.put(grouper.input(i).name(), i), Map::putAll);
-    boolean ok = true;
-    for (Pair<String, ExpressionNode> inputPair : rawInputExpressions) {
+    var ok = true;
+    for (var inputPair : rawInputExpressions) {
       final int index = inputPositions.getOrDefault(inputPair.first(), -1);
       if (index == -1) {
         errorHandler.accept(
@@ -508,21 +499,18 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
 
     ok =
         ok
-            && children
-                        .stream()
+            && children.stream()
                         .filter(
                             group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
                         .count()
                     == children.size()
-                & inputExpressions
-                        .stream()
+                & inputExpressions.stream()
                         .filter(
                             expression ->
                                 expression.resolveDefinitions(oliveCompilerServices, errorHandler))
                         .count()
                     == inputExpressions.size()
-                & discriminators
-                        .stream()
+                & discriminators.stream()
                         .filter(
                             group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
                         .count()
@@ -536,19 +524,18 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
 
   @Override
   public final boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok =
+    var ok =
         inputExpressions.stream().filter(expression -> expression.typeCheck(errorHandler)).count()
             == inputExpressions.size();
 
     ok =
         ok
-            && discriminators
-                    .stream()
+            && discriminators.stream()
                     .filter(discriminator -> discriminator.typeCheck(errorHandler))
                     .count()
                 == discriminators.size();
     if (ok) {
-      for (int i = 0; i < inputExpressions.size(); i++) {
+      for (var i = 0; i < inputExpressions.size(); i++) {
         if (!grouper.input(i).type().check(typeVariables, inputExpressions.get(i).type())) {
           inputExpressions
               .get(i)
@@ -570,7 +557,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
             && where
                 .map(
                     w -> {
-                      boolean whereOk = w.typeCheck(errorHandler);
+                      var whereOk = w.typeCheck(errorHandler);
                       if (whereOk) {
                         if (!w.type().isSame(Imyhat.BOOLEAN)) {
                           w.typeError(Imyhat.BOOLEAN, w.type(), errorHandler);

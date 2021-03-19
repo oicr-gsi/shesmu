@@ -2,11 +2,10 @@ package ca.on.oicr.gsi.shesmu.json;
 
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.Collections;
 import java.util.Map;
 
 public class Configuration {
-  private Map<String, JsonNode> defaults = Collections.emptyMap();
+  private Map<String, JsonNode> defaults = Map.of();
   private boolean missingUsesDefaults;
   private Map<String, Imyhat> types;
   private Map<String, Map<String, JsonNode>> values;

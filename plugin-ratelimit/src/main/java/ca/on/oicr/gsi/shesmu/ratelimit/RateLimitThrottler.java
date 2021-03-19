@@ -13,14 +13,13 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 import org.kohsuke.MetaInfServices;
 
 @MetaInfServices
 public class RateLimitThrottler extends PluginFileType<RateLimitThrottler.TokenBucket> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  class TokenBucket extends JsonPluginFile<RateLimitConfiguration> {
+  static class TokenBucket extends JsonPluginFile<RateLimitConfiguration> {
 
     private int capacity;
 
@@ -32,7 +31,7 @@ public class RateLimitThrottler extends PluginFileType<RateLimitThrottler.TokenB
       super(fileName, instanceName, MAPPER, RateLimitConfiguration.class);
     }
 
-    public void configuration(SectionRenderer renderer) throws XMLStreamException {
+    public void configuration(SectionRenderer renderer) {
       renderer.line("Capacity", Integer.toString(capacity));
       renderer.line("Regeneration delay (ms)", Integer.toString(delay));
     }
@@ -42,7 +41,7 @@ public class RateLimitThrottler extends PluginFileType<RateLimitThrottler.TokenB
       if (!services.contains(name())) {
         return Stream.empty();
       }
-      final long newTokens = Duration.between(lastTime, Instant.now()).toMillis() / delay;
+      final var newTokens = Duration.between(lastTime, Instant.now()).toMillis() / delay;
       lastTime = lastTime.plusMillis(delay * newTokens);
       tokens = Math.min(tokens + newTokens, capacity);
       tokenCount.labels(name()).set(tokens);

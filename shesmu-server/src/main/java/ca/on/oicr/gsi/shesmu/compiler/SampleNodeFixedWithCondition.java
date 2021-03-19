@@ -40,7 +40,7 @@ public class SampleNodeFixedWithCondition extends SampleNode {
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     limitExpression.collectFreeVariables(names, predicate);
-    final List<String> remove =
+    final var remove =
         definedNames.stream().filter(name -> !names.contains(name)).collect(Collectors.toList());
     conditionExpression.collectFreeVariables(names, predicate);
     names.removeAll(remove);
@@ -74,7 +74,7 @@ public class SampleNodeFixedWithCondition extends SampleNode {
       Renderer renderer, int previousLocal, Imyhat currentType, LoadableConstructor name) {
     final Set<String> freeVariables = new HashSet<>();
     conditionExpression.collectFreeVariables(freeVariables, Flavour::needsCapture);
-    final LambdaBuilder builder =
+    final var builder =
         new LambdaBuilder(
             renderer.root(),
             String.format(
@@ -87,8 +87,8 @@ public class SampleNodeFixedWithCondition extends SampleNode {
                 .filter(v -> freeVariables.contains(v.name()))
                 .toArray(LoadableValue[]::new));
 
-    final Renderer conditionRenderer = builder.renderer(renderer.signerEmitter());
-    final int argCount = conditionRenderer.methodGen().getArgumentTypes().length;
+    final var conditionRenderer = builder.renderer(renderer.signerEmitter());
+    final var argCount = conditionRenderer.methodGen().getArgumentTypes().length;
     name.create(r -> r.methodGen().loadArg(argCount - 1))
         .forEach(v -> conditionRenderer.define(v.name(), v));
 
@@ -127,7 +127,7 @@ public class SampleNodeFixedWithCondition extends SampleNode {
   @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
-    final boolean ok =
+    final var ok =
         limitExpression.resolve(defs, errorHandler)
             & conditionExpression.resolve(defs.bind(name), errorHandler);
     definedNames = name.targets().map(Target::name).collect(Collectors.toList());
@@ -144,8 +144,8 @@ public class SampleNodeFixedWithCondition extends SampleNode {
   @Override
   public boolean typeCheck(Imyhat type, Consumer<String> errorHandler) {
     this.type = type;
-    boolean limitok = limitExpression.typeCheck(errorHandler);
-    boolean conditionok = conditionExpression.typeCheck(errorHandler);
+    var limitok = limitExpression.typeCheck(errorHandler);
+    var conditionok = conditionExpression.typeCheck(errorHandler);
     if (limitok && !limitExpression.type().isSame(Imyhat.INTEGER)) {
       limitExpression.typeError(Imyhat.INTEGER, limitExpression.type(), errorHandler);
       limitok = false;

@@ -56,8 +56,7 @@ public class ExpressionNodeOptionalUnbox extends ExpressionNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    final Optional<TargetWithContext> candidate =
-        expressionCompilerServices.captureOptional(expression);
+    final var candidate = expressionCompilerServices.captureOptional(expression);
     if (candidate.isPresent()) {
       target = candidate.get();
       return true;

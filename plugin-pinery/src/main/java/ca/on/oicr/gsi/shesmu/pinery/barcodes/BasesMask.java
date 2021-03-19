@@ -189,10 +189,7 @@ public class BasesMask {
     if (!Objects.equals(this.readTwoIncludeLength, other.readTwoIncludeLength)) {
       return false;
     }
-    if (!Objects.equals(this.readTwoIgnoreLength, other.readTwoIgnoreLength)) {
-      return false;
-    }
-    return true;
+    return Objects.equals(this.readTwoIgnoreLength, other.readTwoIgnoreLength);
   }
 
   public static BasesMask fromString(String basesMaskString) {
@@ -251,44 +248,36 @@ public class BasesMask {
           + '}';
     }
 
-    public BasesMaskBuilder setReadOneIncludeLength(Integer readOneIncludeLength) {
+    public void setReadOneIncludeLength(Integer readOneIncludeLength) {
       this.readOneIncludeLength = readOneIncludeLength;
-      return this;
     }
 
-    public BasesMaskBuilder setReadOneIgnoreLength(Integer readOneIgnoreLength) {
+    public void setReadOneIgnoreLength(Integer readOneIgnoreLength) {
       this.readOneIgnoreLength = readOneIgnoreLength;
-      return this;
     }
 
-    public BasesMaskBuilder setIndexOneIncludeLength(Integer indexOneIncludeLength) {
+    public void setIndexOneIncludeLength(Integer indexOneIncludeLength) {
       this.indexOneIncludeLength = indexOneIncludeLength;
-      return this;
     }
 
-    public BasesMaskBuilder setIndexOneIgnoreLength(Integer indexOneIgnoreLength) {
+    public void setIndexOneIgnoreLength(Integer indexOneIgnoreLength) {
       this.indexOneIgnoreLength = indexOneIgnoreLength;
-      return this;
     }
 
-    public BasesMaskBuilder setIndexTwoIncludeLength(Integer indexTwoIncludeLength) {
+    public void setIndexTwoIncludeLength(Integer indexTwoIncludeLength) {
       this.indexTwoIncludeLength = indexTwoIncludeLength;
-      return this;
     }
 
-    public BasesMaskBuilder setIndexTwoIgnoreLength(Integer indexTwoIgnoreLength) {
+    public void setIndexTwoIgnoreLength(Integer indexTwoIgnoreLength) {
       this.indexTwoIgnoreLength = indexTwoIgnoreLength;
-      return this;
     }
 
-    public BasesMaskBuilder setReadTwoIncludeLength(Integer readTwoIncludeLength) {
+    public void setReadTwoIncludeLength(Integer readTwoIncludeLength) {
       this.readTwoIncludeLength = readTwoIncludeLength;
-      return this;
     }
 
-    public BasesMaskBuilder setReadTwoIgnoreLength(Integer readTwoIgnoreLength) {
+    public void setReadTwoIgnoreLength(Integer readTwoIgnoreLength) {
       this.readTwoIgnoreLength = readTwoIgnoreLength;
-      return this;
     }
 
     public BasesMask createBasesMask() {

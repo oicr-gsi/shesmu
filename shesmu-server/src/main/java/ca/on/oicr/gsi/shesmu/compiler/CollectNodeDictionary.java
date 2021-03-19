@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
@@ -25,7 +24,7 @@ public class CollectNodeDictionary extends CollectNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
-    final List<String> remove =
+    final var remove =
         definedNames.stream().filter(name -> !names.contains(name)).collect(Collectors.toList());
     key.collectFreeVariables(names, predicate);
     value.collectFreeVariables(names, predicate);
@@ -43,7 +42,7 @@ public class CollectNodeDictionary extends CollectNode {
     final Set<String> freeVariables = new HashSet<>();
     key.collectFreeVariables(freeVariables, Flavour::needsCapture);
     value.collectFreeVariables(freeVariables, Flavour::needsCapture);
-    final Pair<Renderer, Renderer> renderer =
+    final var renderer =
         builder.dictionary(
             line(),
             column(),
@@ -81,9 +80,8 @@ public class CollectNodeDictionary extends CollectNode {
   @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
-    final NameDefinitions innerDefs = defs.bind(name);
-    final boolean ok =
-        key.resolve(innerDefs, errorHandler) & value.resolve(innerDefs, errorHandler);
+    final var innerDefs = defs.bind(name);
+    final var ok = key.resolve(innerDefs, errorHandler) & value.resolve(innerDefs, errorHandler);
     definedNames = name.targets().map(Target::name).collect(Collectors.toList());
     return ok;
   }

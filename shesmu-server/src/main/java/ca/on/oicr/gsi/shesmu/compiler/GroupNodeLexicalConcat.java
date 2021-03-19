@@ -77,8 +77,8 @@ public final class GroupNodeLexicalConcat extends GroupNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final ExpressionNode e : new ExpressionNode[] {expression, delimiter}) {
+    var ok = true;
+    for (final var e : new ExpressionNode[] {expression, delimiter}) {
       if (e.typeCheck(errorHandler)) {
         if (!e.type().isSame(Imyhat.STRING)) {
           e.typeError(Imyhat.STRING, e.type(), errorHandler);

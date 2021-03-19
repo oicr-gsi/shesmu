@@ -53,8 +53,7 @@ public class ExpressionNodeString extends ExpressionNode {
   @Override
   public void render(Renderer renderer) {
     if (parts.stream().allMatch(StringNode::isPassive)) {
-      final String renderedString =
-          parts.stream().map(StringNode::text).collect(Collectors.joining());
+      final var renderedString = parts.stream().map(StringNode::text).collect(Collectors.joining());
       renderer.methodGen().push(renderedString);
     } else {
       renderer.methodGen().newInstance(A_STRINGBUILDER_TYPE);

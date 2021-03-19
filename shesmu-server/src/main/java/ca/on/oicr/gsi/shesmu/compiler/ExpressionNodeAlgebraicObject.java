@@ -6,7 +6,6 @@ import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -64,7 +63,7 @@ public class ExpressionNodeAlgebraicObject extends ExpressionNode {
   @Override
   public void render(Renderer renderer) {
     renderer.mark(line());
-    final Map<String, Integer> indices =
+    final var indices =
         fields.stream()
             .flatMap(ObjectElementNode::names)
             .map(Pair::first)
@@ -77,7 +76,7 @@ public class ExpressionNodeAlgebraicObject extends ExpressionNode {
     renderer.methodGen().push(name);
     renderer.methodGen().push(indices.size());
     renderer.methodGen().newArray(A_OBJECT_TYPE);
-    for (final ObjectElementNode element : fields) {
+    for (final var element : fields) {
       element.render(renderer, indices::get);
     }
 
@@ -108,9 +107,9 @@ public class ExpressionNodeAlgebraicObject extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok =
+    var ok =
         fields.stream().filter(field -> field.typeCheck(errorHandler)).count() == fields.size();
-    final Map<String, Long> fieldCounts =
+    final var fieldCounts =
         fields.stream()
             .flatMap(ObjectElementNode::names)
             .map(Pair::first)

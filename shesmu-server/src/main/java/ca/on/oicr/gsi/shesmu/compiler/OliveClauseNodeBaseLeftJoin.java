@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
@@ -123,8 +122,8 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
 
   @Override
   public final boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final GroupNode child : children) {
+    var ok = true;
+    for (final var child : children) {
       if (!child.isRead()) {
         ok = false;
         errorHandler.accept(
@@ -152,9 +151,8 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
 
   @Override
   public final Stream<OliveClauseRow> dashboard() {
-    final Set<String> joinedNames =
-        innerVariables
-            .stream()
+    final var joinedNames =
+        innerVariables.stream()
             .map(Target::name)
             .map(variablePrefix::concat)
             .collect(Collectors.toSet());
@@ -168,8 +166,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
             true,
             true,
             Stream.concat(
-                children
-                    .stream()
+                children.stream()
                     .map(
                         child -> {
                           final Set<String> inputs = new TreeSet<>(whereInputs);
@@ -178,8 +175,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
                           return new VariableInformation(
                               child.name(), child.type(), inputs.stream(), Behaviour.DEFINITION);
                         }),
-                discriminators
-                    .stream()
+                discriminators.stream()
                     .map(
                         discriminator ->
                             new VariableInformation(
@@ -229,8 +225,8 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
       innerKey.collectFreeVariables(innerSignables, Flavour.STREAM_SIGNABLE::equals);
     }
 
-    final String prefix = String.format("LeftJoin %d:%d", line, column);
-    final JoinInputSource inputSource =
+    final var prefix = String.format("LeftJoin %d:%d", line, column);
+    final var inputSource =
         source.render(
             oliveBuilder,
             definitions,
@@ -240,17 +236,20 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
             innerSignables::contains);
 
     oliveBuilder.line(line);
-    final Pair<JoinBuilder, RegroupVariablesBuilder> leftJoin =
+    final var leftJoin =
         oliveBuilder.leftJoin(
             line,
             column,
             intersection(),
             inputSource,
             outerKey.type(),
-            (signatureDefinition, renderer) -> {
-              BaseOliveBuilder.renderSigner(
-                  oliveBuilder.owner, inputSource.format(), prefix, signatureDefinition, renderer);
-            },
+            (signatureDefinition, renderer) ->
+                BaseOliveBuilder.renderSigner(
+                    oliveBuilder.owner,
+                    inputSource.format(),
+                    prefix,
+                    signatureDefinition,
+                    renderer),
             oliveBuilder
                 .loadableValues()
                 .filter(value -> freeVariables.contains(value.name()))
@@ -272,26 +271,25 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
     leftJoin.first().finish();
 
     discriminators.forEach(
-        discriminator -> {
-          leftJoin
-              .second()
-              .addKey(
-                  discriminator.type().apply(TypeUtils.TO_ASM),
-                  discriminator.name(),
-                  context -> {
-                    context.loadStream();
-                    context
-                        .methodGen()
-                        .invokeVirtual(
-                            context.streamType(),
-                            new Method(
-                                discriminator.name(),
-                                discriminator.type().apply(TypeUtils.TO_ASM),
-                                new Type[] {}));
-                  });
-        });
+        discriminator ->
+            leftJoin
+                .second()
+                .addKey(
+                    discriminator.type().apply(TypeUtils.TO_ASM),
+                    discriminator.name(),
+                    context -> {
+                      context.loadStream();
+                      context
+                          .methodGen()
+                          .invokeVirtual(
+                              context.streamType(),
+                              new Method(
+                                  discriminator.name(),
+                                  discriminator.type().apply(TypeUtils.TO_ASM),
+                                  new Type[] {}));
+                    }));
 
-    final Regrouper regrouper =
+    final var regrouper =
         where.map(w -> leftJoin.second().addWhere(w::render)).orElse(leftJoin.second());
     children.forEach(group -> group.render(regrouper, builder));
 
@@ -305,21 +303,20 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
       Consumer<String> errorHandler) {
-    final Stream<? extends Target> innerVariables =
+    final var innerVariables =
         source.resolve("LeftJoin", oliveCompilerServices, defs, errorHandler);
     if (innerVariables == null) {
       return defs.fail(false);
     }
     this.innerVariables = innerVariables.collect(Collectors.toList());
 
-    final Set<String> newNames =
-        this.innerVariables
-            .stream()
+    final var newNames =
+        this.innerVariables.stream()
             .map(Target::name)
             .map(variablePrefix::concat)
             .collect(Collectors.toSet());
 
-    final List<String> duplicates =
+    final var duplicates =
         defs.stream()
             .filter(n -> n.flavour().isStream() && newNames.contains(n.name()))
             .map(Target::name)
@@ -355,12 +352,11 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
             .filter(t -> t.flavour().isStream() && t.flavour() != Flavour.STREAM_SIGNATURE)
             .collect(Collectors.toList());
 
-    final NameDefinitions joinedDefs =
+    final var joinedDefs =
         defs.replaceStream(
             Stream.concat(
                 discriminators.stream(),
-                this.innerVariables
-                    .stream()
+                this.innerVariables.stream()
                     .map(
                         v ->
                             v.name().contains(Parser.NAMESPACE_SEPARATOR)
@@ -368,12 +364,11 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
                                 : new PrefixedTarget(v))),
             true);
 
-    final boolean ok =
-        children
-                    .stream()
+    final var ok =
+        children.stream()
                     .filter(
                         group -> {
-                          final boolean isDuplicate =
+                          final var isDuplicate =
                               discriminators.stream().anyMatch(t -> t.name().equals(group.name()));
                           if (isDuplicate) {
                             errorHandler.accept(
@@ -388,8 +383,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
             & outerKey.resolve(defs, errorHandler)
             & innerKey.resolve(
                 defs.replaceStream(
-                    this.innerVariables
-                        .stream()
+                    this.innerVariables.stream()
                         .flatMap(
                             v -> {
                               if (v instanceof InputVariable) {
@@ -411,9 +405,8 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
   @Override
   public final boolean resolveDefinitions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    boolean ok =
-        children
-                .stream()
+    var ok =
+        children.stream()
                 .filter(group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == children.size();
@@ -425,8 +418,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
               line,
               column,
               syntax(),
-              children
-                  .stream()
+              children.stream()
                   .map(GroupNode::name)
                   .sorted()
                   .distinct()
@@ -443,7 +435,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
 
   @Override
   public final boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok =
+    var ok =
         source.typeCheck(errorHandler)
             & outerKey.typeCheck(errorHandler)
             & innerKey.typeCheck(errorHandler);
@@ -466,7 +458,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
         & where
             .map(
                 w -> {
-                  boolean whereOk = w.typeCheck(errorHandler);
+                  var whereOk = w.typeCheck(errorHandler);
                   if (whereOk) {
                     if (!w.type().isSame(Imyhat.BOOLEAN)) {
                       w.typeError(Imyhat.BOOLEAN, w.type(), errorHandler);

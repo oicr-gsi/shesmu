@@ -16,8 +16,8 @@ import java.util.stream.Stream;
 
 public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T> {
   public static <R> AlgebraicGuarantee<R> empty(String name, R result) {
-    final Imyhat tupleType = Imyhat.algebraicTuple(name);
-    return new AlgebraicGuarantee<R>() {
+    final var tupleType = Imyhat.algebraicTuple(name);
+    return new AlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.empty(name);
@@ -56,8 +56,8 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
   }
 
   public static <R> AlgebraicGuarantee<R> emptyFactory(String name, Supplier<R> result) {
-    final Imyhat tupleType = Imyhat.algebraicTuple(name);
-    return new AlgebraicGuarantee<R>() {
+    final var tupleType = Imyhat.algebraicTuple(name);
+    return new AlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.empty(name);
@@ -100,9 +100,9 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       Function<? super T, ? extends R> convert,
       String paramName,
       TypeGuarantee<T> param) {
-    final Imyhat tupleType =
+    final var tupleType =
         Imyhat.algebraicObject(name, Stream.of(new Pair<>(paramName, param.type())));
-    return new AlgebraicGuarantee<R>() {
+    return new AlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.object(name, Stream.of(new Pair<>(paramName, param.type())));
@@ -121,7 +121,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       @Override
       protected boolean checkObject(Stream<Pair<String, Imyhat>> contents) {
         return contents.allMatch(
-            new Predicate<Pair<String, Imyhat>>() {
+            new Predicate<>() {
               int index;
 
               @Override
@@ -161,14 +161,14 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       TypeGuarantee<T> first,
       String secondName,
       TypeGuarantee<U> second) {
-    final Imyhat tupleType =
+    final var tupleType =
         Imyhat.algebraicObject(
             name,
             Stream.of(new Pair<>(firstName, first.type()), new Pair<>(secondName, second.type())));
     if (firstName.compareTo(secondName) >= 0) {
       throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
     }
-    return new AlgebraicGuarantee<R>() {
+    return new AlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.object(
@@ -184,7 +184,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       @Override
       protected boolean checkObject(Stream<Pair<String, Imyhat>> contents) {
         return contents.allMatch(
-            new Predicate<Pair<String, Imyhat>>() {
+            new Predicate<>() {
               int index;
 
               @Override
@@ -234,7 +234,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       TypeGuarantee<U> second,
       String thirdName,
       TypeGuarantee<V> third) {
-    final Imyhat tupleType =
+    final var tupleType =
         Imyhat.algebraicObject(
             name,
             Stream.of(
@@ -244,7 +244,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
     if (firstName.compareTo(secondName) >= 0 || secondName.compareTo(thirdName) >= 0) {
       throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
     }
-    return new AlgebraicGuarantee<R>() {
+    return new AlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.object(
@@ -263,7 +263,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       @Override
       protected boolean checkObject(Stream<Pair<String, Imyhat>> contents) {
         return contents.allMatch(
-            new Predicate<Pair<String, Imyhat>>() {
+            new Predicate<>() {
               int index;
 
               @Override
@@ -319,7 +319,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       TypeGuarantee<V> third,
       String fourthName,
       TypeGuarantee<W> fourth) {
-    final Imyhat tupleType =
+    final var tupleType =
         Imyhat.algebraicObject(
             name,
             Stream.of(
@@ -332,7 +332,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
         || thirdName.compareTo(fourthName) >= 0) {
       throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
     }
-    return new AlgebraicGuarantee<R>() {
+    return new AlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.object(
@@ -352,7 +352,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       @Override
       protected boolean checkObject(Stream<Pair<String, Imyhat>> contents) {
         return contents.allMatch(
-            new Predicate<Pair<String, Imyhat>>() {
+            new Predicate<>() {
               int index;
 
               @Override
@@ -416,7 +416,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       TypeGuarantee<W> fourth,
       String fifthName,
       TypeGuarantee<X> fifth) {
-    final Imyhat tupleType =
+    final var tupleType =
         Imyhat.algebraicObject(
             name,
             Stream.of(
@@ -431,7 +431,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
         || fourthName.compareTo(fifthName) >= 0) {
       throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
     }
-    return new AlgebraicGuarantee<R>() {
+    return new AlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.object(
@@ -452,7 +452,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       @Override
       protected boolean checkObject(Stream<Pair<String, Imyhat>> contents) {
         return contents.allMatch(
-            new Predicate<Pair<String, Imyhat>>() {
+            new Predicate<>() {
               int index;
 
               @Override
@@ -509,8 +509,8 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
 
   public static <R, T> AlgebraicGuarantee<R> tuple(
       String name, Function<? super T, ? extends R> convert, TypeGuarantee<T> param) {
-    final Imyhat tupleType = Imyhat.algebraicTuple(name, param.type());
-    return new AlgebraicGuarantee<R>() {
+    final var tupleType = Imyhat.algebraicTuple(name, param.type());
+    return new AlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.tuple(name, Stream.of(param.type()));
@@ -529,7 +529,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       @Override
       protected boolean checkTuple(Stream<Imyhat> contents) {
         return contents.allMatch(
-            new Predicate<Imyhat>() {
+            new Predicate<>() {
               int index;
 
               @Override
@@ -566,8 +566,8 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       Pack2<? super T, ? super U, ? extends R> convert,
       TypeGuarantee<T> first,
       TypeGuarantee<U> second) {
-    final Imyhat tupleType = Imyhat.algebraicTuple(name, first.type(), second.type());
-    return new AlgebraicGuarantee<R>() {
+    final var tupleType = Imyhat.algebraicTuple(name, first.type(), second.type());
+    return new AlgebraicGuarantee<>() {
       @Override
       protected boolean checkEmpty() {
         return false;
@@ -581,7 +581,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       @Override
       protected boolean checkTuple(Stream<Imyhat> contents) {
         return contents.allMatch(
-            new Predicate<Imyhat>() {
+            new Predicate<>() {
               int index;
 
               @Override
@@ -626,8 +626,8 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       TypeGuarantee<T> first,
       TypeGuarantee<U> second,
       TypeGuarantee<V> third) {
-    final Imyhat tupleType = Imyhat.algebraicTuple(name, first.type(), second.type(), third.type());
-    return new AlgebraicGuarantee<R>() {
+    final var tupleType = Imyhat.algebraicTuple(name, first.type(), second.type(), third.type());
+    return new AlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.tuple(name, Stream.of(first.type(), second.type(), third.type()));
@@ -646,7 +646,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       @Override
       protected boolean checkTuple(Stream<Imyhat> contents) {
         return contents.allMatch(
-            new Predicate<Imyhat>() {
+            new Predicate<>() {
               int index;
 
               @Override
@@ -690,9 +690,9 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       TypeGuarantee<U> second,
       TypeGuarantee<V> third,
       TypeGuarantee<W> fourth) {
-    final Imyhat tupleType =
+    final var tupleType =
         Imyhat.algebraicTuple(name, first.type(), second.type(), third.type(), fourth.type());
-    return new AlgebraicGuarantee<R>() {
+    return new AlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.tuple(
@@ -712,7 +712,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       @Override
       protected boolean checkTuple(Stream<Imyhat> contents) {
         return contents.allMatch(
-            new Predicate<Imyhat>() {
+            new Predicate<>() {
               int index;
 
               @Override
@@ -757,7 +757,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
   @Override
   public boolean check(Map<String, Imyhat> variables, AlgebraicTransformer reference) {
     return reference.visit(
-        new AlgebraicVisitor<Boolean>() {
+        new AlgebraicVisitor<>() {
           @Override
           public Boolean empty(String name) {
             return checkEmpty();

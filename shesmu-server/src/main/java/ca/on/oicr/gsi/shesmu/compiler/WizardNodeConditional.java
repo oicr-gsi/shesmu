@@ -19,7 +19,7 @@ public class WizardNodeConditional extends WizardNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    final String result = renderer.newLet();
+    final var result = renderer.newLet();
     renderer.conditional(
         test.renderEcma(renderer),
         r -> r.statement(String.format("%s = %s", result, trueStep.renderEcma(r))),
@@ -53,7 +53,7 @@ public class WizardNodeConditional extends WizardNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = trueStep.typeCheck(errorHandler) & falseStep.typeCheck(errorHandler);
+    var ok = trueStep.typeCheck(errorHandler) & falseStep.typeCheck(errorHandler);
     if (test.typeCheck(errorHandler)) {
       if (test.type().isSame(Imyhat.BOOLEAN)) {
         return ok;

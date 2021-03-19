@@ -30,7 +30,7 @@ public class WizardNodeLet extends WizardNode {
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
     final List<EcmaLoadableValue> values = new ArrayList<>();
-    for (final Pair<DestructuredArgumentNode, ExpressionNode> entry : entries) {
+    for (final var entry : entries) {
       entry
           .first()
           .renderEcma(renderer.newConst(entry.second().renderEcma(renderer)))
@@ -42,8 +42,8 @@ public class WizardNodeLet extends WizardNode {
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final Map.Entry<String, Long> entry :
+    var ok = true;
+    for (final var entry :
         entries.stream()
             .flatMap(p -> p.first().targets())
             .collect(Collectors.groupingBy(Target::name, Collectors.counting()))

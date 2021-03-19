@@ -83,8 +83,7 @@ public final class FormNodeDropdown extends FormNode {
   }
 
   public boolean typeCheck(Consumer<String> errorHandler) {
-    final boolean ok =
-        label.stream().filter(l -> l.typeCheck(errorHandler)).count() == label.size();
+    final var ok = label.stream().filter(l -> l.typeCheck(errorHandler)).count() == label.size();
     if (values.typeCheck(errorHandler)) {
       if (values.type() instanceof ListImyhat) {
         type = ((ListImyhat) values.type()).inner();

@@ -98,8 +98,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
             description,
             definition.supplementaryInformation(),
             clauses().stream().flatMap(OliveClauseNode::dashboard),
-            arguments
-                .stream()
+            arguments.stream()
                 .flatMap(
                     arg -> {
                       final Set<String> inputs = new HashSet<>();
@@ -125,25 +124,22 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
     final Set<String> captures = new HashSet<>();
     arguments.forEach(arg -> arg.collectFreeVariables(captures, Flavour::needsCapture));
     variableTags.forEach(arg -> arg.collectFreeVariables(captures, Flavour::needsCapture));
-    final OliveBuilder oliveBuilder =
+    final var oliveBuilder =
         builder.buildRunOlive(
             line, column, definition.name(), signableNames, signableVariableChecks);
     clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
     oliveBuilder.line(line);
-    final Renderer action =
+    final var action =
         oliveBuilder.finish(
             "Run " + actionName,
             oliveBuilder.loadableValues().filter(v -> captures.contains(v.name())));
     action.methodGen().visitCode();
     action.methodGen().visitLineNumber(line, action.methodGen().mark());
     definition.initialize(action.methodGen());
-    final int local = action.methodGen().newLocal(A_ACTION_TYPE);
+    final var local = action.methodGen().newLocal(A_ACTION_TYPE);
     action.methodGen().storeLocal(local);
 
-    arguments.forEach(
-        parameter -> {
-          parameter.render(action, local);
-        });
+    arguments.forEach(parameter -> parameter.render(action, local));
     action.methodGen().visitLineNumber(line, action.methodGen().mark());
     action.methodGen().loadLocal(local);
     action.methodGen().invokeVirtual(A_ACTION_TYPE, METHOD_ACTION__PREPARE);
@@ -151,27 +147,27 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
         .methodGen()
         .push(variableTags.stream().mapToInt(VariableTagNode::staticSize).sum() + tags.size());
     final List<IntConsumer> dynamicTagLocal = new ArrayList<>();
-    for (final VariableTagNode tag : variableTags) {
+    for (final var tag : variableTags) {
       tag.renderDynamicSize(action).ifPresent(dynamicTagLocal::add);
     }
     action.methodGen().newArray(A_STRING_TYPE);
-    int tagIndex = 0;
-    for (final String tag : tags) {
+    var tagIndex = 0;
+    for (final var tag : tags) {
       action.methodGen().dup();
       action.methodGen().push(tagIndex++);
       action.methodGen().push(tag);
       action.methodGen().arrayStore(A_STRING_TYPE);
     }
-    for (final VariableTagNode tag : variableTags) {
+    for (final var tag : variableTags) {
       tagIndex += tag.renderStaticTag(action, tagIndex);
     }
-    final int dynamicTagIndex = action.methodGen().newLocal(Type.INT_TYPE);
+    final var dynamicTagIndex = action.methodGen().newLocal(Type.INT_TYPE);
     action.methodGen().push(tagIndex);
     action.methodGen().storeLocal(dynamicTagIndex);
-    for (final IntConsumer consumer : dynamicTagLocal) {
+    for (final var consumer : dynamicTagLocal) {
       consumer.accept(dynamicTagIndex);
     }
-    int tagArray = action.methodGen().newLocal(A_STRING_TYPE);
+    var tagArray = action.methodGen().newLocal(A_STRING_TYPE);
     action.methodGen().storeLocal(tagArray);
     oliveBuilder.emitAction(action.methodGen(), local, tagArray);
     action.methodGen().visitInsn(Opcodes.RETURN);
@@ -182,9 +178,8 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
   @Override
   public boolean resolve(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    final NameDefinitions defs =
-        clauses()
-            .stream()
+    final var defs =
+        clauses().stream()
             .reduce(
                 NameDefinitions.root(
                     oliveCompilerServices.inputFormat(),
@@ -194,19 +189,18 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
-    boolean ok =
+    var ok =
         defs.isGood()
             & arguments.stream().filter(argument -> argument.resolve(defs, errorHandler)).count()
                 == arguments.size()
             & variableTags.stream().filter(tag -> tag.resolve(defs, errorHandler)).count()
                 == variableTags.size();
 
-    final Map<String, Long> argumentNames =
-        arguments
-            .stream()
+    final var argumentNames =
+        arguments.stream()
             .flatMap(OliveArgumentNode::targets)
             .collect(Collectors.groupingBy(Target::name, Collectors.counting()));
-    for (final Map.Entry<String, Long> entry : argumentNames.entrySet()) {
+    for (final var entry : argumentNames.entrySet()) {
       if (entry.getValue() > 1) {
         errorHandler.accept(
             String.format(
@@ -215,9 +209,9 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
       }
     }
 
-    final Set<String> definedArgumentNames =
+    final var definedArgumentNames =
         definition.parameters().map(ActionParameterDefinition::name).collect(Collectors.toSet());
-    final Set<String> requiredArgumentNames =
+    final var requiredArgumentNames =
         definition
             .parameters()
             .filter(ActionParameterDefinition::required)
@@ -232,8 +226,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
               "%d:%d: Extra arguments for action %s: %s",
               line, column, actionName, String.join(", ", badTerms)));
     }
-    switch (arguments
-        .stream()
+    switch (arguments.stream()
         .map(argument -> argument.checkWildcard(errorHandler))
         .reduce(WildcardCheck.NONE, WildcardCheck::combine)) {
       case NONE:
@@ -248,12 +241,11 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
         }
         break;
       case HAS_WILDCARD:
-        final UndefinedVariableProvider provider =
-            arguments
-                .stream()
+        final var provider =
+            arguments.stream()
                 .map(x -> (UndefinedVariableProvider) x)
                 .reduce(UndefinedVariableProvider.NONE, UndefinedVariableProvider::combine);
-        for (final String requiredName : requiredArgumentNames) {
+        for (final var requiredName : requiredArgumentNames) {
           if (!definedArgumentNames.contains(requiredName)) {
             provider.handleUndefinedVariable(requiredName);
           }
@@ -275,13 +267,11 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
           String.format("%d:%d: Unknown action for “%s”.", line, column, actionName));
     }
     return definition != null
-        & arguments
-                .stream()
+        & arguments.stream()
                 .filter(arg -> arg.resolveFunctions(oliveCompilerServices, errorHandler))
                 .count()
             == arguments.size()
-        & variableTags
-                .stream()
+        & variableTags.stream()
                 .filter(tag -> tag.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == variableTags.size();
@@ -305,27 +295,25 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
 
   @Override
   protected boolean typeCheckExtra(Consumer<String> errorHandler) {
-    boolean ok =
-        arguments
-                .stream()
+    var ok =
+        arguments.stream()
                 .filter(
                     argument ->
                         argument.typeCheck(errorHandler) && argument.checkName(errorHandler))
                 .count()
             == arguments.size();
     if (ok) {
-      final Map<String, ActionParameterDefinition> parameterInfo =
+      final var parameterInfo =
           definition
               .parameters()
               .collect(Collectors.toMap(ActionParameterDefinition::name, Function.identity()));
       ok =
-          arguments
-                  .stream()
+          arguments.stream()
                   .filter(argument -> argument.checkArguments(parameterInfo::get, errorHandler))
                   .count()
               == arguments.size();
     }
-    for (final VariableTagNode tag : variableTags) {
+    for (final var tag : variableTags) {
       if (!tag.typeCheck(errorHandler)) {
         ok = false;
       }

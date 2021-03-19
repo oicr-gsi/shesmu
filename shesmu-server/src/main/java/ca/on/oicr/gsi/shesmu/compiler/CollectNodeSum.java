@@ -22,7 +22,7 @@ public class CollectNodeSum extends CollectNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
-    final List<String> remove =
+    final var remove =
         definedNames.stream().filter(name -> !names.contains(name)).collect(Collectors.toList());
     expression.collectFreeVariables(names, predicate);
     names.removeAll(remove);
@@ -37,9 +37,9 @@ public class CollectNodeSum extends CollectNode {
   public void render(JavaStreamBuilder builder, LoadableConstructor name) {
     final Set<String> freeVariables = new HashSet<>();
     expression.collectFreeVariables(freeVariables, Flavour::needsCapture);
-    final PrimitiveStream primitive =
+    final var primitive =
         expression.type().isSame(Imyhat.INTEGER) ? PrimitiveStream.LONG : PrimitiveStream.DOUBLE;
-    final Renderer renderer =
+    final var renderer =
         builder.mapToPrimitive(
             line(),
             column(),
@@ -76,7 +76,7 @@ public class CollectNodeSum extends CollectNode {
   @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
-    final boolean ok = expression.resolve(defs.bind(name), errorHandler);
+    final var ok = expression.resolve(defs.bind(name), errorHandler);
     definedNames = name.targets().map(Target::name).collect(Collectors.toList());
     return ok;
   }

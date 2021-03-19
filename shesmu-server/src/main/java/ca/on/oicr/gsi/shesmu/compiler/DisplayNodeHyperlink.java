@@ -36,7 +36,7 @@ public class DisplayNodeHyperlink extends DisplayNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = true;
+    var ok = true;
     if (label.typeCheck(errorHandler)) {
       if (label.type().isSame(Imyhat.STRING)
           || label.type().isSame(Imyhat.STRING.asList())

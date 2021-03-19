@@ -18,7 +18,11 @@ public final class OliveClauseNodeDump extends OliveClauseNodeBaseDump implement
   private final List<Pair<Optional<String>, ExpressionNode>> columns;
 
   public OliveClauseNodeDump(
-            Optional<String> label, int line, int column, String dumper, List<Pair<Optional<String>, ExpressionNode>> columns) {
+      Optional<String> label,
+      int line,
+      int column,
+      String dumper,
+      List<Pair<Optional<String>, ExpressionNode>> columns) {
     super(label, line, column, dumper);
     this.columns = columns;
   }
@@ -55,7 +59,7 @@ public final class OliveClauseNodeDump extends OliveClauseNodeBaseDump implement
 
   @Override
   public Pair<String, Imyhat> columnDefinition(int index) {
-    final Pair<Optional<String>, ExpressionNode> column = columns.get(index);
+    final var column = columns.get(index);
     return new Pair<>(
         column
             .first()
@@ -81,8 +85,7 @@ public final class OliveClauseNodeDump extends OliveClauseNodeBaseDump implement
   @Override
   public boolean resolveDefinitionsExtra(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    return columns
-            .stream()
+    return columns.stream()
             .filter(e -> e.second().resolveDefinitions(oliveCompilerServices, errorHandler))
             .count()
         == columns.size();

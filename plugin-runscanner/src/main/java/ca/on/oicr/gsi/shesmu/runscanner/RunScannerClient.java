@@ -13,9 +13,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
-import javax.xml.stream.XMLStreamException;
 import org.apache.commons.codec.net.URLCodec;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -27,21 +25,20 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
       super(name, ttl, recordCtor);
     }
 
-    protected abstract T extract(NotificationDto dto) throws Exception;
+    protected abstract T extract(NotificationDto dto);
 
     @Override
     protected final Optional<T> fetch(String runName, Instant lastUpdated) throws Exception {
-      if (!url.isPresent()) {
+      if (url.isEmpty()) {
         return Optional.empty();
       }
-      final HttpGet request =
+      final var request =
           new HttpGet(String.format("%s/run/%s", url.get(), new URLCodec().encode(runName)));
-      try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
+      try (var response = HTTP_CLIENT.execute(request)) {
         if (response.getStatusLine().getStatusCode() != 200) {
           return Optional.empty();
         }
-        NotificationDto run =
-            MAPPER.readValue(response.getEntity().getContent(), NotificationDto.class);
+        var run = MAPPER.readValue(response.getEntity().getContent(), NotificationDto.class);
         return Optional.ofNullable(extract(run));
       }
     }
@@ -54,7 +51,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
     }
 
     @Override
-    protected NotificationDto extract(NotificationDto dto) throws Exception {
+    protected NotificationDto extract(NotificationDto dto) {
       dto.setMetrics(null); // Discard metrics to save memory
       return dto;
     }
@@ -67,7 +64,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
     }
 
     @Override
-    protected Long extract(NotificationDto dto) throws Exception {
+    protected Long extract(NotificationDto dto) {
       if (dto instanceof IlluminaNotificationDto) {
         return (long) ((IlluminaNotificationDto) dto).getScoreCycle();
       }
@@ -89,11 +86,11 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
    */
   private static Set<Set<Long>> computeGeometry(NotificationDto notificationDto) {
     if (!(notificationDto instanceof IlluminaNotificationDto)) {
-      return Collections.emptySet();
+      return Set.of();
     }
-    final IlluminaNotificationDto run = (IlluminaNotificationDto) notificationDto;
+    final var run = (IlluminaNotificationDto) notificationDto;
     // If chemistry is NextSeq or HiSeq onboard clustering or NovaSeq Standard
-    final boolean isJoined =
+    final var isJoined =
         run.getChemistry() == IlluminaChemistry.NS_HIGH
             || run.getChemistry() == IlluminaChemistry.NS_MID
             || run.getWorkflowType() != null
@@ -112,7 +109,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) {
     renderer.line("Filename", fileName().toString());
     url.ifPresent(u -> renderer.link("URL", u, u));
   }
@@ -145,12 +142,9 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   public Set<Set<Long>> flowcell_geometry(
       @ShesmuParameter(description = "name of run") String runName) {
     try {
-      return runCache
-          .get(runName)
-          .map(RunScannerClient::computeGeometry)
-          .orElse(Collections.emptySet());
+      return runCache.get(runName).map(RunScannerClient::computeGeometry).orElse(Set.of());
     } catch (InitialCachePopulationException e) {
-      return Collections.emptySet();
+      return Set.of();
     }
   }
 

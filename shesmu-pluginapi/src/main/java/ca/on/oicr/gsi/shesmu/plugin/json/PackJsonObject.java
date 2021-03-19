@@ -37,14 +37,14 @@ public class PackJsonObject implements ImyhatConsumer {
   @Override
   public void acceptMap(Map<?, ?> map, Imyhat key, Imyhat value) {
     if (key.isSame(Imyhat.STRING)) {
-      final ObjectNode inner = node.putObject(name);
+      final var inner = node.putObject(name);
       for (final Map.Entry<?, ?> entry : map.entrySet()) {
         value.accept(new PackJsonObject(inner, (String) entry.getKey()), entry.getValue());
       }
     } else {
-      final ArrayNode inner = node.putArray(name);
+      final var inner = node.putArray(name);
       for (final Map.Entry<?, ?> entry : map.entrySet()) {
-        final PackJsonArray row = new PackJsonArray(inner.addArray());
+        final var row = new PackJsonArray(inner.addArray());
         key.accept(row, entry.getKey());
         value.accept(row, entry.getValue());
       }
@@ -53,7 +53,7 @@ public class PackJsonObject implements ImyhatConsumer {
 
   @Override
   public void accept(Stream<Object> values, Imyhat inner) {
-    final ArrayNode array = node.putArray(name);
+    final var array = node.putArray(name);
     values.forEach(v -> inner.accept(createArray(array), v));
   }
 
@@ -73,7 +73,7 @@ public class PackJsonObject implements ImyhatConsumer {
 
   @Override
   public void accept(String typeName, Consumer<ImyhatConsumer> accessor) {
-    final ObjectNode algebraic = node.putObject(name);
+    final var algebraic = node.putObject(name);
     algebraic.put("type", typeName);
     accessor.accept(createObject(algebraic, "contents"));
   }
@@ -100,13 +100,13 @@ public class PackJsonObject implements ImyhatConsumer {
 
   @Override
   public void acceptObject(Stream<Field<String>> fields) {
-    final ObjectNode object = node.putObject(name);
+    final var object = node.putObject(name);
     fields.forEach(f -> f.type().accept(createObject(object, f.index()), f.value()));
   }
 
   @Override
   public void acceptTuple(Stream<Field<Integer>> fields) {
-    final ArrayNode array = node.putArray(name);
+    final var array = node.putArray(name);
     fields
         .sorted(Comparator.comparing(Field::index))
         .forEach(f -> f.type().accept(createArray(array), f.value()));

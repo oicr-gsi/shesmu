@@ -15,12 +15,10 @@ import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
-import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.cache.LabelledKeyValueCache;
-import ca.on.oicr.gsi.shesmu.plugin.cache.Record;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
@@ -32,7 +30,6 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.TypeParser;
 import ca.on.oicr.gsi.shesmu.plugin.wdl.WdlInputType;
 import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
-import ca.on.oicr.gsi.shesmu.runtime.OliveRunInfo;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.*;
@@ -45,7 +42,6 @@ import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import ca.on.oicr.gsi.status.*;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -73,7 +69,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.Base64;
-import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.function.*;
 import java.util.regex.Pattern;
@@ -114,7 +109,7 @@ public final class Server implements ServerConfig, ActionServices {
                     .filter(i -> i.length() > 0)
                     .map(q -> EQUAL.split(q, 2))
                     .collect(Collectors.toMap(q -> q[0], q -> q[1], (a, b) -> a)))
-        .orElseGet(Collections::emptyMap);
+        .orElseGet(Map::of);
   }
 
   private static <T> String handleJsonQueryParameter(
@@ -128,16 +123,15 @@ public final class Server implements ServerConfig, ActionServices {
           RuntimeSupport.MAPPER.readValue(Base64.getUrlDecoder().decode(parameter), clazz));
     } else {
       return RuntimeSupport.MAPPER.writeValueAsString(
-          RuntimeSupport.MAPPER.readValue(URLDecoder.decode(parameter, "UTF-8"), clazz));
+          RuntimeSupport.MAPPER.readValue(
+              URLDecoder.decode(parameter, StandardCharsets.UTF_8), clazz));
     }
   }
 
   public static Runnable inflight(String name) {
     INFLIGHT.putIfAbsent(name, Instant.now());
     inflightOldest.set(
-        INFLIGHT
-            .values()
-            .stream()
+        INFLIGHT.values().stream()
             .min(Comparator.naturalOrder())
             .map(Instant::getEpochSecond)
             .orElse(0L));
@@ -145,9 +139,7 @@ public final class Server implements ServerConfig, ActionServices {
     return () -> {
       INFLIGHT.remove(name);
       inflightOldest.set(
-          INFLIGHT
-              .values()
-              .stream()
+          INFLIGHT.values().stream()
               .min(Comparator.naturalOrder())
               .map(Instant::getEpochSecond)
               .orElse(0L));
@@ -162,7 +154,7 @@ public final class Server implements ServerConfig, ActionServices {
   public static void main(String[] args) throws Exception {
     DefaultExports.initialize();
 
-    final Server s = new Server(8081, FileWatcher.DATA_DIRECTORY);
+    final var s = new Server(8081, FileWatcher.DATA_DIRECTORY);
     s.start();
   }
 
@@ -214,7 +206,7 @@ public final class Server implements ServerConfig, ActionServices {
   private final AutoUpdatingDirectory<GuidedMeditation> guidedMeditations;
   private final HttpServer server;
   private final StaticActions staticActions;
-  private Map<String, TypeParser> typeParsers = new TreeMap<>();
+  private final Map<String, TypeParser> typeParsers = new TreeMap<>();
   public final String version;
   private final Executor wwwExecutor =
       new ThreadPoolExecutor(
@@ -224,7 +216,7 @@ public final class Server implements ServerConfig, ActionServices {
           TimeUnit.HOURS,
           new ArrayBlockingQueue<>(10 * Runtime.getRuntime().availableProcessors()),
           runnable -> {
-            final Thread thread = new Thread(runnable);
+            final var thread = new Thread(runnable);
             thread.setPriority(Thread.MAX_PRIORITY);
             return thread;
           },
@@ -236,8 +228,8 @@ public final class Server implements ServerConfig, ActionServices {
 
   public Server(int port, FileWatcher fileWatcher) throws IOException, ParseException {
     this.fileWatcher = fileWatcher;
-    try (final InputStream in = Server.class.getResourceAsStream("shesmu-build.properties")) {
-      final Properties prop = new Properties();
+    try (final var in = Server.class.getResourceAsStream("shesmu-build.properties")) {
+      final var prop = new Properties();
       prop.load(in);
       version = prop.getProperty("version");
       versionCounter.labels(version).inc();
@@ -251,7 +243,7 @@ public final class Server implements ServerConfig, ActionServices {
     }
     pluginManager = new PluginManager(fileWatcher);
     savedSearches = new AutoUpdatingDirectory<>(fileWatcher, ".search", SavedSearch::new);
-    final SimpleModule module = new SimpleModule("shesmu");
+    final var module = new SimpleModule("shesmu");
     module.addSerializer(
         SourceLocation.class, new SourceLocation.SourceLocationSerializer(pluginManager));
     RuntimeSupport.MAPPER.registerModule(module);
@@ -307,7 +299,7 @@ public final class Server implements ServerConfig, ActionServices {
                         () ->
                             jsonDumpers.containsKey(name)
                                 ? new Dumper() {
-                                  private ArrayNode output =
+                                  private final ArrayNode output =
                                       RuntimeSupport.MAPPER.createArrayNode();
 
                                   @Override
@@ -322,8 +314,8 @@ public final class Server implements ServerConfig, ActionServices {
 
                                   @Override
                                   public void write(Object... values) {
-                                    final ObjectNode row = output.addObject();
-                                    for (int i = 0; i < types.length; i++) {
+                                    final var row = output.addObject();
+                                    for (var i = 0; i < types.length; i++) {
                                       types[i].accept(
                                           new PackJsonObject(row, columns[i]), values[i]);
                                     }
@@ -345,10 +337,7 @@ public final class Server implements ServerConfig, ActionServices {
               @Override
               public boolean isOverloaded(String... services) {
                 return processor.isOverloaded(services)
-                    || pluginManager
-                        .isOverloaded(new HashSet<>(Arrays.asList(services)))
-                        .findAny()
-                        .isPresent();
+                    || pluginManager.isOverloaded(Set.of(services)).findAny().isPresent();
               }
 
               @Override
@@ -499,7 +488,7 @@ public final class Server implements ServerConfig, ActionServices {
                       }
                     }));
 
-    for (final TypeParser parser : ServiceLoader.load(TypeParser.class)) {
+    for (final var parser : ServiceLoader.load(TypeParser.class)) {
       addTypeParser(parser);
     }
 
@@ -508,11 +497,11 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             new StatusPage(this, false) {
 
               @Override
-              protected void emitCore(SectionRenderer renderer) throws XMLStreamException {
+              protected void emitCore(SectionRenderer renderer) {
                 renderer.line("Version", version);
                 renderer.line("Build Time", buildTime);
                 renderer.line("Build Git Commit", build);
@@ -552,11 +541,10 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
-            final JsonGenerator jsonOutput =
-                new JsonFactory().createGenerator(os, JsonEncoding.UTF8);
+          try (var os = t.getResponseBody()) {
+            final var jsonOutput = new JsonFactory().createGenerator(os, JsonEncoding.UTF8);
             jsonOutput.writeStartObject();
-            for (Entry<String, Instant> inflight : INFLIGHT.entrySet()) {
+            for (var inflight : INFLIGHT.entrySet()) {
               jsonOutput.writeNumberField(inflight.getKey(), inflight.getValue().toEpochMilli());
             }
             jsonOutput.writeEndObject();
@@ -567,7 +555,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             new TablePage(this, "Inflight Process", "Started", "Duration") {
 
               final Instant now = Instant.now();
@@ -579,7 +567,7 @@ public final class Server implements ServerConfig, ActionServices {
 
               @Override
               protected void writeRows(TableRowWriter writer) {
-                for (Entry<String, Instant> inflight : INFLIGHT.entrySet()) {
+                for (var inflight : INFLIGHT.entrySet()) {
                   writer.write(
                       false,
                       inflight.getKey(),
@@ -595,8 +583,8 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          final Map<String, String> parameters = getParameters(t);
-          try (OutputStream os = t.getResponseBody()) {
+          final var parameters = getParameters(t);
+          try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
               public String activeUrl() {
@@ -605,12 +593,12 @@ public final class Server implements ServerConfig, ActionServices {
 
               @Override
               public Stream<Header> headers() {
-                String olivesJson = "[]";
-                String savedJson = "null";
-                String userFilters = "null";
-                String alertFilters = "null";
+                var olivesJson = "[]";
+                var savedJson = "null";
+                var userFilters = "null";
+                var alertFilters = "null";
                 try {
-                  final ArrayNode olives = RuntimeSupport.MAPPER.createArrayNode();
+                  final var olives = RuntimeSupport.MAPPER.createArrayNode();
                   oliveJson(olives);
                   olivesJson = RuntimeSupport.MAPPER.writeValueAsString(olives);
 
@@ -660,8 +648,8 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          final Map<String, String> parameters = getParameters(t);
-          try (OutputStream os = t.getResponseBody()) {
+          final var parameters = getParameters(t);
+          try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
               public String activeUrl() {
@@ -670,9 +658,9 @@ public final class Server implements ServerConfig, ActionServices {
 
               @Override
               public Stream<Header> headers() {
-                String filesJson = "[]";
+                var filesJson = "[]";
                 try {
-                  final ArrayNode files = RuntimeSupport.MAPPER.createArrayNode();
+                  final var files = RuntimeSupport.MAPPER.createArrayNode();
                   compiler
                       .dashboard()
                       .map(fileTable -> fileTable.second().filename())
@@ -688,8 +676,7 @@ public final class Server implements ServerConfig, ActionServices {
                             + "initialiseMeditationDash, register"
                             + "} from \"./guided_meditations.js\";"
                             + "import * as runtime from \"./runtime.js\";\n\n"
-                            + guidedMeditations
-                                .stream()
+                            + guidedMeditations.stream()
                                 .flatMap(GuidedMeditation::stream)
                                 .collect(Collectors.joining())
                             + "initialiseMeditationDash("
@@ -715,9 +702,9 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          final Map<String, String> parameters = getParameters(t);
+          final var parameters = getParameters(t);
 
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
               public String activeUrl() {
@@ -773,9 +760,9 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          final Map<String, String> parameters = getParameters(t);
+          final var parameters = getParameters(t);
 
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
               public String activeUrl() {
@@ -815,7 +802,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
               public String activeUrl() {
@@ -824,9 +811,9 @@ public final class Server implements ServerConfig, ActionServices {
 
               @Override
               public Stream<Header> headers() {
-                String defs = "[]";
+                var defs = "[]";
                 try {
-                  final ArrayNode array = RuntimeSupport.MAPPER.createArrayNode();
+                  final var array = RuntimeSupport.MAPPER.createArrayNode();
                   actionDefsJson(array);
                   constantDefsJson(array);
                   functionsDefsJson(array);
@@ -859,7 +846,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
               public String activeUrl() {
@@ -867,7 +854,7 @@ public final class Server implements ServerConfig, ActionServices {
               }
 
               @Override
-              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+              protected void renderContent(XMLStreamWriter writer) {
                 AnnotatedInputFormatDefinition.formats()
                     .sorted(Comparator.comparing(InputFormatDefinition::name))
                     .forEach(
@@ -959,7 +946,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
               public String activeUrl() {
@@ -967,7 +954,7 @@ public final class Server implements ServerConfig, ActionServices {
               }
 
               @Override
-              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+              protected void renderContent(XMLStreamWriter writer) {
                 OliveClauseNodeGroupWithGrouper.definitions()
                     .sorted(Comparator.comparing(GrouperDefinition::name))
                     .forEach(
@@ -997,7 +984,7 @@ public final class Server implements ServerConfig, ActionServices {
                             writer.writeCharacters("Description");
                             writer.writeEndElement();
                             writer.writeEndElement();
-                            for (int i = 0; i < grouper.inputs(); i++) {
+                            for (var i = 0; i < grouper.inputs(); i++) {
                               writer.writeStartElement("tr");
                               writer.writeStartElement("td");
                               writer.writeCharacters(grouper.input(i).name());
@@ -1015,8 +1002,7 @@ public final class Server implements ServerConfig, ActionServices {
                               }
                               writer.writeEndElement();
                               writer.writeStartElement("td");
-                              writer.writeCharacters(
-                                  grouper.input(i).type().toString(Collections.emptyMap()));
+                              writer.writeCharacters(grouper.input(i).type().toString(Map.of()));
                               writer.writeEndElement();
                               writer.writeStartElement("td");
                               writer.writeCharacters(grouper.input(i).description());
@@ -1047,7 +1033,7 @@ public final class Server implements ServerConfig, ActionServices {
                             writer.writeEndElement();
                             writer.writeEndElement();
 
-                            for (int i = 0; i < grouper.outputs(); i++) {
+                            for (var i = 0; i < grouper.outputs(); i++) {
                               writer.writeStartElement("tr");
                               writer.writeStartElement("td");
                               writer.writeCharacters(Integer.toString(i + 1));
@@ -1068,8 +1054,7 @@ public final class Server implements ServerConfig, ActionServices {
                               }
                               writer.writeEndElement();
                               writer.writeStartElement("td");
-                              writer.writeCharacters(
-                                  grouper.output(i).type().toString(Collections.emptyMap()));
+                              writer.writeCharacters(grouper.output(i).type().toString(Map.of()));
                               writer.writeEndElement();
                               writer.writeStartElement("td");
                               writer.writeCharacters(grouper.output(i).description());
@@ -1094,7 +1079,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             new TablePage(this) {
               @Override
               public String activeUrl() {
@@ -1105,10 +1090,7 @@ public final class Server implements ServerConfig, ActionServices {
               protected void writeRows(TableRowWriter row) {
                 PluginManager.dumpBound()
                     .sorted(Comparator.comparing(Pair::first))
-                    .forEach(
-                        x -> {
-                          row.write(false, x.first(), x.second().toString());
-                        });
+                    .forEach(x -> row.write(false, x.first(), x.second().toString()));
               }
             }.renderPage(os);
           }
@@ -1119,7 +1101,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             new TablePage(this) {
               @Override
               public String activeUrl() {
@@ -1131,9 +1113,7 @@ public final class Server implements ServerConfig, ActionServices {
                 PluginManager.dumpArbitrary()
                     .sorted(Comparator.comparing(Pair::first))
                     .forEach(
-                        x -> {
-                          row.write(false, x.first(), x.second().toMethodDescriptorString());
-                        });
+                        x -> row.write(false, x.first(), x.second().toMethodDescriptorString()));
               }
             }.renderPage(os);
           }
@@ -1143,7 +1123,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             new TablePage(this, "Configuration File", "Kind", "Name") {
               @Override
               public String activeUrl() {
@@ -1164,7 +1144,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             new TablePage(this, "Plugin", "File", "SHA-256") {
               @Override
               public String activeUrl() {
@@ -1195,7 +1175,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
               public String activeUrl() {
@@ -1226,10 +1206,8 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeStartElement("select");
                 writer.writeAttribute("id", "format");
 
-                for (final TypeParser parser :
-                    typeParsers
-                        .values()
-                        .stream()
+                for (final var parser :
+                    typeParsers.values().stream()
                         .sorted(Comparator.comparing(TypeParser::description))
                         .collect(Collectors.toList())) {
                   writer.writeStartElement("option");
@@ -1315,10 +1293,10 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          final String filters =
+          final var filters =
               handleJsonQueryParameter(
                   AlertFilter[].class, getParameters(t).get("filters"), new AlertFilter[0]);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
               public String activeUrl() {
@@ -1356,7 +1334,7 @@ public final class Server implements ServerConfig, ActionServices {
     addJson(
         "/actions",
         (mapper, query) -> {
-          final ArrayNode array = mapper.createArrayNode();
+          final var array = mapper.createArrayNode();
           actionDefsJson(array);
           return array;
         });
@@ -1376,16 +1354,15 @@ public final class Server implements ServerConfig, ActionServices {
             } catch (final Exception e) {
               e.printStackTrace();
               t.sendResponseHeaders(400, 0);
-              try (OutputStream os = t.getResponseBody()) {}
+              try (var os = t.getResponseBody()) {}
               return;
             }
           }
           t.sendResponseHeaders(200, 0);
-          try (final OutputStream os = t.getResponseBody();
-              final JsonGenerator jsonOutput =
-                  new JsonFactory().createGenerator(os, JsonEncoding.UTF8)) {
+          try (final var os = t.getResponseBody();
+              final var jsonOutput = new JsonFactory().createGenerator(os, JsonEncoding.UTF8)) {
             jsonOutput.writeStartArray();
-            for (final String tag :
+            for (final var tag :
                 processor.tags(filters).collect(Collectors.toCollection(TreeSet::new))) {
               jsonOutput.writeString(tag);
             }
@@ -1399,7 +1376,7 @@ public final class Server implements ServerConfig, ActionServices {
     addJson(
         "/refillers",
         (mapper, query) -> {
-          final ArrayNode array = mapper.createArrayNode();
+          final var array = mapper.createArrayNode();
           refillerDefsJson(array);
           return array;
         });
@@ -1407,35 +1384,35 @@ public final class Server implements ServerConfig, ActionServices {
     addJson(
         "/constants",
         (mapper, query) -> {
-          final ArrayNode array = mapper.createArrayNode();
+          final var array = mapper.createArrayNode();
           constantDefsJson(array);
           return array;
         });
     addJson(
         "/signatures",
         (mapper, query) -> {
-          final ArrayNode array = mapper.createArrayNode();
+          final var array = mapper.createArrayNode();
           signatureDefsJson(array);
           return array;
         });
     addJson(
         "/functions",
         (mapper, query) -> {
-          final ArrayNode array = mapper.createArrayNode();
+          final var array = mapper.createArrayNode();
           functionsDefsJson(array);
           return array;
         });
     addJson(
         "/olivedefinitions",
         (mapper, query) -> {
-          final ArrayNode array = mapper.createArrayNode();
+          final var array = mapper.createArrayNode();
           oliveDefsJson(array);
           return array;
         });
     addJson(
         "/olives",
         (mapper, query) -> {
-          final ArrayNode array = mapper.createArrayNode();
+          final var array = mapper.createArrayNode();
           oliveJson(array);
           return array;
         });
@@ -1443,9 +1420,9 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/metrodiagram",
         t -> {
-          final SourceOliveLocation location =
+          final var location =
               RuntimeSupport.MAPPER.readValue(t.getRequestBody(), SourceOliveLocation.class);
-          final Pair<Pair<OliveRunInfo, FileTable>, OliveTable> match =
+          final var match =
               compiler
                   .dashboard()
                   .flatMap(
@@ -1468,9 +1445,8 @@ public final class Server implements ServerConfig, ActionServices {
           } else {
             t.sendResponseHeaders(200, 0);
             t.getResponseHeaders().set("Content-type", "image/svg+xml; charset=utf-8");
-            try (final OutputStream os = t.getResponseBody()) {
-              final XMLStreamWriter writer =
-                  XMLOutputFactory.newFactory().createXMLStreamWriter(os);
+            try (final var os = t.getResponseBody()) {
+              final var writer = XMLOutputFactory.newFactory().createXMLStreamWriter(os);
               writer.writeStartDocument("utf-8", "1.0");
 
               MetroDiagram.draw(
@@ -1493,7 +1469,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", TextFormat.CONTENT_TYPE_004);
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody();
+          try (var os = t.getResponseBody();
               Writer writer = new PrintWriter(os)) {
             TextFormat.write004(writer, CollectorRegistry.defaultRegistry.metricFamilySamples());
           }
@@ -1510,20 +1486,18 @@ public final class Server implements ServerConfig, ActionServices {
           } catch (final Exception e) {
             e.printStackTrace();
             t.sendResponseHeaders(400, 0);
-            try (OutputStream os = t.getResponseBody()) {}
+            try (var os = t.getResponseBody()) {}
             return;
           }
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
-            final JsonGenerator jsonOutput =
-                new JsonFactory().createGenerator(os, JsonEncoding.UTF8);
+          try (var os = t.getResponseBody()) {
+            final var jsonOutput = new JsonFactory().createGenerator(os, JsonEncoding.UTF8);
             jsonOutput.setCodec(RuntimeSupport.MAPPER);
             jsonOutput.writeStartObject();
             jsonOutput.writeNumberField("offset", query.getSkip());
             jsonOutput.writeNumberField("total", processor.size(filters));
             jsonOutput.writeArrayFieldStart("results");
-            processor
-                .stream(pluginManager, filters)
+            processor.stream(pluginManager, filters)
                 .skip(Math.max(0, query.getSkip()))
                 .limit(query.getLimit())
                 .forEach(
@@ -1536,8 +1510,7 @@ public final class Server implements ServerConfig, ActionServices {
                     });
             jsonOutput.writeEndArray();
             jsonOutput.writeArrayFieldStart("bulkCommands");
-            for (final Map.Entry<ActionCommand<?>, Long> command :
-                processor.commonCommands(filters).entrySet()) {
+            for (final var command : processor.commonCommands(filters).entrySet()) {
               if (command.getKey().prefers(Preference.ALLOW_BULK)) {
                 jsonOutput.writeStartObject();
                 jsonOutput.writeStringField("command", command.getKey().command());
@@ -1561,14 +1534,11 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           final Set<String> names;
           try {
-            names =
-                new HashSet<>(
-                    Arrays.asList(
-                        RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String[].class)));
+            names = Set.of(RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String[].class));
           } catch (final Exception e) {
             e.printStackTrace();
             t.sendResponseHeaders(400, 0);
-            try (OutputStream os = t.getResponseBody()) {}
+            try (var os = t.getResponseBody()) {}
             return;
           }
           KeyValueCache.caches()
@@ -1585,31 +1555,31 @@ public final class Server implements ServerConfig, ActionServices {
     addJson(
         "/caches",
         (mapper, query) -> {
-          final ArrayNode array = mapper.createArrayNode();
+          final var array = mapper.createArrayNode();
           KeyValueCache.caches()
               .forEach(
                   cache -> {
-                    final ObjectNode node = array.addObject();
+                    final var node = array.addObject();
                     node.put("name", cache.name());
                     node.put("ttl", cache.ttl());
                     node.put("type", "kv");
-                    final ObjectNode entries = node.putObject("entries");
+                    final var entries = node.putObject("entries");
                     storeEntries(entries, cache);
                   });
           LabelledKeyValueCache.caches()
               .forEach(
                   cache -> {
-                    final ObjectNode node = array.addObject();
+                    final var node = array.addObject();
                     node.put("name", cache.name());
                     node.put("ttl", cache.ttl());
                     node.put("type", "kv");
-                    final ObjectNode entries = node.putObject("entries");
+                    final var entries = node.putObject("entries");
                     storeEntries(entries, cache);
                   });
           ValueCache.caches()
               .forEach(
                   cache -> {
-                    final ObjectNode node = array.addObject();
+                    final var node = array.addObject();
                     node.put("name", cache.name());
                     node.put("ttl", cache.ttl());
                     node.put("lastUpdate", cache.lastUpdated().toEpochMilli());
@@ -1627,11 +1597,11 @@ public final class Server implements ServerConfig, ActionServices {
 
           } catch (final Exception e) {
             t.sendResponseHeaders(400, 0);
-            try (OutputStream os = t.getResponseBody()) {}
+            try (var os = t.getResponseBody()) {}
             return;
           }
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             RuntimeSupport.MAPPER.writeValue(
                 os,
                 processor.stats(
@@ -1652,11 +1622,11 @@ public final class Server implements ServerConfig, ActionServices {
             filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class);
           } catch (final Exception e) {
             t.sendResponseHeaders(400, 0);
-            try (OutputStream os = t.getResponseBody()) {}
+            try (var os = t.getResponseBody()) {}
             return;
           }
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             RuntimeSupport.MAPPER.writeValue(
                 os,
                 processor.count(
@@ -1674,11 +1644,11 @@ public final class Server implements ServerConfig, ActionServices {
             filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class);
           } catch (final Exception e) {
             t.sendResponseHeaders(400, 0);
-            try (OutputStream os = t.getResponseBody()) {}
+            try (var os = t.getResponseBody()) {}
             return;
           }
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             RuntimeSupport.MAPPER.writeValue(
                 os,
                 processor.purge(
@@ -1696,13 +1666,12 @@ public final class Server implements ServerConfig, ActionServices {
             filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class);
           } catch (final Exception e) {
             t.sendResponseHeaders(400, 0);
-            try (OutputStream os = t.getResponseBody()) {}
+            try (var os = t.getResponseBody()) {}
             return;
           }
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody();
-              final JsonGenerator jsonOutput =
-                  new JsonFactory().createGenerator(os, JsonEncoding.UTF8)) {
+          try (var os = t.getResponseBody();
+              final var jsonOutput = new JsonFactory().createGenerator(os, JsonEncoding.UTF8)) {
             jsonOutput.writeStartArray();
             processor
                 .actionIds(
@@ -1729,20 +1698,19 @@ public final class Server implements ServerConfig, ActionServices {
             filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class);
           } catch (final Exception e) {
             t.sendResponseHeaders(400, 0);
-            try (final OutputStream os = t.getResponseBody()) {}
+            try (final var os = t.getResponseBody()) {}
             return;
           }
           t.sendResponseHeaders(200, 0);
-          try (final Stream<ObjectNode> actions =
+          try (final var actions =
                   processor.drain(
                       pluginManager,
                       Stream.of(filters)
                           .filter(Objects::nonNull)
                           .map(filterJson -> filterJson.convert(processor))
                           .toArray(Filter[]::new));
-              final OutputStream os = t.getResponseBody();
-              final JsonGenerator jsonOutput =
-                  new JsonFactory().createGenerator(os, JsonEncoding.UTF8)) {
+              final var os = t.getResponseBody();
+              final var jsonOutput = new JsonFactory().createGenerator(os, JsonEncoding.UTF8)) {
             jsonOutput.setCodec(RuntimeSupport.MAPPER);
             jsonOutput.writeStartArray();
             actions.forEach(
@@ -1764,19 +1732,17 @@ public final class Server implements ServerConfig, ActionServices {
             request = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), CommandRequest.class);
           } catch (final Exception e) {
             t.sendResponseHeaders(400, 0);
-            try (OutputStream os = t.getResponseBody()) {}
+            try (var os = t.getResponseBody()) {}
             return;
           }
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             RuntimeSupport.MAPPER.writeValue(
                 os,
                 processor.command(
                     pluginManager,
                     request.getCommand(),
-                    t.getRequestHeaders()
-                        .getOrDefault("X-Remote-User", Collections.emptyList())
-                        .stream()
+                    t.getRequestHeaders().getOrDefault("X-Remote-User", List.of()).stream()
                         .findFirst(),
                     Stream.of(request.getFilters())
                         .filter(Objects::nonNull)
@@ -1788,12 +1754,11 @@ public final class Server implements ServerConfig, ActionServices {
         "/parsefiltertext",
         t -> {
           t.getResponseHeaders().set("Content-type", "application/json");
-          final String text = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
-          final Optional<ActionFilter> result =
-              ActionFilter.extractFromText(text, RuntimeSupport.MAPPER);
+          final var text = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          final var result = ActionFilter.extractFromText(text, RuntimeSupport.MAPPER);
           if (result.isPresent()) {
             t.sendResponseHeaders(200, 0);
-            try (OutputStream os = t.getResponseBody()) {
+            try (var os = t.getResponseBody()) {
               RuntimeSupport.MAPPER.writeValue(os, result.get());
             }
           } else {
@@ -1807,7 +1772,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             os.write(processor.currentAlerts().getBytes(StandardCharsets.UTF_8));
           }
         });
@@ -1816,9 +1781,9 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          final JsonFactory jfactory = new JsonFactory();
-          try (OutputStream os = t.getResponseBody();
-              JsonGenerator jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8)) {
+          final var jfactory = new JsonFactory();
+          try (var os = t.getResponseBody();
+              var jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8)) {
             jGenerator.setCodec(RuntimeSupport.MAPPER);
             processor.alerts(jGenerator, a -> true);
           }
@@ -1828,13 +1793,13 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          final Predicate<ActionProcessor.Alert> predicate =
+          final var predicate =
               RuntimeSupport.MAPPER
                   .readValue(t.getRequestBody(), AlertFilter.class)
                   .convert(ActionProcessor.ALERT_FILTER_BUILDER);
-          final JsonFactory jfactory = new JsonFactory();
-          try (OutputStream os = t.getResponseBody();
-              JsonGenerator jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8)) {
+          final var jfactory = new JsonFactory();
+          try (var os = t.getResponseBody();
+              var jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8)) {
             jGenerator.setCodec(RuntimeSupport.MAPPER);
             processor.alerts(jGenerator, predicate);
           }
@@ -1844,8 +1809,8 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          final String id = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
-          try (OutputStream os = t.getResponseBody()) {
+          final var id = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          try (var os = t.getResponseBody()) {
             processor.getAlert(os, id);
           }
         });
@@ -1853,7 +1818,7 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/constant",
         t -> {
-          final String query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          final var query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
           ConstantLoader loader;
           if (constantLoaders.containsKey(query)) {
             loader = constantLoaders.get(query);
@@ -1866,18 +1831,19 @@ public final class Server implements ServerConfig, ActionServices {
                     .orElseGet(
                         () ->
                             target ->
-                                target.put("error", String.format("No such constant.", query)));
+                                target.put(
+                                    "error", String.format("Constant %s is unknown.", query)));
             constantLoaders.put(query, loader);
           }
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          final ObjectNode node = RuntimeSupport.MAPPER.createObjectNode();
+          final var node = RuntimeSupport.MAPPER.createObjectNode();
           try {
             loader.load(node);
           } catch (final Exception e) {
             node.put("error", e.getMessage());
           }
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             RuntimeSupport.MAPPER.writeValue(os, node);
           }
         });
@@ -1885,7 +1851,7 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/function",
         t -> {
-          final FunctionRequest query =
+          final var query =
               RuntimeSupport.MAPPER.readValue(t.getRequestBody(), FunctionRequest.class);
           FunctionRunner runner;
           if (functionRunners.containsKey(query.getName())) {
@@ -1899,18 +1865,19 @@ public final class Server implements ServerConfig, ActionServices {
                     .orElseGet(
                         () ->
                             (args, target) ->
-                                target.put("error", String.format("No such function.", query)));
+                                target.put(
+                                    "error", String.format("Function %s is unknown.", query)));
             functionRunners.put(query.getName(), runner);
           }
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          final ObjectNode node = RuntimeSupport.MAPPER.createObjectNode();
+          final var node = RuntimeSupport.MAPPER.createObjectNode();
           try {
             runner.run(query.getArgs(), node);
           } catch (final Exception e) {
             node.put("error", e.getMessage());
           }
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             RuntimeSupport.MAPPER.writeValue(os, node);
           }
         });
@@ -1918,30 +1885,29 @@ public final class Server implements ServerConfig, ActionServices {
     addJson(
         "/variables",
         (mapper, query) -> {
-          final ObjectNode node = mapper.createObjectNode();
+          final var node = mapper.createObjectNode();
           AnnotatedInputFormatDefinition.formats()
               .forEach(
                   source -> {
-                    final ObjectNode sourceNode = node.putObject(source.name());
+                    final var sourceNode = node.putObject(source.name());
 
-                    final ObjectNode variablesNode = sourceNode.putObject("variables");
+                    final var variablesNode = sourceNode.putObject("variables");
                     source
                         .baseStreamVariables()
                         .forEach(
-                            variable -> {
-                              variablesNode.put(variable.name(), variable.type().descriptor());
-                            });
+                            variable ->
+                                variablesNode.put(variable.name(), variable.type().descriptor()));
 
-                    final ObjectNode gangsNode = sourceNode.putObject("gangs");
+                    final var gangsNode = sourceNode.putObject("gangs");
                     source
                         .gangs()
                         .forEach(
                             gang -> {
-                              final ArrayNode gangArray = gangsNode.putArray(gang.name());
+                              final var gangArray = gangsNode.putArray(gang.name());
                               gang.elements()
                                   .forEach(
                                       element -> {
-                                        final ObjectNode elementNode = gangArray.addObject();
+                                        final var elementNode = gangArray.addObject();
                                         elementNode.put("name", element.name());
                                         elementNode.put("type", element.type().descriptor());
                                         elementNode.put("dropIfDefault", element.dropIfDefault());
@@ -1966,11 +1932,11 @@ public final class Server implements ServerConfig, ActionServices {
         "/check",
         t -> {
           final String script;
-          try (Scanner scanner = new Scanner(t.getRequestBody(), "utf-8")) {
+          try (var scanner = new Scanner(t.getRequestBody(), StandardCharsets.UTF_8)) {
             script = scanner.useDelimiter("\\Z").next();
           }
-          final StringBuilder errors = new StringBuilder();
-          boolean success =
+          final var errors = new StringBuilder();
+          var success =
               (new Compiler(true) {
                     private final NameLoader<ActionDefinition> actions =
                         new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
@@ -2039,16 +2005,16 @@ public final class Server implements ServerConfig, ActionServices {
                       true,
                       false);
           t.getResponseHeaders().set("Content-type", "text/plain; charset=utf-8");
-          final byte[] errorBytes = errors.toString().getBytes(StandardCharsets.UTF_8);
+          final var errorBytes = errors.toString().getBytes(StandardCharsets.UTF_8);
           t.sendResponseHeaders(success ? 200 : 400, errorBytes.length);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             os.write(errorBytes);
           }
         });
     add(
         "/simulate",
         t -> {
-          final SimulateRequest request =
+          final var request =
               RuntimeSupport.MAPPER.readValue(t.getRequestBody(), SimulateRequest.class);
           request.run(
               DefinitionRepository.concat(definitionRepository, compiler), this, inputSource, t);
@@ -2056,7 +2022,7 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/simulate-existing",
         t -> {
-          final SimulateExistingRequest request =
+          final var request =
               RuntimeSupport.MAPPER.readValue(t.getRequestBody(), SimulateExistingRequest.class);
           request.run(
               compiler,
@@ -2068,8 +2034,8 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/simulatedash",
         t -> {
-          final String existingScript = getParameters(t).get("script");
-          final String sharedScript = getParameters(t).get("share");
+          final var existingScript = getParameters(t).get("script");
+          final var sharedScript = getParameters(t).get("share");
           final String scriptName;
           final String scriptBody;
           final boolean decodeBody;
@@ -2078,12 +2044,10 @@ public final class Server implements ServerConfig, ActionServices {
               t.sendResponseHeaders(403, -1);
               return;
             }
-            final Path scriptPath = Paths.get(existingScript);
+            final var scriptPath = Paths.get(existingScript);
             scriptName =
                 RuntimeSupport.MAPPER.writeValueAsString(scriptPath.getFileName().toString());
-            scriptBody =
-                RuntimeSupport.MAPPER.writeValueAsString(
-                    new String(Files.readAllBytes(scriptPath), StandardCharsets.UTF_8));
+            scriptBody = RuntimeSupport.MAPPER.writeValueAsString(Files.readString(scriptPath));
             decodeBody = false;
           } else {
             scriptName = "null";
@@ -2095,15 +2059,13 @@ public final class Server implements ServerConfig, ActionServices {
               decodeBody = false;
             }
           }
-          final String typeFormats =
+          final var typeFormats =
               RuntimeSupport.MAPPER.writeValueAsString(
-                  typeParsers
-                      .values()
-                      .stream()
+                  typeParsers.values().stream()
                       .collect(Collectors.toMap(TypeParser::format, TypeParser::description)));
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
               public String activeUrl() {
@@ -2150,7 +2112,7 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/compile-meditation",
         t -> {
-          final MeditationCompilationRequest request =
+          final var request =
               RuntimeSupport.MAPPER.readValue(
                   t.getRequestBody(), MeditationCompilationRequest.class);
           try {
@@ -2162,24 +2124,21 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/yogastudio",
         t -> {
-          final String existingScript = getParameters(t).get("script");
-          final String sharedScript = getParameters(t).get("share");
+          final var existingScript = getParameters(t).get("script");
+          final var sharedScript = getParameters(t).get("share");
           final String scriptName;
           final String scriptBody;
           final boolean decodeBody;
           if (existingScript != null) {
-            if (guidedMeditations
-                .stream()
+            if (guidedMeditations.stream()
                 .noneMatch(p -> p.filename().toString().equals(existingScript))) {
               t.sendResponseHeaders(403, -1);
               return;
             }
-            final Path scriptPath = Paths.get(existingScript);
+            final var scriptPath = Paths.get(existingScript);
             scriptName =
                 RuntimeSupport.MAPPER.writeValueAsString(scriptPath.getFileName().toString());
-            scriptBody =
-                RuntimeSupport.MAPPER.writeValueAsString(
-                    new String(Files.readAllBytes(scriptPath), StandardCharsets.UTF_8));
+            scriptBody = RuntimeSupport.MAPPER.writeValueAsString(Files.readString(scriptPath));
             decodeBody = false;
           } else {
             scriptName = "null";
@@ -2193,7 +2152,7 @@ public final class Server implements ServerConfig, ActionServices {
           }
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
               public String activeUrl() {
@@ -2241,10 +2200,10 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/type",
         t -> {
-          final TypeParseRequest request =
+          final var request =
               RuntimeSupport.MAPPER.readValue(t.getRequestBody(), TypeParseRequest.class);
           t.getResponseHeaders().set("Content-type", "application/json");
-          final Imyhat type =
+          final var type =
               typeParsers
                   .getOrDefault(
                       request.getFormat(),
@@ -2267,10 +2226,10 @@ public final class Server implements ServerConfig, ActionServices {
                   .parse(request.getValue());
           if (type.isBad()) {
             t.sendResponseHeaders(400, 0);
-            try (OutputStream os = t.getResponseBody()) {}
+            try (var os = t.getResponseBody()) {}
           } else {
             t.sendResponseHeaders(200, 0);
-            try (OutputStream os = t.getResponseBody()) {
+            try (var os = t.getResponseBody()) {
               RuntimeSupport.MAPPER.writeValue(os, new TypeParseResponse(type));
             }
           }
@@ -2281,8 +2240,8 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/javascript;charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody();
-              PrintStream writer = new PrintStream(os, false, "UTF-8")) {
+          try (var os = t.getResponseBody();
+              var writer = new PrintStream(os, false, StandardCharsets.UTF_8)) {
             writer.println(
                 "import { title } from './action.js'; import { breakSlashes } from './util.js'; import { blank, collapsible, jsonParameters, link, objectTable, preformatted, recursiveDifferences, revealWhitespace, table, text, timespan, strikeout } from './html.js';\nexport const actionRender = new Map();\nexport const specialImports = [];\n");
             definitionRepository.writeJavaScriptRenderer(writer);
@@ -2292,9 +2251,8 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/pauseolive",
         t -> {
-          final ObjectNode query =
-              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ObjectNode.class);
-          final SourceLocation location =
+          final var query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ObjectNode.class);
+          final var location =
               new SourceLocation(
                   query.get("file").asText(""),
                   query.get("line").asInt(0),
@@ -2309,7 +2267,7 @@ public final class Server implements ServerConfig, ActionServices {
           }
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             os.write(
                 Boolean.toString(processor.isPaused(location)).getBytes(StandardCharsets.UTF_8));
           }
@@ -2317,9 +2275,8 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/pausefile",
         t -> {
-          final ObjectNode query =
-              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ObjectNode.class);
-          final String file = query.get("file").asText("");
+          final var query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ObjectNode.class);
+          final var file = query.get("file").asText("");
           if (query.has("pause") && !query.get("pause").isNull()) {
             if (query.get("pause").asBoolean(false)) {
               processor.pause(file);
@@ -2329,19 +2286,19 @@ public final class Server implements ServerConfig, ActionServices {
           }
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             os.write(Boolean.toString(processor.isPaused(file)).getBytes(StandardCharsets.UTF_8));
           }
         });
     add(
         "/jsondumper",
         t -> {
-          final String name = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          final var name = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
           switch (t.getRequestMethod()) {
             case "POST":
               t.getResponseHeaders().set("Content-type", "application/json");
               t.sendResponseHeaders(200, 0);
-              try (OutputStream os = t.getResponseBody()) {
+              try (var os = t.getResponseBody()) {
                 os.write(jsonDumpers.getOrDefault(name, "[]").getBytes(StandardCharsets.UTF_8));
               }
               break;
@@ -2353,7 +2310,7 @@ public final class Server implements ServerConfig, ActionServices {
             case "DELETE":
               t.getResponseHeaders().set("Content-type", "application/json");
               t.sendResponseHeaders(200, 0);
-              try (OutputStream os = t.getResponseBody()) {
+              try (var os = t.getResponseBody()) {
                 os.write(
                     Boolean.toString(jsonDumpers.remove(name) != null)
                         .getBytes(StandardCharsets.UTF_8));
@@ -2362,7 +2319,7 @@ public final class Server implements ServerConfig, ActionServices {
             default:
               t.getResponseHeaders().set("Content-type", "application/json");
               t.sendResponseHeaders(400, 0);
-              try (OutputStream os = t.getResponseBody()) {
+              try (var os = t.getResponseBody()) {
                 os.write("{}".getBytes(StandardCharsets.UTF_8));
               }
           }
@@ -2370,19 +2327,18 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/parsequery",
         t -> {
-          final String input = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
-          final ObjectNode response = RuntimeSupport.MAPPER.createObjectNode();
-          final ArrayNode errors = response.putArray("errors");
+          final var input = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          final var response = RuntimeSupport.MAPPER.createObjectNode();
+          final var errors = response.putArray("errors");
           ActionFilter.parseQuery(
                   input,
                   name ->
-                      savedSearches
-                          .stream()
+                      savedSearches.stream()
                           .filter(s -> s.name().equals(name))
                           .findAny()
                           .map(s -> ActionFilterBuilder.JSON.and(s.filters())),
                   ((line, column, errorMessage) -> {
-                    final ObjectNode error = errors.addObject();
+                    final var error = errors.addObject();
                     error.put("line", line);
                     error.put("column", column);
                     error.put("message", errorMessage);
@@ -2394,18 +2350,17 @@ public final class Server implements ServerConfig, ActionServices {
                   });
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             RuntimeSupport.MAPPER.writeValue(os, response);
           }
         });
     add(
         "/printquery",
         t -> {
-          final ActionFilter input =
-              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter.class);
+          final var input = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter.class);
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             RuntimeSupport.MAPPER.writeValue(os, input.convert(ActionFilterBuilder.QUERY).first());
           }
         });
@@ -2468,7 +2423,7 @@ public final class Server implements ServerConfig, ActionServices {
         .actions()
         .forEach(
             actionDefinition -> {
-              final ObjectNode obj = array.addObject();
+              final var obj = array.addObject();
               obj.put("kind", "action");
               obj.put("name", actionDefinition.name());
               obj.put("description", actionDefinition.description());
@@ -2477,22 +2432,22 @@ public final class Server implements ServerConfig, ActionServices {
                   actionDefinition.filename() == null
                       ? null
                       : actionDefinition.filename().toString());
-              final ArrayNode supplementaryInfoArray = obj.putArray("supplementaryInformation");
+              final var supplementaryInfoArray = obj.putArray("supplementaryInformation");
               actionDefinition
                   .supplementaryInformation()
                   .generate()
                   .forEach(
                       row -> {
-                        final ObjectNode rowNode = supplementaryInfoArray.addObject();
+                        final var rowNode = supplementaryInfoArray.addObject();
                         rowNode.set("label", row.first().toJson());
                         rowNode.set("value", row.second().toJson());
                       });
-              final ArrayNode parameters = obj.putArray("parameters");
+              final var parameters = obj.putArray("parameters");
               actionDefinition
                   .parameters()
                   .forEach(
                       param -> {
-                        final ObjectNode paramInfo = parameters.addObject();
+                        final var paramInfo = parameters.addObject();
                         paramInfo.put("name", param.name());
                         paramInfo.put("type", param.type().toString());
                         paramInfo.put("required", param.required());
@@ -2501,7 +2456,7 @@ public final class Server implements ServerConfig, ActionServices {
   }
 
   private ArrayNode activeLocations() {
-    final ArrayNode locationArray = RuntimeSupport.MAPPER.createArrayNode();
+    final var locationArray = RuntimeSupport.MAPPER.createArrayNode();
     processor.locations().forEach(l -> l.toJson(locationArray, pluginManager));
     return locationArray;
   }
@@ -2515,8 +2470,8 @@ public final class Server implements ServerConfig, ActionServices {
             t.sendResponseHeaders(503, -1);
             return;
           }
-          try (AutoCloseable timer = responseTime.start(url);
-              AutoCloseable inflight =
+          try (var timer = responseTime.start(url);
+              var inflight =
                   inflightCloseable(
                       String.format(
                           "HTTP request %s for %s", url, t.getRemoteAddress().toString()))) {
@@ -2535,9 +2490,9 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", type);
           t.sendResponseHeaders(200, 0);
-          final byte[] b = new byte[1024];
-          try (OutputStream output = t.getResponseBody();
-              InputStream input = getClass().getResourceAsStream(url)) {
+          final var b = new byte[1024];
+          try (var output = t.getResponseBody();
+              var input = getClass().getResourceAsStream(url)) {
             int count;
             while ((count = input.read(b)) > 0) {
               output.write(b, 0, count);
@@ -2553,10 +2508,10 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         url,
         t -> {
-          final JsonNode node = fetcher.apply(RuntimeSupport.MAPPER, t.getRequestURI().getQuery());
+          final var node = fetcher.apply(RuntimeSupport.MAPPER, t.getRequestURI().getQuery());
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
+          try (var os = t.getResponseBody()) {
             RuntimeSupport.MAPPER.writeValue(os, node);
           }
         });
@@ -2570,7 +2525,7 @@ public final class Server implements ServerConfig, ActionServices {
     Stream.concat(definitionRepository.constants(), compiler.constants())
         .forEach(
             constant -> {
-              final ObjectNode obj = array.addObject();
+              final var obj = array.addObject();
               obj.put("kind", "constant");
               obj.put("name", constant.name());
               obj.put("description", constant.description());
@@ -2588,20 +2543,17 @@ public final class Server implements ServerConfig, ActionServices {
       throws IOException {
     if (!readStale
         && (processor.isOverloaded(format.name())
-            || pluginManager
-                .isOverloaded(Collections.singleton(format.name()))
-                .findAny()
-                .isPresent()
+            || pluginManager.isOverloaded(Set.of(format.name())).findAny().isPresent()
             || !inputDownloadSemaphore.tryAcquire())) {
       t.sendResponseHeaders(503, 0);
-      try (OutputStream os = t.getResponseBody()) {}
+      try (var os = t.getResponseBody()) {}
       return;
     }
     t.getResponseHeaders().set("Content-type", "application/json");
     t.sendResponseHeaders(200, 0);
-    final JsonFactory jfactory = new JsonFactory();
-    try (OutputStream os = t.getResponseBody();
-        JsonGenerator jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8)) {
+    final var jfactory = new JsonFactory();
+    try (var os = t.getResponseBody();
+        var jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8)) {
       format.writeJson(jGenerator, inputSource, readStale);
     } catch (final IOException e) {
       e.printStackTrace();
@@ -2674,19 +2626,19 @@ public final class Server implements ServerConfig, ActionServices {
     Stream.concat(definitionRepository.functions(), compiler.functions())
         .forEach(
             function -> {
-              final ObjectNode obj = array.addObject();
+              final var obj = array.addObject();
               obj.put("kind", "function");
               obj.put("name", function.name());
               obj.put("description", function.description());
               obj.put("return", function.returnType().descriptor());
               obj.put(
                   "filename", function.filename() == null ? null : function.filename().toString());
-              final ArrayNode parameters = obj.putArray("parameters");
+              final var parameters = obj.putArray("parameters");
               function
                   .parameters()
                   .forEach(
                       p -> {
-                        final ObjectNode parameter = parameters.addObject();
+                        final var parameter = parameters.addObject();
                         parameter.put("type", p.type().descriptor());
                         parameter.put("description", p.description());
                       });
@@ -2708,7 +2660,7 @@ public final class Server implements ServerConfig, ActionServices {
 
   private String localname() {
     URIBuilder builder = null;
-    final String url = System.getenv("LOCAL_URL");
+    final var url = System.getenv("LOCAL_URL");
     if (url != null) {
       try {
         builder = new URIBuilder(url);
@@ -2778,7 +2730,7 @@ public final class Server implements ServerConfig, ActionServices {
     Stream.concat(definitionRepository.oliveDefinitions(), compiler.oliveDefinitions())
         .forEach(
             oliveDefinition -> {
-              final ObjectNode obj = array.addObject();
+              final var obj = array.addObject();
               obj.put("kind", "olive");
               obj.put("name", oliveDefinition.name());
               obj.put("isRoot", oliveDefinition.isRoot());
@@ -2788,13 +2740,13 @@ public final class Server implements ServerConfig, ActionServices {
                   oliveDefinition.filename() == null
                       ? null
                       : oliveDefinition.filename().toString());
-              final ObjectNode output = obj.putObject("output");
+              final var output = obj.putObject("output");
               oliveDefinition
                   .outputStreamVariables(null, null)
                   .get()
                   .forEach(v -> output.put(v.name(), v.type().descriptor()));
-              final ArrayNode parameters = obj.putArray("parameters");
-              for (int i = 0; i < oliveDefinition.parameterCount(); i++) {
+              final var parameters = obj.putArray("parameters");
+              for (var i = 0; i < oliveDefinition.parameterCount(); i++) {
                 parameters.add(oliveDefinition.parameterType(i).descriptor());
               }
             });
@@ -2806,7 +2758,7 @@ public final class Server implements ServerConfig, ActionServices {
         .sorted(Comparator.comparing(fileTable -> fileTable.second().filename()))
         .forEach(
             fileTable -> {
-              final ObjectNode fileNode = array.addObject();
+              final var fileNode = array.addObject();
               fileNode.put("format", fileTable.second().format().name());
               fileNode.put("hash", fileTable.second().hash());
               fileNode.put("file", fileTable.second().filename());
@@ -2831,7 +2783,7 @@ public final class Server implements ServerConfig, ActionServices {
               fileNode.put(
                   "lastRun",
                   fileTable.first() == null ? null : fileTable.first().lastRun().toEpochMilli());
-              final ArrayNode olivesNode = fileNode.putArray("olives");
+              final var olivesNode = fileNode.putArray("olives");
 
               fileTable
                   .second()
@@ -2839,13 +2791,13 @@ public final class Server implements ServerConfig, ActionServices {
                   .sorted(Comparator.comparing(OliveTable::line).thenComparing(OliveTable::column))
                   .forEach(
                       olive -> {
-                        final SourceLocation location =
+                        final var location =
                             new SourceLocation(
                                 fileTable.second().filename(),
                                 olive.line(),
                                 olive.column(),
                                 fileTable.second().hash());
-                        final ObjectNode oliveNode = olivesNode.addObject();
+                        final var oliveNode = olivesNode.addObject();
                         location.toJson(oliveNode, pluginManager);
                         oliveNode.put("description", olive.description());
                         oliveNode.put("syntax", olive.syntax());
@@ -2854,23 +2806,23 @@ public final class Server implements ServerConfig, ActionServices {
                           oliveNode.put("paused", processor.isPaused(location));
                         }
                         olive.tags().sorted().forEach(oliveNode.putArray("tags")::add);
-                        final ArrayNode supplementaryInfoArray =
+                        final var supplementaryInfoArray =
                             oliveNode.putArray("supplementaryInformation");
                         olive
                             .supplementaryInformation()
                             .generate()
                             .forEach(
                                 row -> {
-                                  final ObjectNode rowNode = supplementaryInfoArray.addObject();
+                                  final var rowNode = supplementaryInfoArray.addObject();
                                   rowNode.set("label", row.first().toJson());
                                   rowNode.set("value", row.second().toJson());
                                 });
-                        final ArrayNode clauseArray = oliveNode.putArray("clauses");
+                        final var clauseArray = oliveNode.putArray("clauses");
                         olive
                             .clauses()
                             .forEach(
                                 clause -> {
-                                  final ObjectNode clauseNode = clauseArray.addObject();
+                                  final var clauseNode = clauseArray.addObject();
                                   clauseNode.put("line", clause.line());
                                   clauseNode.put("column", clause.column());
                                   clauseNode.put("syntax", clause.syntax());
@@ -2880,14 +2832,14 @@ public final class Server implements ServerConfig, ActionServices {
   }
 
   public ObjectNode pauses() {
-    final Map<String, String> currentOlives =
+    final var currentOlives =
         compiler
             .dashboard()
             .map(Pair::second)
             .collect(Collectors.toMap(FileTable::filename, FileTable::hash));
-    final ObjectNode pauseInfo = RuntimeSupport.MAPPER.createObjectNode();
-    final ArrayNode liveOlives = pauseInfo.putArray("liveOlives");
-    final ArrayNode deadOlives = pauseInfo.putArray("deadOlives");
+    final var pauseInfo = RuntimeSupport.MAPPER.createObjectNode();
+    final var liveOlives = pauseInfo.putArray("liveOlives");
+    final var deadOlives = pauseInfo.putArray("deadOlives");
     processor
         .pauses()
         .forEach(
@@ -2897,8 +2849,8 @@ public final class Server implements ServerConfig, ActionServices {
                         ? liveOlives
                         : deadOlives,
                     pluginManager));
-    final ArrayNode liveFiles = pauseInfo.putArray("liveFiles");
-    final ArrayNode deadFiles = pauseInfo.putArray("deadFiles");
+    final var liveFiles = pauseInfo.putArray("liveFiles");
+    final var deadFiles = pauseInfo.putArray("deadFiles");
     processor
         .pausedFiles()
         .forEach(file -> (currentOlives.containsKey(file) ? liveFiles : deadFiles).add(file));
@@ -2910,28 +2862,28 @@ public final class Server implements ServerConfig, ActionServices {
         .refillers()
         .forEach(
             refiller -> {
-              final ObjectNode obj = array.addObject();
+              final var obj = array.addObject();
               obj.put("kind", "refiller");
               obj.put("name", refiller.name());
               obj.put("description", refiller.description());
               obj.put(
                   "filename", refiller.filename() == null ? null : refiller.filename().toString());
-              final ArrayNode supplementaryInfoArray = obj.putArray("supplementaryInformation");
+              final var supplementaryInfoArray = obj.putArray("supplementaryInformation");
               refiller
                   .supplementaryInformation()
                   .generate()
                   .forEach(
                       row -> {
-                        final ObjectNode rowNode = supplementaryInfoArray.addObject();
+                        final var rowNode = supplementaryInfoArray.addObject();
                         rowNode.set("label", row.first().toJson());
                         rowNode.set("value", row.second().toJson());
                       });
-              final ArrayNode parameters = obj.putArray("parameters");
+              final var parameters = obj.putArray("parameters");
               refiller
                   .parameters()
                   .forEach(
                       param -> {
-                        final ObjectNode paramInfo = parameters.addObject();
+                        final var paramInfo = parameters.addObject();
                         paramInfo.put("name", param.name());
                         paramInfo.put("type", param.type().toString());
                       });
@@ -2939,7 +2891,7 @@ public final class Server implements ServerConfig, ActionServices {
   }
 
   public ObjectNode savedSearches() {
-    final ObjectNode searchInfo = RuntimeSupport.MAPPER.createObjectNode();
+    final var searchInfo = RuntimeSupport.MAPPER.createObjectNode();
     pluginManager
         .searches(ActionFilterBuilder.JSON)
         .forEach(pair -> searchInfo.putArray(pair.first()).addPOJO(pair.second()));
@@ -2973,7 +2925,7 @@ public final class Server implements ServerConfig, ActionServices {
         .signatures()
         .forEach(
             constant -> {
-              final ObjectNode obj = array.addObject();
+              final var obj = array.addObject();
               obj.put("kind", "signature");
               obj.put("name", constant.name());
               obj.put("type", constant.type().descriptor());
@@ -2993,7 +2945,7 @@ public final class Server implements ServerConfig, ActionServices {
     } catch (final InterruptedException e) {
       Thread.currentThread().interrupt();
     }
-    final long pluginCount = pluginManager.count();
+    final var pluginCount = pluginManager.count();
     System.out.printf("Found %d plugins\n", pluginCount);
     System.out.println("Compiling script...");
     compiler.start(fileWatcher);
@@ -3002,20 +2954,20 @@ public final class Server implements ServerConfig, ActionServices {
     processor.start(executor);
     System.out.println("Starting scheduler...");
     master.start(executor);
-    pluginManager.log("Shesmu started.", Collections.emptyMap());
+    pluginManager.log("Shesmu started.", Map.of());
   }
 
   private <L, V> void storeEntries(ObjectNode entries, LabelledKeyValueCache<?, L, ?, V> cache) {
-    for (final Map.Entry<L, Record<V>> record : cache) {
-      final ObjectNode node = entries.putObject(record.getKey().toString());
+    for (final var record : cache) {
+      final var node = entries.putObject(record.getKey().toString());
       node.put("collectionSize", record.getValue().collectionSize());
       node.put("lastUpdate", record.getValue().lastUpdate().toEpochMilli());
     }
   }
 
   private <K, V> void storeEntries(ObjectNode entries, KeyValueCache<K, ?, V> cache) {
-    for (final Map.Entry<K, Record<V>> record : cache) {
-      final ObjectNode node = entries.putObject(record.getKey().toString());
+    for (final var record : cache) {
+      final var node = entries.putObject(record.getKey().toString());
       node.put("collectionSize", record.getValue().collectionSize());
       node.put("lastUpdate", record.getValue().lastUpdate().toEpochMilli());
     }

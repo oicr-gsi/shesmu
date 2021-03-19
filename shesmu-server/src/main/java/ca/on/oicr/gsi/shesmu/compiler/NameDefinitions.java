@@ -6,7 +6,6 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -68,9 +67,7 @@ public class NameDefinitions {
     return new NameDefinitions(
         Stream.concat(
                 Stream.of(parameter),
-                variables
-                    .values()
-                    .stream()
+                variables.values().stream()
                     .filter(variable -> !variable.name().equals(parameter.name())))
             .collect(Collectors.toMap(Target::name, Function.identity(), (a, b) -> a)),
         isGood,
@@ -86,14 +83,11 @@ public class NameDefinitions {
    * @param parameters the parameters to bind
    */
   public NameDefinitions bind(List<? extends Target> parameters) {
-    final Set<String> shadowedNames =
-        parameters.stream().map(Target::name).collect(Collectors.toSet());
+    final var shadowedNames = parameters.stream().map(Target::name).collect(Collectors.toSet());
     return new NameDefinitions(
         Stream.concat(
                 parameters.stream(),
-                variables
-                    .values()
-                    .stream()
+                variables.values().stream()
                     .filter(variable -> !shadowedNames.contains(variable.name())))
             .collect(Collectors.toMap(Target::name, Function.identity(), (a, b) -> a)),
         isGood,
@@ -114,8 +108,8 @@ public class NameDefinitions {
 
   /** Get a variable from the collection. */
   public Optional<Target> get(String name) {
-    Optional<Target> result = Optional.ofNullable(variables.get(name));
-    if (!result.isPresent()) {
+    var result = Optional.ofNullable(variables.get(name));
+    if (result.isEmpty()) {
       result = undefinedVariableProvider.handleUndefinedVariable(name);
       result.ifPresent(t -> variables.put(t.name(), t));
     }

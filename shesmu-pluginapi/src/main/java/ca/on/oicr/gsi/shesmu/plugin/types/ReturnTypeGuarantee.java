@@ -16,8 +16,8 @@ import java.util.Set;
  */
 public abstract class ReturnTypeGuarantee<T> extends GenericReturnTypeGuarantee<T> {
   public static <T> ReturnTypeGuarantee<Set<T>> list(ReturnTypeGuarantee<T> inner) {
-    final Imyhat listType = inner.type().asList();
-    return new ReturnTypeGuarantee<Set<T>>() {
+    final var listType = inner.type().asList();
+    return new ReturnTypeGuarantee<>() {
       @Override
       public Imyhat type() {
         return listType;
@@ -26,8 +26,8 @@ public abstract class ReturnTypeGuarantee<T> extends GenericReturnTypeGuarantee<
   }
 
   public static <T> ReturnTypeGuarantee<Optional<T>> optional(ReturnTypeGuarantee<T> inner) {
-    final Imyhat optionalType = inner.type().asOptional();
-    return new ReturnTypeGuarantee<Optional<T>>() {
+    final var optionalType = inner.type().asOptional();
+    return new ReturnTypeGuarantee<>() {
       @Override
       public Imyhat type() {
         return optionalType;
@@ -36,7 +36,7 @@ public abstract class ReturnTypeGuarantee<T> extends GenericReturnTypeGuarantee<
   }
 
   public static final ReturnTypeGuarantee<Boolean> BOOLEAN =
-      new ReturnTypeGuarantee<Boolean>() {
+      new ReturnTypeGuarantee<>() {
 
         @Override
         public Imyhat type() {
@@ -44,7 +44,7 @@ public abstract class ReturnTypeGuarantee<T> extends GenericReturnTypeGuarantee<
         }
       };
   public static final ReturnTypeGuarantee<Instant> DATE =
-      new ReturnTypeGuarantee<Instant>() {
+      new ReturnTypeGuarantee<>() {
 
         @Override
         public Imyhat type() {
@@ -52,7 +52,7 @@ public abstract class ReturnTypeGuarantee<T> extends GenericReturnTypeGuarantee<
         }
       };
   public static final ReturnTypeGuarantee<Double> DOUBLE =
-      new ReturnTypeGuarantee<Double>() {
+      new ReturnTypeGuarantee<>() {
 
         @Override
         public Imyhat type() {
@@ -60,7 +60,7 @@ public abstract class ReturnTypeGuarantee<T> extends GenericReturnTypeGuarantee<
         }
       };
   public static final ReturnTypeGuarantee<Long> LONG =
-      new ReturnTypeGuarantee<Long>() {
+      new ReturnTypeGuarantee<>() {
 
         @Override
         public Imyhat type() {
@@ -68,7 +68,7 @@ public abstract class ReturnTypeGuarantee<T> extends GenericReturnTypeGuarantee<
         }
       };
   public static final ReturnTypeGuarantee<Path> PATH =
-      new ReturnTypeGuarantee<Path>() {
+      new ReturnTypeGuarantee<>() {
 
         @Override
         public Imyhat type() {
@@ -76,7 +76,7 @@ public abstract class ReturnTypeGuarantee<T> extends GenericReturnTypeGuarantee<
         }
       };
   public static final ReturnTypeGuarantee<String> STRING =
-      new ReturnTypeGuarantee<String>() {
+      new ReturnTypeGuarantee<>() {
 
         @Override
         public Imyhat type() {

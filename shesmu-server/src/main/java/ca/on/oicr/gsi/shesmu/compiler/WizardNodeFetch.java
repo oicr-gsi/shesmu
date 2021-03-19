@@ -41,7 +41,7 @@ public class WizardNodeFetch extends WizardNode {
         renderer.lambda(
             1,
             (r, a) -> {
-              for (final FetchNode entry : entries) {
+              for (final var entry : entries) {
                 r.define(
                     new EcmaLoadableValue() {
                       @Override
@@ -61,8 +61,8 @@ public class WizardNodeFetch extends WizardNode {
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final Map.Entry<String, Long> entry :
+    var ok = true;
+    for (final var entry :
         entries.stream()
             .collect(Collectors.groupingBy(FetchNode::name, Collectors.counting()))
             .entrySet()) {

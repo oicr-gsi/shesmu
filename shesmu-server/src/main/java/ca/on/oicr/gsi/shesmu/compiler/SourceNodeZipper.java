@@ -46,7 +46,7 @@ public class SourceNodeZipper extends SourceNode {
   private final ExpressionNode right;
   private Imyhat type;
   private Imyhat keyType;
-  private List<Pair<Integer, Character>> copySemantics = new ArrayList<>();
+  private final List<Pair<Integer, Character>> copySemantics = new ArrayList<>();
 
   public SourceNodeZipper(int line, int column, ExpressionNode left, ExpressionNode right) {
     super(line, column);
@@ -99,13 +99,13 @@ public class SourceNodeZipper extends SourceNode {
             renderer.lambda(
                 2,
                 (r, arg) -> {
-                  final String result = r.newLet("[]");
+                  final var result = r.newLet("[]");
                   r.conditional(
                       keyType.apply(EcmaScriptRenderer.isEqual(arg.apply(0), arg.apply(1))),
                       whenTrue -> {
-                        final String output =
+                        final var output =
                             whenTrue.newLet(String.format("new Array(%d)", copySemantics.size()));
-                        for (int index = 0; index < copySemantics.size(); index++) {
+                        for (var index = 0; index < copySemantics.size(); index++) {
                           whenTrue.statement(
                               String.format(
                                   "%s[%d] = $runtime.nullifyUndefined(%s?.[%d])",
@@ -148,8 +148,8 @@ public class SourceNodeZipper extends SourceNode {
       return false;
     }
     final List<Imyhat.TupleImyhat> types = new ArrayList<>();
-    for (final ExpressionNode expression : Arrays.asList(left, right)) {
-      final Imyhat type = expression.type();
+    for (final var expression : List.of(left, right)) {
+      final var type = expression.type();
       if (type == Imyhat.EMPTY) {
         errorHandler.accept(
             String.format(
@@ -158,7 +158,7 @@ public class SourceNodeZipper extends SourceNode {
         return false;
       }
       if (type instanceof Imyhat.ListImyhat) {
-        Imyhat inner = ((Imyhat.ListImyhat) type).inner();
+        var inner = ((Imyhat.ListImyhat) type).inner();
         if (inner instanceof Imyhat.TupleImyhat) {
           types.add((Imyhat.TupleImyhat) inner);
         } else {
@@ -171,8 +171,8 @@ public class SourceNodeZipper extends SourceNode {
         return false;
       }
     }
-    final Imyhat leftIndex = types.get(0).get(0);
-    final Imyhat rightIndex = types.get(1).get(0);
+    final var leftIndex = types.get(0).get(0);
+    final var rightIndex = types.get(1).get(0);
     if (!leftIndex.isSame(rightIndex)) {
       errorHandler.accept(
           String.format(
@@ -183,9 +183,9 @@ public class SourceNodeZipper extends SourceNode {
     final List<Imyhat> output = new ArrayList<>();
     keyType = leftIndex.unify(rightIndex);
     output.add(keyType);
-    for (int position = 0; position < 2; position++) {
-      for (int index = 1; index < types.get(position).count(); index++) {
-        final Imyhat outputType = types.get(position).get(index).asOptional();
+    for (var position = 0; position < 2; position++) {
+      for (var index = 1; index < types.get(position).count(); index++) {
+        final var outputType = types.get(position).get(index).asOptional();
         output.add(outputType);
         copySemantics.add(
             new Pair<>(
@@ -194,7 +194,7 @@ public class SourceNodeZipper extends SourceNode {
                     ((outputType.isSame(types.get(position).get(index)) ? 'A' : 'a') + position)));
       }
     }
-    type = Imyhat.tuple(output.stream().toArray(Imyhat[]::new));
+    type = Imyhat.tuple(output.toArray(Imyhat[]::new));
     return true;
   }
 }

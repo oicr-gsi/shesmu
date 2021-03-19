@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -73,9 +72,8 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
       Function<List<Pair<String, DestructuredArgumentNode>>, T> objectConstructor,
       Function<List<DestructuredArgumentNode>, T> tupleConstructor) {
     {
-      final AtomicReference<List<Pair<String, DestructuredArgumentNode>>> inner =
-          new AtomicReference<>();
-      Parser result =
+      final var inner = new AtomicReference<List<Pair<String, DestructuredArgumentNode>>>();
+      var result =
           p.whitespace()
               .listEmpty(inner::set, (ip, io) -> parseInner(ip, io, true), ',')
               .whitespace();
@@ -101,7 +99,7 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
 
       result = result.symbol("}").whitespace();
       if (result.isGood() && !inner.get().isEmpty()) {
-        final Map<Boolean, Long> formats =
+        final var formats =
             inner.get().stream()
                 .collect(Collectors.partitioningBy(x -> x.first() == null, Collectors.counting()));
         if ((formats.get(true) > 0) && (formats.get(false) > 0)) {
@@ -143,13 +141,13 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
     DISPATCH.addRaw(
         "variable",
         (p, o) -> {
-          final AtomicReference<String> name = new AtomicReference<>();
-          final Parser result = p.identifier(name::set).whitespace();
+          final var name = new AtomicReference<String>();
+          final var result = p.identifier(name::set).whitespace();
           if (result.isGood()) {
-            final Parser asResult = result.keyword("As");
+            final var asResult = result.keyword("As");
             if (asResult.isGood()) {
-              final AtomicReference<ImyhatNode> type = new AtomicReference<>();
-              final Parser converted =
+              final var type = new AtomicReference<ImyhatNode>();
+              final var converted =
                   asResult.whitespace().then(ImyhatNode::parse, type::set).whitespace();
               if (converted.isGood()) {
                 o.accept(
@@ -172,11 +170,11 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
       Parser parser,
       Consumer<Pair<String, DestructuredArgumentNode>> output,
       boolean tupleAllowed) {
-    final AtomicReference<DestructuredArgumentNode> node = new AtomicReference<>();
-    final AtomicReference<String> name = new AtomicReference<>();
-    final Parser childResult = parse(parser, node::set);
+    final var node = new AtomicReference<DestructuredArgumentNode>();
+    final var name = new AtomicReference<String>();
+    final var childResult = parse(parser, node::set);
     if (childResult.isGood()) {
-      final Parser objectParser =
+      final var objectParser =
           childResult.whitespace().symbol("=").whitespace().identifier(name::set).whitespace();
       if (objectParser.isGood()) {
         output.accept(new Pair<>(name.get(), node.get()));

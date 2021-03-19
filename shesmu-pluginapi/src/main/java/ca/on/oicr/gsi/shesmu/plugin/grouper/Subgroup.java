@@ -52,8 +52,8 @@ public final class Subgroup<I, O> {
 
   /** Create the output value for this input row */
   public O build(Function<I, O> makeKey) {
-    final O output = makeKey.apply(items.get(0));
-    for (final I item : items) {
+    final var output = makeKey.apply(items.get(0));
+    for (final var item : items) {
       collector.accept(output, item);
     }
     return output;

@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 public class PartitionCount {
   @RuntimeInterop
   public static final Collector<Boolean, PartitionCount, Tuple> COLLECTOR =
-      new Collector<Boolean, PartitionCount, Tuple>() {
+      new Collector<>() {
 
         @Override
         public BiConsumer<PartitionCount, Boolean> accumulator() {

@@ -44,8 +44,8 @@ public abstract class LabelledKeyValueCache<K, L, I, V>
 
     @Override
     public I update(Instant lastModified) throws Exception {
-      double cpuStart = Owner.CPU_TIME.getAsDouble();
-      try (final AutoCloseable _ignored = fetchTime.start(name)) {
+      var cpuStart = Owner.CPU_TIME.getAsDouble();
+      try (final var _ignored = fetchTime.start(name)) {
         return fetch(key, label, lastModified);
       } finally {
         fetchCpuTime.labels(name).observe(Owner.CPU_TIME.getAsDouble() - cpuStart);
@@ -125,7 +125,7 @@ public abstract class LabelledKeyValueCache<K, L, I, V>
    *     is in an error state
    */
   public final V get(K key) {
-    final Record<V> record =
+    final var record =
         records.computeIfAbsent(
             label(key), label -> recordCtor.create(new LabelledKeyValueUpdater(key, label)));
     maxCount = Math.max(maxCount, record.collectionSize());
@@ -140,14 +140,14 @@ public abstract class LabelledKeyValueCache<K, L, I, V>
    * @return the last value that was fetched
    */
   public final V getStale(K key) {
-    final Record<V> record =
+    final var record =
         records.computeIfAbsent(
             label(key), label -> recordCtor.create(new LabelledKeyValueUpdater(key, label)));
     return record.readStale();
   }
 
   public final void invalidate(K key) {
-    final Record<V> record = records.get(label(key));
+    final var record = records.get(label(key));
     if (record != null) {
       record.invalidate();
     }

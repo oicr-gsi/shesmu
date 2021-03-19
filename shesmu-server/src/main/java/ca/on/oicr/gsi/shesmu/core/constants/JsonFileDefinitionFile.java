@@ -9,14 +9,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
-import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import javax.xml.stream.XMLStreamException;
 
 public class JsonFileDefinitionFile extends JsonPluginFile<ObjectNode> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -49,8 +45,8 @@ public class JsonFileDefinitionFile extends JsonPluginFile<ObjectNode> {
       } else {
         return null;
       }
-      final Set<Object> set = type.newSet();
-      final Iterator<JsonNode> iterator = value.elements();
+      final var set = type.newSet();
+      final var iterator = value.elements();
       while (iterator.hasNext()) {
         set.add(converter.apply(iterator.next()));
       }
@@ -70,21 +66,21 @@ public class JsonFileDefinitionFile extends JsonPluginFile<ObjectNode> {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) {
     if (!badKeys.isEmpty()) {
-      renderer.line("Bad keys", badKeys.stream().collect(Collectors.joining(", ")));
+      renderer.line("Bad keys", String.join(", ", badKeys));
     }
   }
 
   @Override
   protected Optional<Integer> update(ObjectNode node) {
-    final String description = String.format("User-defined value specified in %s.", fileName());
+    final var description = String.format("User-defined value specified in %s.", fileName());
     definer.clearConstants();
     badKeys.clear();
-    Iterator<Entry<String, JsonNode>> iterator = node.fields();
+    var iterator = node.fields();
     while (iterator.hasNext()) {
-      Entry<String, JsonNode> e = iterator.next();
-      final Pair<Imyhat, Object> constant = convert(e.getValue());
+      var e = iterator.next();
+      final var constant = convert(e.getValue());
       if (constant != null) {
         definer.defineConstant(e.getKey(), description, constant.first(), constant.second());
       } else {

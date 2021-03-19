@@ -21,7 +21,6 @@ import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Handle;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -36,7 +35,7 @@ public abstract class BaseOliveBuilder {
       InputFormatDefinition inputFormat,
       List<SignableRenderer> signables,
       SignatureDefinition signer) {
-    final String name = prefix + signer.name();
+    final var name = prefix + signer.name();
     switch (signer.storage()) {
       case STATIC:
         owner.classVisitor.visitField(
@@ -50,10 +49,10 @@ public abstract class BaseOliveBuilder {
             owner.selfType(), name, signer.type().apply(TypeUtils.TO_ASM));
         break;
       case DYNAMIC:
-        final Method method =
+        final var method =
             new Method(
                 name, signer.type().apply(TypeUtils.TO_ASM), new Type[] {inputFormat.type()});
-        final GeneratorAdapter methodGen =
+        final var methodGen =
             new GeneratorAdapter(
                 Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC, method, null, null, owner.classVisitor);
         methodGen.visitCode();
@@ -243,7 +242,7 @@ public abstract class BaseOliveBuilder {
    */
   public final void call(
       CallableDefinitionRenderer defineOlive, Stream<Consumer<Renderer>> arguments) {
-    final List<Consumer<Renderer>> arglist = arguments.collect(Collectors.toList());
+    final var arglist = arguments.collect(Collectors.toList());
     if (arglist.size() != defineOlive.parameters()) {
       throw new IllegalArgumentException(
           String.format(
@@ -264,7 +263,7 @@ public abstract class BaseOliveBuilder {
           renderer.emitNamed(SOURCE_LOCATION_COLUMN);
           renderer.emitNamed(SOURCE_LOCATION_HASH);
           loadAccessor(renderer);
-          for (Consumer<Renderer> rendererConsumer : arglist) {
+          for (var rendererConsumer : arglist) {
             rendererConsumer.accept(renderer);
           }
           defineOlive.generateCall(renderer.methodGen());
@@ -301,8 +300,8 @@ public abstract class BaseOliveBuilder {
    * @return a method generator for the body of the clause
    */
   public final Renderer filter(int line, int column, LoadableValue... capturedVariables) {
-    final Type type = currentType;
-    final LambdaBuilder lambda =
+    final var type = currentType;
+    final var lambda =
         new LambdaBuilder(
             owner,
             String.format("Where %d:%d", line, column),
@@ -331,20 +330,20 @@ public abstract class BaseOliveBuilder {
       Imyhat unrollType,
       boolean copySignatures,
       LoadableValue... capturedVariables) {
-    final String className = String.format("shesmu/dyn/Flatten %d:%d", line, column);
+    final var className = String.format("shesmu/dyn/Flatten %d:%d", line, column);
 
-    final Type oldType = currentType;
-    final Type newType = Type.getObjectType(className);
+    final var oldType = currentType;
+    final var newType = Type.getObjectType(className);
     currentType = newType;
 
-    final LambdaBuilder explodeLambda =
+    final var explodeLambda =
         new LambdaBuilder(
             owner,
             String.format("Flatten %d:%d 🧨", line, column),
             LambdaBuilder.function(A_STREAM_TYPE, oldType),
             capturedVariables);
 
-    final FlattenBuilder flattenBuilder =
+    final var flattenBuilder =
         new FlattenBuilder(
             owner,
             newType,
@@ -355,7 +354,7 @@ public abstract class BaseOliveBuilder {
 
     final Consumer<Renderer> pushConstructor;
     if (copySignatures) {
-      final LambdaBuilder constructLambda =
+      final var constructLambda =
           new LambdaBuilder(
               owner,
               String.format("Flatten %d:%d✨", line, column),
@@ -377,7 +376,7 @@ public abstract class BaseOliveBuilder {
                 }
               });
 
-      final Renderer constructorRenderer = constructLambda.renderer(oldType, 0, this::emitSigner);
+      final var constructorRenderer = constructLambda.renderer(oldType, 0, this::emitSigner);
       constructorRenderer.methodGen().visitCode();
       constructorRenderer.methodGen().newInstance(flattenBuilder.type());
       constructorRenderer.methodGen().dup();
@@ -416,21 +415,21 @@ public abstract class BaseOliveBuilder {
       JoinInputSource innerType,
       Imyhat keyType,
       LoadableValue... capturedVariables) {
-    final String className = String.format("shesmu/dyn/Join %d:%d", line, column);
+    final var className = String.format("shesmu/dyn/Join %d:%d", line, column);
 
-    final Type oldType = currentType;
-    final Type newType = Type.getObjectType(className);
+    final var oldType = currentType;
+    final var newType = Type.getObjectType(className);
     currentType = newType;
 
     owner.useInputFormat(innerType.format());
 
-    final LambdaBuilder outerKeyLambda =
+    final var outerKeyLambda =
         new LambdaBuilder(
             owner,
             String.format("Join %d:%d Outer 🔑", line, column),
             LambdaBuilder.function(keyType, oldType),
             capturedVariables);
-    final LambdaBuilder innerKeyLambda =
+    final var innerKeyLambda =
         new LambdaBuilder(
             owner,
             String.format("Join %d:%d Inner 🔑", line, column),
@@ -458,8 +457,8 @@ public abstract class BaseOliveBuilder {
                       : METHOD_RUNTIME_SUPPORT__JOIN);
         });
 
-    final Renderer outerKeyMethodGen = outerKeyLambda.renderer(oldType, this::emitSigner);
-    final Renderer innerKeyMethodGen = innerKeyLambda.renderer(innerType.type(), this::emitSigner);
+    final var outerKeyMethodGen = outerKeyLambda.renderer(oldType, this::emitSigner);
+    final var innerKeyMethodGen = innerKeyLambda.renderer(innerType.type(), this::emitSigner);
     return new JoinBuilder(
         owner, newType, oldType, innerType.type(), outerKeyMethodGen, innerKeyMethodGen);
   }
@@ -472,36 +471,35 @@ public abstract class BaseOliveBuilder {
       Imyhat keyType,
       BiConsumer<SignatureDefinition, Renderer> innerSigner,
       LoadableValue... capturedVariables) {
-    final String joinedClassName =
-        String.format("shesmu/dyn/LeftJoinTemporary %d:%d", line, column);
-    final String outputClassName = String.format("shesmu/dyn/LeftJoin %d:%d", line, column);
+    final var joinedClassName = String.format("shesmu/dyn/LeftJoinTemporary %d:%d", line, column);
+    final var outputClassName = String.format("shesmu/dyn/LeftJoin %d:%d", line, column);
 
-    final Type oldType = currentType;
-    final Type joinedType = Type.getObjectType(joinedClassName);
-    final Type newType = Type.getObjectType(outputClassName);
+    final var oldType = currentType;
+    final var joinedType = Type.getObjectType(joinedClassName);
+    final var newType = Type.getObjectType(outputClassName);
     currentType = newType;
 
     owner.useInputFormat(innerType.format());
 
-    final LambdaBuilder newMethod =
+    final var newMethod =
         new LambdaBuilder(
             owner,
             String.format("LeftJoin %d:%d✨", line, column),
             LambdaBuilder.function(newType, joinedType),
             capturedVariables);
-    final LambdaBuilder outerKeyLambda =
+    final var outerKeyLambda =
         new LambdaBuilder(
             owner,
             String.format("LeftJoin %d:%d Outer 🔑", line, column),
             LambdaBuilder.function(keyType, oldType),
             capturedVariables);
-    final LambdaBuilder innerKeyLambda =
+    final var innerKeyLambda =
         new LambdaBuilder(
             owner,
             String.format("LeftJoin %d:%d Inner 🔑", line, column),
             LambdaBuilder.function(keyType, innerType.type()),
             capturedVariables);
-    final LambdaBuilder collectLambda =
+    final var collectLambda =
         new LambdaBuilder(
             owner,
             String.format("LeftJoin %d:%d 🧲", line, column),
@@ -535,10 +533,10 @@ public abstract class BaseOliveBuilder {
           renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
         });
 
-    final Renderer newMethodGen = newMethod.renderer(joinedType, this::emitSigner);
-    final Renderer outerKeyMethodGen = outerKeyLambda.renderer(oldType, this::emitSigner);
-    final Renderer innerKeyMethodGen = innerKeyLambda.renderer(innerType.type(), innerSigner);
-    final Renderer collectedMethodGen = collectLambda.renderer(joinedType, 1, innerSigner);
+    final var newMethodGen = newMethod.renderer(joinedType, this::emitSigner);
+    final var outerKeyMethodGen = outerKeyLambda.renderer(oldType, this::emitSigner);
+    final var innerKeyMethodGen = innerKeyLambda.renderer(innerType.type(), innerSigner);
+    final var collectedMethodGen = collectLambda.renderer(joinedType, 1, innerSigner);
 
     return new Pair<>(
         new JoinBuilder(
@@ -548,13 +546,13 @@ public abstract class BaseOliveBuilder {
   }
 
   public final LetBuilder let(int line, int column, LoadableValue... capturedVariables) {
-    final String className = String.format("shesmu/dyn/Let %d:%d", line, column);
+    final var className = String.format("shesmu/dyn/Let %d:%d", line, column);
 
-    final Type oldType = currentType;
-    final Type newType = Type.getObjectType(className);
+    final var oldType = currentType;
+    final var newType = Type.getObjectType(className);
     currentType = newType;
 
-    final LambdaBuilder createLambda =
+    final var createLambda =
         new LambdaBuilder(
             owner,
             String.format("Let %d:%d", line, column),
@@ -567,7 +565,7 @@ public abstract class BaseOliveBuilder {
           renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__MAP);
         });
 
-    final Renderer createMethodGen = createLambda.renderer(oldType, this::emitSigner);
+    final var createMethodGen = createLambda.renderer(oldType, this::emitSigner);
 
     return new LetBuilder(owner, newType, createMethodGen);
   }
@@ -622,8 +620,8 @@ public abstract class BaseOliveBuilder {
       String help,
       List<String> names,
       LoadableValue[] capturedVariables) {
-    final Type type = currentType;
-    final LambdaBuilder lambda =
+    final var type = currentType;
+    final var lambda =
         new LambdaBuilder(
             owner,
             String.format("Monitor %s %d:%d", metricName, line, column),
@@ -640,8 +638,8 @@ public abstract class BaseOliveBuilder {
   }
 
   public Renderer peek(String action, int line, int column, LoadableValue[] capturedVariables) {
-    final Type type = currentType;
-    final LambdaBuilder lambda =
+    final var type = currentType;
+    final var lambda =
         new LambdaBuilder(
             owner,
             String.format("%s %d:%d", action, line, column),
@@ -671,22 +669,22 @@ public abstract class BaseOliveBuilder {
       boolean max,
       Stream<Target> discriminators,
       LoadableValue[] capturedVariables) {
-    final Type streamType = currentType;
+    final var streamType = currentType;
 
-    final LambdaBuilder hashCodeLambda =
+    final var hashCodeLambda =
         new LambdaBuilder(
             owner,
             String.format("Pick %d:%d hash", line, column),
             LambdaBuilder.toIntFunction(streamType));
 
-    final LambdaBuilder equalsLambda =
+    final var equalsLambda =
         new LambdaBuilder(
             owner,
             String.format("Pick %d:%d equals", line, column),
             LambdaBuilder.bipredicate(streamType, streamType),
             capturedVariables);
 
-    final LambdaBuilder extractLambda =
+    final var extractLambda =
         new LambdaBuilder(
             owner,
             String.format("Pick %d:%d 🔍", line, column),
@@ -704,17 +702,17 @@ public abstract class BaseOliveBuilder {
           }
           renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_PICK);
         });
-    final GeneratorAdapter hashCodeGenerator = hashCodeLambda.methodGen();
+    final var hashCodeGenerator = hashCodeLambda.methodGen();
     hashCodeGenerator.visitCode();
     hashCodeGenerator.push(0);
 
-    final GeneratorAdapter equalsGenerator = equalsLambda.methodGen();
+    final var equalsGenerator = equalsLambda.methodGen();
     equalsGenerator.visitCode();
-    final Label end = equalsGenerator.newLabel();
+    final var end = equalsGenerator.newLabel();
 
     discriminators.forEach(
         discriminator -> {
-          final Method getter =
+          final var getter =
               new Method(discriminator.name(), discriminator.type().apply(TO_ASM), new Type[] {});
           equalsGenerator.loadArg(equalsLambda.trueArgument(0));
           if (discriminator instanceof InputVariable) {
@@ -778,19 +776,19 @@ public abstract class BaseOliveBuilder {
 
   public final RegroupVariablesBuilder regroup(
       int line, int column, LoadableValue... capturedVariables) {
-    final String className = String.format("shesmu/dyn/Group_%d_%d", line, column);
+    final var className = String.format("shesmu/dyn/Group_%d_%d", line, column);
 
-    final Type oldType = currentType;
-    final Type newType = Type.getObjectType(className);
+    final var oldType = currentType;
+    final var newType = Type.getObjectType(className);
     currentType = newType;
 
-    final LambdaBuilder newLambda =
+    final var newLambda =
         new LambdaBuilder(
             owner,
             String.format("Group %d:%d ✨", line, column),
             LambdaBuilder.function(newType, oldType),
             capturedVariables);
-    final LambdaBuilder collectLambda =
+    final var collectLambda =
         new LambdaBuilder(
             owner,
             String.format("Group %d:%d 🧲", line, column),
@@ -810,8 +808,8 @@ public abstract class BaseOliveBuilder {
           renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
         });
 
-    final Renderer newRenderer = newLambda.renderer(oldType, this::emitSigner);
-    final Renderer collectedRenderer = collectLambda.renderer(oldType, 1, this::emitSigner);
+    final var newRenderer = newLambda.renderer(oldType, this::emitSigner);
+    final var collectedRenderer = collectLambda.renderer(oldType, 1, this::emitSigner);
 
     return new RegroupVariablesBuilder(
         owner, className, newRenderer, collectedRenderer, capturedVariables.length);
@@ -842,12 +840,12 @@ public abstract class BaseOliveBuilder {
       LoadableValue[] grouperCaptures,
       List<Pair<String, Type>> grouperVariables,
       LoadableValue... capturedVariables) {
-    final String className = String.format("shesmu/dyn/GroupWithGrouper_%d_%d", line, column);
-    final Type oldType = currentType;
-    final Type newType = Type.getObjectType(className);
+    final var className = String.format("shesmu/dyn/GroupWithGrouper_%d_%d", line, column);
+    final var oldType = currentType;
+    final var newType = Type.getObjectType(className);
     currentType = newType;
 
-    final LambdaBuilder newLambda =
+    final var newLambda =
         new LambdaBuilder(
             owner,
             String.format("Group with Grouper %d:%d ✨", line, column),
@@ -859,16 +857,16 @@ public abstract class BaseOliveBuilder {
     // collect the values. This is that capturing method. It first captures all the external values
     // into a type specified by the grouper. Inside it creates a new lambda capturing the external
     // values plus the new ones provided by the grouper.
-    final LambdaBuilder collectBuilderLambda =
+    final var collectBuilderLambda =
         new LambdaBuilder(
             owner,
             String.format("Group with Grouper %d:%d 🔨", line, column),
             collectorBuilderType,
             capturedVariables);
 
-    final Renderer collectBuilder = collectBuilderLambda.renderer(null, this::emitSigner);
+    final var collectBuilder = collectBuilderLambda.renderer(null, this::emitSigner);
 
-    final LambdaBuilder collectLambda =
+    final var collectLambda =
         new LambdaBuilder(
             owner,
             String.format("Group with Grouper %d:%d 🧲", line, column),
@@ -879,12 +877,12 @@ public abstract class BaseOliveBuilder {
                     collectorBuilderType
                         .parameterTypes(LambdaBuilder.AccessMode.REAL)
                         .map(
-                            new Function<Type, LoadableValue>() {
+                            new Function<>() {
                               int counter;
 
                               @Override
                               public LoadableValue apply(Type type) {
-                                final int index = counter++;
+                                final var index = counter++;
                                 return new LoadableValue() {
                                   @Override
                                   public void accept(Renderer renderer) {
@@ -913,7 +911,7 @@ public abstract class BaseOliveBuilder {
 
     steps.add(
         renderer -> {
-          for (final LoadableValue value : grouperCaptures) {
+          for (final var value : grouperCaptures) {
             value.accept(renderer);
           }
           collectBuilderLambda.push(renderer);
@@ -938,14 +936,14 @@ public abstract class BaseOliveBuilder {
           renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
         });
 
-    final Renderer newRenderer = newLambda.renderer(oldType, this::emitSigner);
-    final Renderer collectedRenderer = collectLambda.renderer(oldType, 1, this::emitSigner);
+    final var newRenderer = newLambda.renderer(oldType, this::emitSigner);
+    final var collectedRenderer = collectLambda.renderer(oldType, 1, this::emitSigner);
     // For any grouper variable that is really a function, redefine it to be the correct function
     // call followed by an unboxing
-    for (final Pair<String, Type> grouperVariable : grouperVariables) {
-      final Type type = grouperVariable.second();
+    for (final var grouperVariable : grouperVariables) {
+      final var type = grouperVariable.second();
       if (type != null) {
-        final LoadableValue function = collectedRenderer.getNamed(grouperVariable.first());
+        final var function = collectedRenderer.getNamed(grouperVariable.first());
         collectedRenderer.define(
             grouperVariable.first(),
             new LoadableValue() {

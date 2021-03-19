@@ -48,16 +48,14 @@ public class PineryPluginType extends PluginFileType<PinerySource> {
               description = "Bases mask collection",
               type = "ao4group$ilength$iposition$itype$s")
           Set<Tuple> basesMask) {
-    return basesMask
-        .stream()
+    return basesMask.stream()
         .collect(Collectors.groupingBy(t -> (Long) t.get(0)))
         .entrySet()
         .stream()
-        .sorted(Comparator.comparing(Map.Entry::getKey))
+        .sorted(Map.Entry.comparingByKey())
         .map(
             e ->
-                e.getValue()
-                    .stream()
+                e.getValue().stream()
                     .sorted(Comparator.comparing(t -> (Long) t.get(2)))
                     .map(
                         t -> {

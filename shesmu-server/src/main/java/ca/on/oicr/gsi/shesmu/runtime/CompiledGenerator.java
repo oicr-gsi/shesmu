@@ -31,7 +31,6 @@ import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Gauge;
-import io.prometheus.client.Gauge.Timer;
 import java.io.PrintStream;
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -91,7 +90,7 @@ public class CompiledGenerator implements DefinitionRepository {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      DefinitionKey that = (DefinitionKey) o;
+      var that = (DefinitionKey) o;
       return inputFormat.equals(that.inputFormat)
           && definitionName.equals(that.definitionName)
           && variableName.equals(that.variableName);
@@ -159,23 +158,21 @@ public class CompiledGenerator implements DefinitionRepository {
         this.variables = variables;
 
         qualifiedName =
-            parameterTypes
-                .stream()
+            parameterTypes.stream()
                 .map(Imyhat::descriptor)
                 .collect(Collectors.joining(" ", name + " ", ""));
-        for (final List<DefineVariableExport> variableSubset : powerSet(variables)) {
+        for (final var variableSubset : powerSet(variables)) {
           if (variableSubset.isEmpty()) {
             continue;
           }
-          final String expandedName =
+          final var expandedName =
               qualifiedName
-                  + variableSubset
-                      .stream()
+                  + variableSubset.stream()
                       .sorted(Comparator.comparing(DefineVariableExport::name))
                       .map(d -> d.name() + "$" + d.type().descriptor())
                       .collect(Collectors.joining(" ", " ", ""));
           callsites.add(DEFINE_REGISTRY.upsert(new Pair<>(inputFormatName, expandedName), method));
-          for (final DefineVariableExport variable : variableSubset) {
+          for (final var variable : variableSubset) {
             callsites.add(
                 DEFINE_VARIABLE_REGISTRY.upsert(
                     new DefinitionKey(
@@ -184,14 +181,14 @@ public class CompiledGenerator implements DefinitionRepository {
                         variable.name() + "$" + variable.type().descriptor()),
                     variable.method()));
           }
-          for (final DefineVariableExport variable : checks) {
+          for (final var variable : checks) {
             callsites.add(
                 DEFINE_SIGNATURE_CHECK_REGISTRY.upsert(
                     new DefinitionKey(inputFormatName, expandedName, variable.name()),
                     variable.method()));
           }
         }
-        MutableCallSite.syncAll(callsites.stream().toArray(MutableCallSite[]::new));
+        MutableCallSite.syncAll(callsites.toArray(MutableCallSite[]::new));
       }
 
       @Override
@@ -201,8 +198,7 @@ public class CompiledGenerator implements DefinitionRepository {
         return new CallableOliveDefinition() {
           private final Set<String> used = new TreeSet<>();
           private final List<SignableVariableCheck> checkers =
-              checks
-                  .stream()
+              checks.stream()
                   .map(
                       c ->
                           new SignableVariableCheck() {
@@ -224,8 +220,7 @@ public class CompiledGenerator implements DefinitionRepository {
                           })
                   .collect(Collectors.toList());
           private final List<Target> targets =
-              variables
-                  .stream()
+              variables.stream()
                   .map(
                       v ->
                           new InputVariable() {
@@ -284,8 +279,7 @@ public class CompiledGenerator implements DefinitionRepository {
                     column,
                     true,
                     !isRoot,
-                    targets
-                        .stream()
+                    targets.stream()
                         .map(
                             x ->
                                 new VariableInformation(
@@ -370,7 +364,7 @@ public class CompiledGenerator implements DefinitionRepository {
 
       private List<List<DefineVariableExport>> powerSet(List<DefineVariableExport> variables) {
         Stream<Supplier<Stream<DefineVariableExport>>> supplier = Stream.of(Stream::empty);
-        for (final DefineVariableExport variable : variables) {
+        for (final var variable : variables) {
           supplier =
               supplier.flatMap(
                   head -> Stream.of(head, () -> Stream.concat(head.get(), Stream.of(variable))));
@@ -458,10 +452,10 @@ public class CompiledGenerator implements DefinitionRepository {
     private MutableCallSite callsite;
 
     private FileTable dashboard;
-    private List<String> errors = Collections.emptyList();
-    private List<ExportedConstantDefinition> exportedConstants = Collections.emptyList();
-    private List<ExportedDefineOliveDefinition> exportedDefineOlives = Collections.emptyList();
-    private List<ExportedFunctionDefinition> exportedFunctions = Collections.emptyList();
+    private List<String> errors = List.of();
+    private List<ExportedConstantDefinition> exportedConstants = List.of();
+    private List<ExportedDefineOliveDefinition> exportedDefineOlives = List.of();
+    private List<ExportedFunctionDefinition> exportedFunctions = List.of();
     private final Path fileName;
     private final DefinitionRepository allowedDefinitions =
         new DefinitionRepository() {
@@ -510,7 +504,7 @@ public class CompiledGenerator implements DefinitionRepository {
           }
         };
     private ActionGenerator generator = ActionGenerator.NULL;
-    private Set<ImportVerifier> imports = Collections.emptySet();
+    private Set<ImportVerifier> imports = Set.of();
     private final String instance;
     private volatile boolean live = true;
     private OliveRunInfo runInfo;
@@ -542,7 +536,7 @@ public class CompiledGenerator implements DefinitionRepository {
       if (errors.isEmpty()) {
         return;
       }
-      for (final String error : errors) {
+      for (final var error : errors) {
         renderer.line(
             Stream.of(new Pair<>("class", "error")),
             "Compile Error",
@@ -565,7 +559,7 @@ public class CompiledGenerator implements DefinitionRepository {
       if (CompiledGenerator.this.checkPaused.test(fileName.toString())) {
         return "Script is paused.";
       }
-      try (final MonitoredOliveServices monitoredConsumer =
+      try (final var monitoredConsumer =
           new MonitoredOliveServices(consumer, fileName.toString())) {
         generator.run(monitoredConsumer, input);
         return "Completed normally";
@@ -589,14 +583,13 @@ public class CompiledGenerator implements DefinitionRepository {
     @Override
     public synchronized Optional<Integer> update() {
       live = true;
-      try (Timer timer = compileTime.labels(fileName.toString()).startTimer()) {
+      try (var timer = compileTime.labels(fileName.toString()).startTimer()) {
         final List<ExportedDefineOliveDefinition> exportedDefineOlives = new ArrayList<>();
         final List<ExportedConstantDefinition> exportedConstants = new ArrayList<>();
         final List<ExportedFunctionDefinition> exportedFunctions = new ArrayList<>();
         final Set<ImportVerifier> imports = new HashSet<>();
-        final HotloadingCompiler compiler =
-            new HotloadingCompiler(SOURCES::get, allowedDefinitions);
-        final Optional<ActionGenerator> result =
+        final var compiler = new HotloadingCompiler(SOURCES::get, allowedDefinitions);
+        final var result =
             compiler.compile(
                 fileName,
                 new LiveExportConsumer() {
@@ -648,7 +641,7 @@ public class CompiledGenerator implements DefinitionRepository {
         sourceValid.labels(fileName.toString()).set(result.isPresent() ? 1 : 0);
         result.ifPresent(
             x -> {
-              final Set<String> newNames =
+              final var newNames =
                   Stream.concat(
                           exportedFunctions.stream().map(e -> e.invokeName),
                           exportedConstants.stream().map(e -> e.invokeName))
@@ -794,7 +787,7 @@ public class CompiledGenerator implements DefinitionRepository {
 
   static {
     try {
-      final MethodHandles.Lookup lookup = MethodHandles.lookup();
+      final var lookup = MethodHandles.lookup();
       CREATE_EXCEPTION =
           lookup.findConstructor(
               IllegalStateException.class, MethodType.methodType(void.class, String.class));
@@ -879,12 +872,12 @@ public class CompiledGenerator implements DefinitionRepository {
 
   private static MethodHandle makeDeadMethodHandle(String name, MethodType methodType) {
     // Create a method handle that instantiates a new exception
-    final MethodHandle createException =
+    final var createException =
         CREATE_EXCEPTION.bindTo(String.format("Exported function %s is no longer valid.", name));
 
     // Now, create a method handle that appears to return the same type as the callsite expects and
     // throws the exception we just made
-    final MethodHandle throwException =
+    final var throwException =
         MethodHandles.foldArguments(
             MethodHandles.throwException(
                 methodType.returnType(),
@@ -966,18 +959,17 @@ public class CompiledGenerator implements DefinitionRepository {
   public void run(OliveServices consumer, InputSource input) {
     // Load all the input data in an attempt to cache it before any olives try to
     // use it. This avoids making the first olive seem really slow.
-    final Set<String> usedFormats =
+    final var usedFormats =
         scripts()
             .filter(s -> s.running.isDone())
             .flatMap(s -> s.generator.inputs())
             .collect(Collectors.toSet());
     // Allow inhibitions to be set on a per-input format and skip fetching this data.
     final Set<String> inhibitedFormats =
-        usedFormats
-            .stream()
+        usedFormats.stream()
             .filter(consumer::isOverloaded)
             .collect(Collectors.toCollection(TreeSet::new));
-    final InputProvider cache =
+    final var cache =
         new InputProvider() {
           final Map<String, List<Object>> data =
               SOURCES
@@ -990,10 +982,10 @@ public class CompiledGenerator implements DefinitionRepository {
                       Collectors.toMap(
                           InputFormatDefinition::name,
                           format -> {
-                            try (AutoCloseable timer = INPUT_FETCH_TIME.start(format.name());
-                                AutoCloseable inflight =
+                            try (var timer = INPUT_FETCH_TIME.start(format.name());
+                                var inflight =
                                     Server.inflightCloseable("Fetching " + format.name())) {
-                              final List<Object> results =
+                              final var results =
                                   input.fetch(format.name(), false).collect(Collectors.toList());
                               INPUT_RECORDS.labels(format.name()).set(results.size());
                               return results;
@@ -1002,13 +994,13 @@ public class CompiledGenerator implements DefinitionRepository {
                               // If we failed to load this format, pretend like it was inhibited and
                               // don't run dependent olives
                               inhibitedFormats.add(format.name());
-                              return Collections.emptyList();
+                              return List.of();
                             }
                           }));
 
           @Override
           public Stream<Object> fetch(String format) {
-            return data.getOrDefault(format, Collections.emptyList()).stream();
+            return data.getOrDefault(format, List.of()).stream();
           }
         };
 
@@ -1030,20 +1022,20 @@ public class CompiledGenerator implements DefinitionRepository {
         // have.
         .forEach(
             script -> {
-              final AtomicReference<Runnable> inflight =
+              final var inflight =
                   new AtomicReference<>(Server.inflight("Queued " + script.fileName.toString()));
               // For each script, create two futures: one that runs the olive script and
               // return true and one that will wait for the timeout and return false
-              final CompletableFuture<OliveRunInfo> timeoutFuture = new CompletableFuture<>();
-              final CompletableFuture<OliveRunInfo> processFuture =
+              final var timeoutFuture = new CompletableFuture<OliveRunInfo>();
+              final var processFuture =
                   CompletableFuture.supplyAsync(
                       () -> {
-                        final Instant startTime = Instant.now();
+                        final var startTime = Instant.now();
                         inflight.get().run();
                         inflight.set(Server.inflight("Running " + script.fileName.toString()));
                         script.runInfo =
                             new OliveRunInfo(true, "Running now", null, startTime, null);
-                        final long inputCount =
+                        final var inputCount =
                             script.dashboard == null
                                 ? 0
                                 : cache.fetch(script.dashboard.format().name()).count();
@@ -1056,8 +1048,8 @@ public class CompiledGenerator implements DefinitionRepository {
                                         false, "Deadline exceeded", inputCount, startTime, null)),
                             script.generator.timeout(),
                             TimeUnit.SECONDS);
-                        final long startCpu = CPU_TIME.getAsLong();
-                        final String result = script.run(consumer, cache);
+                        final var startCpu = CPU_TIME.getAsLong();
+                        final var result = script.run(consumer, cache);
                         return new OliveRunInfo(
                             true,
                             result,
@@ -1073,7 +1065,7 @@ public class CompiledGenerator implements DefinitionRepository {
                   CompletableFuture.anyOf(timeoutFuture, processFuture)
                       .thenAccept(
                           obj -> {
-                            final OliveRunInfo runInfo = (OliveRunInfo) obj;
+                            final var runInfo = (OliveRunInfo) obj;
                             script.runInfo = runInfo;
                             OLIVE_WATCHDOG
                                 .labels(script.fileName.toString())

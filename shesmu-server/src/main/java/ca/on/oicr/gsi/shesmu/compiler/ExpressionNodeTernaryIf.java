@@ -6,7 +6,6 @@ import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 public class ExpressionNodeTernaryIf extends ExpressionNode {
@@ -44,7 +43,7 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    final String result = renderer.newLet();
+    final var result = renderer.newLet();
     renderer.conditional(
         testExpression.renderEcma(renderer),
         whenTrue ->
@@ -61,8 +60,8 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
     testExpression.render(renderer);
     renderer.mark(line());
 
-    final Label end = renderer.methodGen().newLabel();
-    final Label truePath = renderer.methodGen().newLabel();
+    final var end = renderer.methodGen().newLabel();
+    final var truePath = renderer.methodGen().newLabel();
     renderer.methodGen().ifZCmp(GeneratorAdapter.NE, truePath);
     falseExpression.render(renderer);
     renderer.methodGen().goTo(end);
@@ -93,15 +92,14 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean testOk = testExpression.typeCheck(errorHandler);
+    var testOk = testExpression.typeCheck(errorHandler);
     if (testOk) {
       testOk = testExpression.type().isSame(Imyhat.BOOLEAN);
       if (!testOk) {
         typeError(Imyhat.BOOLEAN, testExpression.type(), errorHandler);
       }
     }
-    boolean resultOk =
-        trueExpression.typeCheck(errorHandler) & falseExpression.typeCheck(errorHandler);
+    var resultOk = trueExpression.typeCheck(errorHandler) & falseExpression.typeCheck(errorHandler);
     if (resultOk) {
       resultOk = trueExpression.type().isSame(falseExpression.type());
       if (!resultOk) {

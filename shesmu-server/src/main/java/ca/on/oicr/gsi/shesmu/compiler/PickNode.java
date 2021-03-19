@@ -10,9 +10,9 @@ import java.util.stream.Stream;
 
 public abstract class PickNode {
   static Parser parse(Parser parser, Consumer<PickNode> output) {
-    final AtomicBoolean group = new AtomicBoolean(false);
-    final AtomicReference<String> name = new AtomicReference<>();
-    final Parser result =
+    final var group = new AtomicBoolean(false);
+    final var name = new AtomicReference<String>();
+    final var result =
         parser
             .whitespace()
             .regex(ATSIGN, m -> group.set(!m.group().isEmpty()), "“@” for group, or nothing")

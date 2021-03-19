@@ -34,7 +34,7 @@ import org.apache.http.impl.client.HttpClients;
  */
 public class RunReport extends JsonParameterisedAction {
   private static final ActionCommand<RunReport> FORCE_RELAUNCH_COMMAND =
-      new ActionCommand<RunReport>(
+      new ActionCommand<>(
           RunReport.class,
           "GUANYIN-FORCE-RELAUNCH",
           FrontEndIcon.ARROW_REPEAT,
@@ -90,7 +90,7 @@ public class RunReport extends JsonParameterisedAction {
   }
 
   private WorkflowIdAndStatus cromwellId;
-  private List<String> errors = Collections.emptyList();
+  private List<String> errors = List.of();
   private Optional<Instant> externalTimestamp = Optional.empty();
   private boolean forceRelaunch;
   private final Definer<GuanyinRemote> owner;
@@ -145,7 +145,7 @@ public class RunReport extends JsonParameterisedAction {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final RunReport other = (RunReport) obj;
+    final var other = (RunReport) obj;
     if (owner != other.owner) {
       return false;
     }
@@ -156,10 +156,7 @@ public class RunReport extends JsonParameterisedAction {
     } else if (!parameters.equals(other.parameters)) {
       return false;
     }
-    if (reportId != other.reportId) {
-      return false;
-    }
-    return true;
+    return reportId == other.reportId;
   }
 
   @Override
@@ -179,8 +176,8 @@ public class RunReport extends JsonParameterisedAction {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
+    final var prime = 31;
+    var result = 1;
     result = prime * result + (owner == null ? 0 : owner.hashCode());
     result = prime * result + (parameters == null ? 0 : parameters.hashCode());
     result = prime * result + Long.hashCode(reportId);
@@ -194,7 +191,7 @@ public class RunReport extends JsonParameterisedAction {
 
   @Override
   public ActionState perform(ActionServices services) {
-    final Set<String> overloaded = services.isOverloaded("all", "guanyin");
+    final var overloaded = services.isOverloaded("all", "guanyin");
     if (!overloaded.isEmpty()) {
       errors = Collections.singletonList("Overloaded services: " + String.join(", ", overloaded));
       return ActionState.THROTTLED;
@@ -211,24 +208,23 @@ public class RunReport extends JsonParameterisedAction {
       return ActionState.FAILED;
     }
 
-    boolean create = false;
-    final HttpPost request =
+    var create = false;
+    final var request =
         new HttpPost(
             String.format(
                 "%s/reportdb/record_parameters?report=%d", owner.get().观音Url(), reportId));
     request.addHeader("Accept", ContentType.APPLICATION_JSON.getMimeType());
     request.setEntity(body);
-    try (AutoCloseable timer = 观音RequestTime.start(owner.get().观音Url());
-        CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
+    try (var timer = 观音RequestTime.start(owner.get().观音Url());
+        var response = HTTP_CLIENT.execute(request)) {
       if (response.getStatusLine().getStatusCode() / 100 != 2) {
         showError(response, request.getURI());
         观音RequestErrors.labels(owner.get().观音Url()).inc();
         return ActionState.FAILED;
       }
-      final RecordDto[] results =
-          MAPPER.readValue(response.getEntity().getContent(), RecordDto[].class);
+      final var results = MAPPER.readValue(response.getEntity().getContent(), RecordDto[].class);
       if (results.length > 0) {
-        final RecordDto record =
+        final var record =
             Stream.of(results).max(Comparator.comparing(RecordDto::getGenerated)).get();
         reportRecordId = OptionalLong.of(record.getId());
         externalTimestamp = Optional.of(ZonedDateTime.parse(record.getGenerated()).toInstant());
@@ -247,13 +243,13 @@ public class RunReport extends JsonParameterisedAction {
     // At this point, either it exists and isn't complete or it doesn't exist.
     // Create it if it doesn't exist
     if (create) {
-      final HttpPost createRequest =
+      final var createRequest =
           new HttpPost(
               String.format("%s/reportdb/record_start?report=%d", owner.get().观音Url(), reportId));
       createRequest.addHeader("Accept", ContentType.APPLICATION_JSON.getMimeType());
       createRequest.setEntity(body);
-      try (AutoCloseable timer = 观音RequestTime.start(owner.get().观音Url());
-          CloseableHttpResponse response = HTTP_CLIENT.execute(createRequest)) {
+      try (var timer = 观音RequestTime.start(owner.get().观音Url());
+          var response = HTTP_CLIENT.execute(createRequest)) {
         if (response.getStatusLine().getStatusCode() / 100 != 2) {
           showError(response, request.getURI());
           观音RequestErrors.labels(owner.get().观音Url()).inc();
@@ -272,18 +268,18 @@ public class RunReport extends JsonParameterisedAction {
     }
     // Now that exists, try to run it via Cromwell if configured
     try {
-      ApiClient apiClient = new ApiClient();
+      var apiClient = new ApiClient();
       apiClient.setBasePath(owner.get().cromwellUrl());
-      WorkflowsApi wfApi = new WorkflowsApi(apiClient);
+      var wfApi = new WorkflowsApi(apiClient);
       if (cromwellId == null && create || forceRelaunch) {
         forceRelaunch = false;
-        ObjectNode inputs = MAPPER.createObjectNode();
+        var inputs = MAPPER.createObjectNode();
         inputs.put("guanyin.report.script", owner.get().script());
         inputs.put("guanyin.report.guanyin", owner.get().观音Url());
         inputs.put("guanyin.report.record", reportRecordId.getAsLong());
         inputs.put("guanyin.report.modules", owner.get().modules());
         inputs.put("guanyin.report.memory", owner.get().memory());
-        ObjectNode labels = MAPPER.createObjectNode();
+        var labels = MAPPER.createObjectNode();
         labels.put(
             "external_id",
             String.format(
@@ -335,10 +331,10 @@ public class RunReport extends JsonParameterisedAction {
   private void showError(CloseableHttpResponse response, URI url)
       throws UnsupportedOperationException, IOException {
     final List<String> errors = new ArrayList<>();
-    try (Scanner s = new Scanner(response.getEntity().getContent())) {
+    try (var s = new Scanner(response.getEntity().getContent())) {
       s.useDelimiter("\\A");
       if (s.hasNext()) {
-        final String message = s.next();
+        final var message = s.next();
         final Map<String, String> labels = new TreeMap<>();
         labels.put("url", url.getHost());
         owner.log(message, labels);
@@ -350,7 +346,7 @@ public class RunReport extends JsonParameterisedAction {
 
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
-    final ObjectNode node = mapper.createObjectNode();
+    final var node = mapper.createObjectNode();
     node.put("type", "guanyin-report");
     node.put("reportName", reportName);
     node.put("reportId", reportId);

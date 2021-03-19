@@ -31,7 +31,7 @@ public class InputLimsKeyDeserializer extends JsonDeserializer<InputLimsKeyProvi
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<CustomLimsEntryType> PAIR_DISPATCH =
       new Parser.ParseDispatch<>();
-  private static final Pattern ARRAY_SUFFIX = Pattern.compile("(\\*|\\+)?");
+  private static final Pattern ARRAY_SUFFIX = Pattern.compile("([*+])?");
   private static final Pattern QUESTION_MARK = Pattern.compile("\\??");
 
   static {

@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -11,23 +10,23 @@ import java.util.function.Consumer;
 public abstract class AlgebraicImyhatNode {
 
   public static Parser parse(Parser input, Consumer<AlgebraicImyhatNode> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
-    final Parser result = input.algebraicIdentifier(name::set).whitespace();
+    final var name = new AtomicReference<String>();
+    final var result = input.algebraicIdentifier(name::set).whitespace();
     if (!result.isGood()) {
       return result;
     }
-    final Parser tupleParser = result.symbol("{");
+    final var tupleParser = result.symbol("{");
     if (tupleParser.isGood()) {
-      final AtomicReference<List<Pair<String, ImyhatNode>>> fields = new AtomicReference<>();
-      final Parser objectParser =
+      final var fields = new AtomicReference<List<Pair<String, ImyhatNode>>>();
+      final var objectParser =
           tupleParser
               .whitespace()
-              .<Pair<String, ImyhatNode>>list(
+              .list(
                   fields::set,
                   (fp, fo) -> {
-                    final AtomicReference<String> fieldName = new AtomicReference<>();
-                    final AtomicReference<ImyhatNode> value = new AtomicReference<>();
-                    final Parser fresult =
+                    final var fieldName = new AtomicReference<String>();
+                    final var value = new AtomicReference<ImyhatNode>();
+                    final var fresult =
                         fp.whitespace()
                             .identifier(fieldName::set)
                             .whitespace()
@@ -48,9 +47,8 @@ public abstract class AlgebraicImyhatNode {
         return objectParser;
       }
 
-      final AtomicReference<List<ImyhatNode>> inner =
-          new AtomicReference<>(Collections.emptyList());
-      final Parser tupleResult =
+      final var inner = new AtomicReference<List<ImyhatNode>>(List.of());
+      final var tupleResult =
           tupleParser
               .whitespace()
               .list(inner::set, (p, o) -> ImyhatNode.parse(p.whitespace(), o).whitespace(), ',')

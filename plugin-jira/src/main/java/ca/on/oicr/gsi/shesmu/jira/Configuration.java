@@ -1,18 +1,17 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 public final class Configuration {
   private List<String> closeActions;
   private List<String> closedStatuses;
-  private Map<String, String> defaultFieldValues = Collections.emptyMap();
+  private Map<String, String> defaultFieldValues = Map.of();
   private String issueType;
   private String passwordFile;
   private String projectKey;
   private List<String> reopenActions;
-  private List<Search> searches = Collections.emptyList();
+  private List<Search> searches = List.of();
   private String url;
   private String user;
 

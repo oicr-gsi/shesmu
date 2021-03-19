@@ -18,9 +18,7 @@ import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.prometheus.client.Gauge;
-import io.prometheus.client.Gauge.Timer;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -58,15 +56,14 @@ public class GuidedMeditation implements WatchedFileListener {
       String script,
       Consumer<List<String>> errorHandler,
       Consumer<String> outputHandler)
-      throws JsonProcessingException, NoSuchAlgorithmException {
-    final AtomicReference<List<WizardDefineNode>> definitions = new AtomicReference<>();
-    final AtomicReference<WizardNode> wizard = new AtomicReference<>();
+      throws NoSuchAlgorithmException {
+    final var definitions = new AtomicReference<List<WizardDefineNode>>();
+    final var wizard = new AtomicReference<WizardNode>();
     if (Parser.start(
             script,
             ((line, column, errorMessage) ->
                 errorHandler.accept(
-                    Collections.singletonList(
-                        String.format("%d:%d: %s", line, column, errorMessage)))))
+                    List.of(String.format("%d:%d: %s", line, column, errorMessage)))))
         .whitespace()
         .list(definitions::set, WizardDefineNode::parse)
         .keyword("Start")
@@ -76,7 +73,7 @@ public class GuidedMeditation implements WatchedFileListener {
         .finished()) {
       final List<String> errors = new ArrayList<>();
       final Map<String, WizardDefineNode> crossReferences = new TreeMap<>();
-      final ExpressionCompilerServices expressionCompilerServices =
+      final var expressionCompilerServices =
           new ExpressionCompilerServices() {
             private final NameLoader<AnnotatedInputFormatDefinition> formats =
                 new NameLoader<>(
@@ -132,7 +129,7 @@ public class GuidedMeditation implements WatchedFileListener {
                     MessageDigest.getInstance("SHA-1")
                         .digest(script.getBytes(StandardCharsets.UTF_8))),
                 renderer -> {
-                  for (final WizardDefineNode definition : definitions.get()) {
+                  for (final var definition : definitions.get()) {
                     definition.render(renderer);
                   }
 
@@ -147,7 +144,7 @@ public class GuidedMeditation implements WatchedFileListener {
   }
 
   private final DefinitionRepository definitionRepository;
-  private List<String> errors = Collections.emptyList();
+  private List<String> errors = List.of();
   private final Path fileName;
   private Optional<String> script = Optional.empty();
 
@@ -161,7 +158,7 @@ public class GuidedMeditation implements WatchedFileListener {
       @Override
       public void emit(SectionRenderer sectionRenderer) {
         sectionRenderer.line("Is Good", script.isPresent() ? "Yes" : "No");
-        for (final String error : errors) {
+        for (final var error : errors) {
           sectionRenderer.line("Error", error);
         }
       }
@@ -183,26 +180,26 @@ public class GuidedMeditation implements WatchedFileListener {
   }
 
   public Stream<String> stream() {
-    return script.map(Stream::of).orElseGet(Stream::empty);
+    return script.stream();
   }
 
   @Override
   public Optional<Integer> update() {
-    try (Timer ignored = compileTime.labels(fileName.toString()).startTimer()) {
-      final String name =
+    try (var ignored = compileTime.labels(fileName.toString()).startTimer()) {
+      final var name =
           RuntimeSupport.MAPPER.writeValueAsString(
               RuntimeSupport.removeExtension(fileName, GuidedMeditation.EXTENSION));
       compile(
           fileName,
           definitionRepository,
-          new String(Files.readAllBytes(fileName), StandardCharsets.UTF_8),
+          Files.readString(fileName),
           e -> errors = e,
           o ->
               script =
                   Optional.of(
                       String.format(
                           "register(%s, function($runtime) {%s}(runtime));\n\n", name, o)));
-    } catch (IOException | NoSuchAlgorithmException e) {
+    } catch (NoSuchAlgorithmException | IOException e) {
       sourceValid.labels(fileName.toString()).set(0);
       errors = Collections.singletonList(e.getMessage());
     }

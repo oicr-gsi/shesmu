@@ -5,7 +5,6 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
 import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
@@ -57,7 +56,7 @@ public final class SimulateExistingRequest extends BaseSimulateRequest {
         definitionRepository,
         actionServices,
         inputSource,
-        new String(Files.readAllBytes(Paths.get(fileName)), StandardCharsets.UTF_8),
+        Files.readString(Paths.get(fileName)),
         http);
   }
 

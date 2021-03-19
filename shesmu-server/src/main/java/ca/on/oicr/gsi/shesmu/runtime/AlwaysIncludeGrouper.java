@@ -29,17 +29,15 @@ public class AlwaysIncludeGrouper<I, O, T> implements Grouper<I, O> {
   public Stream<Subgroup<I, O>> group(List<I> inputs) {
     final Map<T, List<I>> groups = new HashMap<>();
     final List<I> wildcards = new ArrayList<>();
-    for (I input : inputs) {
-      final T key = computeKey.apply(input);
+    for (var input : inputs) {
+      final var key = computeKey.apply(input);
       if (key.equals(wildcardValue)) {
         wildcards.add(input);
       } else {
         groups.computeIfAbsent(key, k -> new ArrayList<>()).add(input);
       }
     }
-    return groups
-        .entrySet()
-        .stream()
+    return groups.entrySet().stream()
         .map(
             entry ->
                 new Subgroup<>(

@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.server;
 
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
-import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
 import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
@@ -14,7 +13,6 @@ import io.prometheus.client.Gauge;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 
 public class StaticActions implements LoadedConfiguration {
   private class StaticActionFile implements WatchedFileListener {
@@ -44,14 +42,14 @@ public class StaticActions implements LoadedConfiguration {
     @Override
     public Optional<Integer> update() {
       try {
-        StaticAction[] actions = MAPPER.readValue(fileName().toFile(), StaticAction[].class);
+        var actions = MAPPER.readValue(fileName().toFile(), StaticAction[].class);
         lastCount = actions.length;
-        int success = 0;
-        boolean retry = false;
-        final String hash = Integer.toHexString(Arrays.hashCode(actions));
-        for (final StaticAction action : actions) {
+        var success = 0;
+        var retry = false;
+        final var hash = Integer.toHexString(Arrays.hashCode(actions));
+        for (final var action : actions) {
           if (!runners.containsKey(action.getName())) {
-            final Optional<ActionRunner> runner =
+            final var runner =
                 repository
                     .actions()
                     .filter(definition -> definition.name().equals(action.getName()))
@@ -61,13 +59,13 @@ public class StaticActions implements LoadedConfiguration {
                     .filter(Objects::nonNull);
 
             runner.ifPresent(d -> runners.put(action.getName(), d));
-            if (!runner.isPresent()) {
+            if (runner.isEmpty()) {
               retry = true;
               continue;
             }
           }
           try {
-            final Action result = runners.get(action.getName()).run(action.getParameters());
+            final var result = runners.get(action.getName()).run(action.getParameters());
             if (result != null) {
               result.prepare();
               sink.accept(
@@ -76,7 +74,7 @@ public class StaticActions implements LoadedConfiguration {
                   1,
                   1,
                   hash,
-                  action.getTags().stream().toArray(String[]::new));
+                  action.getTags().toArray(String[]::new));
               success++;
             } else {
               retry = true;
@@ -129,15 +127,11 @@ public class StaticActions implements LoadedConfiguration {
         new ConfigurationSection("Static Configuration") {
 
           @Override
-          public void emit(SectionRenderer renderer) throws XMLStreamException {
+          public void emit(SectionRenderer renderer) {
             if (configuration != null) {
-              configuration
-                  .stream()
+              configuration.stream()
                   .sorted(Comparator.comparing(StaticActionFile::fileName))
-                  .forEach(
-                      config -> {
-                        renderer.line(config.fileName().toString(), config.lastCount);
-                      });
+                  .forEach(config -> renderer.line(config.fileName().toString(), config.lastCount));
             }
           }
         });

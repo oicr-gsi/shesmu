@@ -26,7 +26,7 @@ public class GuanyinReportValue {
     category = reportDto.getCategory();
     filesIn =
         recordDto.getFilesIn() == null
-            ? Collections.emptySet()
+            ? Set.of()
             : recordDto.getFilesIn().stream().map(Paths::get).collect(Collectors.toSet());
     finished = recordDto.isFinished();
     freshestInputDate = Optional.ofNullable(recordDto.getFreshestInputDate()).map(Instant::parse);

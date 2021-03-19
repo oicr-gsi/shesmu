@@ -1,18 +1,17 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 public class Configuration {
-  private List<String> fileRoots = Collections.emptyList();
+  private List<String> fileRoots = List.of();
   private Integer fileRootsTtl;
-  private Map<String, FunctionConfig> functions = Collections.emptyMap();
+  private Map<String, FunctionConfig> functions = Map.of();
   private String host;
-  private List<JsonDataSource> jsonSources = Collections.emptyList();
+  private List<JsonDataSource> jsonSources = List.of();
   private String listCommand;
   private int port;
-  private Map<String, RefillerConfig> refillers = Collections.emptyMap();
+  private Map<String, RefillerConfig> refillers = Map.of();
   private String user;
 
   public List<String> getFileRoots() {

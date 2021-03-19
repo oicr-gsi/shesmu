@@ -45,8 +45,7 @@ public class ExpressionNodeObject extends ExpressionNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    return fields
-        .stream()
+    return fields.stream()
         .flatMap(f -> f.render(renderer))
         .sorted()
         .collect(Collectors.joining(", ", "{", "}"));
@@ -55,14 +54,14 @@ public class ExpressionNodeObject extends ExpressionNode {
   @Override
   public void render(Renderer renderer) {
     renderer.mark(line());
-    final Map<String, Integer> indices =
+    final var indices =
         type.fields().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().second()));
 
     renderer.methodGen().newInstance(A_TUPLE_TYPE);
     renderer.methodGen().dup();
     renderer.methodGen().push(indices.size());
     renderer.methodGen().newArray(A_OBJECT_TYPE);
-    for (final ObjectElementNode element : fields) {
+    for (final var element : fields) {
       element.render(renderer, indices::get);
     }
 
@@ -80,8 +79,7 @@ public class ExpressionNodeObject extends ExpressionNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return fields
-            .stream()
+    return fields.stream()
             .filter(field -> field.resolveDefinitions(expressionCompilerServices, errorHandler))
             .count()
         == fields.size();
@@ -94,17 +92,14 @@ public class ExpressionNodeObject extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok =
+    var ok =
         fields.stream().filter(field -> field.typeCheck(errorHandler)).count() == fields.size();
-    final Map<String, Long> fieldCounts =
-        fields
-            .stream()
+    final var fieldCounts =
+        fields.stream()
             .flatMap(ObjectElementNode::names)
             .map(Pair::first)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-    if (fieldCounts
-            .entrySet()
-            .stream()
+    if (fieldCounts.entrySet().stream()
             .filter(e -> e.getValue() > 1)
             .peek(
                 e ->

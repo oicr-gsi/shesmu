@@ -38,24 +38,24 @@ public abstract class StringNode {
     PARTS.addSymbol(
         "{",
         (p, o) -> {
-          final Parser gangParser = p.whitespace().symbol("@");
+          final var gangParser = p.whitespace().symbol("@");
           if (gangParser.isGood()) {
-            final AtomicReference<String> name = new AtomicReference<>();
-            final Parser gangResult =
+            final var name = new AtomicReference<String>();
+            final var gangResult =
                 gangParser.whitespace().identifier(name::set).whitespace().symbol("}");
             if (gangResult.isGood()) {
               o.accept(new StringNodeGangName(gangParser.line(), gangParser.column(), name.get()));
             }
             return gangResult;
           }
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          Parser result = ExpressionNode.parse(p.whitespace(), expression::set).whitespace();
+          final var expression = new AtomicReference<ExpressionNode>();
+          var result = ExpressionNode.parse(p.whitespace(), expression::set).whitespace();
           if (!result.isGood()) {
             return result;
           }
           if (result.lookAhead(':')) {
-            final AtomicLong width = new AtomicLong();
-            final Parser widthResult =
+            final var width = new AtomicLong();
+            final var widthResult =
                 result.symbol(":").whitespace().integer(width::set, 10).whitespace();
             if (widthResult.isGood()) {
               o.accept(

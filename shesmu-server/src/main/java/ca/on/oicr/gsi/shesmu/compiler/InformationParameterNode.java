@@ -30,20 +30,19 @@ public abstract class InformationParameterNode<T> {
 
     @Override
     public Parser parse(Parser parser, Consumer<InformationParameterNode<T>> output) {
-      final Parser expressionResult = parser.whitespace().symbol("{");
+      final var expressionResult = parser.whitespace().symbol("{");
       if (expressionResult.isGood()) {
         return expressionResult
             .then(
                 ExpressionNode::parse,
                 e ->
                     output.accept(
-                        new InformationParameterNodeExpression<T>(
-                            e, guarantee, canFlatten, suffix)))
+                        new InformationParameterNodeExpression<>(e, guarantee, canFlatten, suffix)))
             .symbol("}")
             .whitespace();
       }
       return real.parse(
-          parser, v -> output.accept(new InformationParameterNodeLiteral<T>(v, canFlatten)));
+          parser, v -> output.accept(new InformationParameterNodeLiteral<>(v, canFlatten)));
     }
   }
 
@@ -61,7 +60,7 @@ public abstract class InformationParameterNode<T> {
   public static final RuleWithLiteral<InformationParameterNode<String>, String> STRING =
       new SubRule<>(ActionFilter.PARSE_STRING, TypeGuarantee.STRING, false, "");
   public static final RuleWithLiteral<InformationParameterNode<String>, String> STRINGS =
-      new SubRule<>(ActionFilter.PARSE_STRING, TypeGuarantee.STRING, true, "");;
+      new SubRule<>(ActionFilter.PARSE_STRING, TypeGuarantee.STRING, true, "");
 
   public abstract String renderEcma(EcmaScriptRenderer renderer);
 

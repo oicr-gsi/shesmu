@@ -39,7 +39,7 @@ public class ExpressionNodeAlgebraicGangTuple extends ExpressionNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
-    for (final Pair<Target, Imyhat> element : elements) {
+    for (final var element : elements) {
       if (predicate.test(element.first().flavour())) {
         names.add(element.first().name());
       }
@@ -56,8 +56,7 @@ public class ExpressionNodeAlgebraicGangTuple extends ExpressionNode {
     return String.format(
         "{\"type\": \"%s\", \"contents\": %s }",
         algebraicName,
-        elements
-            .stream()
+        elements.stream()
             .map(p -> renderer.load(p.first()))
             .collect(Collectors.joining(",", "[", "]")));
   }
@@ -74,7 +73,7 @@ public class ExpressionNodeAlgebraicGangTuple extends ExpressionNode {
     renderer.methodGen().push(algebraicName);
     renderer.methodGen().push(elements.size());
     renderer.methodGen().newArray(A_OBJECT_TYPE);
-    for (int i = 0; i < elements.size(); i++) {
+    for (var i = 0; i < elements.size(); i++) {
       renderer.methodGen().dup();
       renderer.methodGen().push(i);
       renderer.loadTarget(elements.get(i).first());
@@ -86,7 +85,7 @@ public class ExpressionNodeAlgebraicGangTuple extends ExpressionNode {
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    final Optional<List<Pair<Target, Imyhat>>> result =
+    final var result =
         TypeUtils.matchGang(
             line(),
             column(),
@@ -101,7 +100,7 @@ public class ExpressionNodeAlgebraicGangTuple extends ExpressionNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    final Optional<? extends GangDefinition> groupDefinition =
+    final var groupDefinition =
         expressionCompilerServices
             .inputFormat()
             .gangs()
@@ -125,8 +124,7 @@ public class ExpressionNodeAlgebraicGangTuple extends ExpressionNode {
     type =
         Imyhat.algebraicTuple(
             algebraicName, elements.stream().map(e -> e.first().type()).toArray(Imyhat[]::new));
-    return elements
-            .stream()
+    return elements.stream()
             .filter(
                 p -> {
                   if (p.first().type().isSame(p.second())) {

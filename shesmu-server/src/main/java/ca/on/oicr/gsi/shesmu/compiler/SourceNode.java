@@ -20,9 +20,8 @@ public abstract class SourceNode {
     DISPATCH.addKeyword(
         "In",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> source = new AtomicReference<>();
-          final Parser result =
-              p.whitespace().then(ExpressionNode::parse, source::set).whitespace();
+          final var source = new AtomicReference<ExpressionNode>();
+          final var result = p.whitespace().then(ExpressionNode::parse, source::set).whitespace();
           if (result.isGood()) {
             o.accept(new SourceNodeContainer(p.line(), p.column(), source.get()));
           }
@@ -31,9 +30,8 @@ public abstract class SourceNode {
     DISPATCH.addKeyword(
         "Fields",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> source = new AtomicReference<>();
-          final Parser result =
-              p.whitespace().then(ExpressionNode::parse, source::set).whitespace();
+          final var source = new AtomicReference<ExpressionNode>();
+          final var result = p.whitespace().then(ExpressionNode::parse, source::set).whitespace();
           if (result.isGood()) {
             o.accept(new SourceNodeJsonObject(p.line(), p.column(), source.get()));
           }
@@ -42,9 +40,9 @@ public abstract class SourceNode {
     DISPATCH.addKeyword(
         "Splitting",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> source = new AtomicReference<>();
-          final AtomicReference<Pair<String, Integer>> regex = new AtomicReference<>();
-          final Parser result =
+          final var source = new AtomicReference<ExpressionNode>();
+          final var regex = new AtomicReference<Pair<String, Integer>>();
+          final var result =
               p.whitespace()
                   .then(ExpressionNode::parse, source::set)
                   .whitespace()
@@ -65,9 +63,9 @@ public abstract class SourceNode {
     DISPATCH.addKeyword(
         "Zipping",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> left = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> right = new AtomicReference<>();
-          final Parser result =
+          final var left = new AtomicReference<ExpressionNode>();
+          final var right = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace()
                   .then(ExpressionNode::parse, left::set)
                   .whitespace()
@@ -83,9 +81,9 @@ public abstract class SourceNode {
     DISPATCH.addKeyword(
         "From",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> start = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> end = new AtomicReference<>();
-          final Parser result =
+          final var start = new AtomicReference<ExpressionNode>();
+          final var end = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace()
                   .then(ExpressionNode::parse, start::set)
                   .whitespace()

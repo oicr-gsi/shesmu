@@ -34,8 +34,8 @@ public class DestructuredArgumentNodeTuple extends DestructuredArgumentNode {
 
   @Override
   public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final DestructuredArgumentNode element : elements) {
+    var ok = true;
+    for (final var element : elements) {
       if (!element.checkUnusedDeclarations(errorHandler)) {
         ok = false;
       }
@@ -45,7 +45,7 @@ public class DestructuredArgumentNodeTuple extends DestructuredArgumentNode {
 
   @Override
   public WildcardCheck checkWildcard(Consumer<String> errorHandler) {
-    final WildcardCheck result =
+    final var result =
         elements.stream()
             .map(element -> element.checkWildcard(errorHandler))
             .reduce(WildcardCheck.NONE, WildcardCheck::combine);
@@ -91,7 +91,7 @@ public class DestructuredArgumentNodeTuple extends DestructuredArgumentNode {
 
   @Override
   public void setFlavour(Target.Flavour flavour) {
-    for (final DestructuredArgumentNode element : elements) {
+    for (final var element : elements) {
       element.setFlavour(flavour);
     }
   }

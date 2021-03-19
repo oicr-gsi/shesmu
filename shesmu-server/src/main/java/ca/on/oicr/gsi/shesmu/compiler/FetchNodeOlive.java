@@ -102,15 +102,15 @@ public class FetchNodeOlive extends FetchNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer r) {
-    final StringBuilder fullScript = new StringBuilder();
+    final var fullScript = new StringBuilder();
     fullScript
         .append("Version 1; Input ")
         .append(format)
         .append("; Import shesmu::simulated::*; Olive ")
         .append(script)
         .append("\nRefill export_to_meditation With ");
-    boolean first = true;
-    for (final Target refillerType : refillerTypes) {
+    var first = true;
+    for (final var refillerType : refillerTypes) {
       if (first) {
         first = false;
       } else {
@@ -155,8 +155,8 @@ public class FetchNodeOlive extends FetchNode {
             .filter(t -> t.flavour() != Flavour.CONSTANT)
             .flatMap(t -> Stream.of(new InjectedTarget(t, true), new InjectedTarget(t, false)))
             .collect(Collectors.toList());
-    ClauseStreamOrder state = ClauseStreamOrder.PURE;
-    final NameDefinitions clauseDefs =
+    var state = ClauseStreamOrder.PURE;
+    final var clauseDefs =
         clauses.stream()
             .reduce(
                 NameDefinitions.root(
@@ -173,13 +173,10 @@ public class FetchNodeOlive extends FetchNode {
               .filter(v -> v.flavour().isStream() && Parser.IDENTIFIER.matcher(v.name()).matches())
               .collect(Collectors.toList());
       final Set<String> signableNames = new TreeSet<>();
-      for (final OliveClauseNode clause : clauses) {
+      for (final var clause : clauses) {
         state = clause.ensureRoot(state, signableNames, v -> {}, errorHandler);
       }
-      if (state == ClauseStreamOrder.BAD) {
-        return false;
-      }
-      return true;
+      return state != ClauseStreamOrder.BAD;
     } else {
       return false;
     }
@@ -277,7 +274,7 @@ public class FetchNodeOlive extends FetchNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    final boolean result =
+    final var result =
         clauses.stream().filter(c -> c.typeCheck(errorHandler)).count() == clauses.size();
     if (result) {
       type = new ObjectImyhat(refillerTypes.stream().map(t -> new Pair<>(t.name(), t.type())));

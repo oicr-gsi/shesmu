@@ -70,8 +70,7 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
             column,
             true,
             false,
-            innerVariables
-                .stream()
+            innerVariables.stream()
                 .map(
                     variable ->
                         new VariableInformation(
@@ -107,10 +106,10 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
       outerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
       innerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
     }
-    final JoinInputSource inputSource =
+    final var inputSource =
         source.render(oliveBuilder, definitions, "", "", v -> false, v -> false);
 
-    final JoinBuilder join =
+    final var join =
         oliveBuilder.join(
             line,
             column,
@@ -145,17 +144,15 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
       Consumer<String> errorHandler) {
-    final Stream<? extends Target> innerVariables =
-        source.resolve("Join", oliveCompilerServices, defs, errorHandler);
+    final var innerVariables = source.resolve("Join", oliveCompilerServices, defs, errorHandler);
     if (innerVariables == null) {
       return defs.fail(false);
     }
     this.innerVariables = innerVariables.collect(Collectors.toList());
 
-    final Set<String> newNames =
-        this.innerVariables.stream().map(Target::name).collect(Collectors.toSet());
+    final var newNames = this.innerVariables.stream().map(Target::name).collect(Collectors.toSet());
 
-    final List<String> duplicates =
+    final var duplicates =
         defs.stream()
             .filter(n -> n.flavour().isStream() && newNames.contains(n.name()))
             .map(Target::name)
@@ -174,7 +171,7 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
               line, column, syntax(), String.join(", ", duplicates)));
       return defs.fail(false);
     }
-    boolean ok =
+    var ok =
         outerKey.resolve(defs, errorHandler)
             & innerKey.resolve(
                 defs.replaceStream(this.innerVariables.stream(), true), errorHandler);
@@ -197,7 +194,7 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
 
   @Override
   public final boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok =
+    var ok =
         outerKey.typeCheck(errorHandler)
             & innerKey.typeCheck(errorHandler)
             & source.typeCheck(errorHandler);

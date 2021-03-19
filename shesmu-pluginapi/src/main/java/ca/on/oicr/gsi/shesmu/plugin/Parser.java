@@ -100,8 +100,8 @@ public abstract class Parser {
 
     @Override
     public <T> Parser dispatch(ParseDispatch<T> dispatch, Consumer<T> consumer) {
-      for (final Rule<T> d : dispatch.dispatches) {
-        final Parser matched = d.parse(this, consumer);
+      for (final var d : dispatch.dispatches) {
+        final var matched = d.parse(this, consumer);
         if (matched.isGood()) {
           return matched;
         }
@@ -153,7 +153,7 @@ public abstract class Parser {
 
     @Override
     public Parser regex(Pattern pattern, Consumer<Matcher> output, String errorMessage) {
-      final Matcher match = pattern.matcher(input);
+      final var match = pattern.matcher(input);
       if (match.lookingAt()) {
         output.accept(match);
         return new Good(
@@ -180,7 +180,7 @@ public abstract class Parser {
             column(),
             String.format("Expected “%s”, but got end-of-file.", symbol));
       }
-      for (int i = 0; i < symbol.length(); i++) {
+      for (var i = 0; i < symbol.length(); i++) {
         if (symbol.charAt(i) != input.charAt(i)) {
           final CharSequence got;
           if (input.charAt(i) == '\n') {
@@ -210,19 +210,19 @@ public abstract class Parser {
 
     @Override
     public Parser whitespace() {
-      CharSequence i = input;
-      int l = line();
-      int c = column();
+      var i = input;
+      var l = line();
+      var c = column();
       boolean inputConsumed;
       do {
         inputConsumed = false;
-        final Matcher spaceMatch = WHITESPACE.matcher(i);
+        final var spaceMatch = WHITESPACE.matcher(i);
         if (spaceMatch.lookingAt()) {
           c += spaceMatch.end();
           i = consume(i, spaceMatch.end());
           inputConsumed = true;
         }
-        final Matcher commentMatch = COMMENT.matcher(i);
+        final var commentMatch = COMMENT.matcher(i);
         if (commentMatch.lookingAt()) {
           c = 1;
           l++;
@@ -280,7 +280,7 @@ public abstract class Parser {
     public void addKeyword(String symbol, Rule<T> handler) {
       dispatches.add(
           (p, o) -> {
-            final Parser result = p.keyword(symbol);
+            final var result = p.keyword(symbol);
             if (result.isGood()) {
               return handler.parse(result, o);
             }
@@ -307,7 +307,7 @@ public abstract class Parser {
     public void addSymbol(String symbol, Rule<T> handler) {
       dispatches.add(
           (p, o) -> {
-            final Parser result = p.symbol(symbol);
+            final var result = p.symbol(symbol);
             if (result.isGood()) {
               return handler.parse(result, o);
             }
@@ -364,12 +364,12 @@ public abstract class Parser {
    */
   public static <T> Parser scanBinary(
       Rule<T> child, Rule<BinaryOperator<T>> condensers, Parser input, Consumer<T> output) {
-    final AtomicReference<T> node = new AtomicReference<>();
-    Parser parser = child.parse(input, node::set);
+    final var node = new AtomicReference<T>();
+    var parser = child.parse(input, node::set);
     while (parser.isGood()) {
-      final AtomicReference<T> right = new AtomicReference<>();
-      final AtomicReference<BinaryOperator<T>> condenser = new AtomicReference<>();
-      final Parser next =
+      final var right = new AtomicReference<T>();
+      final var condenser = new AtomicReference<BinaryOperator<T>>();
+      final var next =
           child.parse(parser.then(condensers, condenser::set).whitespace(), right::set);
       if (next.isGood()) {
         node.set(condenser.get().apply(node.get(), right.get()));
@@ -384,14 +384,14 @@ public abstract class Parser {
 
   public static <T> Parser scanPrefixed(
       Rule<T> child, Rule<UnaryOperator<T>> condensers, Parser input, Consumer<T> output) {
-    final AtomicReference<UnaryOperator<T>> modifier = new AtomicReference<>();
-    Parser next = input.then(condensers, modifier::set).whitespace();
+    final var modifier = new AtomicReference<UnaryOperator<T>>();
+    var next = input.then(condensers, modifier::set).whitespace();
     if (!next.isGood()) {
       next = input;
       modifier.set(UnaryOperator.identity());
     }
-    final AtomicReference<T> node = new AtomicReference<>();
-    final Parser result = child.parse(next, node::set).whitespace();
+    final var node = new AtomicReference<T>();
+    final var result = child.parse(next, node::set).whitespace();
     if (result.isGood()) {
       output.accept(modifier.get().apply(node.get()));
     }
@@ -404,12 +404,12 @@ public abstract class Parser {
       boolean repeated,
       Parser input,
       Consumer<T> output) {
-    final AtomicReference<T> node = new AtomicReference<>();
-    Parser result = child.parse(input, node::set).whitespace();
-    boolean again = true;
+    final var node = new AtomicReference<T>();
+    var result = child.parse(input, node::set).whitespace();
+    var again = true;
     while (result.isGood() && again) {
-      final AtomicReference<UnaryOperator<T>> modifier = new AtomicReference<>();
-      final Parser next = result.then(condensers, modifier::set).whitespace();
+      final var modifier = new AtomicReference<UnaryOperator<T>>();
+      final var next = result.then(condensers, modifier::set).whitespace();
       if (next.isGood()) {
         result = next;
         node.updateAndGet(modifier.get());
@@ -503,7 +503,7 @@ public abstract class Parser {
    * @param ifFound the parse action to perform if found
    */
   public final Parser keyword(String keyword, UnaryOperator<Parser> ifFound) {
-    final Parser test = keyword(keyword);
+    final var test = keyword(keyword);
     if (test.isGood()) {
       return ifFound.apply(test);
     }
@@ -521,9 +521,9 @@ public abstract class Parser {
    * <p>The list may be empty.
    */
   public final <T> Parser list(Consumer<List<T>> output, Rule<T> childParser) {
-    Parser last = this;
+    var last = this;
     final List<T> list = new ArrayList<>();
-    for (Parser current = this; current.isGood(); current = childParser.parse(current, list::add)) {
+    for (var current = this; current.isGood(); current = childParser.parse(current, list::add)) {
       last = current;
     }
     output.accept(list);
@@ -536,8 +536,8 @@ public abstract class Parser {
    * <p>The list must have at least one item.
    */
   public final <T> Parser list(Consumer<List<T>> output, Rule<T> childParser, char separator) {
-    final String separatorString = Character.toString(separator);
-    Parser current = this;
+    final var separatorString = Character.toString(separator);
+    var current = this;
     final List<T> list = new ArrayList<>();
     while (current.isGood()) {
       current = childParser.parse(current, list::add);
@@ -557,10 +557,10 @@ public abstract class Parser {
    * <p>The list may have no items.
    */
   public final <T> Parser listEmpty(Consumer<List<T>> output, Rule<T> childParser, char separator) {
-    final String separatorString = Character.toString(separator);
-    Parser last = this;
+    final var separatorString = Character.toString(separator);
+    var last = this;
     final List<T> list = new ArrayList<>();
-    for (Parser current = childParser.parse(whitespace(), list::add);
+    for (var current = childParser.parse(whitespace(), list::add);
         current.isGood();
         current = childParser.parse(current.whitespace(), list::add)) {
       last = current;
@@ -594,15 +594,15 @@ public abstract class Parser {
    * @see #identifier(Consumer)
    */
   public final Parser qualifiedIdentifier(Consumer<String> name) {
-    final AtomicReference<List<String>> namespaces = new AtomicReference<>();
-    final AtomicReference<String> tail = new AtomicReference<>();
-    Parser result =
+    final var namespaces = new AtomicReference<List<String>>();
+    final var tail = new AtomicReference<String>();
+    var result =
         this.whitespace()
             .list(
                 namespaces::set,
                 (partParser, partOutput) -> {
-                  final AtomicReference<String> part = new AtomicReference<>();
-                  final Parser partResult =
+                  final var part = new AtomicReference<String>();
+                  final var partResult =
                       partParser
                           .whitespace()
                           .identifier(part::set)
@@ -651,7 +651,7 @@ public abstract class Parser {
    * @param ifFound the parse action to perform if found
    */
   public final Parser symbol(String symbol, UnaryOperator<Parser> ifFound) {
-    final Parser test = symbol(symbol);
+    final var test = symbol(symbol);
     if (test.isGood()) {
       return ifFound.apply(test);
     }

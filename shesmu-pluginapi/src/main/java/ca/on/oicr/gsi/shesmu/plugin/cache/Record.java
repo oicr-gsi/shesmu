@@ -10,12 +10,12 @@ import java.time.Instant;
  * @param <V> the type of cached item
  */
 public interface Record<V> {
-  public static final LatencyHistogram refreshLatency =
+  LatencyHistogram refreshLatency =
       new LatencyHistogram(
           "shesmu_cache_refresh_latency",
           "Attempted to refresh a value stored in cache, but the refresh failed.",
           "name");
-  public static final Counter staleRefreshError =
+  Counter staleRefreshError =
       Counter.build(
               "shesmu_cache_refresh_error",
               "Attempted to refresh a value stored in cache, but the refresh failed.")

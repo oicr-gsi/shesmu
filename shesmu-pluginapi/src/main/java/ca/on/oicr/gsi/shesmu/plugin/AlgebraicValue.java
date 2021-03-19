@@ -29,7 +29,7 @@ public final class AlgebraicValue {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AlgebraicValue tuple = (AlgebraicValue) o;
+    var tuple = (AlgebraicValue) o;
     return name.equals(tuple.name) && Arrays.equals(elements, tuple.elements);
   }
 
@@ -44,7 +44,7 @@ public final class AlgebraicValue {
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(name);
+    var result = Objects.hash(name);
     result = 31 * result + Arrays.hashCode(elements);
     return result;
   }

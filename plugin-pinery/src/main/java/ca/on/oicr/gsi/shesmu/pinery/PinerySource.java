@@ -31,7 +31,6 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 
 public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
@@ -124,7 +123,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         lp.getProvenanceId(),
                         config.get().shortProvider(),
                         false,
-                        Collections.singletonMap("pinery-hash-" + version, lp.getVersion())),
+                        Map.of("pinery-hash-" + version, lp.getVersion())),
                     "",
                     "",
                     "",
@@ -209,7 +208,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             sp.getProvenanceId(),
                             config.get().shortProvider(),
                             false,
-                            Collections.singletonMap("pinery-hash-" + version, sp.getVersion())),
+                            Map.of("pinery-hash-" + version, sp.getVersion())),
                         limsAttr(sp, "geo_tube_id", badSetInRecord::add, false).orElse(""),
                         limsAttr(sp, "geo_group_id_description", badSetInRecord::add, false)
                             .orElse(""),
@@ -389,7 +388,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) {
     final Optional<String> url = config.map(PineryConfiguration::getUrl);
     renderer.link("URL", url.orElse("about:blank"), url.orElse("Unknown"));
     renderer.line("Provider", config.map(PineryConfiguration::getProvider).orElse("Unknown"));
@@ -418,7 +417,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     // Return values are
     // https://github.com/miso-lims/miso-lims/blob/master/core/src/main/java/uk/ac/bbsrc/tgac/miso/core/data/type/PlatformType.java + UNKNOWN
     return new AlgebraicValue(
-        platforms.get().orElse(Collections.emptyMap()).getOrDefault(instrumentModel, "UNKNOWN"));
+        platforms.get().orElse(Map.of()).getOrDefault(instrumentModel, "UNKNOWN"));
   }
 
   @ShesmuMethod(

@@ -13,8 +13,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -23,7 +21,7 @@ import org.kohsuke.MetaInfServices;
 @MetaInfServices
 public class GitHubBranchesApiPluginType
     extends PluginFileType<GitHubBranchesApiPluginType.GitHubRemote> {
-  class GitHubRemote extends JsonPluginFile<Configuration> {
+  static class GitHubRemote extends JsonPluginFile<Configuration> {
     private class BranchCache
         extends ValueCache<Stream<GithubBranchValue>, Stream<GithubBranchValue>> {
 
@@ -33,9 +31,9 @@ public class GitHubBranchesApiPluginType
 
       @Override
       protected Stream<GithubBranchValue> fetch(Instant lastUpdated) throws Exception {
-        if (!configuration.isPresent()) return Stream.empty();
-        final Configuration c = configuration.get();
-        try (CloseableHttpResponse response =
+        if (configuration.isEmpty()) return Stream.empty();
+        final var c = configuration.get();
+        try (var response =
             HTTP_CLIENT.execute(
                 new HttpGet(
                     String.format(
@@ -71,7 +69,7 @@ public class GitHubBranchesApiPluginType
       }
     }
 
-    public void configuration(SectionRenderer renderer) throws XMLStreamException {
+    public void configuration(SectionRenderer renderer) {
       configuration.ifPresent(
           c -> {
             renderer.line("Owner", c.getOwner());
@@ -104,7 +102,7 @@ public class GitHubBranchesApiPluginType
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Override
-  public GitHubRemote create(Path filePath, String instanceName, Definer definer) {
+  public GitHubRemote create(Path filePath, String instanceName, Definer<GitHubRemote> definer) {
     return new GitHubRemote(filePath, instanceName);
   }
 

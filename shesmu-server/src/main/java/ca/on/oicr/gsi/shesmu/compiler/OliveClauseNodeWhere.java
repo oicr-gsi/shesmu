@@ -56,8 +56,7 @@ public class OliveClauseNodeWhere extends OliveClauseNode {
             column,
             true,
             false,
-            inputs
-                .stream()
+            inputs.stream()
                 .map(
                     n ->
                         new VariableInformation(
@@ -89,7 +88,7 @@ public class OliveClauseNodeWhere extends OliveClauseNode {
     final Set<String> freeVariables = new HashSet<>();
     expression.collectFreeVariables(freeVariables, Flavour::needsCapture);
 
-    final Renderer filter =
+    final var filter =
         oliveBuilder.filter(
             line,
             column,
@@ -122,7 +121,7 @@ public class OliveClauseNodeWhere extends OliveClauseNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    final boolean ok = expression.typeCheck(errorHandler);
+    final var ok = expression.typeCheck(errorHandler);
     if (ok) {
       if (!expression.type().isSame(Imyhat.BOOLEAN)) {
         errorHandler.accept(

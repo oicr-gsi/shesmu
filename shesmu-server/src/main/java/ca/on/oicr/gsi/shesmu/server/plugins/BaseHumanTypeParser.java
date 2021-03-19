@@ -23,8 +23,8 @@ public abstract class BaseHumanTypeParser implements TypeParser {
   @Override
   public final Imyhat parse(String input) {
 
-    final AtomicReference<ImyhatNode> node = new AtomicReference<>();
-    final Parser parser =
+    final var node = new AtomicReference<ImyhatNode>();
+    final var parser =
         Parser.start(input, (l, c, m) -> {})
             .whitespace()
             .then(ImyhatNode::parse, node::set)

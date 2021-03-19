@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.lang.reflect.InvocationTargetException;
 import java.util.stream.Stream;
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -59,7 +58,7 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
   }
 
   public ActionRunner compile() {
-    final ClassVisitor classVisitor = createClassVisitor();
+    final var classVisitor = createClassVisitor();
     classVisitor.visit(
         Opcodes.V1_8,
         Opcodes.ACC_PUBLIC,
@@ -68,7 +67,7 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
         A_OBJECT_TYPE.getInternalName(),
         new String[] {A_ACTION_RUNNER_TYPE.getInternalName()});
 
-    final GeneratorAdapter ctor =
+    final var ctor =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, DEFAULT_CTOR, null, null, classVisitor);
     ctor.visitCode();
     ctor.loadThis();
@@ -77,10 +76,10 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
     ctor.visitMaxs(0, 0);
     ctor.visitEnd();
 
-    final GeneratorAdapter handle =
+    final var handle =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, RUN_METHOD, null, null, classVisitor);
     handle.visitCode();
-    final int actionLocal = handle.newLocal(A_ACTION_TYPE);
+    final var actionLocal = handle.newLocal(A_ACTION_TYPE);
     action.initialize(handle);
     handle.storeLocal(actionLocal);
     action

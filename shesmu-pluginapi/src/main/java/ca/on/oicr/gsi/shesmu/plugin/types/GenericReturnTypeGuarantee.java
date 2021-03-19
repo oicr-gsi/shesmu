@@ -17,7 +17,7 @@ public abstract class GenericReturnTypeGuarantee<T> {
    * @param <T> the Java type of the contents of the list
    */
   public static <T> GenericReturnTypeGuarantee<Set<T>> list(GenericReturnTypeGuarantee<T> inner) {
-    return new GenericReturnTypeGuarantee<Set<T>>() {
+    return new GenericReturnTypeGuarantee<>() {
 
       @Override
       public boolean check(Map<String, Imyhat> variables, Imyhat reference) {
@@ -49,7 +49,7 @@ public abstract class GenericReturnTypeGuarantee<T> {
       Class<? extends T> clazz, String id) {
     // This is a situation that require multiple inheritance, so what we do is produce two values
     // and then have one delegate to the other
-    final GenericTypeGuarantee<T> type =
+    final var type =
         new GenericTypeGuarantee<T>() {
           @Override
           public <R> R apply(GenericTransformer<R> transformer) {
@@ -72,7 +72,7 @@ public abstract class GenericReturnTypeGuarantee<T> {
 
           @Override
           public String toString(Map<String, Imyhat> typeVariables) {
-            final Imyhat imyhat = typeVariables.get(id);
+            final var imyhat = typeVariables.get(id);
             return imyhat == null ? id : imyhat.name();
           }
 
@@ -83,7 +83,7 @@ public abstract class GenericReturnTypeGuarantee<T> {
         };
     return new Pair<>(
         type,
-        new GenericReturnTypeGuarantee<T>() {
+        new GenericReturnTypeGuarantee<>() {
           @Override
           public boolean check(Map<String, Imyhat> variables, Imyhat reference) {
             return type.check(variables, reference);

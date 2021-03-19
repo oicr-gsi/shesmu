@@ -69,7 +69,7 @@ public class LetArgumentNodePrefix extends LetArgumentNode {
 
   @Override
   public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
-    for (final String variable : unused) {
+    for (final var variable : unused) {
       errorHandler.accept(
           String.format("%d:%d: Variable %s%s is never used.", line, column, prefix, variable));
     }
@@ -83,7 +83,7 @@ public class LetArgumentNodePrefix extends LetArgumentNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
-    for (final PrefixTarget target : targets) {
+    for (final var target : targets) {
       if (predicate.test(target.backing.flavour())) {
         names.add(target.backing.name());
       }
@@ -107,17 +107,17 @@ public class LetArgumentNodePrefix extends LetArgumentNode {
 
   @Override
   public void render(LetBuilder let) {
-    for (final PrefixTarget target : targets) {
+    for (final var target : targets) {
       let.add(target.type().apply(TO_ASM), target.name(), r -> r.loadTarget(target.backing));
     }
   }
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final String name : names) {
-      final Optional<Target> target = defs.get(name);
-      if (!target.isPresent()) {
+    var ok = true;
+    for (final var name : names) {
+      final var target = defs.get(name);
+      if (target.isEmpty()) {
         ok = false;
         errorHandler.accept(String.format("%d:%d: Undefined variable “%s”.", line, column, name));
         continue;

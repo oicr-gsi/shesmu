@@ -6,7 +6,6 @@ import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Optional;
 import java.util.function.Consumer;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -46,7 +45,7 @@ public class DiscriminatorNodeOnlyIf extends DiscriminatorNodeBaseManipulated {
   protected void render(Renderer renderer) {
     renderer.methodGen().dup();
     renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__sF_PRESENT);
-    final Label end = renderer.methodGen().newLabel();
+    final var end = renderer.methodGen().newLabel();
     renderer.methodGen().ifZCmp(GeneratorAdapter.NE, end);
     renderer.methodGen().visitInsn(Opcodes.ACONST_NULL);
     renderer.methodGen().returnValue();

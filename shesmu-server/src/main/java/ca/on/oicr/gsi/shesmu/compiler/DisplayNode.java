@@ -18,9 +18,9 @@ public abstract class DisplayNode {
     DISPATCH.addKeyword(
         "Link",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> link = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> label = new AtomicReference<>();
-          final Parser result =
+          final var link = new AtomicReference<ExpressionNode>();
+          final var label = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace()
                   .then(ExpressionNode::parse, label::set)
                   .whitespace()

@@ -21,7 +21,7 @@ public final class SignatureCount extends SignatureDefinition {
 
   @Override
   public void build(GeneratorAdapter method, Type initialType, Stream<SignableRenderer> variables) {
-    final int count = method.newLocal(Type.INT_TYPE);
+    final var count = method.newLocal(Type.INT_TYPE);
     method.push(0);
     method.storeLocal(count);
     variables.forEach(

@@ -29,7 +29,7 @@ public final class Tuple {
    * of the supplied tuple.
    */
   public Tuple concat(Tuple other) {
-    final Object[] concat = Arrays.copyOf(elements, elements.length + other.elements.length);
+    final var concat = Arrays.copyOf(elements, elements.length + other.elements.length);
     System.arraycopy(other.elements, 0, concat, elements.length, other.elements.length);
     return new Tuple(concat);
   }
@@ -45,11 +45,8 @@ public final class Tuple {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final Tuple other = (Tuple) obj;
-    if (!Arrays.equals(elements, other.elements)) {
-      return false;
-    }
-    return true;
+    final var other = (Tuple) obj;
+    return Arrays.equals(elements, other.elements);
   }
 
   /**
@@ -63,8 +60,8 @@ public final class Tuple {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
+    final var prime = 31;
+    var result = 1;
     result = prime * result + Arrays.hashCode(elements);
     return result;
   }

@@ -11,18 +11,18 @@ import java.util.stream.Stream;
 
 public abstract class TupleElementNode {
   public static Parser parse(Parser parser, Consumer<TupleElementNode> output) {
-    final Parser restResult = parser.whitespace().symbol("...");
+    final var restResult = parser.whitespace().symbol("...");
     if (restResult.isGood()) {
-      final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-      final Parser result =
+      final var expression = new AtomicReference<ExpressionNode>();
+      final var result =
           restResult.whitespace().then(ExpressionNode::parse, expression::set).whitespace();
       if (result.isGood()) {
         output.accept(new TupleElementNodeRest(expression.get()));
       }
       return result;
     } else {
-      final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-      final Parser result =
+      final var expression = new AtomicReference<ExpressionNode>();
+      final var result =
           parser.whitespace().then(ExpressionNode::parse, expression::set).whitespace();
       if (result.isGood()) {
         output.accept(new TupleElementNodeSingle(expression.get()));

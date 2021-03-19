@@ -8,9 +8,6 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchema;
-import com.fasterxml.jackson.module.jsonSchema.types.ArraySchema;
-import com.fasterxml.jackson.module.jsonSchema.types.ArraySchema.ArrayItems;
-import com.fasterxml.jackson.module.jsonSchema.types.ObjectSchema;
 import com.fasterxml.jackson.module.jsonSchema.types.ObjectSchema.NoAdditionalProperties;
 import com.fasterxml.jackson.module.jsonSchema.types.ObjectSchema.SchemaAdditionalProperties;
 import com.fasterxml.jackson.module.jsonSchema.types.ReferenceSchema;
@@ -34,7 +31,7 @@ public final class JsonSchemaUtils {
    *     properly due to the configuration of the mapper
    */
   public static Imyhat convert(ObjectMapper mapper, JavaType type) throws JsonMappingException {
-    final AtomicReference<Imyhat> result = new AtomicReference<>(Imyhat.BAD);
+    final var result = new AtomicReference<>(Imyhat.BAD);
     mapper.acceptJsonFormatVisitor(type, new ImyhatJsonFormatVisitor(result::set));
     return result.get();
   }
@@ -58,9 +55,9 @@ public final class JsonSchemaUtils {
     } else if (schema.isAnySchema()) {
       return optional(schema, Imyhat.JSON);
     } else if (schema.isArraySchema()) {
-      final ArraySchema arraySchema = schema.asArraySchema();
+      final var arraySchema = schema.asArraySchema();
       if (arraySchema.getItems().isArrayItems()) {
-        final ArrayItems arrayItems = arraySchema.getItems().asArrayItems();
+        final var arrayItems = arraySchema.getItems().asArrayItems();
         return optional(
             schema,
             Imyhat.tuple(
@@ -68,14 +65,13 @@ public final class JsonSchemaUtils {
                     .map(schema1 -> convert(schema1, inferDictionaries, resolver))
                     .toArray(Imyhat[]::new)));
       } else if (arraySchema.getItems().isSingleItems()) {
-        final JsonSchema inner = arraySchema.getItems().asSingleItems().getSchema();
+        final var inner = arraySchema.getItems().asSingleItems().getSchema();
         if (inferDictionaries
             && inner.isArraySchema()
             && inner.getRequired()
             && inner.asArraySchema().getItems().isArrayItems()
             && inner.asArraySchema().getItems().asArrayItems().getJsonSchemas().length == 2) {
-          final JsonSchema[] types =
-              inner.asArraySchema().getItems().asArrayItems().getJsonSchemas();
+          final var types = inner.asArraySchema().getItems().asArrayItems().getJsonSchemas();
           return optional(
               schema,
               Imyhat.dictionary(
@@ -88,17 +84,14 @@ public final class JsonSchemaUtils {
     } else if (schema.isIntegerSchema()) {
       return optional(schema, Imyhat.INTEGER);
     } else if (schema.isObjectSchema()) {
-      final ObjectSchema objectSchema = schema.asObjectSchema();
+      final var objectSchema = schema.asObjectSchema();
       if (objectSchema.getPatternProperties().isEmpty()
           && (objectSchema.getAdditionalProperties() == null
               || objectSchema.getAdditionalProperties() instanceof NoAdditionalProperties)) {
         return optional(
             objectSchema,
             new ObjectImyhat(
-                objectSchema
-                    .getProperties()
-                    .entrySet()
-                    .stream()
+                objectSchema.getProperties().entrySet().stream()
                     .map(
                         e ->
                             new Pair<>(

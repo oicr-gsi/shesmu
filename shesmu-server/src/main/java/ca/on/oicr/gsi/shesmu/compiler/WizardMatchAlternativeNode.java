@@ -16,8 +16,8 @@ public abstract class WizardMatchAlternativeNode {
     DISPATCH.addKeyword(
         "Else",
         (p, o) -> {
-          final AtomicReference<WizardNode> step = new AtomicReference<>();
-          final Parser result = p.whitespace().then(WizardNode::parse, step::set).whitespace();
+          final var step = new AtomicReference<WizardNode>();
+          final var result = p.whitespace().then(WizardNode::parse, step::set).whitespace();
           if (result.isGood()) {
             o.accept(new WizardMatchAlternativeNodeElse(step.get()));
           }
@@ -26,9 +26,9 @@ public abstract class WizardMatchAlternativeNode {
     DISPATCH.addKeyword(
         "Remainder",
         (p, o) -> {
-          final AtomicReference<String> name = new AtomicReference<>();
-          final AtomicReference<WizardNode> expression = new AtomicReference<>();
-          final Parser result =
+          final var name = new AtomicReference<String>();
+          final var expression = new AtomicReference<WizardNode>();
+          final var result =
               p.whitespace()
                   .symbol("(")
                   .whitespace()

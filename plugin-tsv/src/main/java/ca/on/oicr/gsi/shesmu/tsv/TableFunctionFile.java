@@ -5,7 +5,6 @@ import ca.on.oicr.gsi.shesmu.plugin.PluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.VariadicFunction;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.BaseImyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Gauge;
 import java.io.IOException;
@@ -18,7 +17,6 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.xml.stream.XMLStreamException;
 
 class TableFunctionFile extends PluginFile {
 
@@ -34,8 +32,7 @@ class TableFunctionFile extends PluginFile {
 
     @Override
     public Object apply(Object... parameters) {
-      return attempts
-          .stream()
+      return attempts.stream()
           .map(
               attempt ->
                   IntStream.range(0, parameters.length)
@@ -67,7 +64,7 @@ class TableFunctionFile extends PluginFile {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) {
     renderer.line("Is valid?", good ? "Yes" : "No");
   }
 
@@ -75,14 +72,14 @@ class TableFunctionFile extends PluginFile {
   public Optional<Integer> update() {
     good = false;
     try {
-      final List<String> lines = Files.readAllLines(fileName());
+      final var lines = Files.readAllLines(fileName());
 
       if (lines.size() < 2) {
         tableBad.labels(fileName().toString()).set(1);
         return Optional.empty();
       }
 
-      final List<BaseImyhat> types =
+      final var types =
           separator.splitAsStream(lines.get(0)).map(Imyhat::forName).collect(Collectors.toList());
       if (types.size() < 2) {
         tableBad.labels(fileName().toString()).set(1);
@@ -90,8 +87,7 @@ class TableFunctionFile extends PluginFile {
         return Optional.empty();
       }
 
-      final List<String[]> grid =
-          lines.stream().skip(1).map(separator::split).collect(Collectors.toList());
+      final var grid = lines.stream().skip(1).map(separator::split).collect(Collectors.toList());
 
       if (grid.stream().anyMatch(columns -> columns.length != types.size())) {
         tableBad.labels(fileName().toString()).set(1);
@@ -99,12 +95,12 @@ class TableFunctionFile extends PluginFile {
         return Optional.empty();
       }
 
-      final List<Object[]> attempts =
+      final var attempts =
           grid.stream()
               .map(
                   columns -> {
-                    final Object[] attempt = new Object[types.size()];
-                    for (int index = 0; index < columns.length; index++) {
+                    final var attempt = new Object[types.size()];
+                    for (var index = 0; index < columns.length; index++) {
                       if (index == columns.length - 1 || !columns[index].equals("*")) {
                         attempt[index] = types.get(index).parse(columns[index]);
                       }
@@ -118,8 +114,7 @@ class TableFunctionFile extends PluginFile {
           String.format("Table-defined lookup from %s.", fileName()),
           types.get(types.size() - 1),
           new Table(attempts, types.get(types.size() - 1).defaultValue()),
-          types
-              .stream()
+          types.stream()
               .limit(types.size() - 1)
               .map(
                   new Function<Imyhat, FunctionParameter>() {

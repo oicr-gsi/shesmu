@@ -43,9 +43,9 @@ public abstract class GroupNode implements DefinedTarget {
     GROUPERS.addKeyword(
         "LexicalConcat",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> delimiter = new AtomicReference<>();
-          final Parser result =
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var delimiter = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace()
                   .then(ExpressionNode::parse0, expression::set)
                   .whitespace()
@@ -74,7 +74,7 @@ public abstract class GroupNode implements DefinedTarget {
         ofWithDefault(
             (line, column, name, expression) ->
                 new GroupNodeOptima(line, column, name, expression, false)));
-    for (final Match match : Match.values()) {
+    for (final var match : Match.values()) {
       GROUPERS.addKeyword(
           match.syntax(),
           of(
@@ -84,9 +84,9 @@ public abstract class GroupNode implements DefinedTarget {
     GROUPERS.addKeyword(
         "Dict",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> key = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> value = new AtomicReference<>();
-          final Parser result =
+          final var key = new AtomicReference<ExpressionNode>();
+          final var value = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace()
                   .then(ExpressionNode::parse, key::set)
                   .whitespace()
@@ -104,11 +104,11 @@ public abstract class GroupNode implements DefinedTarget {
     GROUPERS.addKeyword(
         "Where",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final AtomicReference<ParseGroup> sink = new AtomicReference<>();
-          final Parser intermediate =
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var sink = new AtomicReference<ParseGroup>();
+          final var intermediate =
               p.whitespace().then(ExpressionNode::parse, expression::set).whitespace();
-          final Parser result = intermediate.dispatch(GROUPERS, sink::set).whitespace();
+          final var result = intermediate.dispatch(GROUPERS, sink::set).whitespace();
           if (result.isGood()) {
             o.accept(
                 (line, column, name) ->
@@ -123,15 +123,15 @@ public abstract class GroupNode implements DefinedTarget {
     GROUPERS.addSymbol(
         "{",
         (p, o) -> {
-          final AtomicReference<List<GroupNode>> children = new AtomicReference<>();
-          final Parser result =
+          final var children = new AtomicReference<List<GroupNode>>();
+          final var result =
               p.whitespace()
                   .list(
                       children::set,
                       (cp, co) -> {
-                        final AtomicReference<String> name = new AtomicReference<>();
-                        final AtomicReference<ParseGroup> child = new AtomicReference<>();
-                        final Parser childResult =
+                        final var name = new AtomicReference<String>();
+                        final var child = new AtomicReference<ParseGroup>();
+                        final var childResult =
                             cp.whitespace()
                                 .identifier(name::set)
                                 .whitespace()
@@ -158,9 +158,8 @@ public abstract class GroupNode implements DefinedTarget {
 
   private static Rule<ParseGroup> of(ParseGroupWithExpression maker) {
     return (p, o) -> {
-      final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-      final Parser result =
-          p.whitespace().then(ExpressionNode::parse0, expression::set).whitespace();
+      final var expression = new AtomicReference<ExpressionNode>();
+      final var result = p.whitespace().then(ExpressionNode::parse0, expression::set).whitespace();
       if (result.isGood()) {
         o.accept((line, column, name) -> maker.make(line, column, name, expression.get()));
       }
@@ -170,14 +169,13 @@ public abstract class GroupNode implements DefinedTarget {
 
   private static Rule<ParseGroup> ofWithDefault(ParseGroupWithExpressionDefaultable maker) {
     return (p, o) -> {
-      final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-      final Parser result =
-          p.whitespace().then(ExpressionNode::parse0, expression::set).whitespace();
+      final var expression = new AtomicReference<ExpressionNode>();
+      final var result = p.whitespace().then(ExpressionNode::parse0, expression::set).whitespace();
       if (result.isGood()) {
-        final Parser defaultResult = result.keyword("Default");
+        final var defaultResult = result.keyword("Default");
         if (defaultResult.isGood()) {
-          final AtomicReference<ExpressionNode> initial = new AtomicReference<>();
-          final Parser defaultComplete =
+          final var initial = new AtomicReference<ExpressionNode>();
+          final var defaultComplete =
               defaultResult.whitespace().then(ExpressionNode::parse0, initial::set).whitespace();
           if (defaultComplete.isGood()) {
             o.accept(
@@ -197,19 +195,16 @@ public abstract class GroupNode implements DefinedTarget {
   }
 
   public static Parser parse(Parser input, Consumer<GroupNode> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
+    final var name = new AtomicReference<String>();
 
-    final Parser result =
-        input
-            .whitespace()
-            .identifier(name::set)
-            .whitespace()
-            .keyword("=")
-            .whitespace()
-            .dispatch(
-                GROUPERS,
-                maker -> output.accept(maker.make(input.line(), input.column(), name.get())));
-    return result;
+    return input
+        .whitespace()
+        .identifier(name::set)
+        .whitespace()
+        .keyword("=")
+        .whitespace()
+        .dispatch(
+            GROUPERS, maker -> output.accept(maker.make(input.line(), input.column(), name.get())));
   }
 
   private final int column;

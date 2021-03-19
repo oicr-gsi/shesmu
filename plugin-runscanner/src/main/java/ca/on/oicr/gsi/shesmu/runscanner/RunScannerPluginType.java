@@ -8,7 +8,6 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -30,13 +29,13 @@ public class RunScannerPluginType extends PluginFileType<RunScannerClient> {
    */
   private static Set<Set<Long>> createFlowCellLayout(Pair<Integer, Boolean> format) {
     if (format.second()) {
-      return Collections.singleton(
+      return Set.of(
           LongStream.rangeClosed(1, format.first())
               .boxed()
               .collect(Collectors.toCollection(TreeSet::new)));
     } else {
       return LongStream.rangeClosed(1, format.first())
-          .mapToObj(Collections::singleton)
+          .mapToObj(Set::of)
           .collect(Collectors.toSet());
     }
   }

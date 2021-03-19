@@ -81,11 +81,10 @@ public class JoinBuilder {
         null,
         A_OBJECT_TYPE.getInternalName(),
         null);
-    final Method ctorType =
+    final var ctorType =
         new Method(
             "<init>", Type.VOID_TYPE, new Type[] {A_SIGNATURE_ACCESSOR_TYPE, outerType, innerType});
-    final GeneratorAdapter ctor =
-        new GeneratorAdapter(Opcodes.ACC_PUBLIC, ctorType, null, null, classVisitor);
+    final var ctor = new GeneratorAdapter(Opcodes.ACC_PUBLIC, ctorType, null, null, classVisitor);
     ctor.visitCode();
     ctor.loadThis();
     ctor.invokeConstructor(A_OBJECT_TYPE, DEFAULT_CTOR);
@@ -126,8 +125,7 @@ public class JoinBuilder {
   }
 
   public void add(Target target, String alias, boolean outer) {
-    final Method getMethod =
-        new Method(alias, target.type().apply(TypeUtils.TO_ASM), new Type[] {});
+    final var getMethod = new Method(alias, target.type().apply(TypeUtils.TO_ASM), new Type[] {});
     final Renderer renderer =
         new JoinHalfRenderer(
             new GeneratorAdapter(Opcodes.ACC_PUBLIC, getMethod, null, null, classVisitor),

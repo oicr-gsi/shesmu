@@ -32,13 +32,13 @@ public class UnpackJson implements ImyhatTransformer<Object> {
 
   @Override
   public Object algebraic(Stream<AlgebraicTransformer> contents) {
-    final String type = value.get("type").asText();
+    final var type = value.get("type").asText();
     return contents
         .filter(a -> a.name().equals(type))
         .findFirst()
         .get()
         .visit(
-            new AlgebraicVisitor<Object>() {
+            new AlgebraicVisitor<>() {
               @Override
               public Object empty(String name) {
                 return new AlgebraicValue(name);
@@ -46,7 +46,7 @@ public class UnpackJson implements ImyhatTransformer<Object> {
 
               @Override
               public Object object(String name, Stream<Pair<String, Imyhat>> contents) {
-                final JsonNode object = value.get("contents");
+                final var object = value.get("contents");
                 return new AlgebraicValue(
                     name,
                     contents
@@ -56,7 +56,7 @@ public class UnpackJson implements ImyhatTransformer<Object> {
 
               @Override
               public Object tuple(String name, Stream<Imyhat> contents) {
-                final JsonNode tuple = value.get("contents");
+                final var tuple = value.get("contents");
                 return new AlgebraicValue(
                     name,
                     contents
@@ -110,12 +110,12 @@ public class UnpackJson implements ImyhatTransformer<Object> {
   @Override
   public Object map(Imyhat key, Imyhat value) {
     @SuppressWarnings("unchecked")
-    final Comparator<Object> comparator = (Comparator<Object>) key.comparator();
+    final var comparator = (Comparator<Object>) key.comparator();
     final SortedMap<Object, Object> map = new TreeMap<>(comparator);
     if (key.isSame(Imyhat.STRING) && this.value.isObject()) {
-      final Iterator<Map.Entry<String, JsonNode>> fields = this.value.fields();
+      final var fields = this.value.fields();
       while (fields.hasNext()) {
-        final Map.Entry<String, JsonNode> field = fields.next();
+        final var field = fields.next();
         map.put(field.getKey(), value.apply(new UnpackJson(field.getValue())));
       }
       return map;
@@ -123,7 +123,7 @@ public class UnpackJson implements ImyhatTransformer<Object> {
     if (!this.value.isArray()) {
       throw new IllegalArgumentException("Invalid JSON for map");
     }
-    for (final JsonNode element : this.value) {
+    for (final var element : this.value) {
       if (!element.isArray() || element.size() != 2) {
         throw new IllegalArgumentException("Invalid JSON for map");
       }
@@ -166,7 +166,7 @@ public class UnpackJson implements ImyhatTransformer<Object> {
     return new Tuple(
         contents
             .map(
-                new Function<Imyhat, Object>() {
+                new Function<>() {
                   int index;
 
                   @Override

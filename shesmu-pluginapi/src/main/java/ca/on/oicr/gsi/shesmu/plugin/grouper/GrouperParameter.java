@@ -21,7 +21,7 @@ public abstract class GrouperParameter<I, T> {
    */
   public static <I, T> GrouperParameter<I, Function<I, T>> dynamic(
       String name, GenericTypeGuarantee<T> type, String description) {
-    return new GrouperParameter<I, Function<I, T>>() {
+    return new GrouperParameter<>() {
       @Override
       public String name() {
         return name;
@@ -45,7 +45,7 @@ public abstract class GrouperParameter<I, T> {
       @Override
       public Function<I, T> unpack(Object value) {
         @SuppressWarnings("unchecked")
-        final Function<I, ?> function = (Function<I, ?>) value;
+        final var function = (Function<I, ?>) value;
         return i -> type.unpack(function.apply(i));
       }
     };
@@ -62,7 +62,7 @@ public abstract class GrouperParameter<I, T> {
    */
   public static <I, T> GrouperParameter<I, T> fixed(
       String name, GenericTypeGuarantee<T> type, String description) {
-    return new GrouperParameter<I, T>() {
+    return new GrouperParameter<>() {
       @Override
       public String name() {
         return name;

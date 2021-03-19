@@ -1,13 +1,12 @@
 package ca.on.oicr.gsi.shesmu.prometheus;
 
-import java.util.Collections;
 import java.util.List;
 
 /** Bean of the on-disk configuration for a {@link PrometheusAlertManagerPluginType}. */
 public class Configuration {
   private String alertmanager;
   private String environment;
-  private List<String> labels = Collections.singletonList("job");
+  private List<String> labels = List.of("job");
 
   public String getAlertmanager() {
     return alertmanager;

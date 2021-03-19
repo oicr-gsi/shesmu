@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
@@ -23,7 +22,7 @@ import java.util.stream.Stream;
 
 public class SymlinkAction extends Action {
   private static final ActionCommand<SymlinkAction> HUMAN_APPROVE_COMMAND =
-      new ActionCommand<SymlinkAction>(
+      new ActionCommand<>(
           SymlinkAction.class,
           "SFTP-HUMAN-APPROVE",
           FrontEndIcon.HAND_THUMBS_UP,
@@ -70,7 +69,7 @@ public class SymlinkAction extends Action {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    SymlinkAction that = (SymlinkAction) o;
+    var that = (SymlinkAction) o;
     return Objects.equals(link, that.link) && Objects.equals(target, that.target);
   }
 
@@ -105,7 +104,7 @@ public class SymlinkAction extends Action {
   public ActionState perform(ActionServices services) {
     // The logic for creating the symlink happens in the other class so that it can make serialised
     // requests to the remote end
-    final Pair<ActionState, Boolean> result =
+    final var result =
         connection
             .get()
             .makeSymlink(
@@ -146,7 +145,7 @@ public class SymlinkAction extends Action {
 
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
-    final ObjectNode node = mapper.createObjectNode();
+    final var node = mapper.createObjectNode();
     node.put("link", link.toString());
     node.put("target", target.toString());
     node.put("instance", connection.get().name());

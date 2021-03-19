@@ -37,7 +37,7 @@ public final class SourceLocation implements Comparable<SourceLocation> {
       jsonGenerator.writeNumberField("line", sourceLocation.line);
       jsonGenerator.writeNumberField("column", sourceLocation.column);
       jsonGenerator.writeStringField("hash", sourceLocation.hash);
-      final Optional<String> url = sourceLocation.url(linker);
+      final var url = sourceLocation.url(linker);
       if (url.isPresent()) {
         jsonGenerator.writeStringField("url", url.get());
       }
@@ -64,7 +64,7 @@ public final class SourceLocation implements Comparable<SourceLocation> {
 
   @Override
   public int compareTo(SourceLocation o) {
-    int comparison = fileName.compareTo(o.fileName);
+    var comparison = fileName.compareTo(o.fileName);
     if (comparison == 0) {
       comparison = Integer.compare(line, o.line);
     }
@@ -88,7 +88,7 @@ public final class SourceLocation implements Comparable<SourceLocation> {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final SourceLocation other = (SourceLocation) obj;
+    final var other = (SourceLocation) obj;
     if (column != other.column) {
       return false;
     }
@@ -103,13 +103,8 @@ public final class SourceLocation implements Comparable<SourceLocation> {
       return false;
     }
     if (hash == null) {
-      if (other.hash != null) {
-        return false;
-      }
-    } else if (!hash.equals(other.hash)) {
-      return false;
-    }
-    return true;
+      return other.hash == null;
+    } else return hash.equals(other.hash);
   }
 
   public String fileName() {
@@ -122,8 +117,8 @@ public final class SourceLocation implements Comparable<SourceLocation> {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
+    final var prime = 31;
+    var result = 1;
     result = prime * result + column;
     result = prime * result + (fileName == null ? 0 : fileName.hashCode());
     result = prime * result + line;
@@ -136,7 +131,7 @@ public final class SourceLocation implements Comparable<SourceLocation> {
   }
 
   public void toJson(ArrayNode array, SourceLocationLinker linker) {
-    final ObjectNode node = array.addObject();
+    final var node = array.addObject();
     toJson(node, linker);
   }
 

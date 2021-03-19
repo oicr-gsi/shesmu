@@ -17,11 +17,11 @@ import java.lang.annotation.Target;
 @Repeatable(JsonActionParameters.class)
 public @interface JsonActionParameter {
   /** The name of the parameter in Shesmu and in the JSON output */
-  public String name();
+  String name();
 
   /** Whether the parameter is required or optional */
-  public boolean required() default true;
+  boolean required() default true;
 
   /** The Shesmu type descriptor for this parameter */
-  public String type();
+  String type();
 }

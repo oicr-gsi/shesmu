@@ -48,7 +48,7 @@ public enum ActionState {
 
   private final int sortPriority;
 
-  private ActionState(int sortPriority) {
+  ActionState(int sortPriority) {
     this.sortPriority = sortPriority;
   }
 

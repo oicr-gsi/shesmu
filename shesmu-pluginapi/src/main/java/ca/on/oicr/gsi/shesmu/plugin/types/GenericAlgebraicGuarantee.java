@@ -20,7 +20,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
       Function<? super T, ? extends R> convert,
       String paramName,
       GenericTypeGuarantee<T> param) {
-    return new GenericAlgebraicGuarantee<R>() {
+    return new GenericAlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.genericObject(name, Stream.of(new Pair<>(paramName, param)));
@@ -29,7 +29,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
       @Override
       public boolean check(Map<String, Imyhat> variables, AlgebraicTransformer reference) {
         return reference.visit(
-            new AlgebraicVisitor<Boolean>() {
+            new AlgebraicVisitor<>() {
               @Override
               public Boolean empty(String name) {
                 return false;
@@ -38,7 +38,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
               @Override
               public Boolean object(String name, Stream<Pair<String, Imyhat>> contents) {
                 return contents.allMatch(
-                    new Predicate<Pair<String, Imyhat>>() {
+                    new Predicate<>() {
                       int index;
 
                       @Override
@@ -92,7 +92,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
     if (firstName.compareTo(secondName) >= 0) {
       throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
     }
-    return new GenericAlgebraicGuarantee<R>() {
+    return new GenericAlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.genericObject(
@@ -102,7 +102,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
       @Override
       public boolean check(Map<String, Imyhat> variables, AlgebraicTransformer reference) {
         return reference.visit(
-            new AlgebraicVisitor<Boolean>() {
+            new AlgebraicVisitor<>() {
               @Override
               public Boolean empty(String name) {
                 return false;
@@ -111,7 +111,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
               @Override
               public Boolean object(String name, Stream<Pair<String, Imyhat>> contents) {
                 return contents.allMatch(
-                    new Predicate<Pair<String, Imyhat>>() {
+                    new Predicate<>() {
                       int index;
 
                       @Override
@@ -181,7 +181,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
     if (firstName.compareTo(secondName) >= 0 || secondName.compareTo(thirdName) >= 0) {
       throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
     }
-    return new GenericAlgebraicGuarantee<R>() {
+    return new GenericAlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.genericObject(
@@ -195,7 +195,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
       @Override
       public boolean check(Map<String, Imyhat> variables, AlgebraicTransformer reference) {
         return reference.visit(
-            new AlgebraicVisitor<Boolean>() {
+            new AlgebraicVisitor<>() {
               @Override
               public Boolean empty(String name) {
                 return false;
@@ -204,7 +204,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
               @Override
               public Boolean object(String name, Stream<Pair<String, Imyhat>> contents) {
                 return contents.allMatch(
-                    new Predicate<Pair<String, Imyhat>>() {
+                    new Predicate<>() {
                       int index;
 
                       @Override
@@ -285,7 +285,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
         || thirdName.compareTo(fourthName) >= 0) {
       throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
     }
-    return new GenericAlgebraicGuarantee<R>() {
+    return new GenericAlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.genericObject(
@@ -300,7 +300,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
       @Override
       public boolean check(Map<String, Imyhat> variables, AlgebraicTransformer reference) {
         return reference.visit(
-            new AlgebraicVisitor<Boolean>() {
+            new AlgebraicVisitor<>() {
               @Override
               public Boolean empty(String name) {
                 return false;
@@ -309,7 +309,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
               @Override
               public Boolean object(String name, Stream<Pair<String, Imyhat>> contents) {
                 return contents.allMatch(
-                    new Predicate<Pair<String, Imyhat>>() {
+                    new Predicate<>() {
                       int index;
 
                       @Override
@@ -402,7 +402,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
         || fourthName.compareTo(fifthName) >= 0) {
       throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
     }
-    return new GenericAlgebraicGuarantee<R>() {
+    return new GenericAlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.genericObject(
@@ -418,7 +418,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
       @Override
       public boolean check(Map<String, Imyhat> variables, AlgebraicTransformer reference) {
         return reference.visit(
-            new AlgebraicVisitor<Boolean>() {
+            new AlgebraicVisitor<>() {
               @Override
               public Boolean empty(String name) {
                 return false;
@@ -427,7 +427,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
               @Override
               public Boolean object(String name, Stream<Pair<String, Imyhat>> contents) {
                 return contents.allMatch(
-                    new Predicate<Pair<String, Imyhat>>() {
+                    new Predicate<>() {
                       int index;
 
                       @Override
@@ -510,7 +510,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
 
   public static <R, T> GenericAlgebraicGuarantee<R> tuple(
       String name, Function<? super T, ? extends R> convert, GenericTypeGuarantee<T> param) {
-    return new GenericAlgebraicGuarantee<R>() {
+    return new GenericAlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.genericTuple(name, Stream.of(param));
@@ -519,7 +519,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
       @Override
       public boolean check(Map<String, Imyhat> variables, AlgebraicTransformer reference) {
         return reference.visit(
-            new AlgebraicVisitor<Boolean>() {
+            new AlgebraicVisitor<>() {
               @Override
               public Boolean empty(String name) {
                 return false;
@@ -533,7 +533,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
               @Override
               public Boolean tuple(String name, Stream<Imyhat> contents) {
                 return contents.allMatch(
-                    new Predicate<Imyhat>() {
+                    new Predicate<>() {
                       int index;
 
                       @Override
@@ -575,7 +575,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
       Pack2<? super T, ? super U, ? extends R> convert,
       GenericTypeGuarantee<T> first,
       GenericTypeGuarantee<U> second) {
-    return new GenericAlgebraicGuarantee<R>() {
+    return new GenericAlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.genericTuple(name, Stream.of(first, second));
@@ -584,7 +584,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
       @Override
       public boolean check(Map<String, Imyhat> variables, AlgebraicTransformer reference) {
         return reference.visit(
-            new AlgebraicVisitor<Boolean>() {
+            new AlgebraicVisitor<>() {
               @Override
               public Boolean empty(String name) {
                 return false;
@@ -598,7 +598,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
               @Override
               public Boolean tuple(String name, Stream<Imyhat> contents) {
                 return contents.allMatch(
-                    new Predicate<Imyhat>() {
+                    new Predicate<>() {
                       int index;
 
                       @Override
@@ -646,7 +646,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
       GenericTypeGuarantee<T> first,
       GenericTypeGuarantee<U> second,
       GenericTypeGuarantee<V> third) {
-    return new GenericAlgebraicGuarantee<R>() {
+    return new GenericAlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.genericTuple(name, Stream.of(first, second, third));
@@ -655,7 +655,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
       @Override
       public boolean check(Map<String, Imyhat> variables, AlgebraicTransformer reference) {
         return reference.visit(
-            new AlgebraicVisitor<Boolean>() {
+            new AlgebraicVisitor<>() {
               @Override
               public Boolean empty(String name) {
                 return false;
@@ -669,7 +669,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
               @Override
               public Boolean tuple(String name, Stream<Imyhat> contents) {
                 return contents.allMatch(
-                    new Predicate<Imyhat>() {
+                    new Predicate<>() {
                       int index;
 
                       @Override
@@ -726,7 +726,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
       GenericTypeGuarantee<U> second,
       GenericTypeGuarantee<V> third,
       GenericTypeGuarantee<W> fourth) {
-    return new GenericAlgebraicGuarantee<R>() {
+    return new GenericAlgebraicGuarantee<>() {
       @Override
       public <G> G apply(GenericAlgebraicVisitor<G> visitor) {
         return visitor.genericTuple(name, Stream.of(first, second, third, fourth));
@@ -735,7 +735,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
       @Override
       public boolean check(Map<String, Imyhat> variables, AlgebraicTransformer reference) {
         return reference.visit(
-            new AlgebraicVisitor<Boolean>() {
+            new AlgebraicVisitor<>() {
               @Override
               public Boolean empty(String name) {
                 return false;
@@ -749,7 +749,7 @@ public abstract class GenericAlgebraicGuarantee<T> {
               @Override
               public Boolean tuple(String name, Stream<Imyhat> contents) {
                 return contents.allMatch(
-                    new Predicate<Imyhat>() {
+                    new Predicate<>() {
                       int index;
 
                       @Override

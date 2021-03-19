@@ -24,7 +24,7 @@ public final class CollectNodeMatches extends CollectNode {
 
   @Override
   public final void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
-    final List<String> remove =
+    final var remove =
         definedNames.stream().filter(name -> !names.contains(name)).collect(Collectors.toList());
     selector.collectFreeVariables(names, predicate);
     names.removeAll(remove);
@@ -40,7 +40,7 @@ public final class CollectNodeMatches extends CollectNode {
     final Set<String> freeVariables = new HashSet<>();
     selector.collectFreeVariables(freeVariables, Flavour::needsCapture);
     freeVariables.removeAll(definedNames);
-    final Renderer renderer =
+    final var renderer =
         builder.match(
             line(),
             column(),
@@ -89,7 +89,7 @@ public final class CollectNodeMatches extends CollectNode {
   @Override
   public final boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
-    final boolean ok = selector.resolve(defs.bind(name), errorHandler);
+    final var ok = selector.resolve(defs.bind(name), errorHandler);
     definedNames = name.targets().map(Target::name).collect(Collectors.toList());
     return ok;
   }

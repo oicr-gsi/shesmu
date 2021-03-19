@@ -71,7 +71,7 @@ public class GroupNodeWithDefault extends GroupNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = inner.typeCheck(errorHandler) & initial.typeCheck(errorHandler);
+    var ok = inner.typeCheck(errorHandler) & initial.typeCheck(errorHandler);
     if (ok) {
       if (inner.type().isSame(initial.type())) {
         type = inner.type().unify(initial.type());

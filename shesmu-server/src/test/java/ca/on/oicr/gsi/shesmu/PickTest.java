@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import java.util.Comparator;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
@@ -13,7 +12,7 @@ public class PickTest {
 
   @Test
   public void pickTest() {
-    final Map<Boolean, Integer> results =
+    final var results =
         RuntimeSupport.pick(
                 Stream.of(
                     new Pair<>(false, 7),

@@ -39,8 +39,8 @@ public abstract class KeyValueCache<K, I, V> implements Owner, Iterable<Map.Entr
 
     @Override
     public I update(Instant lastModifed) throws Exception {
-      double cpuStart = Owner.CPU_TIME.getAsDouble();
-      try (final AutoCloseable _ignored = fetchTime.start(name)) {
+      var cpuStart = Owner.CPU_TIME.getAsDouble();
+      try (final var _ignored = fetchTime.start(name)) {
         return fetch(key, lastModifed);
       } finally {
         fetchCpuTime.labels(name).observe(Owner.CPU_TIME.getAsDouble() - cpuStart);
@@ -116,7 +116,7 @@ public abstract class KeyValueCache<K, I, V> implements Owner, Iterable<Map.Entr
    *     is in an error state
    */
   public final V get(K key) {
-    final Record<V> record =
+    final var record =
         records.computeIfAbsent(key, k -> recordFactory.create(new KeyValueUpdater(k)));
     maxCount = Math.max(maxCount, record.collectionSize());
     innerCount.labels(name).set(maxCount);
@@ -131,13 +131,13 @@ public abstract class KeyValueCache<K, I, V> implements Owner, Iterable<Map.Entr
    * @return the last value that was fetched
    */
   public final V getStale(K key) {
-    final Record<V> record =
+    final var record =
         records.computeIfAbsent(key, k -> recordFactory.create(new KeyValueUpdater(k)));
     return record.readStale();
   }
 
   public final void invalidate(K key) {
-    final Record<V> record = records.get(key);
+    final var record = records.get(key);
     if (record != null) {
       record.invalidate();
     }

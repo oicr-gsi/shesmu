@@ -44,10 +44,10 @@ public abstract class WizardMatchBranchNode {
   }
 
   public static Parser parse(Parser input, Consumer<WizardMatchBranchNode> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
-    final AtomicReference<NodeConstructor> ctor = new AtomicReference<>();
-    final AtomicReference<WizardNode> value = new AtomicReference<>();
-    final Parser result =
+    final var name = new AtomicReference<String>();
+    final var ctor = new AtomicReference<NodeConstructor>();
+    final var value = new AtomicReference<WizardNode>();
+    final var result =
         input
             .whitespace()
             .keyword("When")

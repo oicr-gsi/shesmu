@@ -28,7 +28,7 @@ public abstract class CustomRefillerParameter<F, T> {
    */
   public static <F, T, R> CustomRefillerParameter<F, T> of(
       String name, BiConsumer<F, Function<T, R>> store, TypeGuarantee<R> type) {
-    return new CustomRefillerParameter<F, T>(name, type.type()) {
+    return new CustomRefillerParameter<>(name, type.type()) {
       @Override
       public void store(F refiller, Function<T, Object> value) {
         store.accept(refiller, value.andThen(type::unpack));

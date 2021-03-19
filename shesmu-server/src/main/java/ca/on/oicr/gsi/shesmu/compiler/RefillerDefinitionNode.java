@@ -50,18 +50,18 @@ public final class RefillerDefinitionNode implements RefillerDefinition {
   }
 
   public static Parser parse(Parser parser, Consumer<RefillerDefinitionNode> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
-    final AtomicReference<List<Pair<String, ImyhatNode>>> parameters = new AtomicReference<>();
-    final Parser result =
+    final var name = new AtomicReference<String>();
+    final var parameters = new AtomicReference<List<Pair<String, ImyhatNode>>>();
+    final var result =
         parser
             .keyword("Refiller")
             .whitespace()
             .list(
                 parameters::set,
                 (p, o) -> {
-                  final AtomicReference<String> parameter = new AtomicReference<>();
-                  final AtomicReference<ImyhatNode> type = new AtomicReference<>();
-                  final Parser parameterResult =
+                  final var parameter = new AtomicReference<String>();
+                  final var type = new AtomicReference<ImyhatNode>();
+                  final var parameterResult =
                       p.whitespace()
                           .identifier(parameter::set)
                           .whitespace()
@@ -98,14 +98,14 @@ public final class RefillerDefinitionNode implements RefillerDefinition {
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     final Map<String, Imyhat> arguments = new TreeMap<>();
-    boolean ok = true;
-    for (final Pair<String, ImyhatNode> field : fields) {
+    var ok = true;
+    for (final var field : fields) {
       if (arguments.containsKey(field.first())) {
         ok = false;
         errorHandler.accept(
             String.format("%d:%d: Duplicate field %s in %s.", line, column, field.first(), name));
       } else {
-        final Imyhat result = field.second().render(expressionCompilerServices, errorHandler);
+        final var result = field.second().render(expressionCompilerServices, errorHandler);
         if (result.isBad()) {
           ok = false;
         } else {
@@ -132,9 +132,7 @@ public final class RefillerDefinitionNode implements RefillerDefinition {
     }
     if (ok) {
       outputType =
-          arguments
-              .entrySet()
-              .stream()
+          arguments.entrySet().stream()
               .map(e -> e.getKey() + ": " + e.getValue().descriptor())
               .collect(Collectors.joining(", ", "{", "}"));
     }

@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.sftp;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -33,19 +32,19 @@ public class SshRefiller<T> extends Refiller<T> {
         new TreeSet<>(
             (left, right) -> {
               for (int i = 0, j = 0; i < left.length && j < right.length; i++, j++) {
-                int a = (left[i] & 0xff);
-                int b = (right[j] & 0xff);
+                var a = (left[i] & 0xff);
+                var b = (right[j] & 0xff);
                 if (a != b) {
                   return a - b;
                 }
               }
               return left.length - right.length;
             });
-    final ArrayNode output = SftpServer.MAPPER.createArrayNode();
+    final var output = SftpServer.MAPPER.createArrayNode();
     items.forEach(
         item -> {
-          final ObjectNode outputNode = output.addObject();
-          for (final BiConsumer<T, ObjectNode> writer : writers) {
+          final var outputNode = output.addObject();
+          for (final var writer : writers) {
             writer.accept(item, outputNode);
           }
           try {
@@ -60,11 +59,11 @@ public class SshRefiller<T> extends Refiller<T> {
     // Now, we can take a hash of the sorted hashes and be confident that if the data is the same,
     // the has will be the same even if the data was supplied in a different order
     try {
-      final MessageDigest digest = MessageDigest.getInstance("SHA1");
-      for (final byte[] hash : hashes) {
+      final var digest = MessageDigest.getInstance("SHA1");
+      for (final var hash : hashes) {
         digest.update(hash);
       }
-      final String totalHash = Utils.bytesToHex(digest.digest());
+      final var totalHash = Utils.bytesToHex(digest.digest());
       if (totalHash.equals(lastHash)) {
         return;
       }

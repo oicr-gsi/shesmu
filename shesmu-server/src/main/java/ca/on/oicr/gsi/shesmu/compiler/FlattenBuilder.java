@@ -54,8 +54,7 @@ public class FlattenBuilder {
                         ? owner.signatureVariables().map(SignatureDefinition::storageType)
                         : Stream.empty())
                 .toArray(Type[]::new));
-    final GeneratorAdapter ctor =
-        new GeneratorAdapter(Opcodes.ACC_PUBLIC, ctorType, null, null, classVisitor);
+    final var ctor = new GeneratorAdapter(Opcodes.ACC_PUBLIC, ctorType, null, null, classVisitor);
     ctor.visitCode();
     ctor.loadThis();
     ctor.invokeConstructor(A_OBJECT_TYPE, DEFAULT_CTOR);
@@ -77,7 +76,7 @@ public class FlattenBuilder {
       owner
           .signatureVariables()
           .forEach(
-              new Consumer<SignatureDefinition>() {
+              new Consumer<>() {
                 private int index = 2;
 
                 @Override
@@ -104,9 +103,9 @@ public class FlattenBuilder {
   }
 
   public void add(Target target) {
-    final Method getMethod =
+    final var getMethod =
         new Method(target.name(), target.type().apply(TypeUtils.TO_ASM), new Type[] {});
-    final GeneratorAdapter getter =
+    final var getter =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, getMethod, null, null, classVisitor);
     getter.visitCode();
     getter.loadThis();
@@ -134,8 +133,8 @@ public class FlattenBuilder {
             })
         .forEach(
             loader -> {
-              final Method getMethod = new Method(loader.name(), loader.type(), new Type[] {});
-              final GeneratorAdapter getter =
+              final var getMethod = new Method(loader.name(), loader.type(), new Type[] {});
+              final var getter =
                   new GeneratorAdapter(Opcodes.ACC_PUBLIC, getMethod, null, null, classVisitor);
               getter.visitCode();
               loader.accept(

@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -29,7 +28,7 @@ public class RunStateDead extends RunState {
   }
 
   @Override
-  public PerformResult perform(URI vidarrUrl, SubmitWorkflowRequest request) throws IOException {
+  public PerformResult perform(URI vidarrUrl, SubmitWorkflowRequest request) {
     return new PerformResult(List.of(), ActionState.ZOMBIE, this);
   }
 

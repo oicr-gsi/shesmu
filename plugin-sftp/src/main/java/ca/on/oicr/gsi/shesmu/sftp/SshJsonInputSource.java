@@ -1,13 +1,11 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
 import ca.on.oicr.gsi.shesmu.plugin.input.JsonInputSource;
-import ca.on.oicr.gsi.shesmu.sftp.SshConnectionPool.PooledSshConnection;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Optional;
-import net.schmizz.sshj.connection.channel.direct.Session;
 
 public class SshJsonInputSource implements JsonInputSource {
   private final String command;
@@ -23,10 +21,10 @@ public class SshJsonInputSource implements JsonInputSource {
   @Override
   public InputStream fetch() throws Exception {
 
-    final PooledSshConnection connection = connections.get();
-    final Session session = connection.client().startSession();
-    final Session.Command process = session.exec(command);
-    final InputStream stream = process.getInputStream();
+    final var connection = connections.get();
+    final var session = connection.client().startSession();
+    final var process = session.exec(command);
+    final var stream = process.getInputStream();
     return new InputStream() {
       @Override
       public int available() throws IOException {
@@ -37,8 +35,7 @@ public class SshJsonInputSource implements JsonInputSource {
       public void close() throws IOException {
         stream.close();
         process.join();
-        try (final BufferedReader err =
-            new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+        try (final var err = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
           System.err.printf("=== SSH Errors from %s ===\n", command);
           err.lines().forEach(System.err::println);
           System.err.println("=== END ===");

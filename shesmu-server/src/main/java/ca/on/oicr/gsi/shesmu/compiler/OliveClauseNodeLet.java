@@ -8,7 +8,6 @@ import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -34,8 +33,8 @@ public class OliveClauseNodeLet extends OliveClauseNode {
 
   @Override
   public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final LetArgumentNode argument : arguments) {
+    var ok = true;
+    for (final var argument : arguments) {
       if (!argument.checkUnusedDeclarations(errorHandler)) {
         ok = false;
       }
@@ -62,8 +61,7 @@ public class OliveClauseNodeLet extends OliveClauseNode {
             column,
             arguments.stream().anyMatch(LetArgumentNode::filters),
             true,
-            arguments
-                .stream()
+            arguments.stream()
                 .flatMap(
                     arg -> {
                       final Set<String> inputs = new HashSet<>();
@@ -83,7 +81,7 @@ public class OliveClauseNodeLet extends OliveClauseNode {
       Consumer<SignableVariableCheck> addSignableCheck,
       Consumer<String> errorHandler) {
     if (state == ClauseStreamOrder.PURE || state == ClauseStreamOrder.ALMOST_PURE) {
-      for (LetArgumentNode a : arguments) {
+      for (var a : arguments) {
         a.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals);
       }
       return ClauseStreamOrder.TRANSFORMED;
@@ -104,7 +102,7 @@ public class OliveClauseNodeLet extends OliveClauseNode {
     final Set<String> freeVariables = new HashSet<>();
     arguments.forEach(
         argument -> argument.collectFreeVariables(freeVariables, Flavour::needsCapture));
-    final LetBuilder let =
+    final var let =
         oliveBuilder.let(
             line,
             column,
@@ -125,16 +123,15 @@ public class OliveClauseNodeLet extends OliveClauseNode {
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
       Consumer<String> errorHandler) {
-    boolean good =
+    var good =
         arguments.stream().filter(argument -> argument.resolve(defs, errorHandler)).count()
             == arguments.size();
-    final Map<String, Long> nameCounts =
-        arguments
-            .stream()
+    final var nameCounts =
+        arguments.stream()
             .flatMap(LetArgumentNode::targets)
             .map(Target::name)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-    for (final Map.Entry<String, Long> nameCount : nameCounts.entrySet()) {
+    for (final var nameCount : nameCounts.entrySet()) {
       if (nameCount.getValue() == 1) {
         continue;
       }
@@ -144,11 +141,10 @@ public class OliveClauseNodeLet extends OliveClauseNode {
               "%d:%d: Duplicate variable %s in “Let” clause", line, column, nameCount.getKey()));
     }
 
-    for (final LetArgumentNode arg : arguments) {
+    for (final var arg : arguments) {
       good &= arg.blankCheck(errorHandler);
     }
-    if (arguments
-            .stream()
+    if (arguments.stream()
             .map(a -> a.checkWildcard(errorHandler))
             .reduce(WildcardCheck.NONE, WildcardCheck::combine)
         == WildcardCheck.BAD) {
@@ -157,8 +153,7 @@ public class OliveClauseNodeLet extends OliveClauseNode {
     }
     return defs.replaceStream(arguments.stream().flatMap(LetArgumentNode::targets), good)
         .withProvider(
-            arguments
-                .stream()
+            arguments.stream()
                 .map(x -> (UndefinedVariableProvider) x)
                 .reduce(UndefinedVariableProvider.NONE, UndefinedVariableProvider::combine));
   }
@@ -166,14 +161,11 @@ public class OliveClauseNodeLet extends OliveClauseNode {
   @Override
   public boolean resolveDefinitions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    boolean ok =
-        arguments
-                .stream()
-                .filter(argument -> argument.resolveFunctions(oliveCompilerServices, errorHandler))
-                .count()
-            == arguments.size();
 
-    return ok;
+    return arguments.stream()
+            .filter(argument -> argument.resolveFunctions(oliveCompilerServices, errorHandler))
+            .count()
+        == arguments.size();
   }
 
   @Override

@@ -13,7 +13,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
@@ -36,7 +35,7 @@ public abstract class OliveArgumentNode implements UndefinedVariableProvider {
     public void store(Renderer renderer, int action, LoadableValue value) {
       value.accept(renderer);
       renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__IS_PRESENT);
-      final Label end = renderer.methodGen().newLabel();
+      final var end = renderer.methodGen().newLabel();
       renderer.methodGen().ifZCmp(GeneratorAdapter.EQ, end);
       parameterDefinition.store(
           renderer,
@@ -83,11 +82,11 @@ public abstract class OliveArgumentNode implements UndefinedVariableProvider {
       new Method("isPresent", Type.BOOLEAN_TYPE, new Type[0]);
 
   public static Parser parse(Parser input, Consumer<OliveArgumentNode> output) {
-    final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
-    final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-    final AtomicReference<ExpressionNode> condition = new AtomicReference<>();
+    final var name = new AtomicReference<DestructuredArgumentNode>();
+    final var expression = new AtomicReference<ExpressionNode>();
+    final var condition = new AtomicReference<ExpressionNode>();
 
-    final Parser result =
+    final var result =
         input
             .whitespace()
             .then(DestructuredArgumentNode::parse, name::set)
@@ -96,7 +95,7 @@ public abstract class OliveArgumentNode implements UndefinedVariableProvider {
             .whitespace()
             .then(ExpressionNode::parse, expression::set)
             .whitespace();
-    final Parser conditionResult =
+    final var conditionResult =
         result.keyword("If").whitespace().then(ExpressionNode::parse, condition::set).whitespace();
     if (conditionResult.isGood()) {
       output.accept(
@@ -133,8 +132,7 @@ public abstract class OliveArgumentNode implements UndefinedVariableProvider {
     return name.targets()
         .allMatch(
             target -> {
-              final ActionParameterDefinition definition =
-                  parameterDefinitions.apply(target.name());
+              final var definition = parameterDefinitions.apply(target.name());
 
               if (definition.required() && isConditional()) {
                 errorHandler.accept(
@@ -198,7 +196,7 @@ public abstract class OliveArgumentNode implements UndefinedVariableProvider {
 
   protected void storeAll(Renderer renderer, int action, Consumer<Renderer> loadValue) {
     loadValue.accept(renderer);
-    final int local = renderer.methodGen().newLocal(type().apply(TO_ASM));
+    final var local = renderer.methodGen().newLocal(type().apply(TO_ASM));
     renderer.methodGen().storeLocal(local);
     name.render(r -> r.methodGen().loadLocal(local))
         .forEach(value -> definitions.get(value.name()).store(renderer, action, value));

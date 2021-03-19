@@ -78,7 +78,7 @@ public class ExpressionNodeRegex extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean patternOk = true;
+    var patternOk = true;
     try {
       Pattern.compile(regex);
     } catch (PatternSyntaxException e) {
@@ -86,7 +86,7 @@ public class ExpressionNodeRegex extends ExpressionNode {
           String.format("%d:%d: %s", line(), column(), e.getMessage().split("\n")[0]));
       patternOk = false;
     }
-    final boolean ok = expression.typeCheck(errorHandler);
+    final var ok = expression.typeCheck(errorHandler);
     if (ok) {
       if (expression.type().isSame(Imyhat.STRING)) {
         return patternOk;

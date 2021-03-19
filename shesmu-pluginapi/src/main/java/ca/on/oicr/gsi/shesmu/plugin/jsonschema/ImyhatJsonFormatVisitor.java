@@ -29,7 +29,7 @@ public class ImyhatJsonFormatVisitor implements JsonFormatVisitorWrapper {
   }
 
   @Override
-  public JsonObjectFormatVisitor expectObjectFormat(JavaType javaType) throws JsonMappingException {
+  public JsonObjectFormatVisitor expectObjectFormat(JavaType javaType) {
     return new JsonObjectFormatVisitor.Base() {
       private final Map<String, Imyhat> fields = new TreeMap<>();
 
@@ -69,7 +69,7 @@ public class ImyhatJsonFormatVisitor implements JsonFormatVisitorWrapper {
   }
 
   @Override
-  public JsonArrayFormatVisitor expectArrayFormat(JavaType javaType) throws JsonMappingException {
+  public JsonArrayFormatVisitor expectArrayFormat(JavaType javaType) {
     return new JsonArrayFormatVisitor.Base() {
       @Override
       public void itemsFormat(JsonFormatVisitable handler, JavaType elementType)
@@ -81,45 +81,43 @@ public class ImyhatJsonFormatVisitor implements JsonFormatVisitorWrapper {
   }
 
   @Override
-  public JsonStringFormatVisitor expectStringFormat(JavaType javaType) throws JsonMappingException {
+  public JsonStringFormatVisitor expectStringFormat(JavaType javaType) {
     output.accept(Imyhat.STRING);
     return new JsonStringFormatVisitor.Base();
   }
 
   @Override
-  public JsonNumberFormatVisitor expectNumberFormat(JavaType javaType) throws JsonMappingException {
+  public JsonNumberFormatVisitor expectNumberFormat(JavaType javaType) {
     output.accept(Imyhat.FLOAT);
     return new JsonNumberFormatVisitor.Base();
   }
 
   @Override
-  public JsonIntegerFormatVisitor expectIntegerFormat(JavaType javaType)
-      throws JsonMappingException {
+  public JsonIntegerFormatVisitor expectIntegerFormat(JavaType javaType) {
     output.accept(Imyhat.INTEGER);
     return new JsonIntegerFormatVisitor.Base();
   }
 
   @Override
-  public JsonBooleanFormatVisitor expectBooleanFormat(JavaType javaType)
-      throws JsonMappingException {
+  public JsonBooleanFormatVisitor expectBooleanFormat(JavaType javaType) {
     output.accept(Imyhat.BOOLEAN);
     return new JsonBooleanFormatVisitor.Base();
   }
 
   @Override
-  public JsonNullFormatVisitor expectNullFormat(JavaType javaType) throws JsonMappingException {
+  public JsonNullFormatVisitor expectNullFormat(JavaType javaType) {
     output.accept(Imyhat.NOTHING);
     return new JsonNullFormatVisitor.Base();
   }
 
   @Override
-  public JsonAnyFormatVisitor expectAnyFormat(JavaType javaType) throws JsonMappingException {
+  public JsonAnyFormatVisitor expectAnyFormat(JavaType javaType) {
     output.accept(Imyhat.JSON);
     return new JsonAnyFormatVisitor.Base();
   }
 
   @Override
-  public JsonMapFormatVisitor expectMapFormat(JavaType javaType) throws JsonMappingException {
+  public JsonMapFormatVisitor expectMapFormat(JavaType javaType) {
     return new JsonMapFormatVisitor.Base() {
       private Imyhat key;
       private Imyhat value;

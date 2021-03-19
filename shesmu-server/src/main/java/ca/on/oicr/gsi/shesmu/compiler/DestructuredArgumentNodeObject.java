@@ -6,7 +6,6 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,8 +32,8 @@ public class DestructuredArgumentNodeObject extends DestructuredArgumentNode {
 
   @Override
   public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final Pair<String, DestructuredArgumentNode> field : fields) {
+    var ok = true;
+    for (final var field : fields) {
       if (!field.second().checkUnusedDeclarations(errorHandler)) {
         ok = false;
       }
@@ -44,7 +43,7 @@ public class DestructuredArgumentNodeObject extends DestructuredArgumentNode {
 
   @Override
   public WildcardCheck checkWildcard(Consumer<String> errorHandler) {
-    final WildcardCheck result =
+    final var result =
         fields.stream()
             .map(p -> p.second().checkWildcard(errorHandler))
             .reduce(WildcardCheck.NONE, WildcardCheck::combine);
@@ -94,7 +93,7 @@ public class DestructuredArgumentNodeObject extends DestructuredArgumentNode {
 
   @Override
   public void setFlavour(Target.Flavour flavour) {
-    for (final Pair<String, DestructuredArgumentNode> field : fields) {
+    for (final var field : fields) {
       field.second().setFlavour(flavour);
     }
   }
@@ -106,7 +105,7 @@ public class DestructuredArgumentNodeObject extends DestructuredArgumentNode {
 
   @Override
   public boolean typeCheck(Imyhat type, Consumer<String> errorHandler) {
-    final Map<String, Long> elementCounts =
+    final var elementCounts =
         fields.stream()
             .map(Pair::first)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
@@ -124,9 +123,9 @@ public class DestructuredArgumentNodeObject extends DestructuredArgumentNode {
     }
     if (type instanceof Imyhat.ObjectImyhat) {
       objectType = (Imyhat.ObjectImyhat) type;
-      boolean ok = true;
-      for (final Pair<String, DestructuredArgumentNode> field : fields) {
-        final Imyhat fieldType = objectType.get(field.first());
+      var ok = true;
+      for (final var field : fields) {
+        final var fieldType = objectType.get(field.first());
         if (fieldType.isBad()) {
           ok = false;
           errorHandler.accept(

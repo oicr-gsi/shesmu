@@ -33,7 +33,7 @@ public class PackJsonArray implements ImyhatConsumer {
 
   @Override
   public void accept(String typeName, Consumer<ImyhatConsumer> accessor) {
-    final ObjectNode algebraic = node.addObject();
+    final var algebraic = node.addObject();
     algebraic.put("type", typeName);
     accessor.accept(createObject(algebraic, "contents"));
   }
@@ -55,7 +55,7 @@ public class PackJsonArray implements ImyhatConsumer {
 
   @Override
   public void accept(Stream<Object> values, Imyhat inner) {
-    final ArrayNode array = node.addArray();
+    final var array = node.addArray();
     values.forEach(v -> inner.accept(createArray(array), v));
   }
 
@@ -82,14 +82,14 @@ public class PackJsonArray implements ImyhatConsumer {
   @Override
   public void acceptMap(Map<?, ?> map, Imyhat key, Imyhat value) {
     if (key.isSame(Imyhat.STRING)) {
-      final ObjectNode inner = node.addObject();
+      final var inner = node.addObject();
       for (final Map.Entry<?, ?> entry : map.entrySet()) {
         value.accept(new PackJsonObject(inner, (String) entry.getKey()), entry.getValue());
       }
     } else {
-      final ArrayNode inner = node.addArray();
+      final var inner = node.addArray();
       for (final Map.Entry<?, ?> entry : map.entrySet()) {
-        final PackJsonArray row = new PackJsonArray(inner.addArray());
+        final var row = new PackJsonArray(inner.addArray());
         key.accept(row, entry.getKey());
         value.accept(row, entry.getValue());
       }
@@ -98,13 +98,13 @@ public class PackJsonArray implements ImyhatConsumer {
 
   @Override
   public void acceptObject(Stream<Field<String>> fields) {
-    final ObjectNode object = node.addObject();
+    final var object = node.addObject();
     fields.forEach(f -> f.type().accept(createObject(object, f.index()), f.value()));
   }
 
   @Override
   public void acceptTuple(Stream<Field<Integer>> fields) {
-    final ArrayNode array = node.addArray();
+    final var array = node.addArray();
     fields
         .sorted(Comparator.comparing(Field::index))
         .forEach(f -> f.type().accept(createArray(array), f.value()));

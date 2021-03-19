@@ -43,20 +43,20 @@ public final class InvokeDynamicRefillerParameterDescriptor implements RefillerP
               // this: X<T> extends Y<T>; Y<K> extends Refiller<K>. We don't care if the layers in
               // the middle rename or shuffle values. So, X<T> extends Y<T, Integer>; Y<A, B>
               // extends Refiller<A> is fine.
-              int varPosition = -1;
+              var varPosition = -1;
               Class<?> current = refillerType;
               while (!current.equals(Refiller.class)) {
 
                 // If the class isn't Refiller, then get the generic description of this class,
                 // which must be parameterised
-                java.lang.reflect.Type parentSuper = current.getGenericSuperclass();
+                var parentSuper = current.getGenericSuperclass();
                 if (!(parentSuper instanceof ParameterizedType)) {
                   throw new IllegalArgumentException(
                       String.format(
                           "Refiller type %s is has generic supertype %s that is unexpected.",
                           refillerType.getTypeName(), parentSuper.getTypeName()));
                 }
-                ParameterizedType parameterizedParentSuper = (ParameterizedType) parentSuper;
+                var parameterizedParentSuper = (ParameterizedType) parentSuper;
                 // Okay, our class must have some type variables
                 final TypeVariable<?> parentVariable;
                 if (varPosition == -1) {
@@ -74,7 +74,7 @@ public final class InvokeDynamicRefillerParameterDescriptor implements RefillerP
                 }
                 // Check that this type variable is just a raw type variable; none of that T extends
                 // Foo allowed.
-                for (final java.lang.reflect.Type bound : parentVariable.getBounds()) {
+                for (final var bound : parentVariable.getBounds()) {
                   if (!bound.equals(Object.class)) {
                     throw new IllegalArgumentException(
                         String.format(
@@ -86,10 +86,9 @@ public final class InvokeDynamicRefillerParameterDescriptor implements RefillerP
                 }
                 // Now, figure out the position of this variable in the superclass's type argument
                 // list
-                java.lang.reflect.Type[] parentParams =
-                    parameterizedParentSuper.getActualTypeArguments();
+                var parentParams = parameterizedParentSuper.getActualTypeArguments();
                 varPosition = -1;
-                for (int i = 0; i < parentParams.length; i++) {
+                for (var i = 0; i < parentParams.length; i++) {
                   if (parentParams[i].equals(parentVariable)) {
                     varPosition = i;
                     break;
@@ -103,7 +102,7 @@ public final class InvokeDynamicRefillerParameterDescriptor implements RefillerP
                           parentVariable.getTypeName(),
                           current.getTypeName()));
                 }
-                final java.lang.reflect.Type parent = parameterizedParentSuper.getRawType();
+                final var parent = parameterizedParentSuper.getRawType();
                 // We expect the current layer to be a class
                 if (!(parent instanceof Class)) {
                   throw new IllegalArgumentException(
@@ -111,15 +110,14 @@ public final class InvokeDynamicRefillerParameterDescriptor implements RefillerP
                           "Refiller type %s is has supertype %s that is unexpected.",
                           refillerType.getTypeName(), parent.getTypeName()));
                 }
-                current = (Class) parent;
+                current = (Class<?>) parent;
               }
               try {
                 final List<RefillerParameterDefinition> parameters = new ArrayList<>();
-                final String actionName = refillerType.getName().replace(".", "·");
+                final var actionName = refillerType.getName().replace(".", "·");
 
-                for (final Field field : refillerType.getFields()) {
-                  final RefillerParameter fieldAnnotation =
-                      field.getAnnotation(RefillerParameter.class);
+                for (final var field : refillerType.getFields()) {
+                  final var fieldAnnotation = field.getAnnotation(RefillerParameter.class);
                   if (fieldAnnotation == null) {
                     continue;
                   }
@@ -129,8 +127,8 @@ public final class InvokeDynamicRefillerParameterDescriptor implements RefillerP
                             "Field %s in %s is annotated with RefillerParameter, but not an instance field.",
                             field.getName(), field.getDeclaringClass().getName()));
                   }
-                  final String fieldName = AnnotationUtils.checkName(fieldAnnotation.name(), field);
-                  final Imyhat fieldType =
+                  final var fieldName = AnnotationUtils.checkName(fieldAnnotation.name(), field);
+                  final var fieldType =
                       unpack(
                           String.format(
                               "Field %s in %s",
@@ -143,9 +141,8 @@ public final class InvokeDynamicRefillerParameterDescriptor implements RefillerP
                           actionName, fieldName, fieldType, lookup.unreflectSetter(field)));
                 }
 
-                for (final Method setter : refillerType.getMethods()) {
-                  final RefillerParameter setterAnnotation =
-                      setter.getAnnotation(RefillerParameter.class);
+                for (final var setter : refillerType.getMethods()) {
+                  final var setterAnnotation = setter.getAnnotation(RefillerParameter.class);
                   if (setterAnnotation == null) {
                     continue;
                   }
@@ -158,9 +155,8 @@ public final class InvokeDynamicRefillerParameterDescriptor implements RefillerP
                             "Setter %s in %s is annotated with RefillerParameter, but not an instance method with no return type and one java.util.function.Function parameter.",
                             setter.getName(), setter.getDeclaringClass().getName()));
                   }
-                  final String setterName =
-                      AnnotationUtils.checkName(setterAnnotation.name(), setter);
-                  final Imyhat setterType =
+                  final var setterName = AnnotationUtils.checkName(setterAnnotation.name(), setter);
+                  final var setterType =
                       unpack(
                           String.format(
                               "Setter %s in %s",
@@ -189,7 +185,7 @@ public final class InvokeDynamicRefillerParameterDescriptor implements RefillerP
       throw new IllegalArgumentException(
           String.format("%s has non-parameterised type %s.", context, genericType.getTypeName()));
     }
-    final ParameterizedType parameterizedType = (ParameterizedType) genericType;
+    final var parameterizedType = (ParameterizedType) genericType;
     if (!parameterizedType.getRawType().equals(Function.class)) {
       throw new IllegalArgumentException(
           String.format("%s has non-Function type %s.", context, genericType.getTypeName()));
@@ -220,7 +216,7 @@ public final class InvokeDynamicRefillerParameterDescriptor implements RefillerP
               Type.getType(String.class)),
           false);
   private static final MethodHandle MH_STORE;
-  private static Map<Class<? extends Refiller>, List<RefillerParameterDefinition>>
+  private static final Map<Class<? extends Refiller>, List<RefillerParameterDefinition>>
       REFILLER_PARAMETERS = new ConcurrentHashMap<>();
   private static final CallSiteRegistry<Pair<String, String>> REGISTRY = new CallSiteRegistry<>();
 

@@ -1,13 +1,12 @@
 package ca.on.oicr.gsi.shesmu.loki;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Collections;
 import java.util.Map;
 
 /** Bean for on-disk Loki service configuration files */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Configuration {
-  private Map<String, String> labels = Collections.emptyMap();
+  private Map<String, String> labels = Map.of();
   private String url;
 
   public Map<String, String> getLabels() {

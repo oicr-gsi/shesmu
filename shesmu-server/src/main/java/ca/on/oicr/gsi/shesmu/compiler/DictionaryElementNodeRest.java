@@ -66,7 +66,7 @@ public class DictionaryElementNodeRest extends DictionaryElementNode {
   public boolean typeCheck(Consumer<String> errorHandler) {
     if (expression.typeCheck(errorHandler)) {
       if (expression.type() instanceof DictionaryImyhat) {
-        final DictionaryImyhat dictType = (DictionaryImyhat) expression.type();
+        final var dictType = (DictionaryImyhat) expression.type();
         key = dictType.key();
         value = dictType.value();
         return true;

@@ -27,8 +27,8 @@ public class OnlineReportRefiller<T> extends Refiller<T> {
         .processInput(
             items.map(
                 i -> {
-                  final ObjectNode node = OnlineReport.MAPPER.createObjectNode();
-                  for (final BiConsumer<T, ObjectNode> writer : writers) {
+                  final var node = OnlineReport.MAPPER.createObjectNode();
+                  for (final var writer : writers) {
                     writer.accept(i, node);
                   }
                   return new Pair<>(label.apply(i), node);

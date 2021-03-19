@@ -125,15 +125,15 @@ public abstract class Compiler {
       Consumer<FileTable> dashboardOutput,
       boolean allowDuplicates,
       boolean allowUnused) {
-    final AtomicReference<ProgramNode> program = new AtomicReference<>();
+    final var program = new AtomicReference<ProgramNode>();
     final String hash;
     try {
-      final MessageDigest digest = MessageDigest.getInstance("SHA-1");
+      final var digest = MessageDigest.getInstance("SHA-1");
       hash = Utils.bytesToHex(digest.digest(input.getBytes(StandardCharsets.UTF_8)));
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);
     }
-    final boolean parseOk =
+    final var parseOk =
         ProgramNode.parseFile(
             input,
             program::set,
@@ -153,7 +153,7 @@ public abstract class Compiler {
                 signatures,
                 allowDuplicates,
                 allowUnused)) {
-      final Instant compileTime = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+      final var compileTime = Instant.now().truncatedTo(ChronoUnit.MILLIS);
       if (dashboardOutput != null && skipRender) {
         dashboardOutput.accept(program.get().dashboard(path, hash, "Bytecode not available."));
       }
@@ -161,7 +161,7 @@ public abstract class Compiler {
         return true;
       }
       final List<Textifier> bytecode = new ArrayList<>();
-      final RootBuilder builder =
+      final var builder =
           new RootBuilder(
               hash,
               name,
@@ -172,11 +172,11 @@ public abstract class Compiler {
               signatures) {
             @Override
             protected ClassVisitor createClassVisitor() {
-              final ClassVisitor outputVisitor = Compiler.this.createClassVisitor();
+              final var outputVisitor = Compiler.this.createClassVisitor();
               if (dashboardOutput == null) {
                 return outputVisitor;
               }
-              final Textifier writer = new Textifier();
+              final var writer = new Textifier();
               bytecode.add(writer);
               return new TraceClassVisitor(outputVisitor, writer, null);
             }
@@ -194,7 +194,7 @@ public abstract class Compiler {
                 pluginFilenames.stream().map(Path::toString).toArray());
             methodGen.invokeInterface(A_OLIVE_SERVICES, METHOD_OLIVE_SERVICES__IS_OVERLOADED_ARRAY);
           });
-      final GeneratorAdapter servicesMethodGen =
+      final var servicesMethodGen =
           new GeneratorAdapter(
               Opcodes.ACC_PUBLIC, METHOD_SERVICES_REQUIRED, null, null, builder.classVisitor);
       servicesMethodGen.visitCode();
@@ -219,8 +219,7 @@ public abstract class Compiler {
                 .dashboard(
                     path,
                     hash,
-                    bytecode
-                        .stream()
+                    bytecode.stream()
                         .flatMap(t -> t.getText().stream())
                         .flatMap(
                             new Function<Object, Stream<String>>() {

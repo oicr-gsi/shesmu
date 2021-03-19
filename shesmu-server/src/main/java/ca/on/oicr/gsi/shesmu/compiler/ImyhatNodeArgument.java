@@ -1,9 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 public class ImyhatNodeArgument extends ImyhatNode {
@@ -22,13 +20,13 @@ public class ImyhatNodeArgument extends ImyhatNode {
   @Override
   public Imyhat render(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    final FunctionDefinition definition = expressionCompilerServices.function(function);
+    final var definition = expressionCompilerServices.function(function);
     if (definition == null) {
       errorHandler.accept(
           String.format("%d:%d: Unknown function %s for parameter type.", line, column, function));
       return Imyhat.BAD;
     }
-    final Optional<Imyhat> argType =
+    final var argType =
         definition.parameters().skip(index).findFirst().map(FunctionParameter::type);
     if (argType.isPresent()) {
       return argType.get();

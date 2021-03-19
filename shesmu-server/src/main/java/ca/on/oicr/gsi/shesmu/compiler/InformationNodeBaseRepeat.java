@@ -26,9 +26,9 @@ public abstract class InformationNodeBaseRepeat extends InformationNode {
 
   @Override
   public final String renderEcma(EcmaScriptRenderer renderer) {
-    final EcmaStreamBuilder builder = source.render(renderer);
-    EcmaLoadableConstructor currentName = loader -> name.renderEcma(loader);
-    for (final ListNode transform : transforms) {
+    final var builder = source.render(renderer);
+    EcmaLoadableConstructor currentName = name::renderEcma;
+    for (final var transform : transforms) {
       currentName = transform.render(builder, currentName);
     }
     builder.map(currentName, Imyhat.BAD, this::renderRow);
@@ -40,9 +40,9 @@ public abstract class InformationNodeBaseRepeat extends InformationNode {
 
   @Override
   public final boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    boolean ok = source.resolve(defs, errorHandler);
+    var ok = source.resolve(defs, errorHandler);
 
-    final Optional<DestructuredArgumentNode> nextName =
+    final var nextName =
         transforms.stream()
             .reduce(
                 Optional.of(name),
@@ -56,8 +56,7 @@ public abstract class InformationNodeBaseRepeat extends InformationNode {
             && nextName
                 .map(
                     name -> {
-                      final NameDefinitions collectorName =
-                          defs.replaceStream(name.targets(), true);
+                      final var collectorName = defs.replaceStream(name.targets(), true);
                       return resolveTerminal(collectorName, errorHandler);
                     })
                 .orElse(false);
@@ -92,7 +91,7 @@ public abstract class InformationNodeBaseRepeat extends InformationNode {
     if (!source.typeCheck(errorHandler) || !name.typeCheck(source.streamType(), errorHandler)) {
       return false;
     }
-    final Ordering ordering =
+    final var ordering =
         transforms.stream()
             .reduce(
                 source.ordering(),
@@ -100,7 +99,7 @@ public abstract class InformationNodeBaseRepeat extends InformationNode {
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
-    final Optional<Imyhat> resultType =
+    final var resultType =
         transforms.stream()
             .reduce(
                 Optional.of(source.streamType()),

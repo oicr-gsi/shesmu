@@ -49,12 +49,12 @@ public class ExpressionNodeFor extends ExpressionNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    final EcmaStreamBuilder builder = source.render(renderer);
+    final var builder = source.render(renderer);
     return collector.render(
         builder,
         transforms.stream()
             .reduce(
-                loader -> name.renderEcma(loader),
+                name::renderEcma,
                 (n, transform) -> transform.render(builder, n),
                 (a, b) -> {
                   throw new UnsupportedOperationException();
@@ -63,7 +63,7 @@ public class ExpressionNodeFor extends ExpressionNode {
 
   @Override
   public void render(Renderer renderer) {
-    final JavaStreamBuilder builder = source.render(renderer);
+    final var builder = source.render(renderer);
     collector.render(
         builder,
         transforms.stream()
@@ -77,9 +77,9 @@ public class ExpressionNodeFor extends ExpressionNode {
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    boolean ok = source.resolve(defs, errorHandler);
+    var ok = source.resolve(defs, errorHandler);
 
-    final Optional<DestructuredArgumentNode> nextName =
+    final var nextName =
         transforms.stream()
             .reduce(
                 Optional.of(name),
@@ -115,7 +115,7 @@ public class ExpressionNodeFor extends ExpressionNode {
     if (!source.typeCheck(errorHandler) || !name.typeCheck(source.streamType(), errorHandler)) {
       return false;
     }
-    final Ordering ordering =
+    final var ordering =
         transforms.stream()
             .reduce(
                 source.ordering(),
@@ -123,7 +123,7 @@ public class ExpressionNodeFor extends ExpressionNode {
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
-    final Optional<Imyhat> resultType =
+    final var resultType =
         transforms.stream()
             .reduce(
                 Optional.of(source.streamType()),

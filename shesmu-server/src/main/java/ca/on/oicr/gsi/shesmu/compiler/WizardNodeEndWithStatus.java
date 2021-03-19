@@ -56,7 +56,7 @@ public class WizardNodeEndWithStatus extends WizardNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = status.typeCheck(errorHandler);
+    var ok = status.typeCheck(errorHandler);
     if (ok) {
       if (!status.type().isSame(Imyhat.BOOLEAN)) {
         ok = false;

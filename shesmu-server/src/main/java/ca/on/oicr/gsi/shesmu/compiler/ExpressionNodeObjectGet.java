@@ -59,9 +59,10 @@ public class ExpressionNodeObjectGet extends ExpressionNode {
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
     if (lifted) {
-      return String.format("$runtime.mapNull(%s, v => v.%s)", expression.renderEcma(renderer), field);
+      return String.format(
+          "$runtime.mapNull(%s, v => v.%s)", expression.renderEcma(renderer), field);
     } else {
-return expression.renderEcma(renderer) + "." + field;
+      return expression.renderEcma(renderer) + "." + field;
     }
   }
 
@@ -81,12 +82,12 @@ return expression.renderEcma(renderer) + "." + field;
       } else {
         lambdaType = LambdaBuilder.function(A_OBJECT_TYPE, A_TUPLE_TYPE);
       }
-      final LambdaBuilder lambda =
+      final var lambda =
           new LambdaBuilder(
               renderer.root(),
               String.format("Optional Getter %d:%d %s", line(), column(), field),
               lambdaType);
-      final GeneratorAdapter method = lambda.methodGen();
+      final var method = lambda.methodGen();
       method.visitCode();
       method.loadArg(0);
       renderLoad(method);
@@ -133,15 +134,15 @@ return expression.renderEcma(renderer) + "." + field;
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = expression.typeCheck(errorHandler);
+    var ok = expression.typeCheck(errorHandler);
     if (ok) {
-      Imyhat expressionType = expression.type();
+      var expressionType = expression.type();
       if (expressionType instanceof Imyhat.OptionalImyhat) {
         lifted = true;
         expressionType = ((Imyhat.OptionalImyhat) expressionType).inner();
       }
       if (expressionType instanceof Imyhat.ObjectImyhat) {
-        final Imyhat.ObjectImyhat objectType = (Imyhat.ObjectImyhat) expressionType;
+        final var objectType = (Imyhat.ObjectImyhat) expressionType;
         type = objectType.get(field);
         if (type.isBad()) {
           errorHandler.accept(

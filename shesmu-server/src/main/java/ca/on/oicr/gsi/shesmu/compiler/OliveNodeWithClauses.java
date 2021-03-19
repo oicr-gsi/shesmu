@@ -35,8 +35,8 @@ public abstract class OliveNodeWithClauses extends OliveNode {
   /** Check the rules that call clauses must only precede “Group” clauses */
   @Override
   public final boolean checkVariableStream(Consumer<String> errorHandler) {
-    ClauseStreamOrder state = ClauseStreamOrder.PURE;
-    for (final OliveClauseNode clause : clauses()) {
+    var state = ClauseStreamOrder.PURE;
+    for (final var clause : clauses()) {
       state = clause.ensureRoot(state, signableNames, signableVariableChecks::add, errorHandler);
     }
     if (state == ClauseStreamOrder.PURE || state == ClauseStreamOrder.ALMOST_PURE) {
@@ -87,9 +87,8 @@ public abstract class OliveNodeWithClauses extends OliveNode {
   @Override
   public final boolean resolveDefinitions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    final boolean clausesOk =
-        clauses
-                .stream()
+    final var clausesOk =
+        clauses.stream()
                 .filter(clause -> clause.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == clauses.size();
@@ -107,7 +106,7 @@ public abstract class OliveNodeWithClauses extends OliveNode {
   /** Type check this olive and all its constituent parts */
   @Override
   public final boolean typeCheck(Consumer<String> errorHandler) {
-    for (final OliveClauseNode clause : clauses) {
+    for (final var clause : clauses) {
       if (!clause.typeCheck(errorHandler)) {
         return false;
       }

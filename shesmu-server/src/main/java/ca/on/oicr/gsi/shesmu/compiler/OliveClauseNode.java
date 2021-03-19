@@ -65,23 +65,15 @@ public abstract class OliveClauseNode {
         "Alert",
         (p, o) ->
             OliveNode.parseAlert(
-                p,
-                v ->
-                    o.accept(
-                        v.create(
-                            p.line(),
-                            p.column(),
-                            Collections.emptyList(),
-                            Collections.emptySet(),
-                            ""))));
+                p, v -> o.accept(v.create(p.line(), p.column(), List.of(), Set.of(), ""))));
 
     CLAUSES.addKeyword("Monitor", (p, o) -> parseMonitor(p, f -> o.accept(f::create)));
     CLAUSES.addKeyword("Dump", (p, o) -> parseDump(p, f -> o.accept(f::create)));
     CLAUSES.addKeyword(
         "Where",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser result = ExpressionNode.parse(p.whitespace(), expression::set).whitespace();
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var result = ExpressionNode.parse(p.whitespace(), expression::set).whitespace();
           if (result.isGood()) {
             o.accept(
                 label -> new OliveClauseNodeWhere(label, p.line(), p.column(), expression.get()));
@@ -91,16 +83,14 @@ public abstract class OliveClauseNode {
     CLAUSES.addKeyword(
         "Group",
         (parser, output) -> {
-          final AtomicReference<List<GroupNode>> collectors =
-              new AtomicReference<>(Collections.emptyList());
-          final AtomicReference<List<DiscriminatorNode>> discriminators = new AtomicReference<>();
-          final AtomicReference<String> name = new AtomicReference<>();
-          final AtomicReference<List<Pair<String, ExpressionNode>>> inputs =
-              new AtomicReference<>();
-          final AtomicReference<List<String>> outputs = new AtomicReference<>();
-          final AtomicReference<Optional<ExpressionNode>> where = new AtomicReference<>();
+          final var collectors = new AtomicReference<List<GroupNode>>(List.of());
+          final var discriminators = new AtomicReference<List<DiscriminatorNode>>();
+          final var name = new AtomicReference<String>();
+          final var inputs = new AtomicReference<List<Pair<String, ExpressionNode>>>();
+          final var outputs = new AtomicReference<List<String>>();
+          final var where = new AtomicReference<Optional<ExpressionNode>>();
 
-          Parser result =
+          var result =
               parser
                   .whitespace()
                   .keyword("By")
@@ -116,11 +106,9 @@ public abstract class OliveClauseNode {
                               .list(
                                   inputs::set,
                                   (p, o) -> {
-                                    final AtomicReference<String> parameterName =
-                                        new AtomicReference<>();
-                                    final AtomicReference<ExpressionNode> expression =
-                                        new AtomicReference<>();
-                                    final Parser paramResult =
+                                    final var parameterName = new AtomicReference<String>();
+                                    final var expression = new AtomicReference<ExpressionNode>();
+                                    final var paramResult =
                                         p.whitespace()
                                             .identifier(parameterName::set)
                                             .whitespace()
@@ -184,8 +172,8 @@ public abstract class OliveClauseNode {
     CLAUSES.addKeyword(
         "Let",
         (letParser, output) -> {
-          final AtomicReference<List<LetArgumentNode>> arguments = new AtomicReference<>();
-          final Parser result =
+          final var arguments = new AtomicReference<List<LetArgumentNode>>();
+          final var result =
               letParser
                   .whitespace()
                   .listEmpty(arguments::set, LetArgumentNode::parse, ',')
@@ -202,9 +190,9 @@ public abstract class OliveClauseNode {
     CLAUSES.addKeyword(
         "Flatten",
         (parser, output) -> {
-          final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser result =
+          final var name = new AtomicReference<DestructuredArgumentNode>();
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var result =
               parser
                   .whitespace()
                   .then(DestructuredArgumentNode::parse, name::set)
@@ -225,9 +213,9 @@ public abstract class OliveClauseNode {
     CLAUSES.addKeyword(
         "Reject",
         (rejectParser, output) -> {
-          final AtomicReference<List<RejectNode>> handlers = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> clause = new AtomicReference<>();
-          final Parser result =
+          final var handlers = new AtomicReference<List<RejectNode>>();
+          final var clause = new AtomicReference<ExpressionNode>();
+          final var result =
               rejectParser
                   .whitespace()
                   .then(ExpressionNode::parse, clause::set)
@@ -254,10 +242,10 @@ public abstract class OliveClauseNode {
     CLAUSES.addKeyword(
         "Require",
         (rejectParser, output) -> {
-          final AtomicReference<List<RejectNode>> handlers = new AtomicReference<>();
-          final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser result =
+          final var handlers = new AtomicReference<List<RejectNode>>();
+          final var name = new AtomicReference<DestructuredArgumentNode>();
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var result =
               rejectParser
                   .whitespace()
                   .then(DestructuredArgumentNode::parse, name::set)
@@ -291,10 +279,10 @@ public abstract class OliveClauseNode {
     CLAUSES.addKeyword(
         "Pick",
         (pickParser, output) -> {
-          final AtomicReference<Boolean> direction = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final AtomicReference<List<PickNode>> discriminators = new AtomicReference<>();
-          final Parser result =
+          final var direction = new AtomicReference<Boolean>();
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var discriminators = new AtomicReference<List<PickNode>>();
+          final var result =
               pickParser
                   .whitespace()
                   .regex(OPTIMA, m -> direction.set(m.group().equals("Max")), "Need Min or Max.")
@@ -321,11 +309,11 @@ public abstract class OliveClauseNode {
     CLAUSES.addRaw(
         "call",
         (input, output) -> {
-          final AtomicReference<String> name = new AtomicReference<>();
-          final Parser callParser = input.qualifiedIdentifier(name::set);
+          final var name = new AtomicReference<String>();
+          final var callParser = input.qualifiedIdentifier(name::set);
           if (callParser.isGood()) {
-            final AtomicReference<List<ExpressionNode>> arguments = new AtomicReference<>();
-            final Parser result =
+            final var arguments = new AtomicReference<List<ExpressionNode>>();
+            final var result =
                 callParser
                     .whitespace()
                     .symbol("(")
@@ -348,8 +336,8 @@ public abstract class OliveClauseNode {
     GROUP_WHERE.addKeyword(
         "Where",
         (p, o) -> {
-          final AtomicReference<ExpressionNode> condition = new AtomicReference<>();
-          final Parser result =
+          final var condition = new AtomicReference<ExpressionNode>();
+          final var result =
               p.whitespace().then(ExpressionNode::parse, condition::set).whitespace();
           if (result.isGood()) {
             o.accept(Optional.of(condition.get()));
@@ -373,10 +361,10 @@ public abstract class OliveClauseNode {
 
   private static Rule<NodeConstructor<OliveClauseNode>> join(JoinConstructor constructor) {
     return (joinParser, output) -> {
-      final AtomicReference<ExpressionNode> outerKey = new AtomicReference<>();
-      final AtomicReference<JoinSourceNode> source = new AtomicReference<>();
-      final AtomicReference<ExpressionNode> innerKey = new AtomicReference<>();
-      final Parser result =
+      final var outerKey = new AtomicReference<ExpressionNode>();
+      final var source = new AtomicReference<JoinSourceNode>();
+      final var innerKey = new AtomicReference<ExpressionNode>();
+      final var result =
           joinParser
               .whitespace()
               .then(ExpressionNode::parse, outerKey::set)
@@ -405,13 +393,13 @@ public abstract class OliveClauseNode {
 
   private static Rule<NodeConstructor<OliveClauseNode>> leftJoin(LeftJoinConstructor constructor) {
     return (leftJoinParser, output) -> {
-      final AtomicReference<ExpressionNode> outerKey = new AtomicReference<>();
-      final AtomicReference<JoinSourceNode> source = new AtomicReference<>();
-      final AtomicReference<String> prefix = new AtomicReference<>();
-      final AtomicReference<ExpressionNode> innerKey = new AtomicReference<>();
-      final AtomicReference<List<GroupNode>> groups = new AtomicReference<>();
-      final AtomicReference<Optional<ExpressionNode>> where = new AtomicReference<>();
-      final Parser result =
+      final var outerKey = new AtomicReference<ExpressionNode>();
+      final var source = new AtomicReference<JoinSourceNode>();
+      final var prefix = new AtomicReference<String>();
+      final var innerKey = new AtomicReference<ExpressionNode>();
+      final var groups = new AtomicReference<List<GroupNode>>();
+      final var where = new AtomicReference<Optional<ExpressionNode>>();
+      final var result =
           leftJoinParser
               .whitespace()
               .then(ExpressionNode::parse, outerKey::set)
@@ -445,9 +433,9 @@ public abstract class OliveClauseNode {
   }
 
   public static Parser parse(Parser input, Consumer<OliveClauseNode> output) {
-    final Parser labelResult = input.whitespace().keyword("Label").whitespace();
+    final var labelResult = input.whitespace().keyword("Label").whitespace();
     if (labelResult.isGood()) {
-      final AtomicReference<String> label = new AtomicReference<>();
+      final var label = new AtomicReference<String>();
       return labelResult
           .regex(HELP, m -> label.set(m.group(1)), "label")
           .whitespace()
@@ -461,23 +449,21 @@ public abstract class OliveClauseNode {
   private static Parser parseDump(
       Parser input, Consumer<NodeConstructor<OliveClauseNodeBaseDump>> output) {
     final DumpConstructor constructor;
-    final Parser allResult = input.whitespace().keyword("All").whitespace();
+    final var allResult = input.whitespace().keyword("All").whitespace();
     final Parser intermediateParser;
     if (allResult.isGood()) {
       constructor = OliveClauseNodeDumpAll::new;
       intermediateParser = allResult;
     } else {
-      final AtomicReference<List<Pair<Optional<String>, ExpressionNode>>> columns =
-          new AtomicReference<>();
+      final var columns = new AtomicReference<List<Pair<Optional<String>, ExpressionNode>>>();
       intermediateParser =
           input
               .whitespace()
               .listEmpty(
                   columns::set,
                   (pf, po) -> {
-                    final AtomicReference<Optional<String>> label =
-                        new AtomicReference<>(Optional.empty());
-                    final Parser labelResult = pf.whitespace().keyword("Label").whitespace();
+                    final var label = new AtomicReference<Optional<String>>(Optional.empty());
+                    final var labelResult = pf.whitespace().keyword("Label").whitespace();
 
                     return ExpressionNode.parse(
                         labelResult.isGood()
@@ -489,8 +475,8 @@ public abstract class OliveClauseNode {
               .whitespace();
       constructor = (la, l, c, d) -> new OliveClauseNodeDump(la, l, c, d, columns.get());
     }
-    final AtomicReference<String> dumper = new AtomicReference<>();
-    final Parser result =
+    final var dumper = new AtomicReference<String>();
+    final var result =
         intermediateParser.keyword("To").whitespace().identifier(dumper::set).whitespace();
 
     if (result.isGood()) {
@@ -501,11 +487,11 @@ public abstract class OliveClauseNode {
 
   private static Parser parseMonitor(
       Parser input, Consumer<NodeConstructor<OliveClauseNodeMonitor>> output) {
-    final AtomicReference<String> metricName = new AtomicReference<>();
-    final AtomicReference<String> help = new AtomicReference<>();
-    final AtomicReference<List<MonitorArgumentNode>> labels = new AtomicReference<>();
+    final var metricName = new AtomicReference<String>();
+    final var help = new AtomicReference<String>();
+    final var labels = new AtomicReference<List<MonitorArgumentNode>>();
 
-    final Parser result =
+    final var result =
         input
             .whitespace()
             .identifier(metricName::set)

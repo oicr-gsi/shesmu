@@ -15,10 +15,10 @@ public abstract class DefinedCheckNode {
   }
 
   public static Parser parse(Parser input, Consumer<DefinedCheckNode> output) {
-    final AtomicReference<Function<String, DefinedCheckNode>> check = new AtomicReference<>();
-    final AtomicReference<String> name = new AtomicReference<>();
+    final var check = new AtomicReference<Function<String, DefinedCheckNode>>();
+    final var name = new AtomicReference<String>();
 
-    final Parser result =
+    final var result =
         input
             .whitespace()
             .dispatch(CHECK, check::set)

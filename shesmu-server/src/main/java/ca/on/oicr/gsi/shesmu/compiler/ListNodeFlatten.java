@@ -41,7 +41,7 @@ public class ListNodeFlatten extends ListNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
-    final List<String> remove =
+    final var remove =
         definedNames.stream().filter(name -> !names.contains(name)).collect(Collectors.toList());
     source.collectFreeVariables(names, predicate);
     names.removeAll(remove);
@@ -69,7 +69,7 @@ public class ListNodeFlatten extends ListNode {
   public LoadableConstructor render(JavaStreamBuilder builder, LoadableConstructor name) {
     final Set<String> freeVariables = new HashSet<>();
     collectFreeVariables(freeVariables, Flavour::needsCapture);
-    final Renderer renderer =
+    final var renderer =
         builder.flatten(
             line(),
             column(),
@@ -81,10 +81,9 @@ public class ListNodeFlatten extends ListNode {
                 .filter(v -> freeVariables.contains(v.name()))
                 .toArray(LoadableValue[]::new));
     renderer.methodGen().visitCode();
-    final JavaStreamBuilder flattenBuilder = source.render(renderer);
+    final var flattenBuilder = source.render(renderer);
     final LoadableConstructor outputName =
-        transforms
-            .stream()
+        transforms.stream()
             .reduce(
                 childName::render,
                 (n, t) -> t.render(flattenBuilder, n),
@@ -107,8 +106,8 @@ public class ListNodeFlatten extends ListNode {
 
     @Override
     public String render(EcmaScriptRenderer renderer, IntFunction<String> arg) {
-      final EcmaStreamBuilder builder = source.render(renderer);
-      for (final ListNode node: transforms) {
+      final var builder = source.render(renderer);
+      for (final var node : transforms) {
         name = node.render(builder, name);
       }
       return builder.finish();
@@ -117,25 +116,20 @@ public class ListNodeFlatten extends ListNode {
 
   @Override
   public EcmaLoadableConstructor render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
-    final FlattenLambda lambda = new FlattenLambda(name);
-        builder.flatten(
-            type,
-           lambda
-            );
-    return  lambda.name;
-
+    final var lambda = new FlattenLambda(name);
+    builder.flatten(type, lambda);
+    return lambda.name;
   }
 
   @Override
   public Optional<DestructuredArgumentNode> resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
-    final NameDefinitions innerDefs = defs.bind(name);
+    final var innerDefs = defs.bind(name);
     if (!source.resolve(innerDefs, errorHandler)) {
       return Optional.empty();
     }
-    final Optional<DestructuredArgumentNode> nextName =
-        transforms
-            .stream()
+    final var nextName =
+        transforms.stream()
             .reduce(
                 Optional.of(childName),
                 (n, t) -> n.flatMap(innerName -> t.resolve(innerName, innerDefs, errorHandler)),
@@ -150,8 +144,7 @@ public class ListNodeFlatten extends ListNode {
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return source.resolveDefinitions(expressionCompilerServices, errorHandler)
-        & transforms
-                .stream()
+        & transforms.stream()
                 .filter(t -> t.resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
             == transforms.size()
@@ -165,17 +158,15 @@ public class ListNodeFlatten extends ListNode {
       return Optional.empty();
     }
     ordering =
-        transforms
-            .stream()
+        transforms.stream()
             .reduce(
                 ordering,
                 (order, transform) -> transform.order(order, errorHandler),
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
-    final Optional<Imyhat> resultType =
-        transforms
-            .stream()
+    final var resultType =
+        transforms.stream()
             .reduce(
                 Optional.of(source.streamType()),
                 (t, transform) -> t.flatMap(tt -> transform.typeCheck(tt, errorHandler)),

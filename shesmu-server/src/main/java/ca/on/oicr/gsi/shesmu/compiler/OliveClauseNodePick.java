@@ -70,14 +70,12 @@ public class OliveClauseNodePick extends OliveClauseNode {
             true,
             false,
             Stream.concat(
-                inputs
-                    .stream()
+                inputs.stream()
                     .map(
                         n ->
                             new VariableInformation(
                                 n, Imyhat.BOOLEAN, Stream.of(n), Behaviour.OBSERVER)),
-                discriminatorVariables
-                    .stream()
+                discriminatorVariables.stream()
                     .map(
                         discriminator ->
                             new VariableInformation(
@@ -94,8 +92,7 @@ public class OliveClauseNodePick extends OliveClauseNode {
       Consumer<SignableVariableCheck> addSignableCheck,
       Consumer<String> errorHandler) {
     if (state == ClauseStreamOrder.PURE || state == ClauseStreamOrder.ALMOST_PURE) {
-      discriminatorVariables
-          .stream()
+      discriminatorVariables.stream()
           .filter(v -> v.flavour() == Flavour.STREAM_SIGNABLE)
           .map(Target::name)
           .forEach(signableNames::add);
@@ -118,7 +115,7 @@ public class OliveClauseNodePick extends OliveClauseNode {
     extractor.collectFreeVariables(freeVariables, Flavour::needsCapture);
 
     oliveBuilder.line(line);
-    final Renderer extractorMethod =
+    final var extractorMethod =
         oliveBuilder.pick(
             line,
             column,
@@ -144,7 +141,7 @@ public class OliveClauseNodePick extends OliveClauseNode {
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
       Consumer<String> errorHandler) {
-    final Optional<List<Target>> maybeDiscriminatorVariables =
+    final var maybeDiscriminatorVariables =
         OliveClauseNodeGroup.checkDiscriminators(
             line,
             column,
@@ -159,8 +156,8 @@ public class OliveClauseNodePick extends OliveClauseNode {
   @Override
   public boolean resolveDefinitions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final PickNode discriminator : discriminators) {
+    var ok = true;
+    for (final var discriminator : discriminators) {
       ok &= discriminator.isGood(oliveCompilerServices.inputFormat(), errorHandler);
     }
     return ok & extractor.resolveDefinitions(oliveCompilerServices, errorHandler);

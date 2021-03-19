@@ -135,7 +135,7 @@ public final class PluginManager
       public ArbitraryConstantDefinition(
           String name, MethodHandle target, Imyhat returnType, String description, Path path) {
         super(name, returnType, description, path);
-        final MethodHandle handle = target.asType(MethodType.methodType(returnType.javaType()));
+        final var handle = target.asType(MethodType.methodType(returnType.javaType()));
 
         fixedName = name + " " + returnType.descriptor();
         callsite = installArbitrary(fixedName, handle);
@@ -290,7 +290,7 @@ public final class PluginManager
         this.description = description;
         this.information = information;
         this.parameters = parameters;
-        final MethodHandle handle = target.asType(MethodType.methodType(Refiller.class));
+        final var handle = target.asType(MethodType.methodType(Refiller.class));
         fixedName = name + " refill";
         callsite = installArbitrary(fixedName, handle);
       }
@@ -384,7 +384,7 @@ public final class PluginManager
             fileFormat.create(
                 path, RuntimeSupport.removeExtension(path, fileFormat.extension()), this);
         // Create a method handle that just returns this instance
-        final MethodHandle target = MethodHandles.constant(fileFormat.fileClass(), instance);
+        final var target = MethodHandles.constant(fileFormat.fileClass(), instance);
         // Update this call site with our current reference. We hold onto the call site
         // because if the olive stops using it, it will be garbage collected
         callsite = CONFIG_FILE_INSTANCES.upsert(path.toString(), target);
@@ -471,9 +471,8 @@ public final class PluginManager
           Supplier<A> supplier,
           Stream<CustomActionParameter<A>> parameters,
           SupplementaryInformation information) {
-        final MethodHandle handle =
-            MH_SUPPLIER_GET.bindTo(supplier).asType(MethodType.methodType(clazz));
-        final String qualifiedName =
+        final var handle = MH_SUPPLIER_GET.bindTo(supplier).asType(MethodType.methodType(clazz));
+        final var qualifiedName =
             String.join(
                 Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
         actions.put(
@@ -493,7 +492,7 @@ public final class PluginManager
 
       @Override
       public String defineConstant(String name, String description, Imyhat type, Object value) {
-        final String qualifiedName =
+        final var qualifiedName =
             String.join(
                 Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
         constants.put(
@@ -510,7 +509,7 @@ public final class PluginManager
       @Override
       public <R> String defineConstant(
           String name, String description, ReturnTypeGuarantee<R> type, R value) {
-        final String qualifiedName =
+        final var qualifiedName =
             String.join(
                 Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
         constants.put(
@@ -530,7 +529,7 @@ public final class PluginManager
           String description,
           ReturnTypeGuarantee<R> returnType,
           Supplier<R> constant) {
-        final String qualifiedName =
+        final var qualifiedName =
             String.join(
                 Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
         constants.put(
@@ -547,7 +546,7 @@ public final class PluginManager
       @Override
       public String defineConstantBySupplier(
           String name, String description, Imyhat type, Supplier<Object> supplier) {
-        final String qualifiedName =
+        final var qualifiedName =
             String.join(
                 Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
 
@@ -567,7 +566,7 @@ public final class PluginManager
           String name,
           ReturnTypeGuarantee<R> returnType,
           Supplier<? extends DynamicSigner<R>> signer) {
-        final String qualifiedName =
+        final var qualifiedName =
             String.join(
                 Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
 
@@ -588,10 +587,10 @@ public final class PluginManager
           Imyhat returnType,
           VariadicFunction function,
           FunctionParameter... parameters) {
-        final String qualifiedName =
+        final var qualifiedName =
             String.join(
                 Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
-        final MethodHandle handle =
+        final var handle =
             MH_VARIADICFUNCTION_APPLY
                 .bindTo(function)
                 .asCollector(Object[].class, parameters.length)
@@ -614,10 +613,10 @@ public final class PluginManager
           String parameterDescription,
           TypeGuarantee<A> parameterType,
           Function<A, R> function) {
-        final String qualifiedName =
+        final var qualifiedName =
             String.join(
                 Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
-        final MethodHandle handle =
+        final var handle =
             MH_FUNCTION_APPLY
                 .bindTo(function)
                 .asType(
@@ -645,9 +644,9 @@ public final class PluginManager
           String parameter2Description,
           TypeGuarantee<B> parameter2Type,
           BiFunction<A, B, R> function) {
-        final String qualifiedName =
+        final var qualifiedName =
             String.join(Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, name);
-        final MethodHandle handle =
+        final var handle =
             MH_BIFUNCTION_APPLY
                 .bindTo(function)
                 .asType(
@@ -655,7 +654,7 @@ public final class PluginManager
                         returnType.type().javaType(),
                         parameter1Type.type().javaType(),
                         parameter2Type.type().javaType()));
-        final String fixedName =
+        final var fixedName =
             name
                 + " "
                 + parameter1Type.type().descriptor()
@@ -722,7 +721,7 @@ public final class PluginManager
       @Override
       public String defineRefiller(String name, String description, RefillDefiner refillerDefiner) {
         final RefillInfo<?, ?> info = refillerDefiner.info(Object.class);
-        final String qualifiedName =
+        final var qualifiedName =
             String.join(
                 Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
         refillers.put(
@@ -758,7 +757,7 @@ public final class PluginManager
           String name,
           ReturnTypeGuarantee<R> returnType,
           Supplier<? extends StaticSigner<R>> signer) {
-        final String qualifiedName =
+        final var qualifiedName =
             String.join(
                 Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
         signatures.put(
@@ -772,8 +771,8 @@ public final class PluginManager
       }
 
       public Stream<Object> fetch(String format, boolean readStale) {
-        final Queue<DynamicInputDataSource> sources = dynamicSources.get(format);
-        final Deque<InputDataSource> customSource = this.customSources.get(format);
+        final var sources = dynamicSources.get(format);
+        final var customSource = this.customSources.get(format);
         return Stream.concat(
             sources == null
                 ? Stream.empty()
@@ -884,32 +883,33 @@ public final class PluginManager
     private final AutoUpdatingDirectory<FileWrapper> configuration;
 
     private final List<Binder<ConstantDefinition>> constantTemplates = new ArrayList<>();
-    private Map<String, Queue<DynamicInputDataSource>> dynamicSources = new ConcurrentHashMap<>();
+    private final Map<String, Queue<DynamicInputDataSource>> dynamicSources =
+        new ConcurrentHashMap<>();
     private final F fileFormat;
     private final List<Binder<FunctionDefinition>> functionTemplates = new ArrayList<>();
     private final List<Binder<RefillerDefinition>> refillTemplates = new ArrayList<>();
     private final List<Binder<SignatureDefinition>> signatureTemplates = new ArrayList<>();
 
-    private List<ActionDefinition> staticActions = new ArrayList<>();
+    private final List<ActionDefinition> staticActions = new ArrayList<>();
 
-    private List<ConstantDefinition> staticConstants = new ArrayList<>();
-    private List<FunctionDefinition> staticFunctions = new ArrayList<>();
-    private List<RefillerDefinition> staticRefillers = new ArrayList<>();
-    private List<SignatureDefinition> staticSignatures = new ArrayList<>();
-    private Map<String, Queue<InputDataSource>> staticSources = new ConcurrentHashMap<>();
-    private Map<Path, WeakReference<FileWrapper>> wrappers = new ConcurrentHashMap<>();
+    private final List<ConstantDefinition> staticConstants = new ArrayList<>();
+    private final List<FunctionDefinition> staticFunctions = new ArrayList<>();
+    private final List<RefillerDefinition> staticRefillers = new ArrayList<>();
+    private final List<SignatureDefinition> staticSignatures = new ArrayList<>();
+    private final Map<String, Queue<InputDataSource>> staticSources = new ConcurrentHashMap<>();
+    private final Map<Path, WeakReference<FileWrapper>> wrappers = new ConcurrentHashMap<>();
 
     public FormatTypeWrapper(F fileFormat) {
       this.fileFormat = fileFormat;
       try {
-        for (final Method method : fileFormat.getClass().getMethods()) {
+        for (final var method : fileFormat.getClass().getMethods()) {
           checkRepositoryMethod(method);
           checkRepositoryAction(method);
           checkRepositoryRefill(method);
           checkRepositorySignature(method);
           checkRepositorySource(method);
         }
-        for (final Method method : fileFormat.fileClass().getMethods()) {
+        for (final var method : fileFormat.fileClass().getMethods()) {
           checkInstanceMethod(method);
           checkInstanceAction(method);
           checkInstanceRefill(method);
@@ -936,7 +936,7 @@ public final class PluginManager
     }
 
     private void checkInstanceAction(final Method method) throws IllegalAccessException {
-      final ShesmuAction actionAnnotation = method.getAnnotation(ShesmuAction.class);
+      final var actionAnnotation = method.getAnnotation(ShesmuAction.class);
       if (actionAnnotation != null) {
         if (Modifier.isStatic(method.getModifiers()) || !Modifier.isPublic(method.getModifiers())) {
           throw new IllegalArgumentException(
@@ -949,7 +949,7 @@ public final class PluginManager
     }
 
     private void checkInstanceMethod(final Method method) throws IllegalAccessException {
-      final ShesmuMethod methodAnnotation = method.getAnnotation(ShesmuMethod.class);
+      final var methodAnnotation = method.getAnnotation(ShesmuMethod.class);
       if (methodAnnotation != null) {
         if (Modifier.isStatic(method.getModifiers()) || !Modifier.isPublic(method.getModifiers())) {
           throw new IllegalArgumentException(
@@ -962,7 +962,7 @@ public final class PluginManager
     }
 
     private void checkInstanceRefill(final Method method) throws IllegalAccessException {
-      final ShesmuRefill refillAnnotation = method.getAnnotation(ShesmuRefill.class);
+      final var refillAnnotation = method.getAnnotation(ShesmuRefill.class);
       if (refillAnnotation != null) {
         if (Modifier.isStatic(method.getModifiers()) || !Modifier.isPublic(method.getModifiers())) {
           throw new IllegalArgumentException(
@@ -975,7 +975,7 @@ public final class PluginManager
     }
 
     private void checkInstanceSignature(final Method method) throws IllegalAccessException {
-      final ShesmuSigner signatureAnnotation = method.getAnnotation(ShesmuSigner.class);
+      final var signatureAnnotation = method.getAnnotation(ShesmuSigner.class);
       if (signatureAnnotation != null) {
         if (Modifier.isStatic(method.getModifiers())) {
           throw new IllegalArgumentException(
@@ -988,7 +988,7 @@ public final class PluginManager
     }
 
     private void checkInstanceSource(final Method method) throws IllegalAccessException {
-      final ShesmuInputSource sourceAnnotation = method.getAnnotation(ShesmuInputSource.class);
+      final var sourceAnnotation = method.getAnnotation(ShesmuInputSource.class);
       if (sourceAnnotation != null) {
         if (Modifier.isStatic(method.getModifiers())) {
           throw new IllegalArgumentException(
@@ -998,8 +998,7 @@ public final class PluginManager
         }
         processSourceMethod(method, true);
       }
-      final ShesmuJsonInputSource jsonAnnotation =
-          method.getAnnotation(ShesmuJsonInputSource.class);
+      final var jsonAnnotation = method.getAnnotation(ShesmuJsonInputSource.class);
       if (jsonAnnotation != null) {
         if (Modifier.isStatic(method.getModifiers())) {
           throw new IllegalArgumentException(
@@ -1012,7 +1011,7 @@ public final class PluginManager
     }
 
     private void checkRepositoryAction(final Method method) throws IllegalAccessException {
-      final ShesmuAction actionAnnotation = method.getAnnotation(ShesmuAction.class);
+      final var actionAnnotation = method.getAnnotation(ShesmuAction.class);
       if (actionAnnotation != null) {
         if (!Modifier.isStatic(method.getModifiers())) {
           throw new IllegalArgumentException(
@@ -1025,7 +1024,7 @@ public final class PluginManager
     }
 
     private void checkRepositoryMethod(final Method method) throws IllegalAccessException {
-      final ShesmuMethod methodAnnotation = method.getAnnotation(ShesmuMethod.class);
+      final var methodAnnotation = method.getAnnotation(ShesmuMethod.class);
       if (methodAnnotation != null) {
         if (!Modifier.isStatic(method.getModifiers())) {
           throw new IllegalArgumentException(
@@ -1033,7 +1032,7 @@ public final class PluginManager
                   "Method %s of %s has annotation but is not static.",
                   method.getName(), method.getDeclaringClass().getName()));
         }
-        final boolean isInstance =
+        final var isInstance =
             method.getParameterCount() > 0
                 && method.getParameterTypes()[0].isAssignableFrom(fileFormat.fileClass());
         processFunctionOrConstantMethod(methodAnnotation, method, isInstance, isInstance ? 1 : 0);
@@ -1041,7 +1040,7 @@ public final class PluginManager
     }
 
     private void checkRepositoryRefill(final Method method) throws IllegalAccessException {
-      final ShesmuRefill refillAnnotation = method.getAnnotation(ShesmuRefill.class);
+      final var refillAnnotation = method.getAnnotation(ShesmuRefill.class);
       if (refillAnnotation != null) {
         if (!Modifier.isStatic(method.getModifiers())) {
           throw new IllegalArgumentException(
@@ -1054,7 +1053,7 @@ public final class PluginManager
     }
 
     private void checkRepositorySignature(final Method method) throws IllegalAccessException {
-      final ShesmuSigner signatureAnnotation = method.getAnnotation(ShesmuSigner.class);
+      final var signatureAnnotation = method.getAnnotation(ShesmuSigner.class);
       if (signatureAnnotation != null) {
         if (!Modifier.isStatic(method.getModifiers())) {
           throw new IllegalArgumentException(
@@ -1067,7 +1066,7 @@ public final class PluginManager
     }
 
     private void checkRepositorySource(final Method method) throws IllegalAccessException {
-      final ShesmuInputSource sourceAnnotation = method.getAnnotation(ShesmuInputSource.class);
+      final var sourceAnnotation = method.getAnnotation(ShesmuInputSource.class);
       if (sourceAnnotation != null) {
         if (!Modifier.isStatic(method.getModifiers())) {
           throw new IllegalArgumentException(
@@ -1077,8 +1076,7 @@ public final class PluginManager
         }
         processSourceMethod(method, false);
       }
-      final ShesmuJsonInputSource jsonAnnotation =
-          method.getAnnotation(ShesmuJsonInputSource.class);
+      final var jsonAnnotation = method.getAnnotation(ShesmuJsonInputSource.class);
       if (jsonAnnotation != null) {
         if (!Modifier.isStatic(method.getModifiers())) {
           throw new IllegalArgumentException(
@@ -1102,7 +1100,7 @@ public final class PluginManager
     }
 
     public Stream<Object> fetch(String format, boolean readStale) {
-      Queue<InputDataSource> sources = staticSources.get(format);
+      var sources = staticSources.get(format);
       return Stream.concat(
           sources == null
               ? Stream.empty()
@@ -1127,12 +1125,12 @@ public final class PluginManager
 
     private DynamicInvoker installMethod(Method method, String prefix, Class<?> returnType)
         throws IllegalAccessException {
-      final String mangledMethodName = prefix + method.getName();
-      MethodHandle handle = fileFormat.lookup().unreflect(method);
+      final var mangledMethodName = prefix + method.getName();
+      var handle = fileFormat.lookup().unreflect(method);
       if (returnType != null) {
         handle = handle.asType(handle.type().changeReturnType(returnType));
       }
-      final String methodDescriptor =
+      final var methodDescriptor =
           handle.type().dropParameterTypes(0, 1).toMethodDescriptorString();
       CONFIG_FILE_METHOD_BINDINGS.put(
           new Pair<>(fileFormat.fileClass(), mangledMethodName), handle);
@@ -1153,8 +1151,8 @@ public final class PluginManager
 
     public void log(String message, Map<String, String> attributes) {
       fileFormat.writeLog(message, attributes);
-      for (final WeakReference<FileWrapper> reference : this.wrappers.values()) {
-        final FileWrapper wrapper = reference.get();
+      for (final var reference : this.wrappers.values()) {
+        final var wrapper = reference.get();
         if (wrapper != null) {
           wrapper.instance.writeLog(message, attributes);
         }
@@ -1163,19 +1161,19 @@ public final class PluginManager
 
     private void processActionMethod(ShesmuAction annotation, Method method, boolean isInstance)
         throws IllegalAccessException {
-      final String name = AnnotationUtils.checkName(annotation.name(), method);
+      final var name = AnnotationUtils.checkName(annotation.name(), method);
       if (!Action.class.isAssignableFrom(method.getReturnType())) {
         throw new IllegalArgumentException(
             String.format(
                 "Method %s of %s is not an action.",
                 method.getName(), method.getDeclaringClass().getName()));
       }
-      final List<ActionParameterDefinition> parameters =
+      final var parameters =
           InvokeDynamicActionParameterDescriptor.findActionDefinitionsByAnnotation(
                   method.getReturnType().asSubclass(Action.class), fileFormat.lookup())
               .collect(Collectors.toList());
       if (isInstance) {
-        final DynamicInvoker invoker = installMethod(method, "action", Action.class);
+        final var invoker = installMethod(method, "action", Action.class);
         actionTemplates.add(
             (instance, path) ->
                 new ActionDefinition(
@@ -1204,8 +1202,8 @@ public final class PluginManager
     private void processFunctionOrConstantMethod(
         ShesmuMethod annotation, Method method, boolean isInstance, int offset)
         throws IllegalAccessException {
-      final String name = AnnotationUtils.checkName(annotation.name(), method);
-      final Imyhat returnType =
+      final var name = AnnotationUtils.checkName(annotation.name(), method);
+      final var returnType =
           Imyhat.convert(
               String.format(
                   "Return type of %s in %s",
@@ -1215,7 +1213,7 @@ public final class PluginManager
 
       if (method.getParameterCount() == offset) {
         if (isInstance) {
-          final DynamicInvoker invoker = installMethod(method, "", null);
+          final var invoker = installMethod(method, "", null);
           constantTemplates.add(
               (instanceName, path) ->
                   new ConstantDefinition(
@@ -1237,7 +1235,7 @@ public final class PluginManager
                     }
                   });
         } else {
-          final MethodHandle handle = fileFormat.lookup().unreflect(method);
+          final var handle = fileFormat.lookup().unreflect(method);
           staticConstants.add(
               new ArbitraryConstantDefinition(
                   String.join(Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), name),
@@ -1247,14 +1245,13 @@ public final class PluginManager
                   null));
         }
       } else {
-        final FunctionParameter[] functionParameters =
+        final var functionParameters =
             Stream.of(method.getParameters())
                 .skip(offset)
                 .map(
                     p -> {
-                      final ShesmuParameter parameterAnnotation =
-                          p.getAnnotation(ShesmuParameter.class);
-                      final Imyhat type =
+                      final var parameterAnnotation = p.getAnnotation(ShesmuParameter.class);
+                      final var type =
                           Imyhat.convert(
                               String.format(
                                   "Parameter %s from %s in %s",
@@ -1271,7 +1268,7 @@ public final class PluginManager
                     })
                 .toArray(FunctionParameter[]::new);
         if (isInstance) {
-          final DynamicInvoker invoker = installMethod(method, "", null);
+          final var invoker = installMethod(method, "", null);
           functionTemplates.add(
               (instanceName, path) ->
                   new FunctionDefinition() {
@@ -1318,7 +1315,7 @@ public final class PluginManager
                     }
                   });
         } else {
-          final MethodHandle handle = fileFormat.lookup().unreflect(method);
+          final var handle = fileFormat.lookup().unreflect(method);
           staticFunctions.add(
               new ArbitraryFunctionDefinition(
                   String.join(Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), name),
@@ -1333,7 +1330,7 @@ public final class PluginManager
 
     private void processRefillMethod(ShesmuRefill annotation, Method method, boolean isInstance)
         throws IllegalAccessException {
-      final String name = AnnotationUtils.checkName(annotation.name(), method);
+      final var name = AnnotationUtils.checkName(annotation.name(), method);
       if (!Refiller.class.isAssignableFrom(method.getReturnType())) {
         throw new IllegalArgumentException(
             String.format(
@@ -1362,7 +1359,7 @@ public final class PluginManager
                 "Return value of method %s of %s is not a parameterized.",
                 method.getName(), method.getDeclaringClass().getName()));
       }
-      final ParameterizedType parameterizedType = (ParameterizedType) method.getGenericReturnType();
+      final var parameterizedType = (ParameterizedType) method.getGenericReturnType();
       if (parameterizedType.getActualTypeArguments().length != 1
           || !parameterizedType.getActualTypeArguments()[0].equals(
               method.getGenericParameterTypes()[0])) {
@@ -1373,12 +1370,12 @@ public final class PluginManager
                 method.getDeclaringClass().getName(),
                 method.getGenericParameterTypes()[0].getTypeName()));
       }
-      final List<RefillerParameterDefinition> parameters =
+      final var parameters =
           InvokeDynamicRefillerParameterDescriptor.findRefillerDefinitionsByAnnotation(
                   method.getReturnType().asSubclass(Refiller.class), fileFormat.lookup())
               .collect(Collectors.toList());
       if (isInstance) {
-        final DynamicInvoker invoker = installMethod(method, "refiller", null);
+        final var invoker = installMethod(method, "refiller", null);
         refillTemplates.add(
             (instance, path) ->
                 new RefillerDefinition() {
@@ -1427,7 +1424,7 @@ public final class PluginManager
 
     private void processSignatureMethod(ShesmuSigner annotation, Method method, boolean isInstance)
         throws IllegalAccessException {
-      final String name = AnnotationUtils.checkName(annotation.name(), method);
+      final var name = AnnotationUtils.checkName(annotation.name(), method);
       if (!DynamicSigner.class.isAssignableFrom(method.getReturnType())
           && !StaticSigner.class.isAssignableFrom(method.getReturnType())) {
         throw new IllegalArgumentException(
@@ -1435,8 +1432,8 @@ public final class PluginManager
                 "Method %s of %s is not an signer.",
                 method.getName(), method.getDeclaringClass().getName()));
       }
-      final boolean isDynamic = DynamicSigner.class.isAssignableFrom(method.getReturnType());
-      final Imyhat returnType =
+      final var isDynamic = DynamicSigner.class.isAssignableFrom(method.getReturnType());
+      final var returnType =
           unwrapAndConvert(
               String.format(
                   "Method %s of %s.", method.getName(), method.getDeclaringClass().getName()),
@@ -1449,7 +1446,7 @@ public final class PluginManager
                 method.getName(), method.getDeclaringClass().getName(), annotation.type()));
       }
       if (isInstance) {
-        final DynamicInvoker invoker = installMethod(method, "signer", null);
+        final var invoker = installMethod(method, "signer", null);
         if (isDynamic) {
           signatureTemplates.add(
               (instance, path) ->
@@ -1514,15 +1511,14 @@ public final class PluginManager
                 "Method %s of %s does not return Stream.",
                 method.getName(), method.getDeclaringClass().getName()));
       }
-      java.lang.reflect.Type returnType = method.getGenericReturnType();
+      var returnType = method.getGenericReturnType();
       if (!(returnType instanceof ParameterizedType)) {
         throw new IllegalArgumentException(
             String.format(
                 "Method %s of %s does not return Stream<T> or generic type information missing from bytecode.",
                 method.getName(), method.getDeclaringClass().getName()));
       }
-      java.lang.reflect.Type typeParameter =
-          ((ParameterizedType) returnType).getActualTypeArguments()[0];
+      var typeParameter = ((ParameterizedType) returnType).getActualTypeArguments()[0];
       if (!(typeParameter instanceof Class)) {
         throw new IllegalArgumentException(
             String.format(
@@ -1550,14 +1546,14 @@ public final class PluginManager
                   "Method %s of %s has too many parameters. Needs to be none or a single boolean.",
                   method.getName(), method.getDeclaringClass().getName()));
       }
-      Class<?> dataType = (Class<?>) typeParameter;
+      var dataType = (Class<?>) typeParameter;
       final Consumer<String> writeSource;
-      MethodHandle handle = fileFormat.lookup().unreflect(method);
+      var handle = fileFormat.lookup().unreflect(method);
       if (dropBoolean) {
         handle = MethodHandles.dropArguments(handle, handle.type().parameterCount(), boolean.class);
       }
       if (isInstance) {
-        final DynamicInputDataSource source =
+        final var source =
             MethodHandleProxies.asInterfaceInstance(DynamicInputDataSource.class, handle);
         writeSource =
             name ->
@@ -1565,8 +1561,7 @@ public final class PluginManager
                     .computeIfAbsent(name, k -> new ConcurrentLinkedQueue<>())
                     .add(source);
       } else {
-        final InputDataSource source =
-            MethodHandleProxies.asInterfaceInstance(InputDataSource.class, handle);
+        final var source = MethodHandleProxies.asInterfaceInstance(InputDataSource.class, handle);
         writeSource =
             name ->
                 staticSources.computeIfAbsent(name, k -> new ConcurrentLinkedQueue<>()).add(source);
@@ -1587,11 +1582,10 @@ public final class PluginManager
                 method.getName(), method.getDeclaringClass().getName()));
       }
       final Consumer<AnnotatedInputFormatDefinition> writeSource;
-      final MethodHandle handle = fileFormat.lookup().unreflect(method);
-      final String cacheName =
-          method.getDeclaringClass().getCanonicalName() + " " + method.getName();
+      final var handle = fileFormat.lookup().unreflect(method);
+      final var cacheName = method.getDeclaringClass().getCanonicalName() + " " + method.getName();
       if (isInstance) {
-        final DynamicInputJsonSource source =
+        final var source =
             MethodHandleProxies.asInterfaceInstance(DynamicInputJsonSource.class, handle);
         writeSource =
             format ->
@@ -1599,8 +1593,7 @@ public final class PluginManager
                     .computeIfAbsent(format.name(), k -> new ConcurrentLinkedQueue<>())
                     .add(format.fromJsonStream(cacheName, annotation.ttl(), source));
       } else {
-        final JsonInputSource source =
-            MethodHandleProxies.asInterfaceInstance(JsonInputSource.class, handle);
+        final var source = MethodHandleProxies.asInterfaceInstance(JsonInputSource.class, handle);
         writeSource =
             format ->
                 staticSources
@@ -1752,12 +1745,12 @@ public final class PluginManager
     // using it is garbage collected and the file is deleted, this will drop out of
     // the map. Otherwise, if the file is updated, it can change the instance in the
     // call site and all the olives will use the new one.
-    final MutableCallSite instance = CONFIG_FILE_INSTANCES.get(fileName);
+    final var instance = CONFIG_FILE_INSTANCES.get(fileName);
     // For the method, we know the type of the thing in the call site, so let's go
     // find a method that can handle it in our cache. We cache these forever because
     // they can't be created or destroyed without reloading the whole server.
     @SuppressWarnings("SuspiciousMethodCalls")
-    final MethodHandle methodHandle =
+    final var methodHandle =
         CONFIG_FILE_METHOD_BINDINGS.get(new Pair<>(instance.type().returnType(), methodName));
     // Now we smash the instance from above with the method. We can create a
     // constant call site (i.e., one that can't be updated) because the method
@@ -1784,12 +1777,11 @@ public final class PluginManager
     // number of arguments (RequiredServices[0], RequiredServices[1], ..., RequiredServices[N-1]) →
     // String[] where N
     // is the number of plugins
-    MethodHandle collector =
-        SERVICES_REQUIRED.asCollector(RequiredServices[].class, fileNames.length);
+    var collector = SERVICES_REQUIRED.asCollector(RequiredServices[].class, fileNames.length);
     // Now, repeatedly fill in the first argument with one of the plugins; we've got a premade
     // callsite for each plugin, so get it from our table and convert it to return the base type
-    for (String fileName : fileNames) {
-      final CallSite callsite =
+    for (var fileName : fileNames) {
+      final var callsite =
           fileName.endsWith(".shesmu")
               ? CompiledGenerator.scriptCallsite(fileName)
               : CONFIG_FILE_INSTANCES.get(fileName);
@@ -1849,7 +1841,7 @@ public final class PluginManager
   }
 
   public long count() {
-    return (long) formatTypes.size();
+    return formatTypes.size();
   }
 
   private FormatTypeWrapper<?, ?> create(PluginFileType<?> pluginFileType) {
@@ -1865,54 +1857,23 @@ public final class PluginManager
       Stream<FunctionDefinition> functions,
       Stream<String> inputFormats,
       Stream<SignatureDefinition> signatures) {
-    actions.forEach(
-        action ->
-            writer.write(
-                Collections.singletonList(
-                    new Pair<>("onclick", "window.location = 'actiondefs#" + action.name() + "'")),
-                context,
-                "Action",
-                action.name()));
-    constants.forEach(
-        constant ->
-            writer.write(
-                Collections.singletonList(
-                    new Pair<>(
-                        "onclick", "window.location = 'constantdefs#" + constant.name() + "'")),
-                context,
-                "Constant",
-                constant.name()));
-    functions.forEach(
-        function ->
-            writer.write(
-                Collections.singletonList(
-                    new Pair<>(
-                        "onclick", "window.location = 'functiondefs#" + function.name() + "'")),
-                context,
-                "Function",
-                function.name()));
+    actions.forEach(action -> writer.write(List.of(), context, "Action", action.name()));
+    constants.forEach(constant -> writer.write(List.of(), context, "Constant", constant.name()));
+    functions.forEach(function -> writer.write(List.of(), context, "Function", function.name()));
     inputFormats.forEach(
         format ->
             writer.write(
-                Collections.singletonList(
-                    new Pair<>("onclick", "window.location = 'inputdefs#" + format)),
+                List.of(new Pair<>("onclick", "window.location = 'inputdefs#" + format)),
                 context,
                 "Input Source",
                 format));
 
     signatures.forEach(
-        signature ->
-            writer.write(
-                Collections.singletonList(
-                    new Pair<>(
-                        "onclick", "window.location = 'signaturedefs#" + signature.name() + "'")),
-                context,
-                "Signature",
-                signature.name()));
+        signature -> writer.write(List.of(), context, "Signature", signature.name()));
   }
 
   public void dumpPluginConfig(TableRowWriter writer) {
-    for (final FormatTypeWrapper<?, ?> type : formatTypes) {
+    for (final var type : formatTypes) {
       dumpConfig(
           writer,
           type.fileFormat.extension() + " Plugin",
@@ -1982,7 +1943,7 @@ public final class PluginManager
     }
     LOG_REENTRANT_CHECK.set(true);
     try {
-      for (final FormatTypeWrapper<?, ?> format : this.formatTypes) {
+      for (final var format : this.formatTypes) {
         format.log(message, attributes);
       }
     } finally {
@@ -1996,7 +1957,7 @@ public final class PluginManager
   }
 
   public void pushAlerts(String alertJson) {
-    for (FormatTypeWrapper<?, ?> type : formatTypes) {
+    for (var type : formatTypes) {
       type.pushAlerts(alertJson);
     }
   }
@@ -2030,13 +1991,13 @@ public final class PluginManager
     if (!(type instanceof ParameterizedType)) {
       return Imyhat.BAD;
     }
-    final ParameterizedType ptype = (ParameterizedType) type;
+    final var ptype = (ParameterizedType) type;
     return Imyhat.convert(context, descriptor, ptype.getActualTypeArguments()[0]);
   }
 
   @Override
   public void writeJavaScriptRenderer(PrintStream writer) {
-    for (FormatTypeWrapper<?, ?> type : formatTypes) {
+    for (var type : formatTypes) {
       type.writeJavaScriptRenderer(writer);
     }
   }

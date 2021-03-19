@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import com.atlassian.jira.rest.client.api.domain.Issue;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -30,7 +29,7 @@ public final class FileTicket extends BaseTicketAction {
 
   @Override
   protected ActionState perform(ActionServices services, Stream<Issue> results) {
-    final List<Issue> matches = results.collect(Collectors.toList());
+    final var matches = results.collect(Collectors.toList());
     if (matches.isEmpty()) {
       return createIssue(services, description, assignee);
     }

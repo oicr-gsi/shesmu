@@ -17,7 +17,6 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
@@ -70,8 +69,7 @@ public class OliveClauseNodeReject extends OliveClauseNode {
             column,
             true,
             false,
-            inputs
-                .stream()
+            inputs.stream()
                 .map(
                     n ->
                         new VariableInformation(
@@ -103,7 +101,7 @@ public class OliveClauseNodeReject extends OliveClauseNode {
     final Set<String> freeVariables = new HashSet<>();
     expression.collectFreeVariables(freeVariables, Flavour::needsCapture);
     handlers.forEach(handler -> handler.collectFreeVariables(freeVariables));
-    final Renderer renderer =
+    final var renderer =
         oliveBuilder.filter(
             line,
             column,
@@ -133,7 +131,7 @@ public class OliveClauseNodeReject extends OliveClauseNode {
 
     renderer.methodGen().visitCode();
     expression.render(renderer);
-    final Label handleReject = renderer.methodGen().newLabel();
+    final var handleReject = renderer.methodGen().newLabel();
     renderer.methodGen().ifZCmp(GeneratorAdapter.NE, handleReject);
     renderer.methodGen().push(true);
     renderer.methodGen().returnValue();
@@ -154,8 +152,7 @@ public class OliveClauseNodeReject extends OliveClauseNode {
       Consumer<String> errorHandler) {
     return defs.fail(
         expression.resolve(defs, errorHandler)
-            & handlers
-                    .stream()
+            & handlers.stream()
                     .filter(
                         handler ->
                             handler.resolve(oliveCompilerServices, defs, errorHandler).isGood())
@@ -167,8 +164,7 @@ public class OliveClauseNodeReject extends OliveClauseNode {
   public boolean resolveDefinitions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     return expression.resolveDefinitions(oliveCompilerServices, errorHandler)
-        & handlers
-                .stream()
+        & handlers.stream()
                 .filter(handler -> handler.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == handlers.size();
@@ -176,7 +172,7 @@ public class OliveClauseNodeReject extends OliveClauseNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean success = expression.typeCheck(errorHandler);
+    var success = expression.typeCheck(errorHandler);
     if (success) {
       if (!expression.type().isSame(Imyhat.BOOLEAN)) {
         success = false;

@@ -696,7 +696,7 @@ public final class LambdaBuilder {
       String methodName,
       LambdaType lambda,
       Type... captures) {
-    Type selfType =
+    var selfType =
         Stream.concat(Stream.of(captures), lambda.parameterTypes(AccessMode.REAL))
             .findFirst()
             .orElseThrow(IllegalArgumentException::new);
@@ -740,7 +740,7 @@ public final class LambdaBuilder {
    */
   public static void pushNew(Renderer renderer, LambdaType lambda, LoadableValue... captures) {
     assertNonPrimitive(lambda.returnType(AccessMode.REAL));
-    for (LoadableValue capture : captures) {
+    for (var capture : captures) {
       capture.accept(renderer);
     }
     renderer

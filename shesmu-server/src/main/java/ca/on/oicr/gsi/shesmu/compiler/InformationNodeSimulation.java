@@ -9,8 +9,6 @@ import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -48,13 +46,11 @@ public class InformationNodeSimulation extends InformationNode {
       return String.format(
           "{type: \"simulation\", script: %s, parameters: %s, fakeRefillers: %s}",
           RuntimeSupport.MAPPER.writeValueAsString(scriptRaw),
-          constants
-              .stream()
+          constants.stream()
               .flatMap(e -> e.renderConstant(renderer))
               .sorted()
               .collect(Collectors.joining(", ", "{", "}")),
-          refillers
-              .stream()
+          refillers.stream()
               .map(RefillerDefinitionNode::render)
               .sorted()
               .collect(Collectors.joining(", ", "{", "}")));
@@ -65,13 +61,12 @@ public class InformationNodeSimulation extends InformationNode {
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    final Map<String, Long> duplicates =
-        constants
-            .stream()
+    final var duplicates =
+        constants.stream()
             .flatMap(ObjectElementNode::names)
             .collect(Collectors.groupingBy(Pair::first, Collectors.counting()));
-    boolean ok = true;
-    for (final Map.Entry<String, Long> duplicate : duplicates.entrySet()) {
+    var ok = true;
+    for (final var duplicate : duplicates.entrySet()) {
       if (duplicate.getValue() > 1) {
         ok = false;
         errorHandler.accept(
@@ -91,13 +86,11 @@ public class InformationNodeSimulation extends InformationNode {
       Consumer<String> errorHandler) {
     this.expressionCompilerServices = expressionCompilerServices;
     this.nativeDefinitions = nativeDefinitions;
-    return constants
-                .stream()
+    return constants.stream()
                 .filter(c -> c.resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
             == constants.size()
-        & refillers
-                .stream()
+        & refillers.stream()
                 .filter(c -> c.resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
             == refillers.size();
@@ -105,11 +98,10 @@ public class InformationNodeSimulation extends InformationNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    final List<ConstantDefinition> availableConstants =
+    final var availableConstants =
         Stream.concat(
                 nativeDefinitions.constants(),
-                constants
-                    .stream()
+                constants.stream()
                     .flatMap(ObjectElementNode::names)
                     .map(
                         p ->
@@ -130,9 +122,9 @@ public class InformationNodeSimulation extends InformationNode {
                               }
                             }))
             .collect(Collectors.toList());
-    final Set<String> localRefillerNames =
+    final var localRefillerNames =
         refillers.stream().map(RefillerDefinitionNode::name).collect(Collectors.toSet());
-    final Map<String, RefillerDefinition> availableRefillers =
+    final var availableRefillers =
         Stream.concat(
                 refillers.stream(),
                 nativeDefinitions.refillers().filter(r -> !localRefillerNames.contains(r.name())))

@@ -13,12 +13,12 @@ import java.util.function.Predicate;
 public abstract class DictionaryElementNode {
 
   public static Parser parse(Parser parser, Consumer<DictionaryElementNode> output) {
-    final AtomicReference<DictionaryElementNode> value = new AtomicReference<>();
+    final var value = new AtomicReference<DictionaryElementNode>();
 
-    final Parser restResult = parser.whitespace().symbol("...");
+    final var restResult = parser.whitespace().symbol("...");
     if (restResult.isGood()) {
-      final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-      Parser result =
+      final var expression = new AtomicReference<ExpressionNode>();
+      var result =
           restResult.whitespace().then(ExpressionNode::parse, expression::set).whitespace();
 
       if (result.isGood()) {
@@ -26,9 +26,9 @@ public abstract class DictionaryElementNode {
       }
       return result;
     } else {
-      final AtomicReference<ExpressionNode> name = new AtomicReference<>();
-      final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-      final Parser result =
+      final var name = new AtomicReference<ExpressionNode>();
+      final var expression = new AtomicReference<ExpressionNode>();
+      final var result =
           parser
               .whitespace()
               .then(ExpressionNode::parse, name::set)

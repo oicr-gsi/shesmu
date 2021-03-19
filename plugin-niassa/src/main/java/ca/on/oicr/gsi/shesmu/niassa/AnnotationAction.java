@@ -68,7 +68,7 @@ public final class AnnotationAction<A extends Attribute<?, A>> extends Action {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    AnnotationAction that = (AnnotationAction) o;
+    AnnotationAction<?> that = (AnnotationAction<?>) o;
     return Objects.equals(type, that.type)
         && Objects.equals(accession, that.accession)
         && Objects.equals(key, that.key)

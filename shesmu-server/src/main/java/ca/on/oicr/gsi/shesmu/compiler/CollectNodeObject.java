@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -28,9 +27,9 @@ public class CollectNodeObject extends CollectNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
-    final List<String> remove =
+    final var remove =
         definedNames.stream().filter(name -> !names.contains(name)).collect(Collectors.toList());
-    for (final CollectFieldNode field : fields) {
+    for (final var field : fields) {
       field.collectFreeVariables(names, predicate);
     }
     names.removeAll(remove);
@@ -38,7 +37,7 @@ public class CollectNodeObject extends CollectNode {
 
   @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
-    for (final CollectFieldNode field : fields) {
+    for (final var field : fields) {
       field.collectPlugins(pluginFileNames);
     }
   }
@@ -51,12 +50,11 @@ public class CollectNodeObject extends CollectNode {
 
   @Override
   public void render(JavaStreamBuilder builder, LoadableConstructor name) {
-    final JavaStreamBuilder[] builders =
+    final var builders =
         builder.collectObject(
             line(),
             column(),
-            fields
-                .stream()
+            fields.stream()
                 .map(
                     f -> {
                       final Set<String> freeVariables = new HashSet<>();
@@ -70,16 +68,15 @@ public class CollectNodeObject extends CollectNode {
                               .toArray(LoadableValue[]::new));
                     })
                 .collect(Collectors.toList()));
-    for (int i = 0; i < fields.size(); i++) {
+    for (var i = 0; i < fields.size(); i++) {
       fields.get(i).render(builders[i], name);
     }
   }
 
   @Override
   public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
-    final String start = builder.renderer().newConst(builder.finish());
-    return fields
-        .stream()
+    final var start = builder.renderer().newConst(builder.finish());
+    return fields.stream()
         .map(
             f ->
                 f.fieldName()
@@ -92,7 +89,7 @@ public class CollectNodeObject extends CollectNode {
   @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
-    final boolean ok =
+    final var ok =
         fields.stream().filter(f -> f.resolve(defs, name, errorHandler)).count() == fields.size();
     definedNames = name.targets().map(Target::name).collect(Collectors.toList());
     return ok;
@@ -101,10 +98,9 @@ public class CollectNodeObject extends CollectNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    boolean ok = true;
-    for (final Entry<String, Long> nameCount :
-        fields
-            .stream()
+    var ok = true;
+    for (final var nameCount :
+        fields.stream()
             .collect(Collectors.groupingBy(CollectFieldNode::fieldName, Collectors.counting()))
             .entrySet()) {
       if (nameCount.getValue() > 1) {
@@ -116,8 +112,7 @@ public class CollectNodeObject extends CollectNode {
       }
     }
     return ok
-        & fields
-                .stream()
+        & fields.stream()
                 .filter(f -> f.resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
             == fields.size();

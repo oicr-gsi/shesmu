@@ -63,12 +63,12 @@ public class ExpressionNodeVariable extends ExpressionNode {
   @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
     if (target instanceof ConstantDefinition) {
-      final ConstantDefinition constant = (ConstantDefinition) target;
+      final var constant = (ConstantDefinition) target;
       if (constant.filename() != null) {
         pluginFileNames.add(constant.filename());
       }
     } else if (target instanceof SignatureDefinition) {
-      final SignatureDefinition signature = (SignatureDefinition) target;
+      final var signature = (SignatureDefinition) target;
       if (signature.filename() != null) {
         pluginFileNames.add(signature.filename());
       }
@@ -88,7 +88,7 @@ public class ExpressionNodeVariable extends ExpressionNode {
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    final Optional<Target> result = defs.get(name);
+    final var result = defs.get(name);
     if (result.isPresent()) {
       target = result.get();
     } else if (defs.hasShadowName(name)) {
@@ -116,7 +116,7 @@ public class ExpressionNodeVariable extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    final boolean ok = !target.type().isBad();
+    final var ok = !target.type().isBad();
     if (!ok) {
       errorHandler.accept(
           String.format(

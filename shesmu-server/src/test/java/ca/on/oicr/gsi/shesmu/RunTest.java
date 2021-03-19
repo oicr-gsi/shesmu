@@ -25,7 +25,6 @@ import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
@@ -50,7 +49,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 public class RunTest {
-  private class ActionChecker implements OliveServices {
+  private static class ActionChecker implements OliveServices {
 
     private int bad;
     private int good;
@@ -207,22 +206,22 @@ public class RunTest {
   }
 
   private static JsonNode horror1() {
-    final ObjectNode node = JsonNodeFactory.instance.objectNode();
+    final var node = JsonNodeFactory.instance.objectNode();
     node.put("foo", 3);
     node.put("bar", "hi");
     return node;
   }
 
   private static JsonNode horror2() {
-    final ArrayNode node = JsonNodeFactory.instance.arrayNode();
+    final var node = JsonNodeFactory.instance.arrayNode();
     node.add(0);
     return node;
   }
 
   private static final Type A_OK_ACTION_TYPE = Type.getType(OkAction.class);
   private static final List<ConstantDefinition> CONSTANTS =
-      Arrays.asList(ConstantDefinition.of("project_constant", "the_foo_study", "Testing constant"));
-  private static InnerTestValue[] INNER_TEST_DATA =
+      List.of(ConstantDefinition.of("project_constant", "the_foo_study", "Testing constant"));
+  private static final InnerTestValue[] INNER_TEST_DATA =
       new InnerTestValue[] {new InnerTestValue(300, "a"), new InnerTestValue(307, "b")};
   public static final NameLoader<InputFormatDefinition> INPUT_FORMATS;
   private static final FunctionDefinition INT2DATE =
@@ -356,7 +355,7 @@ public class RunTest {
         }
       };
   public static final ThreadLocal<Boolean> REFILL_OKAY = new ThreadLocal<>();
-  private static TestValue[] TEST_DATA =
+  private static final TestValue[] TEST_DATA =
       new TestValue[] {
         new TestValue(
             "1",
@@ -399,8 +398,7 @@ public class RunTest {
   @Test
   public void testData() throws IOException {
     System.err.println("Testing data-handling code");
-    try (Stream<Path> files =
-        Files.walk(Paths.get(this.getClass().getResource("/run").getPath()), 1)) {
+    try (var files = Files.walk(Paths.get(this.getClass().getResource("/run").getPath()), 1)) {
       Assertions.assertTrue(
           files
                   .filter(Files::isRegularFile)
@@ -414,9 +412,9 @@ public class RunTest {
   }
 
   private boolean testFile(Path file) {
-    final AtomicReference<FileTable> dashboard = new AtomicReference<>();
+    final var dashboard = new AtomicReference<FileTable>();
     try {
-      final HotloadingCompiler compiler =
+      final var compiler =
           new HotloadingCompiler(
               INPUT_FORMATS::get,
               DefinitionRepository.concat(
@@ -518,7 +516,7 @@ public class RunTest {
                       // Do nothing.
                     }
                   }));
-      final ActionGenerator generator =
+      final var generator =
           compiler
               .compile(
                   file,
@@ -553,8 +551,8 @@ public class RunTest {
                   importVerifier -> {})
               .orElse(ActionGenerator.NULL);
       compiler.errors().forEach(System.err::println);
-      final ActionChecker checker = new ActionChecker();
-      final InputProviderChecker input = new InputProviderChecker();
+      final var checker = new ActionChecker();
+      final var input = new InputProviderChecker();
       REFILL_OKAY.set(false);
       generator.run(checker, input);
       if ((checker.ok() || REFILL_OKAY.get())

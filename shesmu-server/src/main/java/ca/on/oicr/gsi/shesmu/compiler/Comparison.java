@@ -54,7 +54,7 @@ public enum Comparison {
     @Override
     public ImyhatTransformer<String> render(
         EcmaScriptRenderer renderer, String left, String right) {
-      return new ImyhatTransformer<String>() {
+      return new ImyhatTransformer<>() {
         final ImyhatTransformer<String> isEqual = EcmaScriptRenderer.isEqual(left, right);
 
         @Override
@@ -125,7 +125,7 @@ public enum Comparison {
     }
   };
 
-  private class OrderableComparison implements ImyhatTransformer<String> {
+  private static class OrderableComparison implements ImyhatTransformer<String> {
     private final String left;
     private final String right;
     private final String symbol;
@@ -213,7 +213,7 @@ public enum Comparison {
   private final boolean ordered;
   private final String symbol;
 
-  private Comparison(int id, boolean ordered, String symbol) {
+  Comparison(int id, boolean ordered, String symbol) {
     this.id = id;
     this.ordered = ordered;
     this.symbol = symbol;

@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.gsicommon;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -22,11 +21,9 @@ public final class IUSUtils {
   public static Map<String, Set<String>> attributes(
       SortedMap<String, SortedSet<String>> attributes) {
     if (attributes == null) {
-      return Collections.emptyMap();
+      return Map.of();
     }
-    return attributes
-        .entrySet()
-        .stream()
+    return attributes.entrySet().stream()
         .collect(
             Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, TreeMap::new));
   }
@@ -37,7 +34,7 @@ public final class IUSUtils {
     } catch (final NumberFormatException e) {
       // Try something else.
     }
-    final Matcher laneMatcher = LANE_NUMBER.matcher(laneName);
+    final var laneMatcher = LANE_NUMBER.matcher(laneName);
     if (laneMatcher.matches()) {
       return parseLong(laneMatcher.group(1));
     }
@@ -54,12 +51,15 @@ public final class IUSUtils {
 
   public static Optional<Tuple> parseWorkflowVersion(String input) {
     if (input != null) {
-      final Matcher m3 = WORKFLOW_VERSION3.matcher(input);
+      final var m3 = WORKFLOW_VERSION3.matcher(input);
       if (m3.matches()) {
-        return Optional.of(new Tuple(
-            Long.parseLong(m3.group(1)), Long.parseLong(m3.group(2)), Long.parseLong(m3.group(3))));
+        return Optional.of(
+            new Tuple(
+                Long.parseLong(m3.group(1)),
+                Long.parseLong(m3.group(2)),
+                Long.parseLong(m3.group(3))));
       }
-      final Matcher m2 = WORKFLOW_VERSION2.matcher(input);
+      final var m2 = WORKFLOW_VERSION2.matcher(input);
       if (m2.matches()) {
         return Optional.of(new Tuple(Long.parseLong(m2.group(1)), Long.parseLong(m2.group(2)), 0L));
       }

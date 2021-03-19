@@ -5,7 +5,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 /** A defined variable in a program */
 public interface Target {
   /** The category of variable; this defines the capture and redefinition semantics */
-  public enum Flavour {
+  enum Flavour {
     /**
      * A variable from outside the olive
      *
@@ -44,7 +44,7 @@ public interface Target {
     STREAM_SIGNATURE(true);
     private final boolean isStream;
 
-    private Flavour(boolean isStream) {
+    Flavour(boolean isStream) {
       this.isStream = isStream;
     }
 
@@ -57,7 +57,7 @@ public interface Target {
     }
   }
 
-  public static final TargetWithContext BAD =
+  TargetWithContext BAD =
       new TargetWithContext() {
 
         @Override

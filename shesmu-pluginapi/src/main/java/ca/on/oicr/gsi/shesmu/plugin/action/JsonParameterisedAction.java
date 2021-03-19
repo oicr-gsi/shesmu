@@ -22,7 +22,7 @@ public abstract class JsonParameterisedAction extends Action {
    * pattern supplied
    */
   protected final boolean searchParameters(Pattern pattern) {
-    for (JsonNode value : parameters()) {
+    for (var value : parameters()) {
       if (searchParameters(pattern, value)) return true;
     }
     return false;
@@ -38,7 +38,7 @@ public abstract class JsonParameterisedAction extends Action {
     if (value.isTextual()) {
       return pattern.matcher(value.asText()).matches();
     }
-    for (JsonNode inner : value) {
+    for (var inner : value) {
       if (searchParameters(pattern, inner)) return true;
     }
     return false;

@@ -27,7 +27,6 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 
 public abstract class BaseProvenancePluginType<C extends AutoCloseable>
     extends PluginFileType<BaseProvenancePluginType.FileConfiguration> {
@@ -41,7 +40,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
       }
 
       @Override
-      protected Stream<CerberusFileProvenanceValue> fetch(Instant lastUpdated) throws Exception {
+      protected Stream<CerberusFileProvenanceValue> fetch(Instant lastUpdated) {
         final AtomicInteger badFilePaths = new AtomicInteger();
         final AtomicInteger badSets = new AtomicInteger();
         final AtomicInteger badVersions = new AtomicInteger();
@@ -211,7 +210,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
     }
 
     @Override
-    public void configuration(SectionRenderer renderer) throws XMLStreamException {
+    public void configuration(SectionRenderer renderer) {
       renderer.line("Configuration Good?", ok ? "Yes" : "No");
     }
 

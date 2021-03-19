@@ -6,7 +6,6 @@ import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import org.objectweb.asm.Label;
 
 public class ExpressionNodeComparison extends ExpressionNode {
 
@@ -51,8 +50,8 @@ public class ExpressionNodeComparison extends ExpressionNode {
     right.render(renderer);
     renderer.mark(line());
 
-    final Label end = renderer.methodGen().newLabel();
-    final Label truePath = renderer.methodGen().newLabel();
+    final var end = renderer.methodGen().newLabel();
+    final var truePath = renderer.methodGen().newLabel();
     if (left.type().isSame(Imyhat.BOOLEAN)) {
       comparison.branchBool(truePath, renderer.methodGen());
     } else if (left.type().isSame(Imyhat.INTEGER)) {
@@ -90,7 +89,7 @@ public class ExpressionNodeComparison extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    final boolean ok = left.typeCheck(errorHandler) & right.typeCheck(errorHandler);
+    final var ok = left.typeCheck(errorHandler) & right.typeCheck(errorHandler);
     if (ok) {
       // This logic is a bit funky because in the case of an algebraic type FOO
       // == BAR should be an invalid comparison, but because they are both ADT,

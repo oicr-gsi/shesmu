@@ -39,8 +39,7 @@ public final class FormNodeSelect extends FormNode {
     return String.format(
         "{label: %s, type: \"select\", items: %s}",
         label.stream().map(l -> l.renderEcma(renderer)).collect(Collectors.joining(", ", "[", "]")),
-        options
-            .stream()
+        options.stream()
             .map(
                 p ->
                     String.format(
@@ -51,8 +50,7 @@ public final class FormNodeSelect extends FormNode {
 
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return label.stream().filter(l -> l.resolve(defs, errorHandler)).count() == label.size()
-        & options
-                .stream()
+        & options.stream()
                 .filter(
                     p ->
                         p.first().resolve(defs, errorHandler)
@@ -65,16 +63,14 @@ public final class FormNodeSelect extends FormNode {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    return label
-                .stream()
+    return label.stream()
                 .filter(
                     l ->
                         l.resolveDefinitions(
                             expressionCompilerServices, nativeDefinitions, errorHandler))
                 .count()
             == label.size()
-        & options
-                .stream()
+        & options.stream()
                 .filter(
                     p ->
                         p.first()
@@ -91,12 +87,12 @@ public final class FormNodeSelect extends FormNode {
   }
 
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok =
+    var ok =
         options.stream().filter(p -> p.second().typeCheck(errorHandler)).count() == options.size();
     if (ok) {
       result = options.get(0).second().type();
-      for (int i = 1; i < options.size(); i++) {
-        final Imyhat expressionType = options.get(i).second().type();
+      for (var i = 1; i < options.size(); i++) {
+        final var expressionType = options.get(i).second().type();
         if (result.isSame(expressionType)) {
           result = result.unify(expressionType);
         } else {
