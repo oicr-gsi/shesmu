@@ -7,9 +7,7 @@ import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.GenericTypeGuarantee;
 import ca.on.oicr.gsi.shesmu.plugin.types.ReturnTypeGuarantee;
 import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
 public class LaneSplittingGrouperDefinition extends GrouperDefinition {
   public LaneSplittingGrouperDefinition() {
     super(

@@ -5,13 +5,11 @@ import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import org.kohsuke.MetaInfServices;
 
 /**
  * Read constants from a file with one string per line (and automatically reparse those files if
  * they change)
  */
-@MetaInfServices
 public class StringSetFilePlugin extends PluginFileType<StringSetFile> {
 
   public StringSetFilePlugin() {

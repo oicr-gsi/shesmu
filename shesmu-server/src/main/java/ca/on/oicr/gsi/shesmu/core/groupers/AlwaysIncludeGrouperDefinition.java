@@ -8,9 +8,7 @@ import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.GenericReturnTypeGuarantee;
 import ca.on.oicr.gsi.shesmu.plugin.types.GenericTypeGuarantee;
 import ca.on.oicr.gsi.shesmu.plugin.types.ReturnTypeGuarantee;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
 public class AlwaysIncludeGrouperDefinition extends GrouperDefinition {
   public AlwaysIncludeGrouperDefinition() {
     this(GenericReturnTypeGuarantee.variable(Object.class, "𝒯"));

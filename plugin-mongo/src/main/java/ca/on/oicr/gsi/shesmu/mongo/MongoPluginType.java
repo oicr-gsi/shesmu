@@ -4,9 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
 public class MongoPluginType extends PluginFileType<MongoServer> {
 
   private static final String EXTENSION = ".mongodb";

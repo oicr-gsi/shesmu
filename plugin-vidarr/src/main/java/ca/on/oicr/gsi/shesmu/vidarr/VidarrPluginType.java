@@ -12,9 +12,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.TreeMap;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
 public final class VidarrPluginType extends PluginFileType<VidarrPlugin> {
 
   @ShesmuMethod(

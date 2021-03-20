@@ -2,7 +2,7 @@ package ca.on.oicr.gsi.shesmu.jira;
 
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
 
-public class Search {
+public final class Search {
   private ActionFilter filter;
   private String jql;
   private String name;

@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.kohsuke.MetaInfServices;
 
 /**
  * Determines if throttling should occur based on a Prometheus Alert Manager
@@ -37,7 +36,6 @@ import org.kohsuke.MetaInfServices;
  * where <i>e</i> matches the environment specified in the configuration file (or is absent) and
  * <i>s</i> is one of the services specified by the action.
  */
-@MetaInfServices
 public class PrometheusAlertManagerPluginType
     extends PluginFileType<PrometheusAlertManagerPluginType.AlertManagerEndpoint> {
   private static final Gauge pushOk =

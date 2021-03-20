@@ -14,9 +14,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
 public class RunScannerPluginType extends PluginFileType<RunScannerClient> {
 
   private static final Map<Pair<Integer, Boolean>, Set<Set<Long>>> LANE_GEOMETRY_CACHE =

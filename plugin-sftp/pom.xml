@@ -17,7 +17,6 @@
     <dependency>
       <groupId>ca.on.oicr.gsi</groupId>
       <artifactId>shesmu-pluginapi</artifactId>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.hierynomus</groupId>
@@ -27,58 +26,13 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>io.prometheus</groupId>
       <artifactId>simpleclient</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.kohsuke.metainf-services</groupId>
-      <artifactId>metainf-services</artifactId>
-      <optional>true</optional>
     </dependency>
   </dependencies>
   <build>
     <finalName>shesmu-plugin-sftp</finalName>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.7.0</version>
-        <configuration>
-          <source>17</source>
-          <target>17</target>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>3.4.0</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <!-- Ideally, we would replocate Bouncy Castle, but we can't https://github.com/hierynomus/sshj/issues/82 and it may conflict with other plugins, but there's nothing to be done  -->
-              <filters>
-                <filter>
-                  <artifact>*:*:*:*</artifact>
-                  <excludes>
-                    <exclude>log4j.properties</exclude>
-                    <exclude>META-INF/*.SF</exclude>
-                    <exclude>META-INF/*.DSA</exclude>
-                    <exclude>META-INF/*.RSA</exclude>
-                  </excludes>
-                </filter>
-              </filters>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
   </build>
 </project>

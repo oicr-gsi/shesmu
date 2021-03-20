@@ -5,7 +5,6 @@ import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.util.regex.Pattern;
-import org.kohsuke.MetaInfServices;
 
 /**
  * Converts a CSV file into a function
@@ -16,7 +15,6 @@ import org.kohsuke.MetaInfServices;
  * wild card and a matching return value. If no rows match, the default value for that type is
  * returned.
  */
-@MetaInfServices(PluginFileType.class)
 public class CSVTableFunctionFileType extends PluginFileType<TableFunctionFile> {
 
   private static final Pattern COMMA = Pattern.compile(",");

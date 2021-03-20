@@ -5,8 +5,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.GangElement;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
-import ca.on.oicr.gsi.shesmu.plugin.input.TimeFormat;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.input.Definition;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -17,16 +16,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 
 public final class JsonInputFormatDefinition extends BaseInputFormatDefinition {
-  public record Definition(TreeMap<String, VariableDefinition> variables, TimeFormat timeFormat) {}
-
-  public record GangDefinition(int order, String gang, boolean dropIfDefault) {}
-
-  public record VariableDefinition(Imyhat type, boolean signable, List<GangDefinition> gangs) {}
 
   private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
   private static final String SUFFIX = ".shesmuschema";

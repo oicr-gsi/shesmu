@@ -11,7 +11,6 @@ import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition.ConstantLoader;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository.CallableOliveDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
