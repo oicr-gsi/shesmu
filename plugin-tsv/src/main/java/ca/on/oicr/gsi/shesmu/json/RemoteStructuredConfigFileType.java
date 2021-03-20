@@ -4,9 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
 public final class RemoteStructuredConfigFileType extends PluginFileType<RemoteConfigurationFile> {
 
   public RemoteStructuredConfigFileType() {

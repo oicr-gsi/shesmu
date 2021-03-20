@@ -8,13 +8,9 @@ plugins are suitable, great. If not, it was designed to be easy to extend.
 Shesmu uses
 [`ServiceLoader`](https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html)
 to find plugins. For service loaders to work, a plugin should extend the
-service interface, be marked with a `@MetaInfServices` annotation, and placed
-into a JAR on the `CLASSPATH`. The Java libraries will take care of the rest.
-Since all the plugins must coexist, it is strongly recommended to that a
-[_shaded_ JAR](https://maven.apache.org/plugins/maven-shade-plugin/) is used.
-Shading a JAR renames classes in a way that allows different versions of the
-same library to coexist without conflict.
-
+service interface, be included in a `provides` line in the `module-info` for
+the service interface, and placed into a JAR on the module path. The Java
+libraries will take care of the rest.
 
 In a typical Maven build file, the following is necessary to get the basic dependencies:
 
@@ -29,19 +25,6 @@ In a typical Maven build file, the following is necessary to get the basic depen
         <groupId>io.prometheus</groupId>
         <artifactId>simpleclient</artifactId>
         <version>0.0.26</version>
-        <scope>provided</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.kohsuke.metainf-services</groupId>
-        <artifactId>metainf-services</artifactId>
-        <version>1.1</version>
-        <optional>true</optional>
-        <scope>provided</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.ow2.asm</groupId>
-        <artifactId>asm-debug-all</artifactId>
-        <version>5.2</version>
         <scope>provided</scope>
       </dependency>
     </dependencies>
@@ -143,10 +126,10 @@ method names must be valid Shemsu names (lowercase with underscores) and
 decorated with `@ShesmuVariable` annotations with the correct type descriptor. All
 methods must return `boolean`, `long`, `String`, `Instant`, `Set`, or `Tuple`
 (and `Set` and `Tuple` may only contain more of the same).
-1. Create a new class that extends `InputFormat<`_V_`>` and
+1. Create a new _F_ class that extends `InputFormat<`_V_`>` and
 provides the types to the constructor as well as a name that will be used in
-the `Input` instruction. This class must be annotated with
-`@MetaInfServices(InputFormatDefinition)`.
+the `Input` instruction.
+1. In `module-info` add `provides InputFormatDefinition with `_F_`;`.
 
 For each variable, Shesmu can try to infer the type from the return type of the
 method. If the type is `Tuple` or an erased `Optional`, `Map`, or `Set`, it
@@ -204,8 +187,8 @@ It maybe easiest to implement the grouper and see what information is necessary
 and then work backward to the grouper definition.
 
 1. Create a class _G_ that implements `Grouper` parameterised over _I_ and _O_.
-1. Create a class _D_ that extends `GrouperDefinition` and is annotated with
-`@MetaInfServices`.
+1. Create a class _D_ that extends `GrouperDefinition` and is exposed with
+`provides GrouperDefinition with `_G_`;` in `module-info`.
 1. In _D_, call the appropriate super constructor. They vary by the number of
 input parameters the grouper requires. Use `GrouperParameter` to fill in each
 parameter required.
@@ -226,8 +209,7 @@ the Shesmu data directories.
 As a general outline, for a plugin `Foo`, the two classes would be:
 
 ```
-@MetaInfServices
-public class FooPluginType extends PluginFileType<FooFile> {
+public final class FooPluginType extends PluginFileType<FooFile> {
   public FooPluginType() {
     super(MethodHandles.lookup(), FooFile.class, ".foo");
   }

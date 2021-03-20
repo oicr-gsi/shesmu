@@ -13,9 +13,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
 public class RateLimitThrottler extends PluginFileType<RateLimitThrottler.TokenBucket> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 

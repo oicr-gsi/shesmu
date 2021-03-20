@@ -17,9 +17,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
 public class GitHubBranchesApiPluginType
     extends PluginFileType<GitHubBranchesApiPluginType.GitHubRemote> {
   static class GitHubRemote extends JsonPluginFile<Configuration> {

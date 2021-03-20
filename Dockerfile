@@ -9,8 +9,12 @@ COPY . /build/
 RUN --mount=type=cache,target=/root/.m2 cd /build && \
     tsc -p shesmu-server-ui && \
     mvn -Dsurefire.useFile=false -DskipIT=true clean install && \
+    VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout) && \
     mkdir /usr/share/shesmu && \
-    cp shesmu-pluginapi/target/shesmu-pluginapi.jar shesmu-server/target/shesmu.jar plugin-*/target/shesmu-plugin-*.jar /usr/share/shesmu
+    cp install-pom.xml /usr/share/shesmu/pom.xml && \
+    cd /usr/share/shesmu && \
+    mvn -DVERSION=${VERSION} dependency:copy-dependencies && \
+    rm pom.xml
 
 FROM openjdk:17
 COPY --from=0 /usr/share/shesmu /usr/share/shesmu

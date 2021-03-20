@@ -4,10 +4,8 @@ import ca.on.oicr.gsi.shesmu.plugin.*;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import org.kohsuke.MetaInfServices;
 
 /** Converts Guanyin reports into actions */
-@MetaInfServices
 public class GuanyinReportPluginType extends PluginFileType<GuanyinRemote> {
 
   @Override

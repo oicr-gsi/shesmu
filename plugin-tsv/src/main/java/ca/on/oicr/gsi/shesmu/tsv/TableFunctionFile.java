@@ -52,7 +52,7 @@ class TableFunctionFile extends PluginFile {
 
   private static final Pattern NOT_COMMENT = Pattern.compile("^[^#].*$");
 
-  private final Definer definer;
+  private final Definer<TableFunctionFile> definer;
 
   private final Pattern separator;
 

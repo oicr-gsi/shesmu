@@ -3,10 +3,8 @@ package ca.on.oicr.gsi.shesmu.onlinereport;
 import ca.on.oicr.gsi.shesmu.plugin.*;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import org.kohsuke.MetaInfServices;
 
 /** Converts Online reports into actions */
-@MetaInfServices
 public class OnlineReportPluginType extends PluginFileType<OnlineReport> {
 
   @Override

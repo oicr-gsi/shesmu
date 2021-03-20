@@ -1,69 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <artifactId>shesmu-plugin-nabu</artifactId>
-  <build>
-    <finalName>shesmu-plugin-nabu</finalName>
-    <plugins>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>17</source>
-          <target>17</target>
-        </configuration>
-        <groupId>org.apache.maven.plugins</groupId>
-        <version>3.7.0</version>
-      </plugin>
-      <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <phase>package</phase>
-          </execution>
-        </executions>
-        <groupId>org.apache.maven.plugins</groupId>
-        <version>3.4.0</version>
-      </plugin>
-    </plugins>
-  </build>
-  <dependencies>
-    <dependency>
-      <artifactId>shesmu-pluginapi</artifactId>
-      <groupId>ca.on.oicr.gsi</groupId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <artifactId>jackson-databind</artifactId>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <artifactId>jackson-datatype-jsr310</artifactId>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-    </dependency>
-    <dependency>
-      <artifactId>simpleclient</artifactId>
-      <groupId>io.prometheus</groupId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <artifactId>metainf-services</artifactId>
-      <groupId>org.kohsuke.metainf-services</groupId>
-      <optional>true</optional>
-    </dependency>
-  </dependencies>
   <modelVersion>4.0.0</modelVersion>
-  <name>Shesmu Decision-Action Server - Nabu integration</name>
-  <packaging>jar</packaging>
   <parent>
-    <artifactId>shesmu</artifactId>
     <groupId>ca.on.oicr.gsi</groupId>
+    <artifactId>shesmu</artifactId>
     <version>1.31.3-SNAPSHOT</version>
   </parent>
+  <artifactId>shesmu-plugin-nabu</artifactId>
+  <packaging>jar</packaging>
+  <name>Shesmu Decision-Action Server - Nabu integration</name>
+  <url>https://github.com/oicr-gsi/shesmu</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
-  <url>https://github.com/oicr-gsi/shesmu</url>
+  <dependencies>
+    <dependency>
+      <groupId>ca.on.oicr.gsi</groupId>
+      <artifactId>shesmu-pluginapi</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+    </dependency>
+  </dependencies>
+  <build>
+    <finalName>shesmu-plugin-nabu</finalName>
+  </build>
 </project>

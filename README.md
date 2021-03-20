@@ -99,13 +99,31 @@ To enable this, add the following to your /etc/docker/daemon.json config:
 ```
 
 ### Local Setup
-Now, compile the main server using Maven 3.5 with Java 8:
+Now, compile the main server using Maven with Java:
 
     mvn install
 
 This will create `shesmu-server/target/shesmu.jar`. If you require any
-additional plugins (described below), compile them and collect all the JARs in
-a directory on your server in `/srv/shesmu` or a path of your choosing.
+additional plugins (described below), compile them and collect all the JARs and
+their dependencies in a directory on your server in `/srv/shesmu` or a path of
+your choosing. The complete set of plugins and dependencies can be copied into
+a `jars` directory inside the build directory by doing:
+
+```
+test -d jars || mkdir jars
+cd jars
+ln -sf ../install-pom.xml pom.xml
+rm -rf *.jar
+mvn -DVERSION=$(cd ..; mvn help:evaluate -Dexpression=project.version -q -DforceStdout) dependency:copy-dependencies
+cd ..
+```
+
+If you are installing to `/srv/shesmu`, then copy the JARs:
+
+```
+rm /srv/shesmu/*.jar
+cp jars/*.jar /srv/shesmu
+```
 
 The configuration for Shesmu is kept in a directory and will be automatically
 updated if it changes. This makes it easy to store the configuration in git and
@@ -117,9 +135,9 @@ On a Linux server, create a systemd configuration in `/lib/systemd/system/shesmu
     Description=Shesmu decision-action server
 
     [Service]
-    Environment=CLASSPATH=/srv/shesmu/*
+    Environment=MODULEPATH=/srv/shesmu/*
     Environment=SHESMU_DATA=/srv/shesmu
-    ExecStart=/usr/bin/java ca.on.oicr.gsi.shesmu.Server
+    ExecStart=/usr/bin/java ca.on.oicr.gsi.shesmu.server/ca.on.oicr.gsi.shesmu.Server
     KillMode=process
 
     [Install]

@@ -9,9 +9,7 @@ import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
 public class GitSourceLinker extends PluginFileType<GitSourceLinker.GitLinkerFile> {
   public GitSourceLinker() {
     super(MethodHandles.lookup(), GitLinkerFile.class, ".gitlink", "git");

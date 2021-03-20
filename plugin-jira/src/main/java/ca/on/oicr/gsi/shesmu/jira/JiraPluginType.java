@@ -8,9 +8,7 @@ import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.util.Optional;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
 public final class JiraPluginType extends PluginFileType<JiraConnection> {
 
   private static final Tuple FORMATTING =

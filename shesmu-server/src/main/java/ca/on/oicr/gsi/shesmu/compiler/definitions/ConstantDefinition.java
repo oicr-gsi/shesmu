@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler.definitions;
 
+import ca.on.oicr.gsi.shesmu.ConstantLoader;
 import ca.on.oicr.gsi.shesmu.compiler.LoadableValue;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.Target;
@@ -7,7 +8,6 @@ import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
-import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.BaseHotloadingCompiler;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -39,12 +39,6 @@ import org.objectweb.asm.commons.Method;
  * interaction with any other part of the Shesmu script.
  */
 public abstract class ConstantDefinition implements Target {
-
-  /** Write the value of a constant into the <code>value</code> property of a JSON object. */
-  public interface ConstantLoader {
-    @RuntimeInterop
-    void load(ObjectNode target);
-  }
 
   public static class AliasedConstantDefinition extends ConstantDefinition {
     private final ConstantDefinition original;

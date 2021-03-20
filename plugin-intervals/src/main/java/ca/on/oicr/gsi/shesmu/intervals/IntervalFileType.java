@@ -11,9 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
 public class IntervalFileType extends PluginFileType<IntervalFile> {
   private static final Imyhat GROUP_TYPE = Imyhat.STRING.asList();
 
