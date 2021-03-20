@@ -36,11 +36,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.kohsuke.metainf-services</groupId>
-      <artifactId>metainf-services</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
       <groupId>ca.on.oicr.gsi</groupId>
       <artifactId>shesmu-plugin-gsi-common</artifactId>
       <version>${project.version}</version>
@@ -54,7 +49,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-text</artifactId>
-      <version>1.6</version>
+      <version>1.9</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -74,29 +69,5 @@
   </dependencies>
   <build>
     <finalName>shesmu-plugin-pinery</finalName>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.7.0</version>
-        <configuration>
-          <source>14</source>
-          <target>14</target>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>3.2.4</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
   </build>
 </project>

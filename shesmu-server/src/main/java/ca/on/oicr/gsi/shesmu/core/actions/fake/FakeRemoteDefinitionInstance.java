@@ -7,7 +7,6 @@ import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Scanner;
-import org.kohsuke.MetaInfServices;
 
 /**
  * Create actions that mirror the actions of an existing Shesmu instance, but do nothing when
@@ -15,7 +14,6 @@ import org.kohsuke.MetaInfServices;
  *
  * <p>This is for preparation of development servers
  */
-@MetaInfServices(PluginFileType.class)
 public class FakeRemoteDefinitionInstance extends PluginFileType<RemoteInstance> {
 
   public FakeRemoteDefinitionInstance() {

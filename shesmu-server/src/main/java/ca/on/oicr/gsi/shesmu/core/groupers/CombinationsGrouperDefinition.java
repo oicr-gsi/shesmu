@@ -4,9 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperOutputs;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
 public final class CombinationsGrouperDefinition extends GrouperDefinition {
   public CombinationsGrouperDefinition() {
     super(

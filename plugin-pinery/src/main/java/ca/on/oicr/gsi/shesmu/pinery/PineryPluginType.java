@@ -19,9 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
 public class PineryPluginType extends PluginFileType<PinerySource> {
 
   private enum Mask {

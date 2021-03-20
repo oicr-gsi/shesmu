@@ -5,9 +5,7 @@ import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperOutputs;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.GenericReturnTypeGuarantee;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
 public class CrossTabGrouperDefinition extends GrouperDefinition {
   public <I, O, G extends Grouper<I, ?>, C> CrossTabGrouperDefinition() {
     super(

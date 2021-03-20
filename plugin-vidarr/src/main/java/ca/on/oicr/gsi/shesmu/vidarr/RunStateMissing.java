@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-final class RunStateMissing extends RunState {
+public final class RunStateMissing extends RunState {
   private final List<String> errors;
   private final String id;
   private final List<ExternalKey> keys;

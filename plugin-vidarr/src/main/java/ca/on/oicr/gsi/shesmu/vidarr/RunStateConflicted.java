@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-final class RunStateConflicted extends RunState {
+public final class RunStateConflicted extends RunState {
 
   private final List<String> errors;
   private final List<String> ids;

@@ -50,7 +50,7 @@ class TableFunctionFile extends PluginFile {
           .labelNames("fileName")
           .register();
 
-  private final Definer definer;
+  private final Definer<TableFunctionFile> definer;
 
   private final Pattern separator;
 

@@ -5,9 +5,7 @@ import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
 public class SftpPluginType extends PluginFileType<SftpServer> {
 
   private static final String EXTENSION = ".sftp";

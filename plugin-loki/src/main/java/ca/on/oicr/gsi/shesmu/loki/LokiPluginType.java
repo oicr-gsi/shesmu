@@ -3,10 +3,8 @@ package ca.on.oicr.gsi.shesmu.loki;
 import ca.on.oicr.gsi.shesmu.plugin.*;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import org.kohsuke.MetaInfServices;
 
 /** Allows logging data to Loki */
-@MetaInfServices
 public class LokiPluginType extends PluginFileType<LokiPlugin> {
 
   @Override

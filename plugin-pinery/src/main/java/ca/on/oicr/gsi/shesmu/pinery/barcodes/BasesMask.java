@@ -94,6 +94,8 @@ public class BasesMask {
       return prefix + length.toString();
     } else if (length != null && length == Integer.MAX_VALUE) {
       return prefix + "*";
+    } else if (length != null && length == 0) {
+      return "";
     } else {
       return "";
     }

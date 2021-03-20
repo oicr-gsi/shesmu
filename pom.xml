@@ -73,6 +73,11 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
+        <groupId>ca.on.oicr.gsi</groupId>
+        <artifactId>shesmu-plugin-gsi-common</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
         <version>2.11.0</version>
@@ -133,17 +138,17 @@
       <dependency>
         <groupId>org.ow2.asm</groupId>
         <artifactId>asm-commons</artifactId>
-        <version>7.0</version>
+        <version>9.1</version>
       </dependency>
       <dependency>
         <groupId>org.ow2.asm</groupId>
         <artifactId>asm-tree</artifactId>
-        <version>7.0</version>
+        <version>9.1</version>
       </dependency>
       <dependency>
         <groupId>org.ow2.asm</groupId>
         <artifactId>asm-util</artifactId>
-        <version>7.0</version>
+        <version>9.1</version>
       </dependency>
       <dependency>
         <groupId>org.apache.commons</groupId>
@@ -175,7 +180,6 @@
     <module>plugin-loki</module>
     <module>plugin-mongo</module>
     <module>plugin-nabu</module>
-    <module>plugin-niassa</module>
     <module>plugin-pinery</module>
     <module>plugin-prometheus</module>
     <module>plugin-ratelimit</module>
@@ -186,6 +190,15 @@
   </modules>
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <source>14</source>
+          <target>14</target>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>

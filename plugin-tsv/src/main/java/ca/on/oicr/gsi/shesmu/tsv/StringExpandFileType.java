@@ -4,10 +4,8 @@ import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import org.kohsuke.MetaInfServices;
 
 /** Converts a TSV file into a series of string expansions */
-@MetaInfServices(PluginFileType.class)
 public class StringExpandFileType extends PluginFileType<StringExpandFile> {
 
   static final String EXTENSION = ".strexpand";

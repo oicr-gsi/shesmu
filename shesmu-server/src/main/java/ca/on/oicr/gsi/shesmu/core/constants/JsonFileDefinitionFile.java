@@ -14,7 +14,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Function;
 
-public class JsonFileDefinitionFile extends JsonPluginFile<ObjectNode> {
+public final class JsonFileDefinitionFile extends JsonPluginFile<ObjectNode> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private static Pair<Imyhat, Object> convert(JsonNode value) {
