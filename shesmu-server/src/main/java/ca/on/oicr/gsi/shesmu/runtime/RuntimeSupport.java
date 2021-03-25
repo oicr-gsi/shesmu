@@ -10,6 +10,8 @@ import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -186,6 +188,13 @@ public final class RuntimeSupport {
     return result == null ? JsonNodeFactory.instance.nullNode() : result;
   }
 
+  public static CallSite inputBootstrap(
+      Lookup lookup, String variableName, MethodType methodType, String inputFormatName) {
+    // This is redirects to the input format manager; it's here to limit our export interface
+    return AnnotatedInputFormatDefinition.bootstrap(
+        lookup, variableName, methodType, inputFormatName);
+  }
+
   @RuntimeInterop
   public static <I, N, K, O> Stream<O> join(
       Stream<I> input,
@@ -239,6 +248,12 @@ public final class RuntimeSupport {
     }
 
     return joins.stream().map(p -> joiner.apply(inputs.get(p.first()), inners.get(p.second())));
+  }
+
+  public static CallSite pluginServicesBootstrap(
+      Lookup lookup, String methodName, MethodType methodType, String... fileNames) {
+    // This is redirects to the plugin manager; it's here to limit our export interface
+    return PluginManager.bootstrapServices(lookup, methodName, methodType, fileNames);
   }
 
   @RuntimeInterop
@@ -502,6 +517,18 @@ public final class RuntimeSupport {
             Collectors.groupingBy(item -> new Holder<>(equals, hashCode.applyAsInt(item), item)));
     input.close();
     return groups.values().stream().map(list -> list.stream().min(comparator).get());
+  }
+
+  public static CallSite pluginArbitraryBootstrap(
+      MethodHandles.Lookup lookup, String methodName, MethodType methodType) {
+    // This is redirects to the plugin manager; it's here to limit our export interface
+    return PluginManager.bootstrap(lookup, methodName, methodType);
+  }
+
+  public static CallSite pluginBootstrap(
+      MethodHandles.Lookup lookup, String methodName, MethodType methodType, String filename) {
+    // This is redirects to the plugin manager; it's here to limit our export interface
+    return PluginManager.bootstrap(lookup, methodName, methodType, filename);
   }
 
   @RuntimeInterop
