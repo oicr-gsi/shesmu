@@ -71,7 +71,7 @@ abstract class BaseCerberusFileProvenanceRecord<T extends LimsProvenance>
 
   @Override
   public final long file_size() {
-    return provenanceRecord.record().getFileSize();
+    return provenanceRecord.record().getSize();
   }
 
   @Override
@@ -90,7 +90,7 @@ abstract class BaseCerberusFileProvenanceRecord<T extends LimsProvenance>
 
   @Override
   public final String md5() {
-    return provenanceRecord.record().getMd5sum();
+    return provenanceRecord.record().getMd5();
   }
 
   @Override
@@ -100,7 +100,7 @@ abstract class BaseCerberusFileProvenanceRecord<T extends LimsProvenance>
 
   @Override
   public final Path path() {
-    return Path.of(provenanceRecord.record().getFilePath());
+    return Path.of(provenanceRecord.record().getPath());
   }
 
   @Override
