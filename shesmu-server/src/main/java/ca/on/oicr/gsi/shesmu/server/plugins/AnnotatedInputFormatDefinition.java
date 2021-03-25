@@ -384,8 +384,8 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   private static final Handle BSM_INPUT_VARIABLE =
       new Handle(
           Opcodes.H_INVOKESTATIC,
-          Type.getType(AnnotatedInputFormatDefinition.class).getInternalName(),
-          "bootstrap",
+          Type.getType(RuntimeSupport.class).getInternalName(),
+          "inputBootstrap",
           Type.getMethodDescriptor(
               Type.getType(CallSite.class),
               Type.getType(Lookup.class),

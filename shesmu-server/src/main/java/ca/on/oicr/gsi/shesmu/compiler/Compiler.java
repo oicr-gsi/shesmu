@@ -11,7 +11,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
-import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -54,8 +54,8 @@ public abstract class Compiler {
   private static final Handle SERVICES_REQURED_BSM =
       new Handle(
           Opcodes.H_INVOKESTATIC,
-          Type.getInternalName(PluginManager.class),
-          "bootstrapServices",
+          Type.getInternalName(RuntimeSupport.class),
+          "pluginServicesBootstrap",
           Type.getMethodDescriptor(
               Type.getType(CallSite.class),
               Type.getType(MethodHandles.Lookup.class),

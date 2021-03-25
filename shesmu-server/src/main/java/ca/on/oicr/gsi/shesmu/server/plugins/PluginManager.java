@@ -1653,8 +1653,8 @@ public final class PluginManager
   private static final Handle BSM_HANDLE =
       new Handle(
           Opcodes.H_INVOKESTATIC,
-          Type.getType(PluginManager.class).getInternalName(),
-          "bootstrap",
+          Type.getType(RuntimeSupport.class).getInternalName(),
+          "pluginBootstrap",
           Type.getMethodDescriptor(
               Type.getType(CallSite.class),
               Type.getType(Lookup.class),
@@ -1665,8 +1665,8 @@ public final class PluginManager
   private static final Handle BSM_HANDLE_ARBITRARY =
       new Handle(
           Opcodes.H_INVOKESTATIC,
-          Type.getType(PluginManager.class).getInternalName(),
-          "bootstrap",
+          Type.getType(RuntimeSupport.class).getInternalName(),
+          "pluginArbitraryBootstrap",
           BSM_DESCRIPTOR_ARBITRARY,
           false);
   private static final CallSiteRegistry<String> CONFIG_FILE_ARBITRARY_BINDINGS =
@@ -1690,18 +1690,11 @@ public final class PluginManager
   static {
     try {
       SERVICES_REQUIRED =
-          MethodHandles.publicLookup()
+          MethodHandles.lookup()
               .findStatic(
                   PluginManager.class,
                   "requiredServices",
                   MethodType.methodType(String[].class, RequiredServices[].class));
-    } catch (NoSuchMethodException | IllegalAccessException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  static {
-    try {
       MH_SUPPLIER_GET =
           MethodHandles.publicLookup()
               .findVirtual(Supplier.class, "get", MethodType.methodType(Object.class));
@@ -1909,7 +1902,7 @@ public final class PluginManager
    * Find a dumper
    *
    * @param name the dumper to find
-   * @param columns
+   * @param columns the names of the columns
    * @return the dumper if found, or an empty optional if none is available
    */
   public Optional<Dumper> findDumper(String name, String[] columns, Imyhat... types) {
