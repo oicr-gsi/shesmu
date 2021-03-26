@@ -398,7 +398,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
       new JarHashRepository<>();
   private static final Map<Pair<String, String>, CallSite> INPUT_VARIABLES_REGISTRY =
       new ConcurrentHashMap<>();
-  private static final Lookup LOOKUP = MethodHandles.publicLookup();
+  private static final Lookup LOOKUP = MethodHandles.lookup();
   private static final MethodHandle MH_IMYHAT__ACCEPT;
   private static final MethodHandle MH_PACK_STREAMING__CTOR;
   private static final MethodHandle MH_TUPLE_GET;
@@ -495,7 +495,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
       // cases: either we have an instance of the real type and we should call the
       // method on it, or we have a Tuple that was generated generically by one of our
       // JSON readers
-      final var getter = LOOKUP.unreflect(entry.second()).asType(methodType);
+      final var getter = format.lookup().unreflect(entry.second()).asType(methodType);
       final var handle =
           MethodHandles.guardWithTest(
               MH_TUPLE_IS_INSTANCE,

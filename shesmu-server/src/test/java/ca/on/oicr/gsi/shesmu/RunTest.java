@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -385,9 +386,10 @@ public class RunTest {
       inputFormats =
           new NameLoader<>(
               Stream.of(
-                  new AnnotatedInputFormatDefinition(new InputFormat("test", TestValue.class)),
                   new AnnotatedInputFormatDefinition(
-                      new InputFormat("inner_test", InnerTestValue.class))),
+                      new InputFormat("test", TestValue.class, MethodHandles.lookup())),
+                  new AnnotatedInputFormatDefinition(
+                      new InputFormat("inner_test", InnerTestValue.class, MethodHandles.lookup()))),
               InputFormatDefinition::name);
     } catch (IllegalAccessException e) {
       e.printStackTrace();

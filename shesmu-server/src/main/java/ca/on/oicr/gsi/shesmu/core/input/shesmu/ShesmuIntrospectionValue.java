@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ShesmuIntrospectionValue {
+public final class ShesmuIntrospectionValue {
   private final Action action;
   private final Instant changed;
   private final Instant checked;
@@ -44,8 +44,7 @@ public class ShesmuIntrospectionValue {
     this.lastStateTransition = lastStateTransition;
     this.state = state;
     this.locations =
-        locations
-            .stream()
+        locations.stream()
             .map(
                 l ->
                     new Tuple(
