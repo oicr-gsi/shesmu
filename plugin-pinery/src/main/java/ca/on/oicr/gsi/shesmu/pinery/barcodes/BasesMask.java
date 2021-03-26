@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.pinery.barcodes;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.lang.StringUtils;
 
 /** @author mlaszloffy */
 public class BasesMask {
@@ -107,7 +106,7 @@ public class BasesMask {
       return null;
     } else if ("*".equals(length)) {
       return Integer.MAX_VALUE;
-    } else if (StringUtils.isNumeric(length)) {
+    } else if (length.chars().allMatch(Character::isDigit)) {
       Integer i = Integer.parseInt(length);
       if (i == 0) {
         return null;
