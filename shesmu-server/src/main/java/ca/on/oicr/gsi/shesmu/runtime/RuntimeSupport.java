@@ -256,18 +256,8 @@ public final class RuntimeSupport {
   }
 
   @RuntimeInterop
-  public static Stream<JsonNode> jsonElements(Optional<JsonNode> node) {
-    return node.map(RuntimeSupport::jsonElements).orElseGet(Stream::empty);
-  }
-
-  @RuntimeInterop
   public static Stream<Tuple> jsonFields(JsonNode node) {
     return Utils.stream(node.fields()).map(e -> new Tuple(e.getKey(), e.getValue()));
-  }
-
-  @RuntimeInterop
-  public static Stream<Tuple> jsonFields(Optional<JsonNode> node) {
-    return node.map(RuntimeSupport::jsonFields).orElseGet(Stream::empty);
   }
 
   @RuntimeInterop
@@ -431,11 +421,6 @@ public final class RuntimeSupport {
   @RuntimeInterop
   public static long localYear(Instant time) {
     return time.atZone(ZoneId.systemDefault()).getYear();
-  }
-
-  @RuntimeInterop
-  public static <T> Optional<T> merge(Optional<T> left, Supplier<Optional<T>> right) {
-    return left.isPresent() ? left : right.get();
   }
 
   /**
@@ -639,21 +624,10 @@ public final class RuntimeSupport {
     return data.stream();
   }
 
-  /** Stream an optional */
-  @RuntimeInterop
-  public static <T> Stream<T> stream(Optional<T> optional) {
-    return optional.stream();
-  }
-
   /** Stream a map */
   @RuntimeInterop
   public static Stream<Tuple> stream(Map<?, ?> map) {
     return map.entrySet().stream().map(e -> new Tuple(e.getKey(), e.getValue()));
-  }
-
-  @RuntimeInterop
-  public static Stream<Tuple> streamMap(Optional<Map<?, ?>> map) {
-    return map.orElse(Map.of()).entrySet().stream().map(e -> new Tuple(e.getKey(), e.getValue()));
   }
 
   @RuntimeInterop

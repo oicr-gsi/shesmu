@@ -8,7 +8,6 @@ import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
@@ -22,11 +21,10 @@ import org.objectweb.asm.commons.Method;
 public class OliveClauseNodeRequire extends OliveClauseNode {
 
   private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
-  private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   private static final Method METHOD_OPTIONAL__IS_PRESENT =
       new Method("isPresent", Type.BOOLEAN_TYPE, new Type[] {});
-  private static final Method METHOD_RUNTIME_SUPPORT__STEAM_OPTIONAL =
-      new Method("stream", Type.getType(Stream.class), new Type[] {A_OPTIONAL_TYPE});
+  private static final Method METHOD_OPTIONAL__STEAM =
+      new Method("stream", Type.getType(Stream.class), new Type[] {});
   private final int column;
   private boolean copySignatures;
   private final ExpressionNode expression;
@@ -172,7 +170,7 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
     flattenBuilder
         .explodeMethod()
         .methodGen()
-        .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__STEAM_OPTIONAL);
+        .invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__STEAM);
     flattenBuilder.explodeMethod().methodGen().returnValue();
     flattenBuilder.explodeMethod().methodGen().visitMaxs(0, 0);
     flattenBuilder.explodeMethod().methodGen().visitEnd();
