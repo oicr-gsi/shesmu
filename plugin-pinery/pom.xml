@@ -12,7 +12,7 @@
   <url>https://github.com/oicr-gsi/shesmu</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <pinery-version>2.16.0</pinery-version>
+    <pinery-version>2.18.0</pinery-version>
   </properties>
   <dependencies>
     <dependency>
@@ -23,6 +23,11 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -43,17 +48,7 @@
     </dependency>
     <dependency>
       <groupId>ca.on.oicr</groupId>
-      <artifactId>pinery-client</artifactId>
-      <version>${pinery-version}</version>
-    </dependency>
-    <dependency>
-      <groupId>ca.on.oicr</groupId>
-      <artifactId>pinery-service</artifactId>
-      <version>${pinery-version}</version>
-    </dependency>
-    <dependency>
-      <groupId>ca.on.oicr</groupId>
-      <artifactId>pinery-api</artifactId>
+      <artifactId>pinery-ws-dto</artifactId>
       <version>${pinery-version}</version>
     </dependency>
     <dependency>
