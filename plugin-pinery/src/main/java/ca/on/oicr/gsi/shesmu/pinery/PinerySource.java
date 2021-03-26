@@ -5,7 +5,6 @@ import ca.on.oicr.gsi.provenance.model.SampleProvenance;
 import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
-import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.cache.MergingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.SimpleRecord;
@@ -13,16 +12,22 @@ import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
+import ca.on.oicr.gsi.shesmu.plugin.json.JsonListBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import ca.on.oicr.pinery.client.HttpResponseException;
-import ca.on.oicr.pinery.client.PineryClient;
 import ca.on.oicr.ws.dto.InstrumentModelDto;
+import ca.on.oicr.ws.dto.LaneProvenanceDto;
 import ca.on.oicr.ws.dto.RunDto;
 import ca.on.oicr.ws.dto.RunDtoPosition;
 import ca.on.oicr.ws.dto.SampleProjectDto;
+import ca.on.oicr.ws.dto.SampleProvenanceDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.prometheus.client.Gauge;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -41,60 +46,71 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
     @Override
     protected Stream<PineryIUSValue> fetch(Instant lastUpdated) throws Exception {
-      if (!config.isPresent()) {
+      if (config.isEmpty()) {
         return Stream.empty();
       }
       final PineryConfiguration cfg = config.get();
-      try (PineryClient c = new PineryClient(cfg.getUrl(), true)) {
-        final Map<String, Integer> badSetCounts = new TreeMap<>();
-        final Map<String, RunDto> allRuns =
-            c.getSequencerRun().all().stream()
-                .collect(
-                    Collectors.toMap(
-                        RunDto::getName,
-                        Function.identity(),
-                        // If duplicate run names occur, pick one at random, because the universe is
-                        // spiteful, so we spite it back.
-                        (a, b) -> a));
-        final Set<Pair<String, String>> validLanes = new HashSet<>();
-        return Stream.concat(
-                lanes(
-                    c,
-                    cfg.getVersion(),
-                    cfg.getProvider(),
-                    badSetCounts,
-                    allRuns,
-                    (run, lane) -> validLanes.add(new Pair<>(run, lane))),
-                samples(
-                    c,
-                    cfg.getVersion(),
-                    cfg.getProvider(),
-                    badSetCounts,
-                    allRuns,
-                    (run, lane) -> validLanes.contains(new Pair<>(run, lane))))
-            .onClose(
-                () ->
-                    badSetCounts.forEach(
-                        (key, value) ->
-                            badSetMap
-                                .labels(
-                                    Stream.concat(
-                                            Stream.of(fileName().toString()),
-                                            Stream.of(key.split(":")))
-                                        .toArray(String[]::new))
-                                .set(value)));
-      }
+      final Map<String, Integer> badSetCounts = new TreeMap<>();
+      final Map<String, RunDto> allRuns =
+          HTTP_CLIENT
+              .send(
+                  HttpRequest.newBuilder(URI.create(cfg.getUrl() + "/sequencerruns")).GET().build(),
+                  new JsonListBodyHandler<>(MAPPER, RunDto.class))
+              .body()
+              .get()
+              .collect(
+                  Collectors.toMap(
+                      RunDto::getName,
+                      Function.identity(),
+                      // If duplicate run names occur, pick one at random, because the universe is
+                      // spiteful, so we spite it back.
+                      (a, b) -> a));
+      final Set<Pair<String, String>> validLanes = new HashSet<>();
+      return Stream.concat(
+              lanes(
+                  cfg.getUrl(),
+                  cfg.getVersion(),
+                  cfg.getProvider(),
+                  badSetCounts,
+                  allRuns,
+                  (run, lane) -> validLanes.add(new Pair<>(run, lane))),
+              samples(
+                  cfg.getUrl(),
+                  cfg.getVersion(),
+                  cfg.getProvider(),
+                  badSetCounts,
+                  allRuns,
+                  (run, lane) -> validLanes.contains(new Pair<>(run, lane))))
+          .onClose(
+              () ->
+                  badSetCounts.forEach(
+                      (key, value) ->
+                          badSetMap
+                              .labels(
+                                  Stream.concat(
+                                          Stream.of(fileName().toString()),
+                                          Stream.of(key.split(":")))
+                                      .toArray(String[]::new))
+                              .set(value)));
     }
 
     private Stream<PineryIUSValue> lanes(
-        PineryClient client,
+        String baseUrl,
         int version,
         String provider,
         Map<String, Integer> badSetCounts,
         Map<String, RunDto> allRuns,
         BiConsumer<String, String> addLane)
-        throws HttpResponseException {
-      return Utils.stream(client.getLaneProvenance().version("v" + version))
+        throws IOException, InterruptedException {
+      return HTTP_CLIENT
+          .send(
+              HttpRequest.newBuilder(
+                      URI.create(baseUrl + "/provenance/v" + version + "/lane-provenance"))
+                  .GET()
+                  .build(),
+              new JsonListBodyHandler<>(MAPPER, LaneProvenanceDto.class))
+          .body()
+          .get()
           .filter(
               lp ->
                   isRunValid(allRuns.get(lp.getSequencerRunName()))
@@ -174,14 +190,22 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     }
 
     private Stream<PineryIUSValue> samples(
-        PineryClient client,
+        String baseUrl,
         int version,
         String provider,
         Map<String, Integer> badSetCounts,
         Map<String, RunDto> allRuns,
         BiPredicate<String, String> hasLane)
-        throws HttpResponseException {
-      return Utils.stream(client.getSampleProvenance().version("v" + version))
+        throws IOException, InterruptedException {
+      return HTTP_CLIENT
+          .send(
+              HttpRequest.newBuilder(
+                      URI.create(baseUrl + "/provenance/v" + version + "/sample-provenance"))
+                  .GET()
+                  .build(),
+              new JsonListBodyHandler<>(MAPPER, SampleProvenanceDto.class))
+          .body()
+          .get()
           .filter(
               sp ->
                   isRunValid(allRuns.get(sp.getSequencerRunName()))
@@ -286,18 +310,22 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
     @Override
     protected Optional<Map<String, String>> fetch(Instant lastUpdated) throws Exception {
-      if (!config.isPresent()) {
+      if (config.isEmpty()) {
         return Optional.empty();
       }
       final PineryConfiguration cfg = config.get();
-      try (PineryClient c = new PineryClient(cfg.getUrl(), true)) {
-        return Optional.of(
-            c.getInstrumentModel().all().stream()
-                .filter(i -> !i.getName().equals("unspecified"))
-                .collect(
-                    Collectors.toMap(
-                        InstrumentModelDto::getName, InstrumentModelDto::getPlatform)));
-      }
+      return Optional.of(
+          HTTP_CLIENT
+              .send(
+                  HttpRequest.newBuilder(URI.create(config.get().getUrl() + "/instrumentmodels"))
+                      .GET()
+                      .build(),
+                  new JsonListBodyHandler<>(MAPPER, InstrumentModelDto.class))
+              .body()
+              .get()
+              .filter(i -> !i.getName().equals("unspecified"))
+              .collect(
+                  Collectors.toMap(InstrumentModelDto::getName, InstrumentModelDto::getPlatform)));
     }
   }
 
@@ -313,13 +341,19 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
     @Override
     protected Stream<SampleProjectDto> fetch(Instant lastUpdated) throws Exception {
-      if (!config.isPresent()) return Stream.empty();
-      try (final PineryClient client = new PineryClient(config.get().getUrl())) {
-        return client.getSampleProject().all().stream();
-      }
+      if (config.isEmpty()) return Stream.empty();
+      return HTTP_CLIENT
+          .send(
+              HttpRequest.newBuilder(URI.create(config.get().getUrl() + "/sample/projects"))
+                  .GET()
+                  .build(),
+              new JsonListBodyHandler<>(MAPPER, SampleProjectDto.class))
+          .body()
+          .get();
     }
   }
 
+  private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final Gauge badSetMap =
       Gauge.build(
@@ -327,6 +361,10 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
               "The number of provenace records with sets not containing exactly one item.")
           .labelNames("target", "property", "reason")
           .register();
+
+  static {
+    MAPPER.registerModule(new JavaTimeModule());
+  }
 
   private static boolean isRunValid(RunDto run) {
     return run != null && run.getCreatedDate() != null;
