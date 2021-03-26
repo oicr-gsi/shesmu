@@ -72,6 +72,39 @@ public abstract class BinaryOperation {
     }
   }
 
+  private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
+  private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+  private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
+  private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
+  private static final Type A_SET_TYPE = Type.getType(Set.class);
+  private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
+  private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
+  public static final BinaryOperation BAD =
+      new BinaryOperation(Imyhat.BAD) {
+
+        @Override
+        public void render(
+            int line, int column, Renderer renderer, Renderable leftValue, Renderable rightValue) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String render(
+            EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
+          throw new UnsupportedOperationException();
+        }
+      };
+  private static final Method METHOD_OPTIONAL__OR =
+      new Method("or", A_OPTIONAL_TYPE, new Type[] {A_SUPPLIER_TYPE});
+  private static final Method METHOD_OPTIONAL__OR_ELSE_GET =
+      new Method("orElseGet", A_OBJECT_TYPE, new Type[] {A_SUPPLIER_TYPE});
+  public static final Method TUPLE__CONCAT =
+      new Method("concat", A_TUPLE_TYPE, new Type[] {A_TUPLE_TYPE});
+  public static final Method TUPLE__CTOR =
+      new Method("<init>", Type.VOID_TYPE, new Type[] {Type.getType(Object[].class)});
+  public static final Method TUPLE__GET =
+      new Method("get", A_OBJECT_TYPE, new Type[] {Type.INT_TYPE});
+
   /**
    * Perform a static call if the operands are two lists of the same inner type; the return type is
    * the same
@@ -290,7 +323,7 @@ public abstract class BinaryOperation {
             orElseMethod.methodGen().endMethod();
             leftValue.render(renderer);
             supplier.push(renderer);
-            renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, OPTIONAL__OR_ELSE_GET);
+            renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__OR_ELSE_GET);
             renderer.methodGen().unbox(resultType.apply(TO_ASM));
           }
 
@@ -339,7 +372,7 @@ public abstract class BinaryOperation {
                 orElseMethod.methodGen().endMethod();
                 leftValue.render(renderer);
                 supplier.push(renderer);
-                renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, RUNTIME_SUPPORT__MERGE);
+                renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__OR);
               }
 
               @Override
@@ -396,6 +429,7 @@ public abstract class BinaryOperation {
         symbol,
         right.renderEcma(renderer));
   }
+
   /**
    * Perform a primitive math operation on two operands of the provided type; returning the same
    * type
@@ -641,38 +675,6 @@ public abstract class BinaryOperation {
         });
   }
 
-  private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
-  private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
-  private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
-  private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
-  private static final Type A_SET_TYPE = Type.getType(Set.class);
-  private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
-  private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
-  public static final BinaryOperation BAD =
-      new BinaryOperation(Imyhat.BAD) {
-
-        @Override
-        public void render(
-            int line, int column, Renderer renderer, Renderable leftValue, Renderable rightValue) {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String render(
-            EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
-          throw new UnsupportedOperationException();
-        }
-      };
-  private static final Method OPTIONAL__OR_ELSE_GET =
-      new Method("orElseGet", A_OBJECT_TYPE, new Type[] {A_SUPPLIER_TYPE});
-  private static final Method RUNTIME_SUPPORT__MERGE =
-      new Method("merge", A_OPTIONAL_TYPE, new Type[] {A_OPTIONAL_TYPE, A_SUPPLIER_TYPE});
-  public static final Method TUPLE__CONCAT =
-      new Method("concat", A_TUPLE_TYPE, new Type[] {A_TUPLE_TYPE});
-  public static final Method TUPLE__CTOR =
-      new Method("<init>", Type.VOID_TYPE, new Type[] {Type.getType(Object[].class)});
-  public static final Method TUPLE__GET =
-      new Method("get", A_OBJECT_TYPE, new Type[] {Type.INT_TYPE});
   private final Imyhat returnType;
 
   public BinaryOperation(Imyhat returnType) {

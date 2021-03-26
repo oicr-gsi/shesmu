@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
@@ -60,9 +61,15 @@ public class SourceNodeContainer extends SourceNode {
     LIFTED_MAP {
       @Override
       public void render(Renderer renderer) {
-        renderer
-            .methodGen()
-            .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__STREAM_MAP_OPTIONAL);
+        renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__STREAM);
+        LambdaBuilder.pushStatic(
+            renderer,
+            A_RUNTIME_SUPPORT_TYPE,
+            METHOD_RUNTIME_SUPPORT__STREAM_MAP.getName(),
+            LambdaBuilder.function(
+                METHOD_RUNTIME_SUPPORT__STREAM_MAP.getReturnType(),
+                METHOD_RUNTIME_SUPPORT__STREAM_MAP.getArgumentTypes()[0]));
+        renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FLATMAP);
       }
 
       @Override
@@ -75,9 +82,7 @@ public class SourceNodeContainer extends SourceNode {
     OPTIONAL {
       @Override
       public void render(Renderer renderer) {
-        renderer
-            .methodGen()
-            .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__STREAM_OPTIONAL);
+        renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__STREAM);
       }
 
       @Override
@@ -102,9 +107,15 @@ public class SourceNodeContainer extends SourceNode {
     LIFTED_JSON {
       @Override
       public void render(Renderer renderer) {
-        renderer
-            .methodGen()
-            .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__JSON_ELEMENTS_OPTIONAL);
+        renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__STREAM);
+        LambdaBuilder.pushStatic(
+            renderer,
+            A_RUNTIME_SUPPORT_TYPE,
+            METHOD_RUNTIME_SUPPORT__JSON_ELEMENTS.getName(),
+            LambdaBuilder.function(
+                METHOD_RUNTIME_SUPPORT__JSON_ELEMENTS.getReturnType(),
+                METHOD_RUNTIME_SUPPORT__JSON_ELEMENTS.getArgumentTypes()[0]));
+        renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FLATMAP);
       }
 
       @Override
@@ -130,18 +141,16 @@ public class SourceNodeContainer extends SourceNode {
       new Method("emptySet", A_SET_TYPE, new Type[] {});
   private static final Method METHOD_OPTIONAL__OR_ELSE =
       new Method("orElse", A_OBJECT_TYPE, new Type[] {A_OBJECT_TYPE});
+  private static final Method METHOD_OPTIONAL__STREAM =
+      new Method("stream", A_STREAM_TYPE, new Type[] {});
   private static final Method METHOD_RUNTIME_SUPPORT__JSON_ELEMENTS =
       new Method("jsonElements", A_STREAM_TYPE, new Type[] {Type.getType(JsonNode.class)});
-  private static final Method METHOD_RUNTIME_SUPPORT__JSON_ELEMENTS_OPTIONAL =
-      new Method("jsonElements", A_STREAM_TYPE, new Type[] {A_OPTIONAL_TYPE});
   private static final Method METHOD_RUNTIME_SUPPORT__STREAM_MAP =
       new Method("stream", A_STREAM_TYPE, new Type[] {Type.getType(Map.class)});
-  private static final Method METHOD_RUNTIME_SUPPORT__STREAM_MAP_OPTIONAL =
-      new Method("streamMap", A_STREAM_TYPE, new Type[] {A_OPTIONAL_TYPE});
-  private static final Method METHOD_RUNTIME_SUPPORT__STREAM_OPTIONAL =
-      new Method("stream", A_STREAM_TYPE, new Type[] {A_OPTIONAL_TYPE});
   private static final Method METHOD_SET__STREAM =
       new Method("stream", A_STREAM_TYPE, new Type[] {});
+  private static final Method METHOD_STREAM__FLATMAP =
+      new Method("flatMap", A_STREAM_TYPE, new Type[] {Type.getType(Function.class)});
   private final ExpressionNode expression;
   private Imyhat initialType;
   private Mode mode;
