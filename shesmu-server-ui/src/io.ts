@@ -277,7 +277,11 @@ export function locallyStoredCustom<T>(
     statusFailed: (message: string) => console.log(message),
     get: () => {
       const value = localStorage.getItem(key);
-      return value == null ? empty : parse(value) || empty;
+      if (value === null) {
+        return empty;
+      }
+      const parsed = parse(value);
+      return parsed == null ? empty : parsed;
     },
     listen: (listener) => {
       currentListener = listener;
