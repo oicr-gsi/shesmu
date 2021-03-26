@@ -169,6 +169,7 @@
     <module>plugin-cerberus</module>
     <module>plugin-github</module>
     <module>plugin-guanyin</module>
+    <module>plugin-intervals</module>
     <module>plugin-jira</module>
     <module>plugin-loki</module>
     <module>plugin-mongo</module>
