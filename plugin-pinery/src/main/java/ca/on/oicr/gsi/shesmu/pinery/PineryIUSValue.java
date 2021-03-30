@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /** IUS information from Pinery */
 public final class PineryIUSValue {
@@ -20,6 +21,7 @@ public final class PineryIUSValue {
   private final String external_donor_id;
   private final Tuple external_key;
   private final String external_tissue_id;
+  private final Set<Set<Long>> flowcellGeometry;
   private final String group_desc;
   private final String group_id;
   private final String instrumentModel;
@@ -69,6 +71,7 @@ public final class PineryIUSValue {
       String external_donor_id,
       Tuple external_key,
       String external_tissue_id,
+      Set<Set<Long>> flowcellGeometry,
       String group_desc,
       String group_id,
       String instrumentModel,
@@ -117,6 +120,7 @@ public final class PineryIUSValue {
     this.external_donor_id = external_donor_id;
     this.external_key = external_key;
     this.external_tissue_id = external_tissue_id;
+    this.flowcellGeometry = flowcellGeometry;
     this.group_desc = group_desc;
     this.group_id = group_id;
     this.instrumentModel = instrumentModel;
@@ -220,6 +224,7 @@ public final class PineryIUSValue {
         && external_donor_id.equals(that.external_donor_id)
         && external_key.equals(that.external_key)
         && external_tissue_id.equals(that.external_tissue_id)
+        && flowcellGeometry.equals(that.flowcellGeometry)
         && group_desc.equals(that.group_desc)
         && group_id.equals(that.group_id)
         && instrumentModel.equals(that.instrumentModel)
@@ -269,6 +274,11 @@ public final class PineryIUSValue {
     return external_tissue_id;
   }
 
+  @ShesmuVariable
+  public Set<Set<Long>> flowcell_geometry() {
+    return flowcellGeometry;
+  }
+
   @ShesmuVariable(signable = true)
   public String group_desc() {
     return group_desc;
@@ -298,6 +308,7 @@ public final class PineryIUSValue {
         external_donor_id,
         external_key,
         external_tissue_id,
+        flowcellGeometry,
         group_desc,
         group_id,
         instrumentModel,

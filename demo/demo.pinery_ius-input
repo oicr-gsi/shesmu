@@ -9,6 +9,11 @@
     "dv200": null,
     "external_donor_id": "",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1
+      ]
+    ],
     "group_desc": "",
     "group_id": "",
     "instrument_model": "Illumina MiSeq",
@@ -67,6 +72,14 @@
     "dv200": null,
     "external_donor_id": "",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
     "group_desc": "",
     "group_id": "",
     "instrument_model": "Illumina NovaSeq 6000",
@@ -125,6 +138,14 @@
     "dv200": null,
     "external_donor_id": "",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
     "group_desc": "",
     "group_id": "",
     "instrument_model": "Illumina NovaSeq 6000",
@@ -183,6 +204,14 @@
     "dv200": null,
     "external_donor_id": "",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
     "group_desc": "",
     "group_id": "",
     "instrument_model": "Illumina NovaSeq 6000",
@@ -241,6 +270,14 @@
     "dv200": null,
     "external_donor_id": "",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
     "group_desc": "",
     "group_id": "",
     "instrument_model": "Illumina NovaSeq 6000",
@@ -299,6 +336,11 @@
     "dv200": null,
     "external_donor_id": "",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1
+      ]
+    ],
     "group_desc": "",
     "group_id": "",
     "instrument_model": "Illumina MiSeq",
@@ -357,6 +399,11 @@
     "dv200": null,
     "external_donor_id": "",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1
+      ]
+    ],
     "group_desc": "",
     "group_id": "",
     "instrument_model": "Illumina MiSeq",
@@ -415,6 +462,14 @@
     "dv200": null,
     "external_donor_id": "",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
     "group_desc": "",
     "group_id": "",
     "instrument_model": "Illumina NovaSeq 6000",
@@ -473,6 +528,14 @@
     "dv200": null,
     "external_donor_id": "",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
     "group_desc": "",
     "group_id": "",
     "instrument_model": "Illumina NovaSeq 6000",
@@ -531,6 +594,11 @@
     "dv200": null,
     "external_donor_id": "ABC_0001",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1
+      ]
+    ],
     "group_desc": "LCM Material",
     "group_id": "526",
     "instrument_model": "Illumina MiSeq",
@@ -589,6 +657,11 @@
     "dv200": null,
     "external_donor_id": "ABC_0001",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1
+      ]
+    ],
     "group_desc": "",
     "group_id": "",
     "instrument_model": "Illumina MiSeq",
@@ -647,6 +720,14 @@
     "dv200": null,
     "external_donor_id": "ABC_0001",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
     "group_desc": "LCM Material",
     "group_id": "526",
     "instrument_model": "Illumina NovaSeq 6000",
@@ -705,6 +786,14 @@
     "dv200": null,
     "external_donor_id": "ABC_0001",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
     "group_desc": "",
     "group_id": "",
     "instrument_model": "Illumina NovaSeq 6000",
@@ -763,6 +852,14 @@
     "dv200": null,
     "external_donor_id": "ABC_0001",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
     "group_desc": "LCM Material",
     "group_id": "526",
     "instrument_model": "Illumina NovaSeq 6000",
@@ -821,6 +918,14 @@
     "dv200": null,
     "external_donor_id": "ABC_0001",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
     "group_desc": "",
     "group_id": "",
     "instrument_model": "Illumina NovaSeq 6000",
@@ -879,6 +984,14 @@
     "dv200": null,
     "external_donor_id": "ABC_0001",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
     "group_desc": "LCM Material",
     "group_id": "526",
     "instrument_model": "Illumina NovaSeq 6000",
@@ -937,6 +1050,14 @@
     "dv200": null,
     "external_donor_id": "ABC_0001",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
     "group_desc": "",
     "group_id": "",
     "instrument_model": "Illumina NovaSeq 6000",
@@ -995,6 +1116,14 @@
     "dv200": null,
     "external_donor_id": "ABC_0001",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
     "group_desc": "LCM Material",
     "group_id": "526",
     "instrument_model": "Illumina NovaSeq 6000",
@@ -1053,6 +1182,14 @@
     "dv200": null,
     "external_donor_id": "ABC_0001",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
     "group_desc": "",
     "group_id": "",
     "instrument_model": "Illumina NovaSeq 6000",
@@ -1111,6 +1248,11 @@
     "dv200": null,
     "external_donor_id": "ABC_0001",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1
+      ]
+    ],
     "group_desc": "LCM Material",
     "group_id": "526",
     "instrument_model": "Illumina MiSeq",
@@ -1169,6 +1311,11 @@
     "dv200": null,
     "external_donor_id": "ABC_0001",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1
+      ]
+    ],
     "group_desc": "LCM Material",
     "group_id": "526",
     "instrument_model": "Illumina MiSeq",
@@ -1227,6 +1374,14 @@
     "dv200": null,
     "external_donor_id": "ABC_0001",
     "external_tissue_id": null,
+    "flowcell_geometry": [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
     "group_desc": "LCM Material",
     "group_id": "526",
     "instrument_model": "Illumina NovaSeq 6000",

@@ -12,7 +12,7 @@
   <url>https://github.com/oicr-gsi/shesmu</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <pinery-version>2.18.0</pinery-version>
+    <pinery-version>2.19.0</pinery-version>
   </properties>
   <dependencies>
     <dependency>
@@ -65,6 +65,11 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>ca.on.oicr.gsi</groupId>
+      <artifactId>shesmu-plugin-runscanner</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
   <build>

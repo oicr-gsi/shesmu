@@ -166,6 +166,7 @@
     <module>shesmu-pluginapi</module>
     <module>shesmu-server</module>
     <module>plugin-gsi-common</module>
+    <module>plugin-runscanner</module>
     <module>plugin-cerberus</module>
     <module>plugin-github</module>
     <module>plugin-guanyin</module>
@@ -178,7 +179,6 @@
     <module>plugin-pinery</module>
     <module>plugin-prometheus</module>
     <module>plugin-ratelimit</module>
-    <module>plugin-runscanner</module>
     <module>plugin-sftp</module>
     <module>plugin-tsv</module>
     <module>plugin-vidarr</module>
