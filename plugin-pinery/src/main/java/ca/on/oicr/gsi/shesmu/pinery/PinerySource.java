@@ -14,6 +14,7 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonListBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
+import ca.on.oicr.gsi.shesmu.runscanner.RunScannerPluginType;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.ws.dto.InstrumentModelDto;
 import ca.on.oicr.ws.dto.LaneProvenanceDto;
@@ -141,6 +142,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         false,
                         Map.of("pinery-hash-" + version, lp.getVersion())),
                     "",
+                    flowcellGeometry(run),
                     "",
                     "",
                     lp.getSequencerRunPlatformModel(),
@@ -235,6 +237,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             false,
                             Map.of("pinery-hash-" + version, sp.getVersion())),
                         limsAttr(sp, "geo_tube_id", badSetInRecord::add, false).orElse(""),
+                        flowcellGeometry(run),
                         limsAttr(sp, "geo_group_id_description", badSetInRecord::add, false)
                             .orElse(""),
                         limsAttr(sp, "geo_group_id", badSetInRecord::add, false).orElse(""),
@@ -361,12 +364,26 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   private static final Gauge badSetMap =
       Gauge.build(
               "shesmu_pinery_bad_set",
-              "The number of provenace records with sets not containing exactly one item.")
+              "The number of provenance records with sets not containing exactly one item.")
           .labelNames("target", "property", "reason")
           .register();
 
   static {
     MAPPER.registerModule(new JavaTimeModule());
+  }
+
+  private static Set<Set<Long>> flowcellGeometry(RunDto run) {
+    final var lanes =
+        run.getPositions().stream()
+            .map(RunDtoPosition::getPosition)
+            .max(Comparator.naturalOrder())
+            .orElse(0);
+    final var isJoined =
+        Objects.equals(run.getChemistry(), "NS_HIGH")
+            || Objects.equals(run.getChemistry(), "NS_MID")
+            || run.getWorkflowType() != null
+                && RunScannerPluginType.isWorkflowTypeJoined(run.getWorkflowType());
+    return RunScannerPluginType.getFlowcellLayout(lanes, isJoined);
   }
 
   private static boolean isRunValid(RunDto run) {
