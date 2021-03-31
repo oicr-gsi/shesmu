@@ -20,6 +20,7 @@ import io.prometheus.client.Counter;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
@@ -225,6 +226,7 @@ public class RunReport extends JsonParameterisedAction {
                     String.format(
                         "%s/reportdb/record_parameters?report=%d", owner.get().观音Url(), reportId)))
             .header("Accept", "application/json")
+            .version(Version.HTTP_1_1)
             .POST(body)
             .build();
     try (var timer = 观音RequestTime.start(owner.get().观音Url())) {
@@ -261,6 +263,7 @@ public class RunReport extends JsonParameterisedAction {
                       String.format(
                           "%s/reportdb/record_start?report=%d", owner.get().观音Url(), reportId)))
               .header("Accept", "application/json")
+              .version(Version.HTTP_1_1)
               .POST(body)
               .build();
       try (var timer = 观音RequestTime.start(owner.get().观音Url())) {
@@ -313,6 +316,7 @@ public class RunReport extends JsonParameterisedAction {
                             URI.create(
                                 String.format("%s/api/workflows/v1", owner.get().cromwellUrl())))
                         .header("Content-Type", cromwellBody.getContentType())
+                        .version(Version.HTTP_1_1)
                         .POST(cromwellBody.build())
                         .build(),
                     new JsonBodyHandler<>(MAPPER, WorkflowIdAndStatus.class))
@@ -328,6 +332,7 @@ public class RunReport extends JsonParameterisedAction {
                                 String.format(
                                     "%s/api/workflows/v1/%s/status",
                                     owner.get().cromwellUrl(), cromwellId.getId())))
+                        .version(Version.HTTP_1_1)
                         .GET()
                         .build(),
                     new JsonBodyHandler<>(MAPPER, WorkflowIdAndStatus.class))
