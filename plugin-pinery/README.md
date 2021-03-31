@@ -10,6 +10,7 @@ The Pinery plugin provides two input formats:
 To configure a Pinery source, create a JSON file ending in `.pinery` as follows:
 
     {
+      "clinicalPipelines": ["Clinical", "Accredited Pipeline"],
       "provider": "foo-v2",
       "shortProvider": "foo",
       "url": "http://pinery:8080/",
@@ -23,3 +24,8 @@ provides the Pinery data model version.
 
 For each configuration, the names of all and active projects are also available
 as constants.
+
+There are functions and constants that separate out clinical projects. If `"clinicalPipelines"` is
+set to an array, then any pipeline listed will be considered clinical. If it is `null`, then the
+legacy behaviour is enabled where the pipeline `Clinical` or any pipeline starting with `Accredited`
+will be considered clinical.

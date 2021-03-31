@@ -1,13 +1,19 @@
 package ca.on.oicr.gsi.shesmu.pinery;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.Set;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PineryConfiguration {
+  private Set<String> clinicalPipelines;
   private String provider;
   private String shortProvider;
   private String url;
   private int version;
+
+  public Set<String> getClinicalPipelines() {
+    return clinicalPipelines;
+  }
 
   public String getProvider() {
     return provider;
@@ -23,6 +29,10 @@ public class PineryConfiguration {
 
   public int getVersion() {
     return version;
+  }
+
+  public void setClinicalPipelines(Set<String> clinicalPipelines) {
+    this.clinicalPipelines = clinicalPipelines;
   }
 
   public void setProvider(String provider) {
