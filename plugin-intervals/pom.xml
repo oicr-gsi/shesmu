@@ -31,7 +31,7 @@
     </dependency>
   </dependencies>
   <build>
-    <finalName>shesmu-plugin-tsv</finalName>
+    <finalName>shesmu-plugin-intervals</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
