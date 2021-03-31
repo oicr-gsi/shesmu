@@ -306,7 +306,7 @@ public final class WorkflowAction extends Action {
   private long majorOliveVersion;
   private List<WorkflowRunMatch> matches = Collections.emptyList();
 
-  @ActionParameter(name = "never_ever_launch")
+  @ActionParameter(name = "never_ever_launch", required = false)
   public boolean neverEverLaunch;
 
   private boolean overrideLock;
