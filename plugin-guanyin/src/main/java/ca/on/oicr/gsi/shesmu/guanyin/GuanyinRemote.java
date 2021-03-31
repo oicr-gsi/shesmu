@@ -12,6 +12,7 @@ import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -37,12 +38,14 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
           RunReport.HTTP_CLIENT.send(
               HttpRequest.newBuilder(
                       URI.create(configuration.get().getGuanyin() + "/reportdb/reports"))
+                  .version(Version.HTTP_1_1)
                   .build(),
               new JsonBodyHandler<>(RunReport.MAPPER, ReportDto[].class));
       final var recordsResponse =
           RunReport.HTTP_CLIENT.send(
               HttpRequest.newBuilder(
                       URI.create(configuration.get().getGuanyin() + "/reportdb/records"))
+                  .version(Version.HTTP_1_1)
                   .build(),
               new JsonBodyHandler<>(RunReport.MAPPER, RecordDto[].class));
       final var reports =
@@ -103,6 +106,7 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
           RunReport.HTTP_CLIENT.send(
               HttpRequest.newBuilder(URI.create(configuration.getGuanyin() + "/reportdb/reports"))
                   .GET()
+                  .version(Version.HTTP_1_1)
                   .build(),
               new JsonBodyHandler<>(RunReport.MAPPER, ReportDto[].class));
       definer.clearActions();
