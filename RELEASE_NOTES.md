@@ -1,5 +1,12 @@
 # Unreleased
 
+# [1.8.8] - 2021-03-31T18:38+00:00
+
+Changes:
+
+* Make new Niassa parameter optional
+* Correct interval plugin JAR name
+
 # [1.8.7] - 2021-03-31T17:28+00:00
 
 Changes:
