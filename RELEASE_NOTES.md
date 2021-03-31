@@ -1,5 +1,62 @@
 # Unreleased
 
+# [1.8.7] - 2021-03-31T17:28+00:00
+
+Changes:
+
+* Create a new plugin to handle interval files
+* Fix compiler bug where `Dict` would throw `ClassCastException`
+* Fix compiler bug where `For` would fail to compile if a variable name was reused
+
+UI changes:
+
+* Fix inability to change some Boolean UI element's state
+* Make tabs scrollable
+
+Guided meditation changes:
+
+* Allow a multiple-fetch operation (`For`)
+* Insert the keyword `With` before `Label` in form creation syntax
+* Remove the `Flow By` keywords
+* Insert `Print` before plain text that goes on screen
+* Rename `Fork` to `For`
+* Change the `Repeat` and `Table` constructs to be more like normal `For` expression with a different keyword (`DisplayFor`)
+* Add statuses to end of guided meditations
+* Create a `Let` operation in guided meditations
+* Fix order checking in fetch olive compilation
+* Fix bugs in `Match` construct where values in algebraic type were not available as variables
+* Fix a bug in `If` where the false branch was not compiled correctly
+* Allow variables to also be copied into `Fetch Olive` automatically
+* Correctly output ECMAScript for `For...In...` expressions
+* Ensure empty strings get converted to valid ECMAScript
+* Fix bug generating ECMAScript for `Default` and coalesce
+* Make sure standard functions are available in guided meditations
+* Correctly distinguish between single strings and string sets parsing action queries
+* Fix generated action filter for tags in guided meditations
+
+Niassa plugin:
+
+* Add a `never_ever_launch` to Niassa workflow action
+
+Pinery plugin:
+
+* Make sure Pinery projects are sorted sets
+
+RunScanner plugin:
+
+* Switch to RunScanner incremental fetch interface
+
+SFTP plugin:
+
+* Fix SSH connection pooling bug resulting in deadlock/hang
+
+Vidarr plugin:
+
+* Create action to unload data from Vidarr
+* Enable bulk for Vidarr commands
+* Allow deleting while `WAITING_FOR_RESOURCES`
+* Allow reattempting workflow runs in engine phase `WAITING_FOR_RESOURCES`
+
 # [1.8.6] - 2021-03-02T22:07+00:00
 
 Cerberus plugin:
