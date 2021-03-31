@@ -346,6 +346,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   private final ItemCache cache;
+  private Set<String> clinicalPipelines;
   private Optional<PineryConfiguration> config = Optional.empty();
   private final PlatformCache platforms;
   private final ProjectCache projects;
@@ -382,7 +383,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   public Set<String> clinicalProjects() {
     return projects
         .get()
-        .filter(SampleProjectDto::isClinical)
+        .filter(
+            project -> project.getPipeline() != null && isClinicalPipeline(project.getPipeline()))
         .map(SampleProjectDto::getName)
         .collect(Collectors.toCollection(TreeSet::new));
   }
@@ -397,6 +399,17 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   private String getRunField(RunDto run, Function<RunDto, String> getField) {
     Optional<String> val = maybeGetRunField(run, getField);
     return val.orElse("");
+  }
+
+  @ShesmuMethod(
+      name = "is_clinical_pipeline",
+      description = "Check if a project pipeline would be considered clinical.")
+  public boolean isClinicalPipeline(String pipeline) {
+    if (clinicalPipelines == null) {
+      // This is the default behaviour removed from MISO
+      return pipeline.equals("Clinical") || pipeline.startsWith("Accredited");
+    }
+    return clinicalPipelines.contains(pipeline);
   }
 
   private Optional<String> maybeGetRunField(RunDto run, Function<RunDto, String> getField) {
@@ -452,6 +465,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   @Override
   protected Optional<Integer> update(PineryConfiguration value) {
     config = Optional.of(value);
+    clinicalPipelines = value.getClinicalPipelines();
     projects.invalidate();
     cache.invalidate();
     return Optional.empty();
