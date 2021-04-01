@@ -248,14 +248,16 @@ public final class Server implements ServerConfig, ActionServices {
     server = HttpServer.create(new InetSocketAddress(port), 0);
     server.setExecutor(wwwExecutor);
     definitionRepository = DefinitionRepository.concat(new StandardDefinitions(), pluginManager);
+    processor = new ActionProcessor(localname().resolve("/alerts"), pluginManager, this);
+    compiler = new CompiledGenerator(executor, definitionRepository, processor::isPaused);
+    staticActions = new StaticActions(processor, definitionRepository);
     guidedMeditations =
         new AutoUpdatingDirectory<>(
             fileWatcher,
             GuidedMeditation.EXTENSION,
-            fileName -> new GuidedMeditation(fileName, definitionRepository));
-    processor = new ActionProcessor(localname().resolve("/alerts"), pluginManager, this);
-    compiler = new CompiledGenerator(executor, definitionRepository, processor::isPaused);
-    staticActions = new StaticActions(processor, definitionRepository);
+            fileName ->
+                new GuidedMeditation(
+                    fileName, DefinitionRepository.concat(definitionRepository, compiler)));
     final InputSource inputSource =
         (format, readStale) ->
             Stream.concat(
