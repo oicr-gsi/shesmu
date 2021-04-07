@@ -1,5 +1,17 @@
 # Unreleased
 
+# [1.9.0] - 2021-04-07T19:16+00:00
+
+Changes:
+
+* Force HTTP/1.1 in Guanyin requests
+* Allow guided meditation to access olives 
+* Allow setting a custom set of clinical projects in Pinery
+* Use new Java 14 APIs in generated olive code
+* Relocate bootstrap methods to `RuntimeSupport`
+* Allow using custom lookup environment for input formats
+* Replace `PineryClient` with new HTTP client
+
 # [1.8.8] - 2021-03-31T18:38+00:00
 
 Changes:
