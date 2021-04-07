@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -217,6 +218,8 @@ public abstract class ExpressionNode implements Renderable {
   private static final Parser.ParseDispatch<ExpressionNode> TERMINAL = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> UNARY =
       new Parser.ParseDispatch<>();
+
+  private static final Pattern OPTIONAL_COMMA = Pattern.compile("^,?");
 
   static {
     final var A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
@@ -561,6 +564,29 @@ public abstract class ExpressionNode implements Renderable {
     SUFFIX_LOOSE.addKeyword(
         "As",
         (p, o) -> {
+          final var tupleResult = p.whitespace().symbol("{").whitespace();
+          if (tupleResult.isGood()) {
+            final var size = new AtomicLong();
+            final var allowExtra = new AtomicBoolean();
+            final var result =
+                tupleResult
+                    .integer(size::set, 10)
+                    .whitespace()
+                    .regex(
+                        OPTIONAL_COMMA,
+                        m -> allowExtra.set(m.group().length() > 0),
+                        "comma or nothing")
+                    .whitespace()
+                    .symbol("}")
+                    .whitespace();
+            if (result.isGood()) {
+              o.accept(
+                  node ->
+                      new ExpressionNodeListToTuple(
+                          p.line(), p.column(), size.intValue(), allowExtra.get(), node));
+            }
+            return result;
+          }
           final var typeNode = new AtomicReference<ImyhatNode>();
           final var result = p.whitespace().then(ImyhatNode::parse, typeNode::set).whitespace();
           if (result.isGood()) {

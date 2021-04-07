@@ -111,6 +111,20 @@ export function jsonParse(value: string): any {
     return null;
   }
 }
+export function listToTuple<T>(
+  size: number,
+  allowExtra: boolean,
+  list: T[]
+): T[] | null {
+  if (list.length == size) {
+    return list;
+  } else if (allowExtra && list.length > size) {
+    const result = [...list];
+    result.length = size;
+    return result;
+  }
+  return null;
+}
 export function mapNull<T, R>(
   reciever: T | null,
   transformer: (input: T) => R

@@ -613,6 +613,17 @@ JSON to the matching Shesmu type. Since the conversion from JSON to Shesmu
 cannot be guaranteed, it will return an optional of _type_. To create a JSON
 `null` value, use `` ` ` As json ``.
 
+- _expr_ `As {` _count_ [`,`] `}`
+Takes the values in _expr_, which must be a list, into an optional tuple with
+_count_ elements. If the list does not have enough elements, the empty optional
+is returned. If the right number is provided, they will be converted as a tuple
+in arbitrary order. If `,` is included after the target count, lists with extra
+values will be converted and the extra values discarded; otherwise, a list with
+too many values will also result in an empty optional.
+
+It is worth remembering that Shesmu removes duplicate values, so `[1, 1] As
+{2}` will return an empty optional because `[1, 1]` only has one item in it.
+
 ### Blocks
 - `Begin`
  _name0_ `=` _expr0_`;`

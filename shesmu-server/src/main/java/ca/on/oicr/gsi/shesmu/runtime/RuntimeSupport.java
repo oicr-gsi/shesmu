@@ -250,12 +250,6 @@ public final class RuntimeSupport {
     return joins.stream().map(p -> joiner.apply(inputs.get(p.first()), inners.get(p.second())));
   }
 
-  public static CallSite pluginServicesBootstrap(
-      Lookup lookup, String methodName, MethodType methodType, String... fileNames) {
-    // This is redirects to the plugin manager; it's here to limit our export interface
-    return PluginManager.bootstrapServices(lookup, methodName, methodType, fileNames);
-  }
-
   @RuntimeInterop
   public static CallSite jsonBootstrap(
       MethodHandles.Lookup lookup, String descriptor, MethodType type, String json)
@@ -369,6 +363,15 @@ public final class RuntimeSupport {
                         return output;
                       });
             });
+  }
+
+  public static Optional<Tuple> listToTuple(int size, boolean allowExtra, Set<?> input) {
+    if (input.size() == size) {
+      return Optional.of(new Tuple(input.toArray()));
+    } else if (allowExtra && input.size() > size) {
+      return Optional.of(new Tuple(input.stream().limit(size).toArray()));
+    }
+    return Optional.empty();
   }
 
   public static Optional<Instant> localDate(long year, long month, long day) {
@@ -529,6 +532,12 @@ public final class RuntimeSupport {
       MethodHandles.Lookup lookup, String methodName, MethodType methodType, String filename) {
     // This is redirects to the plugin manager; it's here to limit our export interface
     return PluginManager.bootstrap(lookup, methodName, methodType, filename);
+  }
+
+  public static CallSite pluginServicesBootstrap(
+      Lookup lookup, String methodName, MethodType methodType, String... fileNames) {
+    // This is redirects to the plugin manager; it's here to limit our export interface
+    return PluginManager.bootstrapServices(lookup, methodName, methodType, fileNames);
   }
 
   @RuntimeInterop
