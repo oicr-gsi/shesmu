@@ -176,6 +176,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         ? Instant.EPOCH
                         : ZonedDateTime.parse(run.getStartDate()).toInstant(),
                     Optional.empty(),
+                    Optional.empty(),
                     "",
                     "",
                     "",
@@ -275,6 +276,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         run.getStartDate() == null || run.getStartDate().isEmpty()
                             ? Instant.EPOCH
                             : ZonedDateTime.parse(run.getStartDate()).toInstant(),
+                        limsAttr(sp, "subproject", badSetInRecord::add, false)
+                            .filter(p -> !p.isBlank()),
                         limsAttr(sp, "target_cell_recovery", badSetInRecord::add, false)
                             .map(Double::parseDouble),
                         IUSUtils.tissue(sp.getParentSampleName()),

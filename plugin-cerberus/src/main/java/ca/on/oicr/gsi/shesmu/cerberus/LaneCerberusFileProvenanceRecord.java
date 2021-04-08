@@ -128,6 +128,11 @@ final class LaneCerberusFileProvenanceRecord
   }
 
   @Override
+  public Optional<String> subproject() {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<Double> target_cell_recovery() {
     return Optional.empty();
   }

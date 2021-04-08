@@ -146,6 +146,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                           limsAttr(fp, "spike_in_volume_ul", badSetInRecord::add)
                               .map(Double::parseDouble),
                           fp.getStatus() == FileProvenance.Status.STALE,
+                          limsAttr(fp, "subproject", badSetInRecord::add).filter(p -> !p.isBlank()),
                           limsAttr(fp, "target_cell_recovery", badSetInRecord::add)
                               .map(Double::parseDouble),
                           limsAttr(fp, "geo_targeted_resequencing", badSetInRecord::add).orElse(""),

@@ -131,6 +131,9 @@ public interface CerberusFileProvenanceValue {
   boolean stale();
 
   @ShesmuVariable(signable = true)
+  Optional<String> subproject();
+
+  @ShesmuVariable(signable = true)
   Optional<Double> target_cell_recovery();
 
   @ShesmuVariable(signable = true)
