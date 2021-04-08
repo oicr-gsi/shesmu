@@ -1056,7 +1056,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
       } else if (fieldType.equals(Type.DOUBLE_TYPE)) {
         comparison.branchFloat(end, collectRenderer.methodGen());
       } else {
-        comparison.branchDate(end, collectRenderer.methodGen());
+        comparison.branchComparable(end, collectRenderer.methodGen());
       }
 
       collectRenderer.methodGen().mark(store);
@@ -1143,7 +1143,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
       if (fieldType.equals(Type.LONG_TYPE)) {
         comparison.branchInt(end, collectRenderer.methodGen());
       } else {
-        comparison.branchDate(end, collectRenderer.methodGen());
+        comparison.branchComparable(end, collectRenderer.methodGen());
       }
 
       collectRenderer.methodGen().loadArg(collectedSelfArgument);

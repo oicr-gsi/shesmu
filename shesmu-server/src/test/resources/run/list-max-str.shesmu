@@ -1,0 +1,5 @@
+Version 1;
+Input test;
+
+Olive
+ Run ok With ok = (For x In [ "foo", "bar" ]: Max x Default "") == "foo";
