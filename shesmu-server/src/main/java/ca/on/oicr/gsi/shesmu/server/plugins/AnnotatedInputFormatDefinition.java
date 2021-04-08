@@ -43,6 +43,7 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Path;
@@ -311,7 +312,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
         final var url = config.get().getUrl();
         var response =
             Server.HTTP_CLIENT.send(
-                HttpRequest.newBuilder(URI.create(url)).GET().build(),
+                HttpRequest.newBuilder(URI.create(url)).GET().version(Version.HTTP_1_1).build(),
                 BodyHandlers.ofInputStream());
         try (var parser = RuntimeSupport.MAPPER.getFactory().createParser(response.body())) {
           final List<Object> results = new ArrayList<>();
