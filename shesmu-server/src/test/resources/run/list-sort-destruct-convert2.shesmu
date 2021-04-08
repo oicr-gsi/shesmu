@@ -2,4 +2,4 @@ Version 1;
 Input test;
 
 Olive
- Run ok With ok = (For {x = a, y As string = b} In [ { a = True, b = '/good'}, { a = False, b = '/bad'} ]: Where y == "/good" First x Default False);
+ Run ok With ok = (For {x = a, y As string = b} In [ { a = True, b = '/good'}, { a = False, b = '/bad'} ]: Where y == "/good" Sort y First x Default False);

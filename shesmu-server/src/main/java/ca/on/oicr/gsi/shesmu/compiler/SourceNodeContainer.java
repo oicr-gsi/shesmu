@@ -21,6 +21,11 @@ public class SourceNodeContainer extends SourceNode {
   private enum Mode {
     LIST {
       @Override
+      public boolean isSorted() {
+        return false;
+      }
+
+      @Override
       public void render(Renderer renderer) {
         renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
       }
@@ -31,6 +36,11 @@ public class SourceNodeContainer extends SourceNode {
       }
     },
     LIFTED_LIST {
+      @Override
+      public boolean isSorted() {
+        return false;
+      }
+
       @Override
       public void render(Renderer renderer) {
         renderer.methodGen().invokeStatic(A_COLLECTIONS_TYPE, METHOD_COLLECTIONS__EMPTY_SET);
@@ -47,6 +57,11 @@ public class SourceNodeContainer extends SourceNode {
     },
     MAP {
       @Override
+      public boolean isSorted() {
+        return false;
+      }
+
+      @Override
       public void render(Renderer renderer) {
         renderer
             .methodGen()
@@ -59,6 +74,11 @@ public class SourceNodeContainer extends SourceNode {
       }
     },
     LIFTED_MAP {
+      @Override
+      public boolean isSorted() {
+        return false;
+      }
+
       @Override
       public void render(Renderer renderer) {
         renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__STREAM);
@@ -81,6 +101,11 @@ public class SourceNodeContainer extends SourceNode {
     },
     OPTIONAL {
       @Override
+      public boolean isSorted() {
+        return true;
+      }
+
+      @Override
       public void render(Renderer renderer) {
         renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__STREAM);
       }
@@ -92,6 +117,11 @@ public class SourceNodeContainer extends SourceNode {
       }
     },
     JSON {
+      @Override
+      public boolean isSorted() {
+        return false;
+      }
+
       @Override
       public void render(Renderer renderer) {
         renderer
@@ -105,6 +135,11 @@ public class SourceNodeContainer extends SourceNode {
       }
     },
     LIFTED_JSON {
+      @Override
+      public boolean isSorted() {
+        return false;
+      }
+
       @Override
       public void render(Renderer renderer) {
         renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__STREAM);
@@ -125,6 +160,8 @@ public class SourceNodeContainer extends SourceNode {
             expression.renderEcma(renderer));
       }
     };
+
+    public abstract boolean isSorted();
 
     public abstract void render(Renderer renderer);
 
@@ -172,7 +209,7 @@ public class SourceNodeContainer extends SourceNode {
 
   @Override
   public Ordering ordering() {
-    return Ordering.RANDOM;
+    return mode.isSorted() ? Ordering.REQESTED : Ordering.RANDOM;
   }
 
   @Override

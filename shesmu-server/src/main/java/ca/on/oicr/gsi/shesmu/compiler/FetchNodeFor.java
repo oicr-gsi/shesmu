@@ -94,19 +94,20 @@ public class FetchNodeFor extends FetchNode {
     if (!source.typeCheck(errorHandler) || !name.typeCheck(source.streamType(), errorHandler)) {
       return false;
     }
-    final Ordering ordering =
-        transforms.stream()
-            .reduce(
-                source.ordering(),
-                (order, transform) -> transform.order(order, errorHandler),
-                (a, b) -> {
-                  throw new UnsupportedOperationException();
-                });
-    final Optional<Imyhat> resultType =
+
+    final var resultType =
         transforms.stream()
             .reduce(
                 Optional.of(source.streamType()),
                 (t, transform) -> t.flatMap(tt -> transform.typeCheck(tt, errorHandler)),
+                (a, b) -> {
+                  throw new UnsupportedOperationException();
+                });
+    final var ordering =
+        transforms.stream()
+            .reduce(
+                source.ordering(),
+                (order, transform) -> transform.order(order, errorHandler),
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });

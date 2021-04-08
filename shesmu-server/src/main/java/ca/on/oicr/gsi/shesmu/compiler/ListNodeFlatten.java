@@ -14,15 +14,29 @@ import java.util.stream.Collectors;
 
 public class ListNodeFlatten extends ListNode {
 
+  class FlattenLambda implements EcmaScriptRenderer.LambdaRender {
+
+    private EcmaLoadableConstructor name;
+
+    public FlattenLambda(EcmaLoadableConstructor name) {
+      this.name = name;
+    }
+
+    @Override
+    public String render(EcmaScriptRenderer renderer, IntFunction<String> arg) {
+      final var builder = source.render(renderer);
+      for (final var node : transforms) {
+        name = node.render(builder, name);
+      }
+      return builder.finish();
+    }
+  }
+
   private final DestructuredArgumentNode childName;
   private List<String> definedNames;
-
-  private Ordering ordering;
-
+  private Ordering ordering = Ordering.BAD;
   private final SourceNode source;
-
   private final List<ListNode> transforms;
-
   private Imyhat type;
 
   public ListNodeFlatten(
@@ -32,7 +46,6 @@ public class ListNodeFlatten extends ListNode {
       SourceNode source,
       List<ListNode> transforms) {
     super(line, column);
-    ordering = source.ordering();
     this.childName = childName;
     this.source = source;
     this.transforms = transforms;
@@ -96,24 +109,6 @@ public class ListNodeFlatten extends ListNode {
     return outputName;
   }
 
-  class FlattenLambda implements EcmaScriptRenderer.LambdaRender {
-
-    private EcmaLoadableConstructor name;
-
-    public FlattenLambda(EcmaLoadableConstructor name) {
-      this.name = name;
-    }
-
-    @Override
-    public String render(EcmaScriptRenderer renderer, IntFunction<String> arg) {
-      final var builder = source.render(renderer);
-      for (final var node : transforms) {
-        name = node.render(builder, name);
-      }
-      return builder.finish();
-    }
-  }
-
   @Override
   public EcmaLoadableConstructor render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
     final var lambda = new FlattenLambda(name);
@@ -160,7 +155,7 @@ public class ListNodeFlatten extends ListNode {
     ordering =
         transforms.stream()
             .reduce(
-                ordering,
+                source.ordering(),
                 (order, transform) -> transform.order(order, errorHandler),
                 (a, b) -> {
                   throw new UnsupportedOperationException();
