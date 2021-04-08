@@ -46,6 +46,9 @@ public final class JsonListBodyHandler<W> implements HttpResponse.BodyHandler<Su
 
                   @Override
                   public boolean tryAdvance(Consumer<? super W> consumer) {
+                    if (parser.isClosed()) {
+                      return false;
+                    }
                     try {
                       if (parser.nextToken() == JsonToken.END_ARRAY) {
                         parser.close();
