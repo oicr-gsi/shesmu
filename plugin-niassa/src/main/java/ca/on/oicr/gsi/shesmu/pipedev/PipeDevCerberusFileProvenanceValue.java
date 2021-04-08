@@ -48,6 +48,7 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
   private final Optional<String> spike_in_dilution_factor;
   private final Optional<Double> spike_in_volume_ul;
   private final boolean stale;
+  private final Optional<String> subproject;
   private final Optional<Double> target_cell_recovery;
   private final String targeted_resequencing;
   private final Instant timestamp;
@@ -97,6 +98,7 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
       Optional<String> spike_in_dilution_factor,
       Optional<Double> spike_in_volume_ul,
       boolean stale,
+      Optional<String> subproject,
       Optional<Double> target_cell_recovery,
       String targeted_resequencing,
       Instant timestamp,
@@ -146,6 +148,7 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
     this.spike_in_dilution_factor = spike_in_dilution_factor;
     this.spike_in_volume_ul = spike_in_volume_ul;
     this.stale = stale;
+    this.subproject = subproject;
     this.target_cell_recovery = target_cell_recovery;
     this.targeted_resequencing = targeted_resequencing;
     this.timestamp = timestamp;
@@ -422,6 +425,11 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
   @Override
   public boolean stale() {
     return stale;
+  }
+
+  @Override
+  public Optional<String> subproject() {
+    return subproject;
   }
 
   @Override

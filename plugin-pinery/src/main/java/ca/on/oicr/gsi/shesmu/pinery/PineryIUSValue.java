@@ -47,6 +47,7 @@ public final class PineryIUSValue {
   private final Optional<String> spike_in_dilution_factor;
   private final Optional<Double> spike_in_volume_ul;
   private final Instant startDate;
+  private final Optional<String> subproject;
   private final Optional<Double> target_cell_recovery;
   private final String targeted_resequencing;
   private final Instant timestamp;
@@ -94,6 +95,7 @@ public final class PineryIUSValue {
       Optional<String> spike_in_dilution_factor,
       Optional<Double> spike_in_volume_ul,
       Instant startDate,
+      Optional<String> subproject,
       Optional<Double> target_cell_recovery,
       String tissue_name,
       String tissue_type,
@@ -120,6 +122,7 @@ public final class PineryIUSValue {
     this.instrumentModel = instrumentModel;
     this.run_id = run_id;
     this.run_lane_count = run_lane_count;
+    this.subproject = subproject;
     this.is_sample = is_sample;
     this.ius = ius;
     this.kit = kit;
@@ -240,6 +243,7 @@ public final class PineryIUSValue {
         && spike_in_dilution_factor.equals(that.spike_in_dilution_factor)
         && spike_in_volume_ul.equals(that.spike_in_volume_ul)
         && startDate.equals(that.startDate)
+        && subproject.equals(that.subproject)
         && target_cell_recovery.equals(that.target_cell_recovery)
         && targeted_resequencing.equals(that.targeted_resequencing)
         && timestamp.equals(that.timestamp)
@@ -321,6 +325,7 @@ public final class PineryIUSValue {
         spike_in_dilution_factor,
         spike_in_volume_ul,
         startDate,
+        subproject,
         target_cell_recovery,
         targeted_resequencing,
         timestamp,
@@ -463,6 +468,11 @@ public final class PineryIUSValue {
   @ShesmuVariable(signable = true)
   public Optional<Double> spike_in_volume_ul() {
     return spike_in_volume_ul;
+  }
+
+  @ShesmuVariable(signable = true)
+  public Optional<String> subproject() {
+    return subproject;
   }
 
   @ShesmuVariable

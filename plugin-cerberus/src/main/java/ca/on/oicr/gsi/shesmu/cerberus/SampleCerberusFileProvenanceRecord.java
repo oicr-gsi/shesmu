@@ -135,6 +135,11 @@ public class SampleCerberusFileProvenanceRecord
   }
 
   @Override
+  public Optional<String> subproject() {
+    return limsAttr("subproject").filter(p -> !p.isBlank());
+  }
+
+  @Override
   public Optional<Double> target_cell_recovery() {
     return limsAttr("target_cell_recovery").map(Double::parseDouble);
   }
