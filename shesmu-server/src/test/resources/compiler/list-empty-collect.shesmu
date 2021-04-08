@@ -2,5 +2,5 @@ Version 1;
 Input test;
 
 Olive
- Let foo = (For x In [ "a" ]: First [x] Default [])
+ Let foo = (For x In [ "a" ]: Sort x First [x] Default [])
  Run ok With ok =  True;

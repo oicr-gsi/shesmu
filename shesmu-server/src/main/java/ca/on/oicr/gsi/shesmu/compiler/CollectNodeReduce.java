@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
@@ -32,6 +33,18 @@ public class CollectNodeReduce extends CollectNode {
     this.reducer = reducer;
     this.initial = initial;
     accumulatorName.setFlavour(Flavour.LAMBDA);
+  }
+
+  @Override
+  public boolean orderingCheck(Ordering ordering, Consumer<String> errorHandler) {
+    if (ordering == Ordering.RANDOM) {
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Items to Reduce are in random order. Results will not be reproducible. Sort first.",
+              line(), column()));
+      return false;
+    }
+    return true;
   }
 
   @Override
