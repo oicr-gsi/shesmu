@@ -55,6 +55,7 @@ final class RunStateAttemptSubmit extends RunState {
     final var response =
         VidarrPlugin.CLIENT.send(
             HttpRequest.newBuilder(vidarrUrl.resolve("/api/submit"))
+                .header("Content-type", "application/json")
                 .POST(BodyPublishers.ofByteArray(VidarrPlugin.MAPPER.writeValueAsBytes(request)))
                 .build(),
             new JsonBodyHandler<>(VidarrPlugin.MAPPER, SubmitWorkflowResponse.class));

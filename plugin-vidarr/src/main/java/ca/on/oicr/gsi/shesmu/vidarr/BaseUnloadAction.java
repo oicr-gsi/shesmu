@@ -82,6 +82,7 @@ public abstract class BaseUnloadAction extends Action {
                     final var response =
                         VidarrPlugin.CLIENT.send(
                             HttpRequest.newBuilder(vidarrUrl.resolve("/api/unload"))
+                                .header("Content-type", "application/json")
                                 .POST(
                                     BodyPublishers.ofByteArray(
                                         VidarrPlugin.MAPPER.writeValueAsBytes(request)))

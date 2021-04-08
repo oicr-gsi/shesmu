@@ -93,6 +93,7 @@ public class OnlineReport extends JsonPluginFile<Configuration> {
                               String.format(
                                   "%s/api/workflows/v1/query",
                                   configuration.orElseThrow().getCromwell())))
+                      .header("Content-type", "application/json")
                       .POST(
                           BodyPublishers.ofString(
                               MAPPER.writeValueAsString(

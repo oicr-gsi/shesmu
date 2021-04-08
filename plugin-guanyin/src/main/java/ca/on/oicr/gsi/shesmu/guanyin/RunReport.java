@@ -225,6 +225,7 @@ public class RunReport extends JsonParameterisedAction {
                 URI.create(
                     String.format(
                         "%s/reportdb/record_parameters?report=%d", owner.get().观音Url(), reportId)))
+            .header("Content-type", "application/json")
             .header("Accept", "application/json")
             .version(Version.HTTP_1_1)
             .POST(body)
@@ -262,6 +263,7 @@ public class RunReport extends JsonParameterisedAction {
                   URI.create(
                       String.format(
                           "%s/reportdb/record_start?report=%d", owner.get().观音Url(), reportId)))
+              .header("Content-type", "application/json")
               .header("Accept", "application/json")
               .version(Version.HTTP_1_1)
               .POST(body)
