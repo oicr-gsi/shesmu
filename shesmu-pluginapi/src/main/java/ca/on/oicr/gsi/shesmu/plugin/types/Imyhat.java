@@ -1608,7 +1608,7 @@ public abstract class Imyhat {
 
         @Override
         public boolean isOrderable() {
-          return false;
+          return true;
         }
 
         @Override

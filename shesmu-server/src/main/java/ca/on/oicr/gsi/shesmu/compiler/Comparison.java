@@ -6,7 +6,6 @@ import static org.objectweb.asm.Type.INT_TYPE;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
-import java.time.Instant;
 import java.util.stream.Stream;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
@@ -202,7 +201,7 @@ public enum Comparison {
     }
   }
 
-  private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
+  private static final Type A_COMPARABLE_TYPE = Type.getType(Comparable.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 
   private static final Method METHOD_COMPARE_TO =
@@ -223,8 +222,8 @@ public enum Comparison {
     methodGen.ifCmp(Type.BOOLEAN_TYPE, id, target);
   }
 
-  public void branchDate(Label target, GeneratorAdapter methodGen) {
-    methodGen.invokeVirtual(A_INSTANT_TYPE, METHOD_COMPARE_TO);
+  public void branchComparable(Label target, GeneratorAdapter methodGen) {
+    methodGen.invokeInterface(A_COMPARABLE_TYPE, METHOD_COMPARE_TO);
     methodGen.push(0);
     methodGen.ifCmp(Type.INT_TYPE, id, target);
   }
