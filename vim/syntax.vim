@@ -97,6 +97,7 @@ syn keyword shesmuKeyword Univalued
 syn keyword shesmuKeyword Then
 syn keyword shesmuKeyword Timeout
 syn keyword shesmuKeyword To
+syn keyword shesmuKeyword Tuple
 syn keyword shesmuKeyword TypeAlias
 syn keyword shesmuKeyword Using
 syn keyword shesmuKeyword When

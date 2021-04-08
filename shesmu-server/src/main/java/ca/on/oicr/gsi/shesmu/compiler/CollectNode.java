@@ -10,6 +10,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -50,6 +51,24 @@ public abstract class CollectNode {
           final var result = p.whitespace().then(ExpressionNode::parse0, expression::set);
           if (result.isGood()) {
             o.accept(new CollectNodeList(p.line(), p.column(), expression.get()));
+          }
+          return result;
+        });
+    DISPATCH.addKeyword(
+        "Tuple",
+        (p, o) -> {
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var size = new AtomicLong();
+          final var result =
+              p.whitespace()
+                  .then(ExpressionNode::parse0, expression::set)
+                  .whitespace()
+                  .keyword("Require")
+                  .whitespace()
+                  .integer(size::set, 10)
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(new CollectNodeTuple(p.line(), p.column(), size.intValue(), expression.get()));
           }
           return result;
         });

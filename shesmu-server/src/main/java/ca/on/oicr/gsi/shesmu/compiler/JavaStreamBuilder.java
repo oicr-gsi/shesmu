@@ -20,6 +20,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 /** Helper to build bytecode for “olives” (decision-action stanzas) */
@@ -36,6 +37,7 @@ public final class JavaStreamBuilder {
   private static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
   private static final Type A_MAP_TYPE = Type.getType(Map.class);
+  private static final Type A_OBJECT_ARRAY_TYPE = Type.getType(Object[].class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
@@ -45,6 +47,7 @@ public final class JavaStreamBuilder {
   private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
   private static final Type A_SUBSAMPLER_TYPE = Type.getType(Subsampler.class);
   private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
+  private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
   private static final Type A_UNIVALUED_COLLECTOR_TYPE = Type.getType(UnivaluedCollector.class);
   private static final Method DEFAULT_CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {});
   private static final Method METHOD_COLLECTORS__TO_MAP =
@@ -57,6 +60,10 @@ public final class JavaStreamBuilder {
       new Method("toSet", A_COLLECTOR_TYPE, new Type[] {});
   private static final Method METHOD_COMPARATOR__COMPARING =
       new Method("comparing", A_COMPARATOR_TYPE, new Type[] {A_FUNCTION_TYPE});
+  private static final Method METHOD_OPTIONAL__EMPTY =
+      new Method("empty", A_OPTIONAL_TYPE, new Type[] {});;
+  private static final Method METHOD_OPTIONAL__OF =
+      new Method("of", A_OPTIONAL_TYPE, new Type[] {A_OBJECT_TYPE});
 
   private static final Method METHOD_OPTIONAL__OR_ELSE_GET =
       new Method("orElseGet", A_OBJECT_TYPE, new Type[] {A_SUPPLIER_TYPE});
@@ -96,10 +103,12 @@ public final class JavaStreamBuilder {
       new Method("skip", A_STREAM_TYPE, new Type[] {Type.LONG_TYPE});
   private static final Method METHOD_STREAM__SORTED =
       new Method("sorted", A_STREAM_TYPE, new Type[] {A_COMPARATOR_TYPE});
+  private static final Method METHOD_STREAM__TO_ARRAY =
+      new Method("toArray", A_OBJECT_ARRAY_TYPE, new Type[0]);
   private static final Method METHOD_SUBSAMPLER__SUBSAMPLE =
       new Method("subsample", A_STREAM_TYPE, new Type[] {A_STREAM_TYPE});
-  private static final Method METHOD_UNIVALUED_COLLECTOR__CTOR =
-      new Method("<init>", Type.VOID_TYPE, new Type[] {A_SUPPLIER_TYPE});
+  private static final Method METHOD_TUPLE__CTOR =
+      new Method("<init>", Type.VOID_TYPE, new Type[] {A_OBJECT_ARRAY_TYPE});
   private Imyhat currentType;
 
   private final RootBuilder owner;
@@ -430,6 +439,30 @@ public final class JavaStreamBuilder {
         .methodGen()
         .invokeInterface(
             primitive.outputStreamType(), new Method("sum", primitive.resultType(), new Type[0]));
+  }
+
+  public void toTuple(int size) {
+    renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__TO_ARRAY);
+    final var arrayLocal = renderer.methodGen().newLocal(A_OBJECT_ARRAY_TYPE);
+    renderer.methodGen().storeLocal(arrayLocal);
+
+    renderer.methodGen().loadLocal(arrayLocal);
+    renderer.methodGen().arrayLength();
+    renderer.methodGen().push(size);
+    final var end = renderer.methodGen().newLabel();
+    final var skip = renderer.methodGen().newLabel();
+    renderer.methodGen().ifICmp(GeneratorAdapter.NE, skip);
+
+    renderer.methodGen().newInstance(A_TUPLE_TYPE);
+    renderer.methodGen().dup();
+    renderer.methodGen().loadLocal(arrayLocal);
+    renderer.methodGen().invokeConstructor(A_TUPLE_TYPE, METHOD_TUPLE__CTOR);
+    renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__OF);
+    renderer.methodGen().goTo(end);
+
+    renderer.methodGen().mark(skip);
+    renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__EMPTY);
+    renderer.methodGen().mark(end);
   }
 
   public void univalued() {

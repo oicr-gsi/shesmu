@@ -448,6 +448,17 @@ times it was _false_. The resulting value will be an object with two fields:
 Compute the sum of the resulting value from _expr_, which must be an integer or
 floating point number.
 
+- `Tuple` _expr_ `Require` _count_
+
+Take the inputs and put them into a tuple. The values must be ordered. Tuples
+have a defined number of elements, so there must be exactly the right number of
+items available. If there are _count_ then a tuple of this length will be
+produced with all of the items in the input order. If the number of items is
+either too few **or too many**, an empty optional will be returned instead.
+
+Depending on the situation, `Skip` and `Limit` can be used to trim the input
+appropriately.
+
 - `Univalued` _expr_
 
 Collect exactly one value; if none are collected, the group is rejected; if

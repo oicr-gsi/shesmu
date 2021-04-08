@@ -102,6 +102,7 @@ ace.define(
             "Then",
             "Timeout",
             "To",
+            "Tuple",
             "TypeAlias",
             "Using",
             "When",
