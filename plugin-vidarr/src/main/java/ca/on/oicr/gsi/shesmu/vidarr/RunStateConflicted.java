@@ -60,7 +60,8 @@ final class RunStateConflicted extends RunState {
 
   @Override
   public Stream<String> tags() {
-    return ids.stream().map("vidarr-workflow-run:"::concat);
+    return Stream.concat(
+        Stream.of("vidarr-state:conflict"), ids.stream().map("vidarr-workflow-run:"::concat));
   }
 
   @Override

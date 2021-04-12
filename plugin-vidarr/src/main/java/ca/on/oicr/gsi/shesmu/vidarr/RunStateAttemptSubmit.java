@@ -119,7 +119,7 @@ final class RunStateAttemptSubmit extends RunState {
 
   @Override
   public Stream<String> tags() {
-    return Stream.of("vidarr-attempt:" + attempt);
+    return Stream.of("vidarr-attempt:" + attempt, "vidarr-state:attempt");
   }
 
   @Override
