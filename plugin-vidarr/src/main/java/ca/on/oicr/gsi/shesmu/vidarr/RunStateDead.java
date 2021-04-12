@@ -44,7 +44,7 @@ public class RunStateDead extends RunState {
 
   @Override
   public Stream<String> tags() {
-    return Stream.empty();
+    return Stream.of("vidar-state:dead");
   }
 
   @Override

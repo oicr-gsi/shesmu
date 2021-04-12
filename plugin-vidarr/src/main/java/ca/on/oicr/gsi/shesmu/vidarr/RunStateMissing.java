@@ -66,7 +66,7 @@ final class RunStateMissing extends RunState {
 
   @Override
   public Stream<String> tags() {
-    return Stream.of("vidarr-workflow-run:" + id);
+    return Stream.of("vidarr-workflow-run:" + id, "vidarr-state:missing");
   }
 
   @Override
