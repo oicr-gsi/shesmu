@@ -1705,7 +1705,9 @@ export function checkRandomPermutation(
   count: number,
   callback: () => void
 ): UIElement {
-  const code: number[] = new Array(Math.max(3, Math.min(26, Math.log2(count))));
+  const code: number[] = new Array(
+    Math.max(3, Math.min(26, Math.ceil(Math.log2(count))))
+  );
   for (let i = 0; i < code.length; i++) {
     code[i] = i;
   }
