@@ -33,7 +33,13 @@ public abstract class JsonPluginFile<T> extends PluginFile {
   @Override
   public final Optional<Integer> update() {
     try {
-      final var value = mapper.readValue(Files.readAllBytes(fileName()), clazz);
+      final var contents = Files.readAllBytes(fileName());
+      if (contents.length == 0) {
+        // When a file is being checked out by git, it often shows up as empty. Rather than
+        // complaining about it, wait a minute.
+        return Optional.of(1);
+      }
+      final var value = mapper.readValue(contents, clazz);
       GOOD_JSON.labels(fileName().toString()).set(1);
       return update(value);
     } catch (final Exception e) {
