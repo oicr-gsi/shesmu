@@ -1,6 +1,6 @@
 # Unreleased
 
-# [1.9.0] - 2021-04-07T19:16+00:00
+# [1.9.1] - 2021-04-13T18:37+00:00
 
 Changes:
 
@@ -11,6 +11,19 @@ Changes:
 * Relocate bootstrap methods to `RuntimeSupport`
 * Allow using custom lookup environment for input formats
 * Replace `PineryClient` with new HTTP client
+* Allow strings to be orderable
+* Force HTTP/1.1 when fetching input data
+* Make sure all POST requests have Content-Type
+* Runscanner 1.12.5
+* Make `First` and `Reduce` order-sensitive and optionals sorted
+* Create a `Tuple` collector
+* Include chromosome lengths in interval plugin
+* Add a greedy bin splitting function
+* Fix bug in streaming JSON lists
+* Add a tool to include genome chromosome information
+* Expose `subproject` in `pinery_ius` and `cerberus_fp` 
+* Force array length to be integral
+* Correctly update alert `endsAt` property
 
 # [1.8.8] - 2021-03-31T18:38+00:00
 
