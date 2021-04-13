@@ -108,6 +108,7 @@ public final class ActionProcessor
 
     public void expiresIn(long ttl) {
       expiryTime = Instant.now().plusSeconds(ttl);
+      this.endsAt = DateTimeFormatter.ISO_INSTANT.format(expiryTime);
     }
 
     public String expiryTime() {
@@ -148,10 +149,6 @@ public final class ActionProcessor
 
     public void setAnnotations(Map<String, String> annotations) {
       this.annotations = annotations;
-    }
-
-    public void setEndsAt(Instant endsAt) {
-      this.endsAt = DateTimeFormatter.ISO_INSTANT.format(endsAt);
     }
 
     public void setEndsAt(String endsAt) {
