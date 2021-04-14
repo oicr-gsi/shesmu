@@ -465,19 +465,6 @@ a.button.danger:visited {
   background-size: 200px 200px;
 }
 
-.updating {
-  animation: barberpole 60s infinite linear;
-}
-
-@keyframes barberpole {
-  from {
-    background-position: 0%;
-  }
-  to {
-    background-position: 100%;
-  }
-}
-
 .inset {
   padding: 0.5em;
   margin: 0.5em;
