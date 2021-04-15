@@ -10,7 +10,7 @@ import {
   mergingModel,
   shuffle,
 } from "./util.js";
-import { BasicQuery, createSearch } from "./actionfilters.js";
+import { Query } from "./actionfilters.js";
 import { AlertFilter } from "./alert.js";
 
 /**
@@ -1266,7 +1266,7 @@ export type SearchBarState = "ok" | "bad" | "busy" | "dirty";
  */
 export interface ShesmuLinks {
   actiondash: {
-    filters: BasicQuery | string;
+    filters: Query;
     saved: string;
   };
   alerts: {
@@ -1275,7 +1275,7 @@ export interface ShesmuLinks {
   olivedash: {
     alert: AlertFilter<RegExp>[];
     saved: SourceLocation | null;
-    filters: BasicQuery | string;
+    filters: Query;
   };
 }
 /**
