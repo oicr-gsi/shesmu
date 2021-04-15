@@ -3,7 +3,7 @@ package ca.on.oicr.gsi.shesmu.pinery.barcodes;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /** @author mlaszloffy */
 public class BasesMask {
