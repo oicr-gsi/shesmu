@@ -270,6 +270,12 @@ const timeAccessors: BasicQueryTimeAccessor[] = [
   },
 ];
 
+export interface FrozenSearch {
+  previous: BasicQuery | string;
+  ids: string[];
+  type: "frozen";
+}
+
 interface LogicalOperator {
   operator: "and" | "or";
   icon: IconName;
@@ -290,6 +296,8 @@ export interface ParseQueryError {
 }
 
 export type PropertyType = "status" | "sourcefile" | "tag" | "type";
+
+export type Query = string | BasicQuery | FrozenSearch;
 
 export type SetType = "id" | "tag" | "type";
 /**
@@ -313,7 +321,7 @@ interface SearchPlatform {
   /**
    * A check if the input query is compatible with this search platform
    */
-  handles(query: string | BasicQuery): boolean;
+  handles(query: Query): boolean;
   addRangeSearch: AddRangeSearch;
   addPropertySearch: AddPropertySearch;
 }
@@ -655,7 +663,7 @@ function createFilters(query: BasicQuery): ActionFilter[] {
   return filters;
 }
 export function createSearch(
-  synchronizer: StateSynchronizer<string | BasicQuery>,
+  synchronizer: StateSynchronizer<Query>,
   model: StatefulModel<ActionFilter[]>,
   onActionPage: boolean,
   filenameFormatter: FilenameFormatter,
@@ -693,6 +701,8 @@ export function createSearch(
         sources,
         baseFilters
       );
+    } else if (query.type == "frozen") {
+      search = searchFrozen(query, queryModel, synchronizer);
     } else {
       search = searchBasic(
         query,
@@ -1353,7 +1363,7 @@ function renderSet<T>(
 function searchAdvanced(
   filter: string,
   model: StatefulModel<ActionFilter[]>,
-  synchronizer: StateSynchronizer<string | BasicQuery>,
+  synchronizer: StateSynchronizer<Query>,
   onActionPage: boolean,
   sources: SourceLocation[],
   baseFilters: ObservableModel<ActionFilter[]>
@@ -1483,6 +1493,30 @@ function searchAdvanced(
           }
         }
       ),
+      buttonAccessory(
+        [{ type: "icon", icon: "thermometer" }, "Freeze View"],
+        "Lock view to current set of actions.",
+        () => {
+          if (search.value.trim()) {
+            fetchJsonWithBusyDialog("parsequery", search.value, (result) => {
+              if (result.filter) {
+                fetchJsonWithBusyDialog("action-ids", [result.filter], (ids) =>
+                  synchronizer.statusChanged({
+                    type: "frozen",
+                    previous: search.value.trim(),
+                    ids,
+                  })
+                );
+              }
+            });
+          } else {
+            fetchJsonWithBusyDialog("action-ids", [], (ids) =>
+              synchronizer.statusChanged({ type: "frozen", previous: "", ids })
+            );
+          }
+        }
+      ),
+
       button(
         [{ type: "icon", icon: "funnel" }, "Add Filter"],
         "Add a filter to limit the actions displayed.",
@@ -1776,7 +1810,7 @@ function searchAdvanced(
       ),
     ],
     find: null,
-    handles(query: string | BasicQuery): boolean {
+    handles(query: Query): boolean {
       return typeof query == "string";
     },
     addRangeSearch: (typeName, start, end, ...limits) => {
@@ -1795,7 +1829,7 @@ function searchAdvanced(
 function searchBasic(
   initial: BasicQuery,
   model: StatefulModel<ActionFilter[]>,
-  synchronizer: StateSynchronizer<string | BasicQuery>,
+  synchronizer: StateSynchronizer<Query>,
   onActionPage: boolean,
   filenameFormatter: FilenameFormatter,
   sources: SourceLocation[],
@@ -1830,6 +1864,17 @@ function searchBasic(
               type: "and",
               filters: createFilters(current),
             })
+          )
+      ),
+      buttonAccessory(
+        [{ type: "icon", icon: "thermometer" }, "Freeze View"],
+        "Lock view to current set of actions.",
+        () =>
+          promiseModel(synchronizer).statusChanged(
+            fetchAsPromise(
+              "action-ids",
+              createFilters(current)
+            ).then((ids) => ({ type: "frozen", previous: current, ids }))
           )
       ),
 
@@ -1931,8 +1976,8 @@ function searchBasic(
       });
       return true;
     },
-    handles(query: string | BasicQuery): boolean {
-      return typeof query != "string";
+    handles(query: Query): boolean {
+      return typeof query == "object" && query.type != "frozen";
     },
     addRangeSearch: (typeName, start, end, ...limits) => {
       current[typeName] = {
@@ -1955,6 +2000,34 @@ function searchBasic(
         searchModel.statusChanged(result);
       }
     },
+  };
+}
+
+function searchFrozen(
+  initial: FrozenSearch,
+  model: StatefulModel<ActionFilter[]>,
+  synchronizer: StateSynchronizer<Query>
+): SearchPlatform {
+  synchronizer.statusChanged(initial);
+  model.statusChanged([{ type: "id", ids: initial.ids }]);
+  return {
+    buttons: [
+      buttonAccessory(
+        [{ type: "icon", icon: "thermometer" }, "Unfreeze view"],
+        "Return to the previous query that can be updated.",
+        () => synchronizer.statusChanged(initial.previous)
+      ),
+    ],
+
+    entryBar: `Frozen with ${initial.ids.length} actions.`,
+    find: null,
+    handles(query: Query): boolean {
+      return typeof query == "object" && query.type == "frozen";
+    },
+    addRangeSearch: (_typeName, _start, _end, ..._limits) =>
+      dialog((_) => "Unlock view to edit."),
+
+    addPropertySearch: (..._limits) => dialog((_) => "Unlock view to edit."),
   };
 }
 
