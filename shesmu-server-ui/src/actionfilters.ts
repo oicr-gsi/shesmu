@@ -1494,7 +1494,7 @@ function searchAdvanced(
         }
       ),
       buttonAccessory(
-        [{ type: "icon", icon: "thermometer" }, "Freeze View"],
+        [{ type: "icon", icon: "thermometer-snow" }, "Freeze View"],
         "Lock view to current set of actions.",
         () => {
           if (search.value.trim()) {
@@ -1867,7 +1867,7 @@ function searchBasic(
           )
       ),
       buttonAccessory(
-        [{ type: "icon", icon: "thermometer" }, "Freeze View"],
+        [{ type: "icon", icon: "thermometer-snow" }, "Freeze View"],
         "Lock view to current set of actions.",
         () =>
           promiseModel(synchronizer).statusChanged(
@@ -2013,7 +2013,7 @@ function searchFrozen(
   return {
     buttons: [
       buttonAccessory(
-        [{ type: "icon", icon: "thermometer" }, "Unfreeze view"],
+        [{ type: "icon", icon: "thermometer-sun" }, "Unfreeze view"],
         "Return to the previous query that can be updated.",
         () => synchronizer.statusChanged(initial.previous)
       ),
