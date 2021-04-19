@@ -586,7 +586,15 @@ public final class ActionProcessor
   private final Set<SourceLocation> sourceLocations = ConcurrentHashMap.newKeySet();
   private final ScheduledExecutorService timeoutExecutor =
       Executors.newSingleThreadScheduledExecutor();
-  private final ExecutorService workExecutor = Executors.newFixedThreadPool(ACTION_PERFORM_THREADS);
+  private final ExecutorService workExecutor =
+      Executors.newFixedThreadPool(
+          ACTION_PERFORM_THREADS,
+          runnable -> {
+            final var thread = new Thread(runnable);
+            thread.setPriority(Thread.MIN_PRIORITY);
+            thread.setUncaughtExceptionHandler(Server::unhandledException);
+            return thread;
+          });
 
   public ActionProcessor(URI baseUri, PluginManager manager, ActionServices actionServices) {
     super();
