@@ -98,6 +98,34 @@ public final class Server implements ServerConfig, ActionServices {
     }
   }
 
+  private static final Pattern AMPERSAND = Pattern.compile("&");
+  private static final Pattern BASE64URL_DATA =
+      Pattern.compile("((?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}|[A-Za-z0-9_-]{3}|))");
+  private static final Pattern EQUAL = Pattern.compile("=");
+  public static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
+  private static final Map<String, Instant> INFLIGHT = new ConcurrentSkipListMap<>();
+  private static final Gauge inflightCount =
+      Gauge.build("shesmu_inflight_count", "The number of inflight processes.").register();
+  private static final Gauge inflightOldest =
+      Gauge.build(
+              "shesmu_inflight_oldest_time",
+              "The start time of the longest-running server process.")
+          .register();
+  private static final String instanceName =
+      Optional.ofNullable(System.getenv("SHESMU_INSTANCE"))
+          .map("Shesmu - "::concat)
+          .orElse("Shesmu");
+  private static final LatencyHistogram responseTime =
+      new LatencyHistogram(
+          "shesmu_http_request_time", "The time to respond to an HTTP request.", "url");
+  private static final Gauge stopGauge =
+      Gauge.build("shesmu_emergency_throttler", "Whether the emergency throttler is engaged.")
+          .register();
+  private static final Counter versionCounter =
+      Counter.build("shesmu_version", "The Shesmu git commit version")
+          .labelNames("version")
+          .register();
+
   public static Map<String, String> getParameters(HttpExchange t) {
     return Optional.ofNullable(t.getRequestURI().getQuery())
         .map(
@@ -156,33 +184,11 @@ public final class Server implements ServerConfig, ActionServices {
     s.start();
   }
 
-  private static final Pattern AMPERSAND = Pattern.compile("&");
-  private static final Pattern BASE64URL_DATA =
-      Pattern.compile("((?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}|[A-Za-z0-9_-]{3}|))");
-  private static final Pattern EQUAL = Pattern.compile("=");
-  public static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
-  private static final Map<String, Instant> INFLIGHT = new ConcurrentSkipListMap<>();
-  private static final Gauge inflightCount =
-      Gauge.build("shesmu_inflight_count", "The number of inflight processes.").register();
-  private static final Gauge inflightOldest =
-      Gauge.build(
-              "shesmu_inflight_oldest_time",
-              "The start time of the longest-running server process.")
-          .register();
-  private static final String instanceName =
-      Optional.ofNullable(System.getenv("SHESMU_INSTANCE"))
-          .map("Shesmu - "::concat)
-          .orElse("Shesmu");
-  private static final LatencyHistogram responseTime =
-      new LatencyHistogram(
-          "shesmu_http_request_time", "The time to respond to an HTTP request.", "url");
-  private static final Gauge stopGauge =
-      Gauge.build("shesmu_emergency_throttler", "Whether the emergency throttler is engaged.")
-          .register();
-  private static final Counter versionCounter =
-      Counter.build("shesmu_version", "The Shesmu git commit version")
-          .labelNames("version")
-          .register();
+  public static void unhandledException(Thread thread, Throwable throwable) {
+    System.err.printf("Unhandled error in thread %s (%d)\n", thread.getName(), thread.getId());
+    throwable.printStackTrace();
+  }
+
   public final String build;
   public final Instant buildTime;
   private final CompiledGenerator compiler;
@@ -190,9 +196,16 @@ public final class Server implements ServerConfig, ActionServices {
   private final DefinitionRepository definitionRepository;
   private volatile boolean emergencyStop;
   private final ScheduledExecutorService executor =
-      new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors());
+      new ScheduledThreadPoolExecutor(
+          Runtime.getRuntime().availableProcessors(),
+          runnable -> {
+            final var thread = new Thread(runnable);
+            thread.setUncaughtExceptionHandler(Server::unhandledException);
+            return thread;
+          });
   private final FileWatcher fileWatcher;
   private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
+  private final AutoUpdatingDirectory<GuidedMeditation> guidedMeditations;
   private final Semaphore inputDownloadSemaphore =
       new Semaphore(Math.min(Runtime.getRuntime().availableProcessors() / 2, 1));
   private final Map<String, String> jsonDumpers = new ConcurrentHashMap<>();
@@ -201,7 +214,6 @@ public final class Server implements ServerConfig, ActionServices {
   private final PluginManager pluginManager;
   private final ActionProcessor processor;
   private final AutoUpdatingDirectory<SavedSearch> savedSearches;
-  private final AutoUpdatingDirectory<GuidedMeditation> guidedMeditations;
   private final HttpServer server;
   private final StaticActions staticActions;
   private final Map<String, TypeParser> typeParsers = new TreeMap<>();
@@ -216,6 +228,7 @@ public final class Server implements ServerConfig, ActionServices {
           runnable -> {
             final var thread = new Thread(runnable);
             thread.setPriority(Thread.MAX_PRIORITY);
+            thread.setUncaughtExceptionHandler(Server::unhandledException);
             return thread;
           },
           (runnable, threadPoolExecutor) -> {
