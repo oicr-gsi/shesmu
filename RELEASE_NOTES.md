@@ -1,5 +1,20 @@
 # Unreleased
 
+# [1.10.0] - 2021-04-21T17:35+00:00
+
+Changes:
+
+* Exception handling for non-main threads
+* Guided meditations retry compilation every 2 minutes after failure
+* pipedev -> 2.5.19
+* Bootstrap Icons -> 1.4.1
+* 'Freeze View' button on Actions and Olives for locking search results
+* Remove dependency on Apache commons-lang
+* Remove barberpole animation
+* Suppress empty JSON file errors
+* Use new chemistry from Pinery 'flowcell_geometry' variable
+* Vidarr workflow run actions state tag
+
 # [1.9.1] - 2021-04-13T18:37+00:00
 
 Changes:
