@@ -14,6 +14,7 @@ import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.gsi.vidarr.BasicType;
 import ca.on.oicr.gsi.vidarr.BasicType.Visitor;
 import ca.on.oicr.gsi.vidarr.JsonBodyHandler;
+import ca.on.oicr.gsi.vidarr.api.MaxInFlightDeclaration;
 import ca.on.oicr.gsi.vidarr.api.TargetDeclaration;
 import ca.on.oicr.gsi.vidarr.api.WorkflowDeclaration;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -154,9 +155,17 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
               HttpRequest.newBuilder(url.get().resolve("/api/targets")).GET().build(),
               new JsonBodyHandler<>(
                   MAPPER, new TypeReference<Map<String, TargetDeclaration>>() {}));
-      if (workflowsResult.statusCode() == 200 && targetsResult.statusCode() == 200) {
+      // TODO get max-in-flight from a cache instead of always querying the server
+      final var mifResult =
+          CLIENT.send(
+              HttpRequest.newBuilder(url.get().resolve("/api/max-in-flight")).GET().build(),
+              new JsonBodyHandler<>(MAPPER, MaxInFlightDeclaration.class));
+      if (workflowsResult.statusCode() == 200
+          && targetsResult.statusCode() == 200
+          && mifResult.statusCode() == 200) {
         definer.clearActions();
         final var workflows = workflowsResult.body().get();
+        final var maxInFlight = mifResult.body().get();
         for (final var target : targetsResult.body().get().entrySet()) {
           final var targetParameters = new ArrayList<CustomActionParameter<SubmitAction>>();
           if (target.getValue().getEngineParameters() != null) {
@@ -210,9 +219,17 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                       + "_ "
                                                       + workflow.getVersion()),
                                           String.format(
-                                              "Workflow %s version %s from Vidarr instance %s on target %s.",
+                                              "Workflow %s version %s; inflight %d of max %d; from Vidarr instance %s on target %s.",
                                               workflow.getName(),
                                               workflow.getVersion(),
+                                              maxInFlight
+                                                  .getWorkflows()
+                                                  .get(workflow.getName())
+                                                  .getCurrentInFlight(),
+                                              maxInFlight
+                                                  .getWorkflows()
+                                                  .get(workflow.getName())
+                                                  .getMaxInFlight(),
                                               value.getUrl(),
                                               target.getKey()),
                                           SubmitAction.class,
