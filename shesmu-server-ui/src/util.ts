@@ -147,6 +147,31 @@ export function combineModels<T>(
     },
   };
 }
+
+/**
+ * Create a model that buffers input and passes the available data to another model
+ * @param model the model to consume the collected data
+ * @param maxLength the maximum allowable data
+ */
+export function bufferingModel<T>(
+  model: StatefulModel<T[]>,
+  maxLength: number
+): StatefulModel<T> {
+  const buffer: T[] = [];
+  model.statusChanged([]);
+  return {
+    reload: model.reload,
+    statusChanged: (input: T) => {
+      buffer.push(input);
+      while (buffer.length > maxLength) {
+        buffer.shift();
+      }
+      model.statusChanged(buffer);
+    },
+    statusFailed: model.statusFailed,
+    statusWaiting: model.statusWaiting,
+  };
+}
 /**
  * Create a model that can send data directly to an output model or pre-process it through another model.
  *
