@@ -184,25 +184,19 @@ public final class Server implements ServerConfig, ActionServices {
     s.start();
   }
 
-  public static void unhandledException(Thread thread, Throwable throwable) {
-    System.err.printf("Unhandled error in thread %s (%d)\n", thread.getName(), thread.getId());
-    throwable.printStackTrace();
-  }
-
   public final String build;
   public final Instant buildTime;
   private final CompiledGenerator compiler;
   private final Map<String, ConstantLoader> constantLoaders = new HashMap<>();
   private final DefinitionRepository definitionRepository;
   private volatile boolean emergencyStop;
+  // This executor is to be used only for server dispatch work. The action processor queues actions
+  // on this thread; the olives are queued using this thread pool. No heavy lifting or user-driven
+  // loads are  to happen here.
   private final ScheduledExecutorService executor =
       new ScheduledThreadPoolExecutor(
           Runtime.getRuntime().availableProcessors(),
-          runnable -> {
-            final var thread = new Thread(runnable);
-            thread.setUncaughtExceptionHandler(Server::unhandledException);
-            return thread;
-          });
+          new ShesmuThreadFactory("server-housekeeping", Thread.NORM_PRIORITY));
   private final FileWatcher fileWatcher;
   private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
   private final AutoUpdatingDirectory<GuidedMeditation> guidedMeditations;
@@ -225,12 +219,7 @@ public final class Server implements ServerConfig, ActionServices {
           1,
           TimeUnit.HOURS,
           new ArrayBlockingQueue<>(10 * Runtime.getRuntime().availableProcessors()),
-          runnable -> {
-            final var thread = new Thread(runnable);
-            thread.setPriority(Thread.MAX_PRIORITY);
-            thread.setUncaughtExceptionHandler(Server::unhandledException);
-            return thread;
-          },
+          new ShesmuThreadFactory("www-requests", Thread.MAX_PRIORITY),
           (runnable, threadPoolExecutor) -> {
             overloadState.set(true);
             runnable.run();
