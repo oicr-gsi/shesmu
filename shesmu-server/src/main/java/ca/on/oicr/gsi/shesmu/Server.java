@@ -57,6 +57,7 @@ import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.common.TextFormat;
 import io.prometheus.client.hotspot.DefaultExports;
 import java.io.*;
+import java.lang.management.ManagementFactory;
 import java.net.*;
 import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
@@ -576,6 +577,36 @@ public final class Server implements ServerConfig, ActionServices {
                       inflight.getValue().toString(),
                       Duration.between(inflight.getValue(), now).toString());
                 }
+              }
+            }.renderPage(os);
+          }
+        });
+    add(
+        "/threaddash",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+          t.sendResponseHeaders(200, 0);
+          final var parameters = getParameters(t);
+
+          try (var os = t.getResponseBody()) {
+            new BasePage(this, false) {
+              @Override
+              public String activeUrl() {
+                return "threaddash";
+              }
+
+              @Override
+              public Stream<Header> headers() {
+                return Stream.of(
+                    Header.jsModule(
+                        "import {initialiseThreadDash} from \"./threads.js\";initialiseThreadDash();"));
+              }
+
+              @Override
+              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "threaddash");
+                writer.writeEndElement();
               }
             }.renderPage(os);
           }
@@ -2366,6 +2397,59 @@ public final class Server implements ServerConfig, ActionServices {
             RuntimeSupport.MAPPER.writeValue(os, input.convert(ActionFilterBuilder.QUERY).first());
           }
         });
+    add(
+        "/threads",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "application/json");
+          t.sendResponseHeaders(200, 0);
+          try (var output =
+              RuntimeSupport.MAPPER.getFactory().createGenerator(t.getResponseBody())) {
+            output.writeStartObject();
+            output.writeNumberField("time", System.currentTimeMillis());
+            output.writeObjectFieldStart("threads");
+            final var threadMxBean = ManagementFactory.getThreadMXBean();
+            for (final var thread : threadMxBean.dumpAllThreads(false, false)) {
+              output.writeObjectFieldStart(thread.getThreadName());
+              output.writeStringField("state", thread.getThreadState().name());
+              output.writeNumberField("blockedCount", thread.getBlockedCount());
+              output.writeNumberField("blockedTime", thread.getBlockedTime());
+              output.writeNumberField("waitCount", thread.getWaitedCount());
+              output.writeNumberField("waitTime", thread.getWaitedTime());
+              output.writeNumberField("priority", thread.getPriority());
+              output.writeNumberField(
+                  "cpuTime", threadMxBean.getThreadCpuTime(thread.getThreadId()));
+              output.writeArrayFieldStart("trace");
+              var last = "";
+              for (final var stack : thread.getStackTrace()) {
+                var current = "";
+                if (stack.getModuleName() == null) {
+                  if (stack.getClassName().startsWith("shesmu.dyn.")) {
+                    if (stack.getFileName() == null) {
+                      continue;
+                    } else {
+                      current = stack.getFileName();
+                    }
+                  } else {
+                    current = stack.getClassName();
+                  }
+                } else if (stack.getModuleName().startsWith("java.")
+                    || stack.getModuleName().startsWith("jdk.")) {
+                  continue;
+                } else {
+                  current = stack.getModuleName();
+                }
+                if (!last.equals(current)) {
+                  output.writeString(current);
+                  last = current;
+                }
+              }
+              output.writeEndArray();
+              output.writeEndObject();
+            }
+            output.writeEndObject();
+            output.writeEndObject();
+          }
+        });
     add("/resume", new EmergencyThrottlerHandler(false));
     add("/stopstopstop", new EmergencyThrottlerHandler(true));
     add("main.css", "text/css; charset=utf-8");
@@ -2386,6 +2470,7 @@ public final class Server implements ServerConfig, ActionServices {
     add("runtime.js", "text/javascript;charset=utf-8");
     add("simulation.js", "text/javascript;charset=utf-8");
     add("stats.js", "text/javascript;charset=utf-8");
+    add("threads.js", "text/javascript;charset=utf-8");
     add("util.js", "text/javascript;charset=utf-8");
     add("yogastudio.js", "text/javascript;charset=utf-8");
     add("ace.js", "text/javascript;charset=utf-8");
@@ -2706,6 +2791,7 @@ public final class Server implements ServerConfig, ActionServices {
         NavigationMenu.submenu(
             "Internals",
             NavigationMenu.item("inflightdash", "Active Server Processes"),
+            NavigationMenu.item("threaddash", "Threads"),
             NavigationMenu.item("configmap", "Plugin-Olive Mapping"),
             NavigationMenu.item("pluginhashes", "Plugin JAR Hashes"),
             NavigationMenu.item("dumpdefs", "Annotation-Driven Definition"),
