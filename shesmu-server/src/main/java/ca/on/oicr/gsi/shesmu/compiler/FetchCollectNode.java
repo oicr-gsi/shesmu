@@ -13,14 +13,17 @@ public abstract class FetchCollectNode {
   static {
     DISPATCHER.addKeyword(
         "List",
-        (p, o) -> p.whitespace().then(FetchNode::parse, FetchCollectNodeList::new).whitespace());
+        (p, o) ->
+            p.whitespace()
+                .then(FetchNode::parse, collector -> o.accept(new FetchCollectNodeList(collector)))
+                .whitespace());
     DISPATCHER.addKeyword(
         "Flatten",
         (p, o) ->
             p.whitespace()
                 .then(
                     FetchNode::parse,
-                    inner -> new FetchCollectNodeFlatten(p.line(), p.column(), inner))
+                    inner -> o.accept(new FetchCollectNodeFlatten(p.line(), p.column(), inner)))
                 .whitespace());
     DISPATCHER.addKeyword(
         "Dict",
