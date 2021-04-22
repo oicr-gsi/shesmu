@@ -288,7 +288,7 @@ public final class ActionProcessor
   }
 
   public static final int ACTION_PERFORM_THREADS =
-      Math.max(1, Runtime.getRuntime().availableProcessors() * 5 - 1);
+      Math.max(1, Runtime.getRuntime().availableProcessors() / 2 + 1);
   private static final BinMember<Instant> ADDED =
       new BinMember<>() {
 
@@ -588,13 +588,7 @@ public final class ActionProcessor
       Executors.newSingleThreadScheduledExecutor();
   private final ExecutorService workExecutor =
       Executors.newFixedThreadPool(
-          ACTION_PERFORM_THREADS,
-          runnable -> {
-            final var thread = new Thread(runnable);
-            thread.setPriority(Thread.MIN_PRIORITY);
-            thread.setUncaughtExceptionHandler(Server::unhandledException);
-            return thread;
-          });
+          ACTION_PERFORM_THREADS, new ShesmuThreadFactory("actions", Thread.MIN_PRIORITY));
 
   public ActionProcessor(URI baseUri, PluginManager manager, ActionServices actionServices) {
     super();
