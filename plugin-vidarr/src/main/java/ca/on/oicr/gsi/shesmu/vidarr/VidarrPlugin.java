@@ -5,6 +5,8 @@ import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
+import ca.on.oicr.gsi.shesmu.plugin.cache.SimpleRecord;
+import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.json.AsJsonNode;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
@@ -14,6 +16,7 @@ import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.gsi.vidarr.BasicType;
 import ca.on.oicr.gsi.vidarr.BasicType.Visitor;
 import ca.on.oicr.gsi.vidarr.JsonBodyHandler;
+import ca.on.oicr.gsi.vidarr.api.MaxInFlightDeclaration;
 import ca.on.oicr.gsi.vidarr.api.TargetDeclaration;
 import ca.on.oicr.gsi.vidarr.api.WorkflowDeclaration;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -24,6 +27,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -112,6 +116,46 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
     MAPPER.registerModule(new JavaTimeModule());
   }
 
+  private class MaxInFlightCache
+      extends ValueCache<Optional<MaxInFlightDeclaration>, Optional<MaxInFlightDeclaration>> {
+
+    private Optional<URI> url;
+    private HttpClient client;
+
+    public MaxInFlightCache(String name, HttpClient client) {
+      super("max-in-flight " + name, 10, SimpleRecord::new);
+      this.client = client;
+      url = Optional.empty();
+    }
+
+    public void setURL(Optional<URI> url) {
+      this.url = url;
+    }
+
+    public Optional<URI> getURL() {
+      return url;
+    }
+
+    @Override
+    protected Optional<MaxInFlightDeclaration> fetch(Instant lastUpdated) {
+      Optional<MaxInFlightDeclaration> maxInFlight = Optional.empty();
+      try {
+        if (url.isPresent()) {
+          final var mifResult =
+              client.send(
+                  HttpRequest.newBuilder(url.get().resolve("/api/max-in-flight")).GET().build(),
+                  new JsonBodyHandler<>(MAPPER, MaxInFlightDeclaration.class));
+          if (mifResult.statusCode() == 200) {
+            maxInFlight = Optional.of(mifResult.body().get());
+          }
+        }
+      } catch (IOException | InterruptedException e) {
+        e.printStackTrace();
+      }
+      return maxInFlight;
+    }
+  }
+
   static String sanitise(String raw) {
     final var clean = INVALID.matcher(raw).replaceAll("_");
     return Character.isLowerCase(clean.charAt(0)) ? clean : ("v" + clean);
@@ -119,10 +163,12 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
 
   private final Definer<VidarrPlugin> definer;
   private Optional<URI> url = Optional.empty();
+  private MaxInFlightCache mifCache;
 
   public VidarrPlugin(Path fileName, String instanceName, Definer<VidarrPlugin> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);
     this.definer = definer;
+    mifCache = new MaxInFlightCache("vidarr-plugin", CLIENT);
   }
 
   @Override
@@ -139,6 +185,22 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   @ShesmuAction(name = "unload_by_workflow_runs")
   public UnloadWorkflowRunsAction unloadByWorkflowRuns() {
     return new UnloadWorkflowRunsAction(definer);
+  }
+
+  private String getMaxInFlightMessage(Optional<URI> url, String workflow) {
+    String message;
+    mifCache.setURL(url);
+    Optional<MaxInFlightDeclaration> maxInFlight = mifCache.get();
+    if (maxInFlight.isPresent()) {
+      message =
+          String.format(
+              "%d of max %d",
+              maxInFlight.get().getWorkflows().get(workflow).getCurrentInFlight(),
+              maxInFlight.get().getWorkflows().get(workflow).getMaxInFlight());
+    } else {
+      message = "status unknown";
+    }
+    return message;
   }
 
   @Override
@@ -171,11 +233,9 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                   }
                 });
           }
-
           if (target.getValue().getConsumableResources() != null
               && !target.getValue().getConsumableResources().isEmpty()) {
             for (final var resource : target.getValue().getConsumableResources().entrySet()) {
-
               targetParameters.add(
                   new CustomActionParameter<>(
                       sanitise("resource_" + resource.getKey()),
@@ -210,9 +270,10 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                       + "_ "
                                                       + workflow.getVersion()),
                                           String.format(
-                                              "Workflow %s version %s from Vidarr instance %s on target %s.",
+                                              "Workflow %s version %s; inflight %s; from Vidarr instance %s on target %s.",
                                               workflow.getName(),
                                               workflow.getVersion(),
+                                              getMaxInFlightMessage(url, workflow.getName()),
                                               value.getUrl(),
                                               target.getKey()),
                                           SubmitAction.class,
