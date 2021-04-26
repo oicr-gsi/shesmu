@@ -194,13 +194,15 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
     mifCache.setURL(url);
     Optional<MaxInFlightDeclaration> maxInFlight = mifCache.get();
     if (maxInFlight.isPresent()) {
-      message =
-          String.format(
-              "%d of max %d",
-              maxInFlight.get().getWorkflows().get(workflow).getCurrentInFlight(),
-              maxInFlight.get().getWorkflows().get(workflow).getMaxInFlight());
+      var result = maxInFlight.get().getWorkflows().get(workflow);
+      if (result == null) {
+        message = "unknown workflow";
+      } else {
+        message =
+            String.format("%d of max %d", result.getCurrentInFlight(), result.getMaxInFlight());
+      }
     } else {
-      message = "unknown";
+      message = "could not retrieve status";
     }
     return message;
   }
