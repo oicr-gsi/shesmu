@@ -3,6 +3,8 @@ package ca.on.oicr.gsi.shesmu.vidarr;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
+import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation.DisplayElement;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.SimpleRecord;
@@ -168,7 +170,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   public VidarrPlugin(Path fileName, String instanceName, Definer<VidarrPlugin> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);
     this.definer = definer;
-    mifCache = new MaxInFlightCache("vidarr-plugin", CLIENT);
+    mifCache = new MaxInFlightCache(instanceName, CLIENT);
   }
 
   @Override
@@ -198,7 +200,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
               maxInFlight.get().getWorkflows().get(workflow).getCurrentInFlight(),
               maxInFlight.get().getWorkflows().get(workflow).getMaxInFlight());
     } else {
-      message = "status unknown";
+      message = "unknown";
     }
     return message;
   }
@@ -270,10 +272,9 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                       + "_ "
                                                       + workflow.getVersion()),
                                           String.format(
-                                              "Workflow %s version %s; inflight %s; from Vidarr instance %s on target %s.",
+                                              "Workflow %s version %s from Vidarr instance %s on target %s.",
                                               workflow.getName(),
                                               workflow.getVersion(),
-                                              getMaxInFlightMessage(url, workflow.getName()),
                                               value.getUrl(),
                                               target.getKey()),
                                           SubmitAction.class,
@@ -328,7 +329,21 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                                               value);
                                                                     }
                                                                   }))
-                                              .flatMap(Function.identity()))));
+                                              .flatMap(Function.identity()),
+                                          new SupplementaryInformation() {
+                                            @Override
+                                            public Stream<Pair<DisplayElement, DisplayElement>>
+                                                generate() {
+                                              return Stream.of(
+                                                  new Pair<>(
+                                                      SupplementaryInformation.text("In-flight"),
+                                                      SupplementaryInformation.text(
+                                                          definer
+                                                              .get()
+                                                              .getMaxInFlightMessage(
+                                                                  url, workflow.getName()))));
+                                            }
+                                          })));
             }
           }
         }
