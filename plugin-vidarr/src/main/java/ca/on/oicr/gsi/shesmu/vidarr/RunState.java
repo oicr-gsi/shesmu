@@ -18,7 +18,7 @@ import java.util.stream.Stream;
  * where each implementation can determine what to do and returns a next state. This makes it much
  * cleaner to reset state.
  */
-abstract class RunState {
+public abstract class RunState {
 
   public static final class PerformResult {
     private final ActionState actionState;

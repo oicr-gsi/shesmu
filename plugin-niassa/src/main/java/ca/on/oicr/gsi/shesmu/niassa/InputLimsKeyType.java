@@ -113,6 +113,7 @@ public enum InputLimsKeyType implements InputLimsKeyProvider {
   }
 
   private final CustomActionParameter<WorkflowAction> parameter;
+  private final CustomActionParameter<MigrationAction> migrationParameter;
 
   <T> InputLimsKeyType(
       String name, Function<T, InputLimsCollection> create, TypeGuarantee<T> type) {
@@ -124,9 +125,21 @@ public enum InputLimsKeyType implements InputLimsKeyProvider {
             action.limsKeyCollection(create.apply(type.unpack(value)));
           }
         };
+
+    this.migrationParameter =
+        new CustomActionParameter<MigrationAction>(name, true, type.type()) {
+          @Override
+          public void store(MigrationAction action, Object value) {
+            action.limsKeyCollection(create.apply(type.unpack(value)));
+          }
+        };
   }
 
   public final CustomActionParameter<WorkflowAction> parameter() {
     return parameter;
+  }
+
+  public final CustomActionParameter<MigrationAction> parameterMigration() {
+    return migrationParameter;
   }
 }

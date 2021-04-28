@@ -21,6 +21,7 @@ shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/pause.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/runtime.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/simulation.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/stats.js
+shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/threads.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/util.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/yogastudio.js
 target/

@@ -25,6 +25,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.server.HotloadingCompiler;
 import ca.on.oicr.gsi.shesmu.server.ImportVerifier;
 import ca.on.oicr.gsi.shesmu.server.InputSource;
+import ca.on.oicr.gsi.shesmu.server.ShesmuThreadFactory;
 import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.CallSiteRegistry;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
@@ -898,13 +899,8 @@ public class CompiledGenerator implements DefinitionRepository {
   private Optional<AutoUpdatingDirectory<Script>> scripts = Optional.empty();
   private final ExecutorService workExecutor =
       Executors.newFixedThreadPool(
-          Math.max(1, Runtime.getRuntime().availableProcessors() - 1),
-          runnable -> {
-            final var thread = new Thread(runnable);
-            thread.setPriority(Thread.MIN_PRIORITY);
-            thread.setUncaughtExceptionHandler(Server::unhandledException);
-            return thread;
-          });
+          Runtime.getRuntime().availableProcessors() / 2 + 1,
+          new ShesmuThreadFactory("olive", Thread.MIN_PRIORITY));
 
   public CompiledGenerator(
       ScheduledExecutorService executor,

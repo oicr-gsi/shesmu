@@ -36,6 +36,12 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>ca.on.oicr.gsi</groupId>
+      <artifactId>shesmu-plugin-vidarr</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.kohsuke.metainf-services</groupId>
       <artifactId>metainf-services</artifactId>
       <optional>true</optional>

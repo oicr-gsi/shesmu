@@ -4338,7 +4338,7 @@ export function tabsModel(
             ? "tab selected"
             : "tab";
       });
-      if (groupIndex == targetGroup) {
+      if (groupIndex == targetGroup && targetIndex < panes.length) {
         findHandler = panes[targetIndex].find;
         const reveal = panes[targetIndex].reveal;
         if (reveal) {

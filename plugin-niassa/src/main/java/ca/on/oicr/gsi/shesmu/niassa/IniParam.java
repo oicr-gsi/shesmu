@@ -35,7 +35,7 @@ import java.util.stream.Stream;
 public final class IniParam<T> {
   @JsonDeserialize(using = StringifierDeserializer.class)
   public abstract static class Stringifier {
-    public abstract String stringify(WorkflowAction action, Object value);
+    public abstract String stringify(Object value);
 
     public abstract Imyhat type();
   }
@@ -105,7 +105,7 @@ public final class IniParam<T> {
                       System.err.printf("%d:%d: %s\n", line, column, errorMessage)));
       return new Stringifier() {
         @Override
-        public String stringify(WorkflowAction action, Object value) {
+        public String stringify(Object value) {
           final ObjectNode result = NiassaServer.MAPPER.createObjectNode();
           handler.second().accept(handler.first().apply(result), value);
           try {
@@ -128,7 +128,7 @@ public final class IniParam<T> {
       new Stringifier() {
 
         @Override
-        public String stringify(WorkflowAction action, Object value) {
+        public String stringify(Object value) {
           return value.toString();
         }
 
@@ -142,7 +142,7 @@ public final class IniParam<T> {
       new Stringifier() {
 
         @Override
-        public String stringify(WorkflowAction action, Object value) {
+        public String stringify(Object value) {
           return value.toString();
         }
 
@@ -156,7 +156,7 @@ public final class IniParam<T> {
       new Stringifier() {
 
         @Override
-        public String stringify(WorkflowAction action, Object value) {
+        public String stringify(Object value) {
           return value.toString();
         }
 
@@ -170,7 +170,7 @@ public final class IniParam<T> {
       new Stringifier() {
 
         @Override
-        public String stringify(WorkflowAction action, Object value) {
+        public String stringify(Object value) {
           try {
             return NiassaServer.MAPPER.writeValueAsString(value);
           } catch (JsonProcessingException e) {
@@ -189,7 +189,7 @@ public final class IniParam<T> {
       new Stringifier() {
 
         @Override
-        public String stringify(WorkflowAction action, Object value) {
+        public String stringify(Object value) {
           return value.toString();
         }
 
@@ -203,7 +203,7 @@ public final class IniParam<T> {
       new Stringifier() {
 
         @Override
-        public String stringify(WorkflowAction action, Object value) {
+        public String stringify(Object value) {
           return (String) value;
         }
 
@@ -227,7 +227,7 @@ public final class IniParam<T> {
     return new Stringifier() {
 
       @Override
-      public String stringify(WorkflowAction action, Object v) {
+      public String stringify(Object v) {
         final long value = (Long) v;
         if (value == 0) {
           return "0";
@@ -258,7 +258,7 @@ public final class IniParam<T> {
       private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
 
       @Override
-      public String stringify(WorkflowAction action, Object value) {
+      public String stringify(Object value) {
         return formatter.format(LocalDateTime.ofInstant((Instant) value, ZoneOffset.UTC));
       }
 
@@ -281,11 +281,9 @@ public final class IniParam<T> {
     return new Stringifier() {
 
       @Override
-      public String stringify(WorkflowAction action, Object values) {
+      public String stringify(Object values) {
         return ((Set<?>) values)
-            .stream()
-            .map(value -> inner.stringify(action, value))
-            .collect(Collectors.joining(delimiter));
+            .stream().map(value -> inner.stringify(value)).collect(Collectors.joining(delimiter));
       }
 
       @Override
@@ -316,16 +314,15 @@ public final class IniParam<T> {
                   })
               .collect(Collectors.toList());
 
-      private <T> String apply(WorkflowAction action, Stringifier stringifier, Object value) {
-        return stringifier.stringify(action, value);
+      private <T> String apply(Stringifier stringifier, Object value) {
+        return stringifier.stringify(value);
       }
 
       @Override
-      public String stringify(WorkflowAction action, Object v) {
+      public String stringify(Object v) {
         final Tuple value = (Tuple) v;
-        return contents
-            .stream()
-            .map(p -> apply(action, p.second(), value.get(p.first())))
+        return contents.stream()
+            .map(p -> apply(p.second(), value.get(p.first())))
             .collect(Collectors.joining(delimiter));
       }
 
@@ -368,7 +365,16 @@ public final class IniParam<T> {
     return new CustomActionParameter<WorkflowAction>(name, required, type.type()) {
       @Override
       public void store(WorkflowAction action, Object value) {
-        action.ini.put(iniName, type.stringify(action, value));
+        action.ini.put(iniName, type.stringify(value));
+      }
+    };
+  }
+
+  CustomActionParameter<MigrationAction> parameterMigration() {
+    return new CustomActionParameter<MigrationAction>(name, required, type.type()) {
+      @Override
+      public void store(MigrationAction action, Object value) {
+        action.ini.put(iniName, type.stringify(value));
       }
     };
   }
@@ -395,8 +401,13 @@ public final class IniParam<T> {
 
   public void writeDefault(WorkflowAction action) {
     if (defaultValue != null) {
-      action.ini.put(
-          iniName, type.stringify(action, type.type().apply(new UnpackJson(defaultValue))));
+      action.ini.put(iniName, type.stringify(type.type().apply(new UnpackJson(defaultValue))));
+    }
+  }
+
+  public void writeDefaultMigration(MigrationAction action) {
+    if (defaultValue != null) {
+      action.ini.put(iniName, type.stringify(type.type().apply(new UnpackJson(defaultValue))));
     }
   }
 }

@@ -35,6 +35,7 @@ import {
 import { Stat } from "./stats.js";
 import { Action, ActionQueryResponse, ServerSearches } from "./action.js";
 import { MeditationCompilationResponse } from "./yogastudio.js";
+import { ThreadResponse } from "./threads.js";
 
 /**
  * The update information provided by interrogating the server
@@ -86,6 +87,7 @@ export interface ShesmuRequestType {
   "simulate-existing": ExistingSimulationRequest;
   stats: { filters: ActionFilter[]; wait: boolean };
   tags: ActionFilter[];
+  threads: null;
   type: { value: string; format: string };
 }
 /**
@@ -114,6 +116,7 @@ export interface ShesmuResponseType {
   "simulate-existing": SimulationResponse;
   stats: Stat[];
   tags: string[];
+  threads: ThreadResponse;
   type: TypeResponse;
 }
 
