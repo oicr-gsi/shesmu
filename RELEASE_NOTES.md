@@ -1,5 +1,15 @@
 # Unreleased
 
+# [1.10.1] - 2021-04-28T18:51+00:00
+
+Changes:
+
+* Bug fix in meditation compiler
+* Redesign thread pools
+* Create a threading console
+* MigrationAction to migrate Niassa workflow runs to Vidarr
+* Show max-in-flight from Vidarr
+
 # [1.10.0] - 2021-04-21T17:35+00:00
 
 Changes:
