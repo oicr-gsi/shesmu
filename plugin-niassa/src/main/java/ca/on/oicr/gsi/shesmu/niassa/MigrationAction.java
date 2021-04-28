@@ -335,7 +335,10 @@ public final class MigrationAction extends Action {
       request.setMetadata(metadata);
       request.setTarget("MIGRATION");
       request.setWorkflow(workflowName);
-      request.setWorkflowVersion(matches.get(0).state().workflowVersion());
+      request.setWorkflowVersion(
+          matches.get(0).state().workflowVersion()
+              + "."
+              + matches.get(0).state().workflowAccession());
 
       if (stale) {
         return ActionState.ZOMBIE;
