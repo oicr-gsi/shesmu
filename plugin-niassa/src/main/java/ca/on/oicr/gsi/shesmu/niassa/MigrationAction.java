@@ -302,13 +302,18 @@ public final class MigrationAction extends Action {
       // { "fileSWID": 12346, "output": {"type": "MANUAL", "contents": [
       // "/scratch2/group/gsi/development/vidarr", [{ "provider": "pinery-miso", "id":
       // "123_1_LDI100" }]]}}
-      final var outputFileMigration = MAPPER.createArrayNode();
+      final var outputFileMigration = metadata.putArray("migration");
       final var outputFiles = matches.get(0).state().files();
       outputFiles.forEach(
           file -> {
-            var fileNode = MAPPER.createObjectNode();
-            var limsKeyNode = MAPPER.createArrayNode();
-            var outputNode = MAPPER.createObjectNode();
+            final var fileNode = outputFileMigration.addObject();
+            final var outputNode = fileNode.putObject("fileMetadata");
+            outputNode.put("type", "MANUAL");
+            final var contents = outputNode.putArray("contents");
+            contents
+                .addObject()
+                .put("outputDirectory", server.get().outputDirectory().orElseThrow());
+            var limsKeyNode = contents.addArray();
             file.iterator()
                 .forEachRemaining(
                     limsKey -> {
@@ -317,16 +322,8 @@ public final class MigrationAction extends Action {
                       content.put("id", limsKey.second());
                       limsKeyNode.add(content);
                     });
-            limsKeyNode
-                .addObject()
-                .put("outputDirectory", server.get().outputDirectory().orElseThrow());
-            outputNode.put("type", "MANUAL");
-            outputNode.putPOJO("contents", limsKeyNode);
             fileNode.put("fileSWID", file.getAccession());
-            fileNode.putPOJO("fileMetadata", outputNode);
-            outputFileMigration.add(fileNode);
           });
-      metadata.putPOJO("migration", outputFileMigration);
 
       request.setArguments(arguments);
       request.setConsumableResources(new TreeMap<>());
