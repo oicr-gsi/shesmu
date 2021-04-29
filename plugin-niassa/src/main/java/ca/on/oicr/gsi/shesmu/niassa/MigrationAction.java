@@ -277,7 +277,7 @@ public final class MigrationAction extends Action {
           String hashId = rs.getString("hash_id");
           var node = MAPPER.createObjectNode();
           node.put("type", "INTERNAL");
-          node.putArray("contents").add("vidarr:_/" + hashId);
+          node.putArray("contents").add("vidarr:_/file/" + hashId);
           arrayNode.add(node);
           count++;
         }
