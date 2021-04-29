@@ -323,7 +323,7 @@ public final class MigrationAction extends Action {
             outputNode.put("type", "MANUAL");
             outputNode.putPOJO("contents", limsKeyNode);
             fileNode.put("fileSWID", file.getAccession());
-            fileNode.putPOJO("output", outputNode);
+            fileNode.putPOJO("fileMetadata", outputNode);
             outputFileMigration.add(fileNode);
           });
       metadata.putPOJO("migration", outputFileMigration);
