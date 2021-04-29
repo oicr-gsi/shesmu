@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.time.Instant;
@@ -56,6 +57,7 @@ public final class RunStateAttemptSubmit extends RunState {
         VidarrPlugin.CLIENT.send(
             HttpRequest.newBuilder(vidarrUrl.resolve("/api/submit"))
                 .header("Content-type", "application/json")
+                .version(Version.HTTP_1_1)
                 .POST(BodyPublishers.ofByteArray(VidarrPlugin.MAPPER.writeValueAsBytes(request)))
                 .build(),
             new JsonBodyHandler<>(VidarrPlugin.MAPPER, SubmitWorkflowResponse.class));
