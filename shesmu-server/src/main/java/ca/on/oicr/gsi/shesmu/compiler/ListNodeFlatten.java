@@ -16,14 +16,16 @@ public class ListNodeFlatten extends ListNode {
 
   class FlattenLambda implements EcmaScriptRenderer.LambdaRender {
 
-    private EcmaLoadableConstructor name;
+    private EcmaLoadableConstructor name = childName::renderEcma;
+    private final EcmaLoadableConstructor outerName;
 
-    public FlattenLambda(EcmaLoadableConstructor name) {
-      this.name = name;
+    public FlattenLambda(EcmaLoadableConstructor outerName) {
+      this.outerName = outerName;
     }
 
     @Override
     public String render(EcmaScriptRenderer renderer, IntFunction<String> arg) {
+      outerName.create(arg.apply(0)).forEach(renderer::define);
       final var builder = source.render(renderer);
       for (final var node : transforms) {
         name = node.render(builder, name);
@@ -55,7 +57,7 @@ public class ListNodeFlatten extends ListNode {
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     final var remove =
-        definedNames.stream().filter(name -> !names.contains(name)).collect(Collectors.toList());
+        definedNames.stream().filter(name -> !names.contains(name)).collect(Collectors.toSet());
     source.collectFreeVariables(names, predicate);
     names.removeAll(remove);
     transforms.forEach(t -> t.collectFreeVariables(names, predicate));
