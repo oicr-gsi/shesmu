@@ -1577,7 +1577,7 @@ public final class ActionProcessor
                         && !entry.getValue().updateInProgress
                         && Duration.between(entry.getValue().lastChecked, now).toMinutes()
                             >= Math.max(10, entry.getKey().retryMinutes()))
-            .limit(1000L * ACTION_PERFORM_THREADS - currentRunningActions.get())
+            .limit(5000L * ACTION_PERFORM_THREADS - currentRunningActions.get())
             .collect(Collectors.toList());
     currentRunningActionsGauge.set(currentRunningActions.addAndGet(candidates.size()));
 
