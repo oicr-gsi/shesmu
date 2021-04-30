@@ -39,16 +39,25 @@ import net.sourceforge.seqware.common.model.Workflow;
 
 public final class MigrationAction extends Action {
 
+  static final Comparator<LimsKey> LIMS_ID_COMPARATOR =
+      Comparator.comparing(LimsKey::getProvider).thenComparing(LimsKey::getId);
+  static final Comparator<LimsKey> LIMS_KEY_COMPARATOR =
+      LIMS_ID_COMPARATOR.thenComparing(LimsKey::getVersion);
+  private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final LatencyHistogram matchTime =
       new LatencyHistogram(
           "shesmu_niassa_migrate_match_time",
           "The time to match an action against the workflow runs in the database.",
           "workflow");
 
-  static final Comparator<LimsKey> LIMS_ID_COMPARATOR =
-      Comparator.comparing(LimsKey::getProvider).thenComparing(LimsKey::getId);
-  static final Comparator<LimsKey> LIMS_KEY_COMPARATOR =
-      LIMS_ID_COMPARATOR.thenComparing(LimsKey::getVersion);
+  private static Pair<String, String> extractNewProvider(String legacyProvider) {
+    if (legacyProvider.equals("pinery-miso") || legacyProvider.equals("pinery-miso-2.2")) {
+      return new Pair<>("pinery-miso", "1");
+    } else {
+      int index = legacyProvider.indexOf("-v");
+      return new Pair<>(legacyProvider.substring(0, index), legacyProvider.substring(index + 2));
+    }
+  }
 
   private final Map<String, String> annotations;
   private boolean cacheCollision;
@@ -57,7 +66,6 @@ public final class MigrationAction extends Action {
   Properties ini = new Properties();
   private InputLimsCollection limsKeysCollection;
   private long majorOliveVersion;
-  private static final ObjectMapper MAPPER = new ObjectMapper();
   private List<WorkflowRunMatch> matches = Collections.emptyList();
   private final long[] previousAccessions;
 
@@ -233,18 +241,13 @@ public final class MigrationAction extends Action {
       Set<ExternalKey> externalKeys = new HashSet<>();
       limsKeys.forEach(
           limsKey -> {
-            String provider;
-            if (limsKey.getProvider().equals("pinery-miso")
-                || limsKey.getProvider().equals("pinery-miso-2.2")) {
-              provider = "pinery-miso";
-            } else {
-              int index = limsKey.getProvider().indexOf("-v");
-              provider = limsKey.getProvider().substring(0, index);
-            }
+            final var newProvider = extractNewProvider(limsKey.getProvider());
 
             ExternalKey key =
                 new ExternalKey(
-                    provider, limsKey.getId(), Map.of("pinery-hash-7", limsKey.getVersion()));
+                    newProvider.first(),
+                    limsKey.getId(),
+                    Map.of("pinery-hash-" + newProvider.second(), limsKey.getVersion()));
             externalKeys.add(key);
           });
 
@@ -318,7 +321,7 @@ public final class MigrationAction extends Action {
                 .forEachRemaining(
                     limsKey -> {
                       var content = MAPPER.createObjectNode();
-                      content.put("provider", limsKey.first());
+                      content.put("provider", extractNewProvider(limsKey.first()).first());
                       content.put("id", limsKey.second());
                       limsKeyNode.add(content);
                     });
