@@ -7,11 +7,17 @@ import ca.on.oicr.gsi.shesmu.compiler.description.Renderable;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.StringConcatFactory;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
@@ -77,6 +83,7 @@ public abstract class BinaryOperation {
   private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
+  public static final Type A_STRING_TYPE = Type.getType(String.class);
   private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
   private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
   public static final BinaryOperation BAD =
@@ -94,10 +101,22 @@ public abstract class BinaryOperation {
           throw new UnsupportedOperationException();
         }
       };
+  public static final Handle BOOTSTRAP_MAKE_CONCAT_HANDLE =
+      new Handle(
+          Opcodes.H_INVOKESTATIC,
+          Type.getInternalName(StringConcatFactory.class),
+          "makeConcat",
+          Type.getMethodDescriptor(
+              Type.getType(CallSite.class),
+              Type.getType(Lookup.class),
+              A_STRING_TYPE,
+              Type.getType(MethodType.class)),
+          false);
   private static final Method METHOD_OPTIONAL__OR =
       new Method("or", A_OPTIONAL_TYPE, new Type[] {A_SUPPLIER_TYPE});
   private static final Method METHOD_OPTIONAL__OR_ELSE_GET =
       new Method("orElseGet", A_OBJECT_TYPE, new Type[] {A_SUPPLIER_TYPE});
+
   public static final Method TUPLE__CONCAT =
       new Method("concat", A_TUPLE_TYPE, new Type[] {A_TUPLE_TYPE});
   public static final Method TUPLE__CTOR =
@@ -597,6 +616,39 @@ public abstract class BinaryOperation {
                 "%s(%s, %s)", esMethod, left.renderEcma(renderer), right.renderEcma(renderer));
           }
         });
+  }
+
+  public static Optional<BinaryOperation> stringConcat(Imyhat left, Imyhat right) {
+    if (left.isSame(Imyhat.STRING) && StringNodeExpression.canBeConverted(right)) {
+      return Optional.of(
+          new BinaryOperation(Imyhat.STRING) {
+            @Override
+            public void render(
+                int line,
+                int column,
+                Renderer renderer,
+                Renderable leftValue,
+                Renderable rightValue) {
+              leftValue.render(renderer);
+              rightValue.render(renderer);
+              renderer
+                  .methodGen()
+                  .invokeDynamic(
+                      "concat",
+                      Type.getMethodDescriptor(A_STRING_TYPE, A_STRING_TYPE, right.apply(TO_ASM)),
+                      BOOTSTRAP_MAKE_CONCAT_HANDLE);
+            }
+
+            @Override
+            public String render(
+                EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
+              return String.format(
+                  "(%s + %s)", left.renderEcma(renderer), right.renderEcma(renderer));
+            }
+          });
+    } else {
+      return Optional.empty();
+    }
   }
 
   public static Optional<BinaryOperation> tupleConcat(Imyhat left, Imyhat right) {

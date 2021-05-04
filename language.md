@@ -716,14 +716,22 @@ expression flags](#regexflags).
 
 Adds two values.
 
-| Left    | Right    | Result  | Description                                                     |
-|---------|----------|---------|-----------------------------------------------------------------|
-| `int`   | `int`    | `int`   | Summation                                                       |
-| `date`  | `int`    | `date`  | Add seconds to date                                             |
-| `path`  | `path`   | `path`  | Resolve paths (concatenate, unless second path starts with `/`) |
-| `path`  | `string` | `path`  | Append component to path                                        |
-| `[`x`]` | `[`x`]`  | `[`x`]` | Union of two lists (removing duplicates)                        |
-| `[`x`]` | x        | `[`x`]` | Add item to list (removing duplicates)                          |
+| Left     | Right    | Result   | Description                                                            |
+|----------|----------|----------|------------------------------------------------------------------------|
+| `integer`| `integer`| `integer`| Summation                                                              |
+| `float`  | `integer`| `float`  | Summation                                                              |
+| `integer`| `float`  | `float`  | Summation                                                              |
+| `float`  | `float`  | `float`  | Summation                                                              |
+| `date`   | `integer`| `date`   | Add seconds to date                                                    |
+| `path`   | `path`   | `path`   | Resolve paths (concatenate, unless second path starts with `/`)        |
+| `path`   | `string` | `path`   | Append component to path                                               |
+| `string` | `string` | `string` | Concatenate two strings                                                |
+| `string` | `integer`| `string` | Concatenate a string and an integer value by first converting it       |
+| `string` | `float`  | `string` | Concatenate a string and a floating-point value by first converting it |
+| `string` | `date`   | `string` | Concatenate a string and a date value by first converting it           |
+| `string` | `path`   | `string` | Concatenate a string and a path value by first converting it           |
+| `[`x`]`  | `[`x`]`  | `[`x`]`  | Union of two lists (removing duplicates)                               |
+| `[`x`]`  | x        | `[`x`]`  | Add item to list (removing duplicates)                                 |
 | `{`a1`,`...`,` an`}`              | `{`b1`,`...`,` bn`}`             | `{`a1`,`...`,` an`,`b1`,`...`,` bn`}`                         | Concatenate two tuples                       |
 | `{`fa1`=`a1`, `...`,` fan`=`an`}` | `{`fb1`=`b1`,`...`,` fbn`=`bn`}` | `{`fa1`=`a1`,`...`,` fan`=`an`,`fb1`=`b1`,`...`,` fbn`=`bn`}` | Merge two objects (with no duplicate fields) |
 
@@ -732,13 +740,16 @@ Adds two values.
 
 Subtracts two values.
 
-| Left    | Right   | Result  | Description                                                    |
-|---------|---------|---------|----------------------------------------------------------------|
-| `int`   | `int`   | `int`   | Difference                                                     |
-| `date`  | `int`   | `date`  | Subtract seconds to date                                       |
-| `date`  | `date`  | `int`   | Difference in seconds                                          |
-| `[`x`]` | `[`x`]` | `[`x`]` | Difference of two lists (first list without items from second) |
-| `[`x`]` | x       | `[`x`]` | Remove item from list (if present)                             |
+| Left     | Right    | Result    | Description                                                    |
+|----------|----------|-----------|----------------------------------------------------------------|
+| `integer`| `integer`| `integer` | Difference                                                     |
+| `float`  | `integer`| `float`   | Difference                                                     |
+| `integer`| `float`  | `float`   | Difference                                                     |
+| `float`  | `float`  | `float`   | Difference                                                     |
+| `date`   | `integer`| `date`    | Subtract seconds to date                                       |
+| `date`   | `date`   | `int`     | Difference in seconds                                          |
+| `[`x`]`  | `[`x`]`  | `[`x`]`   | Difference of two lists (first list without items from second) |
+| `[`x`]`  | x        | `[`x`]`   | Remove item from list (if present)                             |
 
 ### Conjunction
 #### Multiplication

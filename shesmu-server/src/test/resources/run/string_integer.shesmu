@@ -1,4 +1,4 @@
 Version 1;
 Input test;
 
-Olive Run ok With ok = "{workflow_version[0]:3}" == "001";
+Olive Run ok With ok = "{workflow_version[0]:3}" == "0" + "0" + 1;

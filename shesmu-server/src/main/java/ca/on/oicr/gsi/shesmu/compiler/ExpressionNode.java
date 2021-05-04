@@ -509,6 +509,7 @@ public abstract class ExpressionNode implements Renderable {
                 Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "plusSeconds", "datePlusSeconds"),
             BinaryOperation.virtualMethod(
                 Imyhat.PATH, Imyhat.PATH, Imyhat.PATH, "resolve", "pathResolve"),
+            BinaryOperation::stringConcat,
             BinaryOperation.staticMethod(
                 Imyhat.PATH,
                 Imyhat.STRING,
