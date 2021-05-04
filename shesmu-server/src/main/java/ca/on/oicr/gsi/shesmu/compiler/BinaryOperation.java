@@ -116,7 +116,26 @@ public abstract class BinaryOperation {
       new Method("or", A_OPTIONAL_TYPE, new Type[] {A_SUPPLIER_TYPE});
   private static final Method METHOD_OPTIONAL__OR_ELSE_GET =
       new Method("orElseGet", A_OBJECT_TYPE, new Type[] {A_SUPPLIER_TYPE});
+  private static final Method METHOD_STRING__REPEAT =
+      new Method("repeat", A_STRING_TYPE, new Type[] {Type.INT_TYPE});
+  public static final BinaryOperation STRING_REPEAT =
+      new BinaryOperation(Imyhat.STRING) {
+        @Override
+        public void render(
+            int line, int column, Renderer renderer, Renderable leftValue, Renderable rightValue) {
+          leftValue.render(renderer);
+          rightValue.render(renderer);
+          renderer.methodGen().cast(Type.LONG_TYPE, Type.INT_TYPE);
+          renderer.methodGen().invokeVirtual(A_STRING_TYPE, METHOD_STRING__REPEAT);
+        }
 
+        @Override
+        public String render(
+            EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
+          return String.format(
+              "%s.repeat(%s)", left.renderEcma(renderer), right.renderEcma(renderer));
+        }
+      };
   public static final Method TUPLE__CONCAT =
       new Method("concat", A_TUPLE_TYPE, new Type[] {A_TUPLE_TYPE});
   public static final Method TUPLE__CTOR =

@@ -541,7 +541,11 @@ public abstract class ExpressionNode implements Renderable {
                 A_RUNTIME_SUPPORT_TYPE, "removeItem", "setRemove")));
 
     CONJUNCTION.addSymbol(
-        "*", binaryOperators("*", BinaryOperation.primitiveMathUpgrading(GeneratorAdapter.MUL)));
+        "*",
+        binaryOperators(
+            "*",
+            BinaryOperation.primitiveMathUpgrading(GeneratorAdapter.MUL),
+            BinaryOperation.exact(Imyhat.STRING, Imyhat.INTEGER, BinaryOperation.STRING_REPEAT)));
     CONJUNCTION.addSymbol(
         "/", binaryOperators("/", BinaryOperation.primitiveMathUpgrading(GeneratorAdapter.DIV)));
     CONJUNCTION.addSymbol(

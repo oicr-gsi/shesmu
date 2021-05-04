@@ -755,12 +755,27 @@ Subtracts two values.
 #### Multiplication
 - _expr_ `*` _expr_
 
-Multiplies two values which must be integers.
+Multiplies two values.
+
+| Left     | Right    | Result    | Description                                |
+|----------|----------|-----------|--------------------------------------------|
+| `integer`| `integer`| `integer` | Multiplication                             |
+| `float`  | `integer`| `float`   | Multiplication                             |
+| `integer`| `float`  | `float`   | Multiplication                             |
+| `float`  | `float`  | `float`   | Multiplication                             |
+| `string` | `integer`| `string`  | Repeats string a specified number of times |
 
 #### Division
 - _expr_ `/` _expr_
 
-Divides two values which must be integers.
+Divides two values.
+
+| Left     | Right    | Result    | Description |
+|----------|----------|-----------|-------------|
+| `integer`| `integer`| `integer` | Division    |
+| `float`  | `integer`| `float`   | Division    |
+| `integer`| `float`  | `float`   | Division    |
+| `float`  | `float`  | `float`   | Division    |
 
 #### Modulus
 - _expr_ `%` _expr_

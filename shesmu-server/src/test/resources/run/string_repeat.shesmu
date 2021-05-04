@@ -1,0 +1,4 @@
+Version 1;
+Input test;
+
+Olive Run ok With ok = "0" * 2 == "00";
