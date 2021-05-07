@@ -89,6 +89,7 @@ syn keyword shesmuKeyword Skip
 syn keyword shesmuKeyword Sort
 syn keyword shesmuKeyword Splitting
 syn keyword shesmuKeyword Squish
+syn keyword shesmuKeyword Stats
 syn keyword shesmuKeyword Subsample
 syn keyword shesmuKeyword Sum
 syn keyword shesmuKeyword Switch

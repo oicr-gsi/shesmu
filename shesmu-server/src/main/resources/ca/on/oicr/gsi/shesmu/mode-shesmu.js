@@ -94,6 +94,7 @@ ace.define(
             "Sort",
             "Splitting",
             "Squish",
+            "Stats",
             "Subsample",
             "Sum",
             "Switch",

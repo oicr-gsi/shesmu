@@ -587,6 +587,24 @@ export function subsampleSquish<T>(
     return position + counter;
   };
 }
+
+export interface SummaryStatistics {
+  average: number;
+  count: number;
+  maximum: number;
+  minimum: number;
+  sum: number;
+}
+export function summaryStatistics(input: number[]): SummaryStatistics {
+  const sum = input.reduce((a, v) => a + v, 0);
+  return {
+    average: sum / input.length,
+    count: input.length,
+    maximum: Math.max(...input),
+    minimum: Math.min(...input),
+    sum,
+  };
+}
 export function univalued<T>(
   input: T[],
   compare: (left: T, right: T) => boolean

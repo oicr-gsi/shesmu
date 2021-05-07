@@ -441,6 +441,14 @@ public final class JavaStreamBuilder {
             primitive.outputStreamType(), new Method("sum", primitive.resultType(), new Type[0]));
   }
 
+  public void summaryStatistics(PrimitiveStream primitive) {
+    renderer
+        .methodGen()
+        .invokeInterface(
+            primitive.outputStreamType(),
+            new Method("summaryStatistics", primitive.summaryStatisticsType(), new Type[0]));
+  }
+
   public void toTuple(int size) {
     renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__TO_ARRAY);
     final var arrayLocal = renderer.methodGen().newLocal(A_OBJECT_ARRAY_TYPE);
