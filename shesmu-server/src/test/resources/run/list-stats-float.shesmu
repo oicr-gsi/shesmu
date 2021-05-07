@@ -1,0 +1,5 @@
+Version 1;
+Input test;
+
+Olive
+ Run ok With ok = (For x In [ 1.0, 3.0, 5.0 ] : Stats x) == { count = 3, maximum = 5.0, minimum = 1.0, average = 3.0, sum = 9.0 };

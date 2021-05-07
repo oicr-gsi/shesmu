@@ -93,6 +93,16 @@ public abstract class CollectNode {
           return result;
         });
     DISPATCH.addKeyword(
+        "Stats",
+        (p, o) -> {
+          final var expression = new AtomicReference<ExpressionNode>();
+          final var result = p.whitespace().then(ExpressionNode::parse0, expression::set);
+          if (result.isGood()) {
+            o.accept(new CollectNodeStats(p.line(), p.column(), expression.get()));
+          }
+          return result;
+        });
+    DISPATCH.addKeyword(
         "Count",
         (p, o) -> {
           o.accept(new CollectNodeCount(p.line(), p.column()));
