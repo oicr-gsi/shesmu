@@ -1,5 +1,28 @@
 # Unreleased
 
+# [1.10.2] - 2021-05-10T20:26+00:00
+
+Changes:
+
+* Change this factor which is effectively number of new actions per thread per
+  minute to compensate for the fact that the number of threads has been
+  decreased.
+* The code generation for `Flatten` in `For` did not generate valid ES6
+
+Languages changes:
+
+* Create a powerset grouper
+* Adds a string repeat operation using `*`, similar to Python
+* Allow `+` to work for strings and a type that is convertible to string
+
+Vidarr plugin:
+
+* Force HTTP/1.1 version for Vidarr requests
+
+Niassa plugin:
+
+* Fix migration action
+
 # [1.10.1] - 2021-04-28T18:51+00:00
 
 Changes:
