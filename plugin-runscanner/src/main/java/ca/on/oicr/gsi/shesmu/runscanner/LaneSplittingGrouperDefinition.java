@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.runtime;
+package ca.on.oicr.gsi.shesmu.runscanner;
 
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperOutput;
