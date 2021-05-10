@@ -1,7 +1,6 @@
-package ca.on.oicr.gsi.shesmu;
+package ca.on.oicr.gsi.shesmu.runscanner;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.runtime.LaneSplittingGrouper;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
