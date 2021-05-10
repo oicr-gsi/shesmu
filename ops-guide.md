@@ -294,6 +294,7 @@ working in bulk.
 | HALP | The action is in a state where it needs human attention or intervention to correct itself. |
 | INFLIGHT | The action is currently being executed. |
 | QUEUED | The action is waiting for a remote system to start it. |
+| SAFETY_LIMIT_REACHED | The action has encountered some user-defined limit stopping it from proceeding. |
 | SUCCEEDED | The action is complete. |
 | THROTTLED | The action is being rate limited by a Shesmu throttler or by an over-capacity signal. |
 | UNKNOWN | The actions state is not currently known either due to an exception or not having been attempted. |
