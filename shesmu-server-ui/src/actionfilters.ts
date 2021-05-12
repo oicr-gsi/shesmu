@@ -1500,12 +1500,15 @@ function searchAdvanced(
           if (search.value.trim()) {
             fetchJsonWithBusyDialog("parsequery", search.value, (result) => {
               if (result.filter) {
-                fetchJsonWithBusyDialog("action-ids", [result.filter], (ids) =>
-                  synchronizer.statusChanged({
-                    type: "frozen",
-                    previous: search.value.trim(),
-                    ids,
-                  })
+                fetchJsonWithBusyDialog(
+                  "action-ids",
+                  baseFilters.value.concat([result.filter]),
+                  (ids) =>
+                    synchronizer.statusChanged({
+                      type: "frozen",
+                      previous: search.value.trim(),
+                      ids,
+                    })
                 );
               }
             });
@@ -1873,7 +1876,7 @@ function searchBasic(
           promiseModel(synchronizer).statusChanged(
             fetchAsPromise(
               "action-ids",
-              createFilters(current)
+              baseFilters.value.concat(createFilters(current))
             ).then((ids) => ({ type: "frozen", previous: current, ids }))
           )
       ),
