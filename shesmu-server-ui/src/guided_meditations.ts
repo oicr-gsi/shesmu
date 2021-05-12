@@ -16,6 +16,7 @@ import { helpArea } from "./help.js";
 import {
   DisplayElement,
   InputField,
+  TableCell,
   UIElement,
   blank,
   br,
@@ -29,6 +30,7 @@ import {
   inputNumber,
   inputText,
   link,
+  mono,
   pane,
   pickFromSet,
   radioSelector,
@@ -344,13 +346,22 @@ function buildFetch<T>(
     Promise.all(promises)
       .then(() => {
         status.statusChanged("UNKNOWN");
-        fetchModel.statusChanged(
+        fetchModel.statusChanged([
           button(
             [{ type: "icon", icon: "arrow-repeat" }, "Refresh"],
             "Reload this data and start again from this point.",
             refresh
-          )
-        );
+          ),
+          "Data fetched from:",
+          br(),
+          tableFromRows(
+            Object.values(wizard.parameters)
+              .flatMap((parameter) =>
+                makeFetchDescription(parameter as FetchOperation<unknown>)
+              )
+              .map((c) => tableRow(null, c))
+          ),
+        ]);
         model.statusChanged(wizard.processor(fetchOutput));
       })
       .catch((e) => fetchModel.statusFailed(`${e}`, refresh));
@@ -458,6 +469,32 @@ function makeFetchPromise<T>(parameter: FetchOperation<T>): Promise<T> {
       return makeFetchPromiseDict(parameter).then((r) => (r as unknown) as T);
   }
 }
+
+function makeFetchDescription<T>(parameter: FetchOperation<T>): TableCell[] {
+  switch (parameter.type) {
+    case "action-ids":
+      return [{ contents: "Action Identifiers" }];
+    case "action-tags":
+      return [{ contents: "Action Tags" }];
+    case "constant":
+      return [{ contents: ["Constant: ", mono(parameter.name)] }];
+    case "count":
+      return [{ contents: "Action Count" }];
+    case "function":
+      return [{ contents: ["Function: ", mono(parameter.name)] }];
+    case "refiller":
+      return [{ contents: "Olive Data" }];
+    case "list":
+      return parameter.operations.flatMap((op) => makeFetchDescription(op));
+    case "flatten":
+      return parameter.operations.flatMap((op) => makeFetchDescription(op));
+    case "dictionary":
+      return parameter.operations.flatMap(({ key, value }) =>
+        makeFetchDescription(value)
+      );
+  }
+}
+
 function makeFetchPromiseDict<K, V>(
   parameter: FetchOperationDictionary<K, V>
 ): Promise<[K, V][]> {
