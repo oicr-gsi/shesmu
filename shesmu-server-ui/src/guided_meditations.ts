@@ -318,7 +318,7 @@ export function initialiseMeditationDash(
       "To add new meditations, consult the ",
       link(
         "https://oicr-gsi.github.io/shesmu/guided-meditations.html",
-        "Guided Medidations Guide"
+        "Guided Meditations Guide"
       ),
       ".",
     ]);
