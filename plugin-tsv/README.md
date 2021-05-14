@@ -3,6 +3,7 @@ The tab-delimited file plugin provides several different features:
 
 - table-based lookup functions
 - string sets
+- equivalence tables
 - TSV dumper
 - maintenance schedules
 
@@ -29,6 +30,20 @@ This will create a function in Shesmu that can be used as
 any unassigned project to `phil`. If no catch-all row is provided, a default
 value is returned (the empty string, false, 0, the current directory, or the
 epoch) depending on the type.
+
+## Equivalence Tables
+In some cases, it is useful to decide that two strings are equivalent. This
+plugin takes a table, ending in `.equiv`, and each line is considered to be a
+set of mutually equivalent values, separated by tabs.
+
+For a file such as this:
+
+    A     B     C
+    D     E
+
+a function `is_same` will be available to the olive and `is_same("A", "B")`
+will be true, but `is_same("A", "E")` will be false. A string is always the
+same as itself, even if not listed in the table.
 
 ## String Sets
 A string set is a file, ending in `.set` that will be available to olives as a
