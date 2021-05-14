@@ -50,7 +50,7 @@ public class GuidedMeditation implements WatchedFileListener {
           .labelNames("filename")
           .register();
 
-  public static void compile(
+  public static boolean compile(
       Path sourcePath,
       DefinitionRepository definitionRepository,
       String script,
@@ -137,10 +137,12 @@ public class GuidedMeditation implements WatchedFileListener {
                       String.format(
                           "return %s", renderer.lambda(0, (r, a) -> wizard.get().renderEcma(r))));
                 }));
+        return true;
       } else {
         errorHandler.accept(errors);
       }
     }
+    return false;
   }
 
   private final DefinitionRepository definitionRepository;
@@ -189,7 +191,7 @@ public class GuidedMeditation implements WatchedFileListener {
       final var name =
           RuntimeSupport.MAPPER.writeValueAsString(
               RuntimeSupport.removeExtension(fileName, GuidedMeditation.EXTENSION));
-      compile(
+      if (compile(
           fileName,
           definitionRepository,
           Files.readString(fileName),
@@ -198,12 +200,13 @@ public class GuidedMeditation implements WatchedFileListener {
               script =
                   Optional.of(
                       String.format(
-                          "register(%s, function($runtime) {%s}(runtime));\n\n", name, o)));
-      return Optional.empty();
+                          "register(%s, function($runtime) {%s}(runtime));\n\n", name, o)))) {
+        return Optional.empty();
+      }
     } catch (NoSuchAlgorithmException | IOException e) {
       sourceValid.labels(fileName.toString()).set(0);
       errors = Collections.singletonList(e.getMessage());
-      return Optional.of(2);
     }
+    return Optional.of(2);
   }
 }
