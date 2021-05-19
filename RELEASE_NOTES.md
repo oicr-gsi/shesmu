@@ -1,5 +1,24 @@
 # Unreleased
 
+# [1.11.0] - 2021-05-19T18:16+00:00
+
+Changes:
+
+* Action view UI: include base filter when freezing action view
+* Guided Meditation UI: add some information about what data was fetched
+* cerberus -> 0.2.0
+* Guided meditations actually retry compilation every 2 minutes after failure
+* Add `SAFETY_LIMIT_REACHED` to Operations Guide
+
+Language changes:
+
+* Add a new `Stats` collector that produces summary statistics of average,
+sum, count, minimum, and maximum for numbers in a `For` expression  
+
+Equivalent Strings plugin:
+
+* Add a plugin to assess strings which should be treated as equivalent
+
 # [1.10.2] - 2021-05-10T20:26+00:00
 
 Changes:
