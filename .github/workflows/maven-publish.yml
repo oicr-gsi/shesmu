@@ -24,6 +24,36 @@ jobs:
       run: npm install -g typescript
     - name: Compile Shesmu Server UI with TypeScript Compiler
       run: tsc -p shesmu-server-ui
+    - name: Setup Repo credentials
+      uses: s4u/maven-settings-action@v2.4.0
+        with:
+          mirrors: |
+            [{
+              "id": "maven-restlet-insecure",
+              "mirrorOf": "maven-restlet",
+              "url": "http://maven.restlet.org",
+              "blocked": false
+            },{
+              "id": "seqware-insecure",
+              "mirrorOf": "seqware.sourceforge.net",
+              "url": "http://artifacts.oicr.on.ca/artifactory/seqware-release",
+              "blocked": false
+            },{
+              "id": "seqware-snapshots-insecure",
+              "mirrorOf": "snapshot.seqware.sourceforge.net",
+              "url": "http://artifacts.oicr.on.ca/artifactory/seqware-snapshot",
+              "blocked": false
+            },{
+              "id": "org.codehaus.plexus-insecure",
+              "mirrorOf": "org.codehaus.plexus",
+              "url": "http://repo1.maven.org/maven2/org/codehaus/plexus",
+              "blocked": false
+            },{
+              "id": "jcenter-insecure",
+              "mirrorOf": "jcenter",
+              "url": "http://jcenter.bintray.com",
+              "blocked": false
+            }]
     - name: Build Shesmu with Maven
       run: mvn -B package --file pom.xml
     - name: Build and push Docker images
