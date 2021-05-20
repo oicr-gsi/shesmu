@@ -6,9 +6,15 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.ws.dto.SampleProvenanceDto;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class SampleCerberusFileProvenanceRecord
     extends BaseCerberusFileProvenanceRecord<SampleProvenanceDto> {
+
+  private static final Pattern COMMA = Pattern.compile(",");
 
   protected SampleCerberusFileProvenanceRecord(
       boolean stale, ProvenanceRecord<SampleProvenanceDto> provenanceRecord) {
@@ -18,6 +24,14 @@ public class SampleCerberusFileProvenanceRecord
   @Override
   public Optional<String> barcode_kit() {
     return limsAttr("barcode_kit");
+  }
+
+  @Override
+  public Set<String> batches() {
+    return limsAttr("batches")
+        .<Set<String>>map(
+            s -> COMMA.splitAsStream(s).collect(Collectors.toCollection(TreeSet::new)))
+        .orElse(Set.of());
   }
 
   @Override

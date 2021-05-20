@@ -17,6 +17,7 @@ import java.util.*;
 public final class PipeDevCerberusFileProvenanceValue implements CerberusFileProvenanceValue {
   private final String accession;
   private final Optional<String> barcode_kit;
+  private final Set<String> batches;
   private final Optional<Double> cell_viability;
   private final Instant completed_date;
   private final String donor;
@@ -67,6 +68,7 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
   public PipeDevCerberusFileProvenanceValue(
       String accession,
       Optional<String> barcode_kit,
+      Set<String> batches,
       Optional<Double> cell_viability,
       Instant completed_date,
       String donor,
@@ -117,6 +119,7 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
     super();
     this.accession = accession;
     this.barcode_kit = barcode_kit;
+    this.batches = batches;
     this.cell_viability = cell_viability;
     this.completed_date = completed_date;
     this.donor = donor;
@@ -178,6 +181,11 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
   }
 
   @Override
+  public Set<String> batches() {
+    return batches;
+  }
+
+  @Override
   public Optional<Double> cell_viability() {
     return cell_viability;
   }
@@ -207,6 +215,7 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
         && umis == that.umis
         && accession.equals(that.accession)
         && barcode_kit.equals(that.barcode_kit)
+        && batches.equals(that.batches)
         && cell_viability.equals(that.cell_viability)
         && completed_date.equals(that.completed_date)
         && donor.equals(that.donor)
@@ -255,6 +264,7 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
     return Objects.hash(
         accession,
         barcode_kit,
+        batches,
         cell_viability,
         completed_date,
         donor,

@@ -80,6 +80,13 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                       new PipeDevCerberusFileProvenanceValue(
                           fp.getFileSWID().toString(),
                           limsAttr(fp, "barcode_kit", badSetInRecord::add),
+                          limsAttr(fp, "batches", badSetInRecord::add)
+                              .<Set<String>>map(
+                                  s ->
+                                      COMMA
+                                          .splitAsStream(s)
+                                          .collect(Collectors.toCollection(TreeSet::new)))
+                              .orElse(Set.of()),
                           limsAttr(fp, "cell_viability", badSetInRecord::add)
                               .map(Double::parseDouble),
                           fp.getLastModified().toInstant(),
@@ -270,18 +277,19 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
   }
 
   private static final Pattern COLON = Pattern.compile(":");
+  private static final Pattern COMMA = Pattern.compile(",");
   public static final Map<FileProvenanceFilter, Set<String>> PROVENANCE_FILTER =
       new EnumMap<>(FileProvenanceFilter.class);
-  private static final Gauge badSetError =
-      Gauge.build(
-              "shesmu_file_provenance_bad_set_size",
-              "The number of records where a set contained not exactly one item.")
-          .labelNames("filename")
-          .register();
   private static final Gauge badFilePathError =
       Gauge.build(
               "shesmu_file_provenance_bad_file_path",
               "The number of records where the file path was missing.")
+          .labelNames("filename")
+          .register();
+  private static final Gauge badSetError =
+      Gauge.build(
+              "shesmu_file_provenance_bad_set_size",
+              "The number of records where a set contained not exactly one item.")
           .labelNames("filename")
           .register();
   private static final Gauge badSetMap =

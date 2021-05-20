@@ -1,6 +1,7 @@
 [
   {
     "accession": "15580425",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576677864361,
     "donor": "ABC_0001",
@@ -70,6 +71,7 @@
   },
   {
     "accession": "15580416",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576677863203,
     "donor": "ABC_0001",
@@ -132,6 +134,7 @@
   },
   {
     "accession": "15580423",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576677864311,
     "donor": "ABC_0001",
@@ -201,6 +204,7 @@
   },
   {
     "accession": "15580449",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576677868849,
     "donor": "ABC_0001",
@@ -270,6 +274,7 @@
   },
   {
     "accession": "15580794",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576684058877,
     "donor": "ABC_0001",
@@ -346,6 +351,7 @@
   },
   {
     "accession": "15580805",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576684060392,
     "donor": "ABC_0001",
@@ -415,6 +421,7 @@
   },
   {
     "accession": "15580831",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576684162634,
     "donor": "ABC_0001",
@@ -484,6 +491,7 @@
   },
   {
     "accession": "15580795",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576684058881,
     "donor": "ABC_0001",
@@ -560,6 +568,7 @@
   },
   {
     "accession": "15580771",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576683989272,
     "donor": "ABC_0001",
@@ -636,6 +645,7 @@
   },
   {
     "accession": "15580825",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576684105211,
     "donor": "ABC_0001",
@@ -705,6 +715,7 @@
   },
   {
     "accession": "15580769",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576683987850,
     "donor": "ABC_0001",
@@ -781,6 +792,7 @@
   },
   {
     "accession": "15580778",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576683993576,
     "donor": "ABC_0001",
@@ -850,6 +862,7 @@
   },
   {
     "accession": "15581166",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576690289661,
     "donor": "ABC_0001",
@@ -918,6 +931,7 @@
   },
   {
     "accession": "15581161",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576690167006,
     "donor": "ABC_0001",
@@ -986,6 +1000,7 @@
   },
   {
     "accession": "15581293",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576693865682,
     "donor": "ABC_0001",
@@ -1064,6 +1079,7 @@
   },
   {
     "accession": "15581285",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576693844266,
     "donor": "ABC_0001",
@@ -1142,6 +1158,7 @@
   },
   {
     "accession": "15581287",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576693849599,
     "donor": "ABC_0001",
@@ -1220,6 +1237,7 @@
   },
   {
     "accession": "15581291",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576693860616,
     "donor": "ABC_0001",
@@ -1298,6 +1316,7 @@
   },
   {
     "accession": "15581289",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576693855709,
     "donor": "ABC_0001",
@@ -1376,6 +1395,7 @@
   },
   {
     "accession": "15581281",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576693831506,
     "donor": "ABC_0001",
@@ -1454,6 +1474,7 @@
   },
   {
     "accession": "15581283",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576693835964,
     "donor": "ABC_0001",
@@ -1532,6 +1553,7 @@
   },
   {
     "accession": "15581306",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576693975847,
     "donor": "ABC_0001",
@@ -1610,6 +1632,7 @@
   },
   {
     "accession": "15581308",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576693980606,
     "donor": "ABC_0001",
@@ -1688,6 +1711,7 @@
   },
   {
     "accession": "15581300",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576693958859,
     "donor": "ABC_0001",
@@ -1766,6 +1790,7 @@
   },
   {
     "accession": "15581310",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576693987307,
     "donor": "ABC_0001",
@@ -1844,6 +1869,7 @@
   },
   {
     "accession": "15581298",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576693953957,
     "donor": "ABC_0001",
@@ -1922,6 +1948,7 @@
   },
   {
     "accession": "15581302",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576693963858,
     "donor": "ABC_0001",
@@ -2000,6 +2027,7 @@
   },
   {
     "accession": "15581304",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576693969963,
     "donor": "ABC_0001",
@@ -2078,6 +2106,7 @@
   },
   {
     "accession": "15581296",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576693948347,
     "donor": "ABC_0001",
@@ -2152,6 +2181,7 @@
   },
   {
     "accession": "15581312",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576694064168,
     "donor": "ABC_0001",
@@ -2226,6 +2256,7 @@
   },
   {
     "accession": "15581489",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576696766086,
     "donor": "ABC_0001",
@@ -2298,6 +2329,7 @@
   },
   {
     "accession": "15581453",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576696645225,
     "donor": "ABC_0001",
@@ -2370,6 +2402,7 @@
   },
   {
     "accession": "15581490",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576696766885,
     "donor": "ABC_0001",
@@ -2442,6 +2475,7 @@
   },
   {
     "accession": "15581471",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576696707238,
     "donor": "ABC_0001",
@@ -2514,6 +2548,7 @@
   },
   {
     "accession": "15581472",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576696708882,
     "donor": "ABC_0001",
@@ -2586,6 +2621,7 @@
   },
   {
     "accession": "15581428",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576696583342,
     "donor": "ABC_0001",
@@ -2658,6 +2694,7 @@
   },
   {
     "accession": "15619392",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576914382376,
     "donor": "ABC_0001",
@@ -2727,6 +2764,7 @@
   },
   {
     "accession": "15619184",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576912161764,
     "donor": "ABC_0001",
@@ -2796,6 +2834,7 @@
   },
   {
     "accession": "15619330",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576913189827,
     "donor": "ABC_0001",
@@ -2865,6 +2904,7 @@
   },
   {
     "accession": "15619115",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1576910979881,
     "donor": "ABC_0001",
@@ -2934,6 +2974,7 @@
   },
   {
     "accession": "15642115",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577173760597,
     "donor": "ABC_0001",
@@ -3003,6 +3044,7 @@
   },
   {
     "accession": "15641648",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577169886424,
     "donor": "ABC_0001",
@@ -3079,6 +3121,7 @@
   },
   {
     "accession": "15642125",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577173839316,
     "donor": "ABC_0001",
@@ -3148,6 +3191,7 @@
   },
   {
     "accession": "15641646",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577169883997,
     "donor": "ABC_0001",
@@ -3224,6 +3268,7 @@
   },
   {
     "accession": "15642510",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577177011977,
     "donor": "ABC_0001",
@@ -3293,6 +3338,7 @@
   },
   {
     "accession": "15642527",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577177085498,
     "donor": "ABC_0001",
@@ -3362,6 +3408,7 @@
   },
   {
     "accession": "15642014",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577173127168,
     "donor": "ABC_0001",
@@ -3438,6 +3485,7 @@
   },
   {
     "accession": "15642015",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577173127860,
     "donor": "ABC_0001",
@@ -3514,6 +3562,7 @@
   },
   {
     "accession": "15645759",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577210241055,
     "donor": "ABC_0001",
@@ -3582,6 +3631,7 @@
   },
   {
     "accession": "15642790",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577180084147,
     "donor": "ABC_0001",
@@ -3654,6 +3704,7 @@
   },
   {
     "accession": "15642798",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577180207670,
     "donor": "ABC_0001",
@@ -3726,6 +3777,7 @@
   },
   {
     "accession": "15642797",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577180207678,
     "donor": "ABC_0001",
@@ -3798,6 +3850,7 @@
   },
   {
     "accession": "15654980",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577334880960,
     "donor": "ABC_0001",
@@ -3873,6 +3926,7 @@
   },
   {
     "accession": "15647495",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577234098149,
     "donor": "ABC_0001",
@@ -3945,6 +3999,7 @@
   },
   {
     "accession": "15653034",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577318480157,
     "donor": "ABC_0001",
@@ -4017,6 +4072,7 @@
   },
   {
     "accession": "15651640",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577288351429,
     "donor": "ABC_0001",
@@ -4089,6 +4145,7 @@
   },
   {
     "accession": "15650442",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577272752018,
     "donor": "ABC_0001",
@@ -4161,6 +4218,7 @@
   },
   {
     "accession": "15646155",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577214473743,
     "donor": "ABC_0001",
@@ -4229,6 +4287,7 @@
   },
   {
     "accession": "15643168",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577183682723,
     "donor": "ABC_0001",
@@ -4301,6 +4360,7 @@
   },
   {
     "accession": "15643165",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577183561365,
     "donor": "ABC_0001",
@@ -4373,6 +4433,7 @@
   },
   {
     "accession": "15643169",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577183683418,
     "donor": "ABC_0001",
@@ -4445,6 +4506,7 @@
   },
   {
     "accession": "15643251",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577185030543,
     "donor": "ABC_0001",
@@ -4523,6 +4585,7 @@
   },
   {
     "accession": "15643253",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577185035826,
     "donor": "ABC_0001",
@@ -4601,6 +4664,7 @@
   },
   {
     "accession": "15643255",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577185040003,
     "donor": "ABC_0001",
@@ -4679,6 +4743,7 @@
   },
   {
     "accession": "15643247",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577185022018,
     "donor": "ABC_0001",
@@ -4757,6 +4822,7 @@
   },
   {
     "accession": "15643249",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577185025668,
     "donor": "ABC_0001",
@@ -4835,6 +4901,7 @@
   },
   {
     "accession": "15643245",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577185015349,
     "donor": "ABC_0001",
@@ -4913,6 +4980,7 @@
   },
   {
     "accession": "15643243",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577185010698,
     "donor": "ABC_0001",
@@ -4991,6 +5059,7 @@
   },
   {
     "accession": "15643266",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577185092759,
     "donor": "ABC_0001",
@@ -5069,6 +5138,7 @@
   },
   {
     "accession": "15643258",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577185077496,
     "donor": "ABC_0001",
@@ -5147,6 +5217,7 @@
   },
   {
     "accession": "15643264",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577185088572,
     "donor": "ABC_0001",
@@ -5225,6 +5296,7 @@
   },
   {
     "accession": "15643268",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577185096525,
     "donor": "ABC_0001",
@@ -5303,6 +5375,7 @@
   },
   {
     "accession": "15643270",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577185100481,
     "donor": "ABC_0001",
@@ -5381,6 +5454,7 @@
   },
   {
     "accession": "15643260",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577185081208,
     "donor": "ABC_0001",
@@ -5459,6 +5533,7 @@
   },
   {
     "accession": "15643262",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577185084923,
     "donor": "ABC_0001",
@@ -5537,6 +5612,7 @@
   },
   {
     "accession": "15655821",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577341643507,
     "donor": "ABC_0001",
@@ -5610,6 +5686,7 @@
   },
   {
     "accession": "15655821",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577341643507,
     "donor": "ABC_0001",
@@ -5683,6 +5760,7 @@
   },
   {
     "accession": "15661038",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577398215815,
     "donor": "ABC_0001",
@@ -5759,6 +5837,7 @@
   },
   {
     "accession": "15648236",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577246100304,
     "donor": "ABC_0001",
@@ -5832,6 +5911,7 @@
   },
   {
     "accession": "15648235",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577246100777,
     "donor": "ABC_0001",
@@ -5905,6 +5985,7 @@
   },
   {
     "accession": "15660008",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577381620021,
     "donor": "ABC_0001",
@@ -5978,6 +6059,7 @@
   },
   {
     "accession": "15660009",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577381620143,
     "donor": "ABC_0001",
@@ -6051,6 +6133,7 @@
   },
   {
     "accession": "15657408",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577358090455,
     "donor": "ABC_0001",
@@ -6124,6 +6207,7 @@
   },
   {
     "accession": "15657408",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577358090455,
     "donor": "ABC_0001",
@@ -6197,6 +6281,7 @@
   },
   {
     "accession": "15661030",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577397858764,
     "donor": "ABC_0001",
@@ -6273,6 +6358,7 @@
   },
   {
     "accession": "15649673",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577262003306,
     "donor": "ABC_0001",
@@ -6347,6 +6433,7 @@
   },
   {
     "accession": "15648738",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1577251626382,
     "donor": "ABC_0001",
@@ -6421,6 +6508,7 @@
   },
   {
     "accession": "15725001",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578342373879,
     "donor": "ABC_0001",
@@ -6493,6 +6581,7 @@
   },
   {
     "accession": "15725005",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578342383716,
     "donor": "ABC_0001",
@@ -6565,6 +6654,7 @@
   },
   {
     "accession": "15725003",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578342379533,
     "donor": "ABC_0001",
@@ -6637,6 +6727,7 @@
   },
   {
     "accession": "15724999",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578342368534,
     "donor": "ABC_0001",
@@ -6709,6 +6800,7 @@
   },
   {
     "accession": "15730550",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578389244224,
     "donor": "ABC_0001",
@@ -6781,6 +6873,7 @@
   },
   {
     "accession": "15730548",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578389240399,
     "donor": "ABC_0001",
@@ -6853,6 +6946,7 @@
   },
   {
     "accession": "15730554",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578389252191,
     "donor": "ABC_0001",
@@ -6925,6 +7019,7 @@
   },
   {
     "accession": "15730552",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578389248362,
     "donor": "ABC_0001",
@@ -6997,6 +7092,7 @@
   },
   {
     "accession": "15731478",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578397589138,
     "donor": "ABC_0001",
@@ -7069,6 +7165,7 @@
   },
   {
     "accession": "15731475",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578397584809,
     "donor": "ABC_0001",
@@ -7141,6 +7238,7 @@
   },
   {
     "accession": "15731486",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578397597850,
     "donor": "ABC_0001",
@@ -7213,6 +7311,7 @@
   },
   {
     "accession": "15731482",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578397593495,
     "donor": "ABC_0001",
@@ -7285,6 +7384,7 @@
   },
   {
     "accession": "15738326",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578432215869,
     "donor": "ABC_0001",
@@ -7357,6 +7457,7 @@
   },
   {
     "accession": "15738324",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578432211709,
     "donor": "ABC_0001",
@@ -7429,6 +7530,7 @@
   },
   {
     "accession": "15738328",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578432219691,
     "donor": "ABC_0001",
@@ -7501,6 +7603,7 @@
   },
   {
     "accession": "15738330",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578432224238,
     "donor": "ABC_0001",
@@ -7573,6 +7676,7 @@
   },
   {
     "accession": "15789540",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578675601583,
     "donor": "ABC_0001",
@@ -7651,6 +7755,7 @@
   },
   {
     "accession": "15789536",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578675593535,
     "donor": "ABC_0001",
@@ -7729,6 +7834,7 @@
   },
   {
     "accession": "15789534",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578675589482,
     "donor": "ABC_0001",
@@ -7807,6 +7913,7 @@
   },
   {
     "accession": "15789531",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578675585642,
     "donor": "ABC_0001",
@@ -7885,6 +7992,7 @@
   },
   {
     "accession": "15789538",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578675597693,
     "donor": "ABC_0001",
@@ -7963,6 +8071,7 @@
   },
   {
     "accession": "15789542",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578675605257,
     "donor": "ABC_0001",
@@ -8041,6 +8150,7 @@
   },
   {
     "accession": "15789526",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578675580994,
     "donor": "ABC_0001",
@@ -8119,6 +8229,7 @@
   },
   {
     "accession": "15852309",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578857218376,
     "donor": "ABC_0001",
@@ -8196,6 +8307,7 @@
   },
   {
     "accession": "15855044",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578865847804,
     "donor": "ABC_0001",
@@ -8273,6 +8385,7 @@
   },
   {
     "accession": "15863575",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578890939726,
     "donor": "ABC_0001",
@@ -8350,6 +8463,7 @@
   },
   {
     "accession": "15863578",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578890943365,
     "donor": "ABC_0001",
@@ -8427,6 +8541,7 @@
   },
   {
     "accession": "15866695",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578904912146,
     "donor": "ABC_0001",
@@ -8504,6 +8619,7 @@
   },
   {
     "accession": "15866698",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578904916463,
     "donor": "ABC_0001",
@@ -8581,6 +8697,7 @@
   },
   {
     "accession": "15872613",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578926432128,
     "donor": "ABC_0001",
@@ -8659,6 +8776,7 @@
   },
   {
     "accession": "15872603",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578926407232,
     "donor": "ABC_0001",
@@ -8737,6 +8855,7 @@
   },
   {
     "accession": "15872611",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578926425087,
     "donor": "ABC_0001",
@@ -8815,6 +8934,7 @@
   },
   {
     "accession": "15872607",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578926416272,
     "donor": "ABC_0001",
@@ -8893,6 +9013,7 @@
   },
   {
     "accession": "15872605",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578926411980,
     "donor": "ABC_0001",
@@ -8971,6 +9092,7 @@
   },
   {
     "accession": "15872601",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578926403065,
     "donor": "ABC_0001",
@@ -9049,6 +9171,7 @@
   },
   {
     "accession": "15872609",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1578926420577,
     "donor": "ABC_0001",
@@ -9127,6 +9250,7 @@
   },
   {
     "accession": "15887100",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1579001694419,
     "donor": "ABC_0001",
@@ -9215,6 +9339,7 @@
   },
   {
     "accession": "15887100",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1579001694419,
     "donor": "ABC_0001",
@@ -9303,6 +9428,7 @@
   },
   {
     "accession": "15887096",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1579001608243,
     "donor": "ABC_0001",
@@ -9391,6 +9517,7 @@
   },
   {
     "accession": "15887096",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1579001608243,
     "donor": "ABC_0001",
@@ -9479,6 +9606,7 @@
   },
   {
     "accession": "15887068",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1579001489040,
     "donor": "ABC_0001",
@@ -9554,6 +9682,7 @@
   },
   {
     "accession": "15887068",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1579001489040,
     "donor": "ABC_0001",
@@ -9629,6 +9758,7 @@
   },
   {
     "accession": "15989156",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1580426347633,
     "donor": "ABC_0001",
@@ -9703,6 +9833,7 @@
   },
   {
     "accession": "16013353",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1580615875363,
     "donor": "ABC_0001",
@@ -9777,6 +9908,7 @@
   },
   {
     "accession": "16019427",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1580692209377,
     "donor": "ABC_0001",
@@ -9852,6 +9984,7 @@
   },
   {
     "accession": "16026290",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1580805121609,
     "donor": "ABC_0001",
@@ -9927,6 +10060,7 @@
   },
   {
     "accession": "16854228",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588802429576,
     "donor": "ABC_0001",
@@ -9996,6 +10130,7 @@
   },
   {
     "accession": "16854264",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588802505501,
     "donor": "ABC_0001",
@@ -10065,6 +10200,7 @@
   },
   {
     "accession": "16862152",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588837778720,
     "donor": "ABC_0001",
@@ -10138,6 +10274,7 @@
   },
   {
     "accession": "16862215",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588837981561,
     "donor": "ABC_0001",
@@ -10211,6 +10348,7 @@
   },
   {
     "accession": "16862277",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588838128937,
     "donor": "ABC_0001",
@@ -10284,6 +10422,7 @@
   },
   {
     "accession": "16862274",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588838072222,
     "donor": "ABC_0001",
@@ -10357,6 +10496,7 @@
   },
   {
     "accession": "16890574",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588899264726,
     "donor": "ABC_0001",
@@ -10429,6 +10569,7 @@
   },
   {
     "accession": "16890601",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588899276705,
     "donor": "ABC_0001",
@@ -10501,6 +10642,7 @@
   },
   {
     "accession": "16890583",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588899268888,
     "donor": "ABC_0001",
@@ -10573,6 +10715,7 @@
   },
   {
     "accession": "16890592",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588899272800,
     "donor": "ABC_0001",
@@ -10645,6 +10788,7 @@
   },
   {
     "accession": "16920575",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588975556465,
     "donor": "ABC_0001",
@@ -10714,6 +10858,7 @@
   },
   {
     "accession": "16920452",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588975535353,
     "donor": "ABC_0001",
@@ -10783,6 +10928,7 @@
   },
   {
     "accession": "16927189",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588997606751,
     "donor": "ABC_0001",
@@ -10856,6 +11002,7 @@
   },
   {
     "accession": "16927188",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588997606024,
     "donor": "ABC_0001",
@@ -10929,6 +11076,7 @@
   },
   {
     "accession": "16927212",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588997720164,
     "donor": "ABC_0001",
@@ -11002,6 +11150,7 @@
   },
   {
     "accession": "16927190",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1588997607345,
     "donor": "ABC_0001",
@@ -11075,6 +11224,7 @@
   },
   {
     "accession": "16936934",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589046641714,
     "donor": "ABC_0001",
@@ -11152,6 +11302,7 @@
   },
   {
     "accession": "16953301",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589081983105,
     "donor": "ABC_0001",
@@ -11229,6 +11380,7 @@
   },
   {
     "accession": "16952378",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589080385739,
     "donor": "ABC_0001",
@@ -11301,6 +11453,7 @@
   },
   {
     "accession": "16952334",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589080375931,
     "donor": "ABC_0001",
@@ -11373,6 +11526,7 @@
   },
   {
     "accession": "16952358",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589080380509,
     "donor": "ABC_0001",
@@ -11445,6 +11599,7 @@
   },
   {
     "accession": "16952308",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589080370213,
     "donor": "ABC_0001",
@@ -11517,6 +11672,7 @@
   },
   {
     "accession": "16985434",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589213234998,
     "donor": "ABC_0001",
@@ -11586,6 +11742,7 @@
   },
   {
     "accession": "16985427",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589213233822,
     "donor": "ABC_0001",
@@ -11655,6 +11812,7 @@
   },
   {
     "accession": "16989841",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589222067652,
     "donor": "ABC_0001",
@@ -11728,6 +11886,7 @@
   },
   {
     "accession": "16989842",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589222067651,
     "donor": "ABC_0001",
@@ -11801,6 +11960,7 @@
   },
   {
     "accession": "16990046",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589222175586,
     "donor": "ABC_0001",
@@ -11874,6 +12034,7 @@
   },
   {
     "accession": "16989834",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589222067113,
     "donor": "ABC_0001",
@@ -11947,6 +12108,7 @@
   },
   {
     "accession": "17003337",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589238511800,
     "donor": "ABC_0001",
@@ -12019,6 +12181,7 @@
   },
   {
     "accession": "17003386",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589238523470,
     "donor": "ABC_0001",
@@ -12091,6 +12254,7 @@
   },
   {
     "accession": "17003356",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589238516067,
     "donor": "ABC_0001",
@@ -12163,6 +12327,7 @@
   },
   {
     "accession": "17003373",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589238519877,
     "donor": "ABC_0001",
@@ -12235,6 +12400,7 @@
   },
   {
     "accession": "17020322",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 1589352411111,
     "donor": "ABC_0001",

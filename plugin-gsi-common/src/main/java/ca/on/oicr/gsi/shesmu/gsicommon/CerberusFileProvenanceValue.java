@@ -18,6 +18,9 @@ public interface CerberusFileProvenanceValue {
   @ShesmuVariable(signable = true)
   Optional<String> barcode_kit();
 
+  @ShesmuVariable
+  Set<String> batches();
+
   @ShesmuVariable(signable = true)
   Optional<Double> cell_viability();
 

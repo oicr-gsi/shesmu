@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.ws.dto.LaneProvenanceDto;
 import java.util.Optional;
+import java.util.Set;
 
 final class LaneCerberusFileProvenanceRecord
     extends BaseCerberusFileProvenanceRecord<LaneProvenanceDto> {
@@ -17,6 +18,11 @@ final class LaneCerberusFileProvenanceRecord
   @Override
   public Optional<String> barcode_kit() {
     return Optional.empty();
+  }
+
+  @Override
+  public Set<String> batches() {
+    return Set.of();
   }
 
   @Override

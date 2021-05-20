@@ -2,6 +2,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "PE-Nano MiSeq Flow Cell",
@@ -65,6 +66,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "S4",
@@ -131,6 +133,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "S4",
@@ -197,6 +200,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "S4",
@@ -263,6 +267,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "S4",
@@ -329,6 +334,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "PE-Nano MiSeq Flow Cell",
@@ -392,6 +398,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "PE-Nano MiSeq Flow Cell",
@@ -455,6 +462,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y101,I8,I8,y101",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "S2",
@@ -521,6 +529,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y101,I8,I8,y101",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "S2",
@@ -587,6 +596,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "PE-Nano MiSeq Flow Cell",
@@ -650,6 +660,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "PE-Nano MiSeq Flow Cell",
@@ -713,6 +724,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "S4",
@@ -779,6 +791,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "S4",
@@ -845,6 +858,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "S4",
@@ -911,6 +925,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "S4",
@@ -977,6 +992,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "S4",
@@ -1043,6 +1059,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "S4",
@@ -1109,6 +1126,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "S4",
@@ -1175,6 +1193,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "S4",
@@ -1241,6 +1260,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "PE-Nano MiSeq Flow Cell",
@@ -1304,6 +1324,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y151,I8,y151",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "PE-Nano MiSeq Flow Cell",
@@ -1367,6 +1388,7 @@
   {
     "barcode_kit": null,
     "bases_mask": "y101,I8,I8,y101",
+    "batches": [],
     "cell_viability": null,
     "completed_date": 0,
     "container_model": "S2",

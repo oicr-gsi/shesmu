@@ -35,6 +35,7 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -130,6 +131,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 return new PineryIUSValue(
                     Optional.empty(),
                     run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
+                    Set.of(),
                     Optional.empty(),
                     Optional.ofNullable(lp.getCreatedDate()).map(ZonedDateTime::toInstant),
                     maybeGetRunField(run, RunDto::getContainerModel),
@@ -224,6 +226,13 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     new PineryIUSValue(
                         limsAttr(sp, "barcode_kit", badSetInRecord::add, false),
                         run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
+                        limsAttr(sp, "batches", badSetInRecord::add, false)
+                            .<Set<String>>map(
+                                s ->
+                                    COMMA
+                                        .splitAsStream(s)
+                                        .collect(Collectors.toCollection(TreeSet::new)))
+                            .orElse(Set.of()),
                         limsAttr(sp, "cell_viability", badSetInRecord::add, false)
                             .map(Double::parseDouble),
                         Optional.ofNullable(sp.getCreatedDate()).map(ZonedDateTime::toInstant),
@@ -358,6 +367,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
           .get();
     }
   }
+
+  private static final Pattern COMMA = Pattern.compile(",");
 
   private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private static final ObjectMapper MAPPER = new ObjectMapper();

@@ -13,6 +13,7 @@ import java.util.Set;
 public final class PineryIUSValue {
   private final Optional<String> barcode_kit;
   private final String bases_mask;
+  private final Set<String> batches;
   private final Optional<Double> cell_viability;
   private final Optional<Instant> completed_date;
   private final Optional<String> container_model;
@@ -63,6 +64,7 @@ public final class PineryIUSValue {
   public PineryIUSValue(
       Optional<String> barcode_kit,
       String bases_mask,
+      Set<String> batches,
       Optional<Double> cell_viability,
       Optional<Instant> completed_date,
       Optional<String> container_model,
@@ -112,6 +114,7 @@ public final class PineryIUSValue {
     super();
     this.barcode_kit = barcode_kit;
     this.bases_mask = bases_mask;
+    this.batches = batches;
     this.cell_viability = cell_viability;
     this.completed_date = completed_date;
     this.container_model = container_model;
@@ -170,6 +173,11 @@ public final class PineryIUSValue {
     return bases_mask;
   }
 
+  @ShesmuVariable
+  public Set<String> batches() {
+    return batches;
+  }
+
   @ShesmuVariable(signable = true)
   public Optional<Double> cell_viability() {
     return cell_viability;
@@ -216,6 +224,7 @@ public final class PineryIUSValue {
         && umis == that.umis
         && barcode_kit.equals(that.barcode_kit)
         && bases_mask.equals(that.bases_mask)
+        && batches.equals(that.batches)
         && cell_viability.equals(that.cell_viability)
         && completed_date.equals(that.completed_date)
         && container_model.equals(that.container_model)
@@ -300,6 +309,7 @@ public final class PineryIUSValue {
     return Objects.hash(
         barcode_kit,
         bases_mask,
+        batches,
         cell_viability,
         completed_date,
         container_model,
