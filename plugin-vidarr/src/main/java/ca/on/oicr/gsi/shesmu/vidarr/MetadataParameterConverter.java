@@ -87,22 +87,22 @@ final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
   }
 
   @Override
-  public Imyhat file() {
+  public Imyhat file(boolean optional) {
     return handle(OutputProvisionFormat.FILES);
   }
 
   @Override
-  public Imyhat fileWithLabels() {
+  public Imyhat fileWithLabels(boolean optional) {
     return handle(OutputProvisionFormat.FILES);
   }
 
   @Override
-  public Imyhat files() {
+  public Imyhat files(boolean optional) {
     return handle(OutputProvisionFormat.FILES);
   }
 
   @Override
-  public Imyhat filesWithLabels() {
+  public Imyhat filesWithLabels(boolean optional) {
     return handle(OutputProvisionFormat.FILES);
   }
 
@@ -129,12 +129,12 @@ final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
   }
 
   @Override
-  public Imyhat logs() {
+  public Imyhat logs(boolean optional) {
     return handle(OutputProvisionFormat.LOGS);
   }
 
   @Override
-  public Imyhat qualityControl() {
+  public Imyhat qualityControl(boolean optional) {
     return handle(OutputProvisionFormat.QUALITY_CONTROL);
   }
 
@@ -144,7 +144,7 @@ final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
   }
 
   @Override
-  public Imyhat warehouseRecords() {
+  public Imyhat warehouseRecords(boolean optional) {
     return handle(OutputProvisionFormat.DATAWAREHOUSE_RECORDS);
   }
 }
