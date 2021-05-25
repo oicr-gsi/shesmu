@@ -17,6 +17,11 @@ import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -39,6 +44,7 @@ import net.sourceforge.seqware.common.model.Workflow;
 
 public final class MigrationAction extends Action {
 
+  private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   static final Comparator<LimsKey> LIMS_ID_COMPARATOR =
       Comparator.comparing(LimsKey::getProvider).thenComparing(LimsKey::getId);
   static final Comparator<LimsKey> LIMS_KEY_COMPARATOR =
@@ -342,6 +348,51 @@ public final class MigrationAction extends Action {
 
       if (stale) {
         return ActionState.ZOMBIE;
+      }
+
+      // Automatically register workflow version
+      final var workflowVersion = MAPPER.createObjectNode();
+      workflowVersion.put("language", "NIASSA");
+      workflowVersion.put("workflow", Long.toString(matches.get(0).state().workflowAccession()));
+      final var workflowVersionParameters = workflowVersion.putObject("parameters");
+      workflowVersionParameters.put("workflowRunSWID", "integer");
+      final var wvpInputFiles = workflowVersionParameters.putObject("inputFiles");
+      wvpInputFiles.put("is", "list");
+      wvpInputFiles.put("inner", "file");
+      final var wvpIni = workflowVersionParameters.putObject("ini");
+      wvpIni.put("is", "dictionary");
+      wvpIni.put("key", "string");
+      wvpIni.put("value", "string");
+      final var wvom = workflowVersion.putObject("outputs").putObject("migration");
+      wvom.put("is", "list");
+      wvom.putObject("keys").put("fileSWID", "INTEGER");
+      wvom.putObject("outputs").put("fileMetadata", "file-with-labels");
+
+      try {
+        final var url = server.get().vidarrUrl();
+        if (url.isPresent()
+            && HTTP_CLIENT
+                    .send(
+                        HttpRequest.newBuilder(
+                                url.get()
+                                    .resolve(
+                                        String.format(
+                                            "/api/workflow/%s/%s",
+                                            request.getWorkflow(), request.getWorkflowVersion())))
+                            .version(Version.HTTP_1_1)
+                            .POST(
+                                BodyPublishers.ofString(MAPPER.writeValueAsString(workflowVersion)))
+                            .build(),
+                        BodyHandlers.discarding())
+                    .statusCode()
+                != 200) {
+          this.errors = List.of("Failed to create workflow");
+          return ActionState.FAILED;
+        }
+      } catch (IOException | InterruptedException e) {
+        e.printStackTrace();
+        this.errors = List.of(e.getMessage());
+        return ActionState.FAILED;
       }
 
       final RunState.PerformResult result =
