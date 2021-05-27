@@ -278,9 +278,9 @@ requesting frequent updates. An old last transition time indicates that the
 problem is internal to the action.
 
 The _external modification time_ is some time that the action self-reports that
-it thinks is useful. For Niassa workflows, this is the last modification time
-of the workflow run. JIRA actions show the last modification time of the ticket
-they are associated with.
+it thinks is useful. For Niassa and Vidarr workflows, this is the last
+modification time of the workflow run. JIRA actions show the last modification
+time of the ticket they are associated with.
 
 Actions also have _commands_ that allow you to tell the action to do something.
 Commands will cause an action to flip back to the `UNKNOWN` state. Some
@@ -384,6 +384,46 @@ Niassa actions have a few states they can be in:
 		should eventually clear when the cache does. If impatient, purging the
     action will force a cache refresh.
   - the workflow run is in a submitted state in Niassa
+- `ZOMBIE` -- the workflow has input which is stale; normal procedures for
+  fixing stale records will eventually generate a non-stale version of this
+  action.
+
+### Vidarr Actions
+Vidarr actions have several important commands meant to replace access to the
+command line:
+
+- Delete and Purge: This will delete a workflow run that has failed or not
+  started. It will also remove the action.
+- Reattempt Failed Workflow: Re-try a workflow run that has failed or not
+  started.  If the parameters from the olive are different from the previous
+	attempt, the olive's parameters will be used.
+- Search Vidarr Again: Shesmu will scan Vidarr for a matching workflow runs to
+  find a match. If the workflow is succeeded, it will never check again. This
+	action triggers a rescan and is useful if workflow runs have been unloaded.
+
+The Vidarr actions also generates some useful tags:
+- `vidarr-target:`_name_: The _target_ on the Vidarr instance.
+- `vidarr-workflow:`_name_[`/`_version_`]: The workflow that this action will
+  run, both with and without the version.
+- `vidarr-workflow-run:`_id_: The Vidarr identifier for the matched workflow
+  run.
+- `vidarr-state:`[`active`|`attempt`|`conflict`|`dead`|`finished`|`missing`]:
+	The action uses a state machine while its communicating with Vidarr. This is
+  the current state of that machine.
+- `vidarr-attempt:`_count_`: The number of times this workflow run has been
+  attempted.
+
+
+Vidarr actions have a few states they can be in:
+
+- `FAILED` -- This can happen for a few reasons: the workflow itself failed,
+	Vidarr rejected the submission request, an internal error occurred tying to
+  launch the workflow.
+- `HALP` -- The workflow run has been previously run, but with incompatible
+	LIMS key versions. Correct LIMS or reprocess the workflow.
+- `QUEUED` -- The workflow is waiting to start the next phase.
+- `INFLIGHT` -- The workflow is running.
+- `WAITING` -- The workflow run is in between Vidarr phases.
 - `ZOMBIE` -- the workflow has input which is stale; normal procedures for
   fixing stale records will eventually generate a non-stale version of this
   action.
