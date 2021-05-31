@@ -196,7 +196,7 @@ Shesmu provides only a small handful of built-in services.
 #### Actions
 These actions are available on any instance:
 
-- `nothing` action: an action that collects a string parameter and does nothing. This can be useful for debugging.
+- `std::nothing` action: an action that collects a string parameter and does nothing. This can be useful for debugging.
 
 #### Constants
 These constants are available on any instance:
