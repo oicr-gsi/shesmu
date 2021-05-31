@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.description.Renderable;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.AlgebraicImyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -114,6 +115,39 @@ public abstract class ExpressionNode implements Renderable {
       return errors.isEmpty()
           ? Optional.empty()
           : Optional.of(new Pair<>("{ " + String.join(", ", errors) + " }", false));
+    }
+    if (acceptable instanceof AlgebraicImyhat && found instanceof AlgebraicImyhat) {
+      final var acceptableType = ((AlgebraicImyhat) acceptable);
+      final var foundType = ((AlgebraicImyhat) found);
+      final var errors =
+          foundType
+              .members()
+              .flatMap(
+                  foundName -> {
+                    final var acceptableElement = acceptableType.typeFor(foundName);
+                    if (acceptableElement.isBad()) {
+                      return Stream.of(
+                          String.format(
+                              "%s is provided but %s is required",
+                              foundName,
+                              acceptableType.members().collect(Collectors.joining(" or "))));
+                    }
+                    return generateRecursiveError(
+                        acceptableElement, foundType.typeFor(foundName), false)
+                        .map(
+                            p -> {
+                              if (p.second()) {
+                                return "(" + foundName + " " + p.first() + ")";
+                              } else {
+                                return foundName + " " + p.first();
+                              }
+                            })
+                        .stream();
+                  })
+              .collect(Collectors.toList());
+      return errors.isEmpty()
+          ? Optional.empty()
+          : Optional.of(new Pair<>(String.join(" | ", errors), true));
     }
     return root
         ? Optional.empty()

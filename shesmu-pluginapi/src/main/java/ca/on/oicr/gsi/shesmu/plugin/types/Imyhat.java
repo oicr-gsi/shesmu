@@ -283,6 +283,10 @@ public abstract class Imyhat {
       return AlgebraicValue.class;
     }
 
+    public Stream<String> members() {
+      return unions.keySet().stream();
+    }
+
     @Override
     public String name() {
       return unions.entrySet().stream()
@@ -297,6 +301,10 @@ public abstract class Imyhat {
                 return e.getKey() + " " + e.getValue().name();
               })
           .collect(Collectors.joining(" | "));
+    }
+
+    public Imyhat typeFor(String name) {
+      return unions.getOrDefault(name, Imyhat.BAD);
     }
 
     @Override
