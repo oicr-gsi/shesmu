@@ -1,5 +1,10 @@
 # Unreleased
 
+# [1.12.1] - 2021-05-31T19:48+00:00
+
+Changes:
+* Upgrade Cerberus to include new Vidarr version
+
 # [1.12.0] - 2021-05-31T14:54+00:00
 
 Changes:
