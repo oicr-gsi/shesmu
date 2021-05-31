@@ -18,6 +18,18 @@ import org.kohsuke.MetaInfServices;
 public final class VidarrPluginType extends PluginFileType<VidarrPlugin> {
 
   @ShesmuMethod(
+      type = "o2id$sprovider$s",
+      description =
+          "Extracts the provider and ID from an external key from file provenance or Pinery provenance.")
+  public static Tuple id(
+      @ShesmuParameter(
+              type = "o4id$sprovider$sstale$bversions$mss",
+              description = "The external key from file provenance or Pinery provenance.")
+          Tuple externalKey) {
+    return new Tuple(externalKey.get(0), externalKey.get(1));
+  }
+
+  @ShesmuMethod(
       type = "o4id$sprovider$sstale$bversions$mss",
       description = "Adds signature information to a file provenance LIMS key.")
   public static Tuple sign(
