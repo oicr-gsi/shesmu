@@ -271,7 +271,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                               + Parser.NAMESPACE_SEPARATOR
                                               + sanitise(
                                                   workflow.getName()
-                                                      + "_ "
+                                                      + "_v"
                                                       + workflow.getVersion()),
                                           String.format(
                                               "Workflow %s version %s from Vidarr instance %s on target %s.",
