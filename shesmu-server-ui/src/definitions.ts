@@ -44,7 +44,7 @@ export interface ActionDefintion {
   description: string;
   parameters: { name: string; type: string; required: boolean }[];
   filename: string | null;
-  supplementaryInformation: {label: DisplayElement, value: DisplayElement}[];
+  supplementaryInformation: { label: DisplayElement; value: DisplayElement }[];
 }
 export interface ConstantDefinition {
   kind: "constant";
@@ -76,7 +76,7 @@ export interface RefillerDefinition {
   description: string;
   parameters: { name: string; type: string }[];
   filename: string | null;
-  supplementaryInformation: {label: DisplayElement, value: DisplayElement}[];
+  supplementaryInformation: { label: DisplayElement; value: DisplayElement }[];
 }
 export interface SignatureDefinition {
   kind: "signature";
@@ -232,7 +232,11 @@ export function initialiseDefinitionDash(definitions: Definition[]): void {
               italic("Description: "),
               definition.description,
               br(),
-              table(definition.supplementaryInformation, ["Extra Information", (x) => x.label], ["Value", (x) => x.value]),
+              table(
+                definition.supplementaryInformation,
+                ["Extra Information", (x) => x.label],
+                ["Value", (x) => x.value]
+              ),
               table(
                 definition.parameters,
                 ["Name", (p) => p.name],
@@ -309,7 +313,11 @@ export function initialiseDefinitionDash(definitions: Definition[]): void {
               italic("Description: "),
               definition.description,
               br(),
-              table(definition.supplementaryInformation, ["Extra Information", (x) => x.label], ["Value", (x) => x.value]),
+              table(
+                definition.supplementaryInformation,
+                ["Extra Information", (x) => x.label],
+                ["Value", (x) => x.value]
+              ),
               table(
                 definition.parameters,
                 ["Name", (p) => p.name],
@@ -580,11 +588,17 @@ export function parseDescriptor<T>(
     case "s":
       return [transformer.s, type.substring(1)];
     case "a": {
-      const [inner, remainder] = parseDescriptor(type.substring(1), transformer);
+      const [inner, remainder] = parseDescriptor(
+        type.substring(1),
+        transformer
+      );
       return [transformer.a(inner), remainder];
     }
     case "m": {
-      const [key, keyRemainder] = parseDescriptor(type.substring(1), transformer);
+      const [key, keyRemainder] = parseDescriptor(
+        type.substring(1),
+        transformer
+      );
       const [value, valueRemainder] = parseDescriptor(
         keyRemainder,
         transformer
@@ -592,7 +606,10 @@ export function parseDescriptor<T>(
       return [transformer.m(key, value), valueRemainder];
     }
     case "q": {
-      const [inner, remainder] = parseDescriptor(type.substring(1), transformer);
+      const [inner, remainder] = parseDescriptor(
+        type.substring(1),
+        transformer
+      );
       return [transformer.q(inner), remainder];
     }
     case "t":
