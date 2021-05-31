@@ -1,5 +1,19 @@
 # Unreleased
 
+# [1.12.0] - 2021-05-31T14:54+00:00
+
+Changes:
+* Attempt to mirror HTTP repositories in GitHub action, fixes security failure
+* Add batches variable to pinery_ius and cerberus_fp
+* Fix yaml formatting in maven-publish github workflow
+* Automatically register workflows during migration
+* Allow polling Vidarr during migration action
+* Vidarr -> 0.4.2
+* Updates to operations guide for Vidarr
+* Add function to extract external ID from external key
+* fix typo in Vidarr action names
+* Improve type error messages for algebraic data types
+
 # [1.11.0] - 2021-05-19T18:16+00:00
 
 Changes:
