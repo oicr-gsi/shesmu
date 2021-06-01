@@ -469,41 +469,43 @@ export function initialiseDefinitionDash(definitions: Definition[]): void {
       .split(/\W+/)
       .filter((s) => s);
     data.statusChanged(
-      definitions.filter((def) =>
-        keywords.every((k) => {
-          if (
-            def.name.toLowerCase().indexOf(k) !== -1 ||
-            (def.filename
-              ? def.filename.toLowerCase().indexOf(k) !== -1
-              : false)
-          ) {
-            return true;
-          }
-          switch (def.kind) {
-            case "action":
-              return (
-                def.description.toLowerCase().indexOf(k) !== -1 ||
-                def.parameters.some((p) => p.name.indexOf(k) !== -1)
-              );
-            case "constant":
-              return def.description.toLowerCase().indexOf(k) !== -1;
-            case "function":
-              return (
-                def.description.toLowerCase().indexOf(k) !== -1 ||
-                def.parameters.some((p) => p.description.indexOf(k) !== -1)
-              );
-            case "olive":
-              return (
-                def.format.toLowerCase().indexOf(k) !== -1 ||
-                Object.keys(def.output).some((o) => o.indexOf(k) !== -1)
-              );
-            case "refiller":
-              return def.parameters.some((p) => p.name.indexOf(k) !== -1);
-            case "signature":
-              return false;
-          }
-        })
-      )
+      definitions
+        .filter((def) =>
+          keywords.every((k) => {
+            if (
+              def.name.toLowerCase().indexOf(k) !== -1 ||
+              (def.filename
+                ? def.filename.toLowerCase().indexOf(k) !== -1
+                : false)
+            ) {
+              return true;
+            }
+            switch (def.kind) {
+              case "action":
+                return (
+                  def.description.toLowerCase().indexOf(k) !== -1 ||
+                  def.parameters.some((p) => p.name.indexOf(k) !== -1)
+                );
+              case "constant":
+                return def.description.toLowerCase().indexOf(k) !== -1;
+              case "function":
+                return (
+                  def.description.toLowerCase().indexOf(k) !== -1 ||
+                  def.parameters.some((p) => p.description.indexOf(k) !== -1)
+                );
+              case "olive":
+                return (
+                  def.format.toLowerCase().indexOf(k) !== -1 ||
+                  Object.keys(def.output).some((o) => o.indexOf(k) !== -1)
+                );
+              case "refiller":
+                return def.parameters.some((p) => p.name.indexOf(k) !== -1);
+              case "signature":
+                return false;
+            }
+          })
+        )
+        .sort((a, b) => a.name.localeCompare(b.name))
     );
   });
 
