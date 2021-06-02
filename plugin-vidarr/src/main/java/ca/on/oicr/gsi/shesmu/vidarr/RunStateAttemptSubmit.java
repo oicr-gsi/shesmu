@@ -68,6 +68,8 @@ public final class RunStateAttemptSubmit extends RunState {
           if (result instanceof SubmitWorkflowResponseSuccess) {
             return RunStateMonitor.create(
                 vidarrUrl, ((SubmitWorkflowResponseSuccess) result).getId());
+          } else if (result instanceof SubmitWorkflowResponseDryRun) {
+            return new PerformResult(List.of(), ActionState.ZOMBIE, new RunStateDead());
           } else {
             return new PerformResult(
                 List.of("Server said success but returned a failure response."),
@@ -91,8 +93,6 @@ public final class RunStateAttemptSubmit extends RunState {
             final var conflict = ((SubmitWorkflowResponseConflict) result);
             final var nextState = new RunStateConflicted(conflict.getIds());
             return new PerformResult(nextState.errors(), ActionState.HALP, nextState);
-          } else if (result instanceof SubmitWorkflowResponseDryRun) {
-            return new PerformResult(List.of(), ActionState.ZOMBIE, new RunStateDead());
           } else {
             return new PerformResult(
                 List.of("Server said failure but returned an unexpected response."),
