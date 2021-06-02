@@ -26,7 +26,7 @@ public class InformationNodeDownload extends InformationNode {
         fileName.renderEcma(renderer),
         mimeType
             .map(m -> m.renderEcma(renderer))
-            .orElse(isJson ? "application/json" : "text/plain"),
+            .orElse(isJson ? "\"application/json\"" : "\"text/plain\""),
         contents.renderEcma(renderer));
   }
 
