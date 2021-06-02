@@ -77,7 +77,8 @@ public class RunStateMonitor extends RunState {
   @Override
   public boolean canReattempt() {
     return status.getOperationStatus().equals("FAILED")
-        || status.getEnginePhase().equals("WAITING_FOR_RESOURCES");
+        || (status.getEnginePhase() == null
+            || status.getEnginePhase().equals("WAITING_FOR_RESOURCES"));
   }
 
   @Override
