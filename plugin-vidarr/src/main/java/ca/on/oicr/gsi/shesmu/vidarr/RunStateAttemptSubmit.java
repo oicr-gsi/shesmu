@@ -86,7 +86,7 @@ public final class RunStateAttemptSubmit extends RunState {
           } else if (result instanceof SubmitWorkflowResponseMissingKeyVersions) {
             final var keyResult = ((SubmitWorkflowResponseMissingKeyVersions) result);
             final var nextState = new RunStateMissing(keyResult.getId(), keyResult.getKeys());
-            return new PerformResult(nextState.errors(), ActionState.FAILED, this);
+            return new PerformResult(nextState.errors(), ActionState.HALP, this);
           } else if (result instanceof SubmitWorkflowResponseConflict) {
             final var conflict = ((SubmitWorkflowResponseConflict) result);
             final var nextState = new RunStateConflicted(conflict.getIds());
