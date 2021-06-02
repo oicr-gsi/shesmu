@@ -21,12 +21,14 @@ final class RunStateMissing extends RunState {
     this.id = id;
     this.keys = keys;
     errors =
-        keys.stream()
-            .map(
-                k ->
-                    String.format(
-                        "LIMS key %s/%s does not have a version for %s. This is a design error in the olive.",
-                        k.getProvider(), k.getId(), id))
+        Stream.concat(
+                Stream.of("This workflow probably needs to be reprocessed."),
+                keys.stream()
+                    .map(
+                        k ->
+                            String.format(
+                                "LIMS key %s/%s does not have a version that overlaps with LIMS key in Vidarr workflow %s.",
+                                k.getProvider(), k.getId(), id)))
             .collect(Collectors.toList());
   }
 
