@@ -1,5 +1,19 @@
 # Unreleased
 
+# [1.12.2] - 2021-06-03T18:04+00:00
+
+Changes:
+
+* Revert change to action scheduler throughput
+* Fix automatic MIME types in guided meditations (bad JavaScript generated)
+* Sort elements on definitions page
+
+Vidarr changes:
+
+* Handle results from dry-run actions correctly
+* Fix Vidarr error message for "missing" state.  The message displayed was incorrect for the error returned by Vidarr.
+* Handle null engine phase in Vidarr action
+
 # [1.12.1] - 2021-05-31T19:48+00:00
 
 Changes:
