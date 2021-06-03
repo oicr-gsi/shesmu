@@ -4,7 +4,7 @@
   <parent>
     <groupId>ca.on.oicr.gsi</groupId>
     <artifactId>shesmu</artifactId>
-    <version>1.12.2</version>
+    <version>1.12.3-SNAPSHOT</version>
   </parent>
   <artifactId>shesmu-plugin-jira</artifactId>
   <packaging>jar</packaging>
