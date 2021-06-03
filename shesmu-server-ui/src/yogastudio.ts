@@ -96,7 +96,7 @@ export function initialiseYogaStudio(
   exportSearches: ExportSearchCommand[]
 ) {
   const filenameFormatter = commonPathPrefix(fileNames);
-  let fileName = scriptName || "unknown.medtiation";
+  let fileName = scriptName || "unknown.meditation";
   const script = document.createElement("DIV");
   script.className = "editor";
   const editor = ace.edit(script);
