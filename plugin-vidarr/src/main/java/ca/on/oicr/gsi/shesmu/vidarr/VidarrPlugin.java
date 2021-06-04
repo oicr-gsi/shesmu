@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
-import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation.DisplayElement;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.SimpleRecord;
@@ -40,6 +39,34 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class VidarrPlugin extends JsonPluginFile<Configuration> {
+
+  private class MaxInFlightCache
+      extends ValueCache<Optional<MaxInFlightDeclaration>, Optional<MaxInFlightDeclaration>> {
+
+    public MaxInFlightCache(String name) {
+      super("max-in-flight " + name, 10, SimpleRecord::new);
+    }
+
+    @Override
+    protected Optional<MaxInFlightDeclaration> fetch(Instant lastUpdated) {
+      Optional<MaxInFlightDeclaration> maxInFlight = Optional.empty();
+      try {
+        if (url.isPresent()) {
+          final var mifResult =
+              CLIENT.send(
+                  HttpRequest.newBuilder(url.get().resolve("/api/max-in-flight")).GET().build(),
+                  new JsonBodyHandler<>(MAPPER, MaxInFlightDeclaration.class));
+          if (mifResult.statusCode() == 200) {
+            maxInFlight = Optional.of(mifResult.body().get());
+          }
+        }
+      } catch (IOException | InterruptedException e) {
+        e.printStackTrace();
+      }
+      return maxInFlight;
+    }
+  }
+
   static final HttpClient CLIENT = HttpClient.newHttpClient();
   private static final Pattern INVALID = Pattern.compile("[^A-Za-z0-9_]");
   static final ObjectMapper MAPPER = new ObjectMapper();
@@ -118,59 +145,19 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
     MAPPER.registerModule(new JavaTimeModule());
   }
 
-  private class MaxInFlightCache
-      extends ValueCache<Optional<MaxInFlightDeclaration>, Optional<MaxInFlightDeclaration>> {
-
-    private Optional<URI> url;
-    private HttpClient client;
-
-    public MaxInFlightCache(String name, HttpClient client) {
-      super("max-in-flight " + name, 10, SimpleRecord::new);
-      this.client = client;
-      url = Optional.empty();
-    }
-
-    public void setURL(Optional<URI> url) {
-      this.url = url;
-    }
-
-    public Optional<URI> getURL() {
-      return url;
-    }
-
-    @Override
-    protected Optional<MaxInFlightDeclaration> fetch(Instant lastUpdated) {
-      Optional<MaxInFlightDeclaration> maxInFlight = Optional.empty();
-      try {
-        if (url.isPresent()) {
-          final var mifResult =
-              client.send(
-                  HttpRequest.newBuilder(url.get().resolve("/api/max-in-flight")).GET().build(),
-                  new JsonBodyHandler<>(MAPPER, MaxInFlightDeclaration.class));
-          if (mifResult.statusCode() == 200) {
-            maxInFlight = Optional.of(mifResult.body().get());
-          }
-        }
-      } catch (IOException | InterruptedException e) {
-        e.printStackTrace();
-      }
-      return maxInFlight;
-    }
-  }
-
   static String sanitise(String raw) {
     final var clean = INVALID.matcher(raw).replaceAll("_");
     return Character.isLowerCase(clean.charAt(0)) ? clean : ("v" + clean);
   }
 
   private final Definer<VidarrPlugin> definer;
+  private final MaxInFlightCache mifCache;
   private Optional<URI> url = Optional.empty();
-  private MaxInFlightCache mifCache;
 
   public VidarrPlugin(Path fileName, String instanceName, Definer<VidarrPlugin> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);
     this.definer = definer;
-    mifCache = new MaxInFlightCache(instanceName, CLIENT);
+    mifCache = new MaxInFlightCache(instanceName);
   }
 
   @Override
@@ -179,19 +166,8 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
     u.ifPresent(uri -> renderer.link("URL", uri.toString(), uri.toString()));
   }
 
-  @ShesmuAction(name = "unload_by_external_ids")
-  public UnloadExternalIdentifiersAction unloadByExternalIds() {
-    return new UnloadExternalIdentifiersAction(definer);
-  }
-
-  @ShesmuAction(name = "unload_by_workflow_runs")
-  public UnloadWorkflowRunsAction unloadByWorkflowRuns() {
-    return new UnloadWorkflowRunsAction(definer);
-  }
-
-  private String getMaxInFlightMessage(Optional<URI> url, String workflow) {
+  private String getMaxInFlightMessage(String workflow) {
     String message;
-    mifCache.setURL(url);
     Optional<MaxInFlightDeclaration> maxInFlight = mifCache.get();
     if (maxInFlight.isPresent()) {
       var result = maxInFlight.get().getWorkflows().get(workflow);
@@ -205,6 +181,16 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
       message = "could not retrieve status";
     }
     return message;
+  }
+
+  @ShesmuAction(name = "unload_by_external_ids")
+  public UnloadExternalIdentifiersAction unloadByExternalIds() {
+    return new UnloadExternalIdentifiersAction(definer);
+  }
+
+  @ShesmuAction(name = "unload_by_workflow_runs")
+  public UnloadWorkflowRunsAction unloadByWorkflowRuns() {
+    return new UnloadWorkflowRunsAction(definer);
   }
 
   @Override
@@ -343,7 +329,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                           definer
                                                               .get()
                                                               .getMaxInFlightMessage(
-                                                                  url, workflow.getName()))));
+                                                                  workflow.getName()))));
                                             }
                                           })));
             }
