@@ -4,10 +4,13 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
+import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.cache.SimpleRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
+import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.json.AsJsonNode;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
@@ -17,7 +20,9 @@ import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.gsi.vidarr.BasicType;
 import ca.on.oicr.gsi.vidarr.BasicType.Visitor;
 import ca.on.oicr.gsi.vidarr.JsonBodyHandler;
+import ca.on.oicr.gsi.vidarr.api.ExternalMultiVersionKey;
 import ca.on.oicr.gsi.vidarr.api.MaxInFlightDeclaration;
+import ca.on.oicr.gsi.vidarr.api.ProvenanceWorkflowRun;
 import ca.on.oicr.gsi.vidarr.api.TargetDeclaration;
 import ca.on.oicr.gsi.vidarr.api.WorkflowDeclaration;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -29,13 +34,17 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class VidarrPlugin extends JsonPluginFile<Configuration> {
@@ -67,6 +76,59 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
     }
   }
 
+  private class WorkflowRunInformationCache
+      extends KeyValueCache<String, Optional<Tuple>, Optional<Tuple>> {
+
+    public WorkflowRunInformationCache(String instanceName) {
+      super("workflow-info " + instanceName, 10, SimpleRecord::new);
+    }
+
+    @Override
+    protected Optional<Tuple> fetch(String id, Instant lastUpdated) throws Exception {
+      final var result =
+          CLIENT.send(
+              HttpRequest.newBuilder(url.orElseThrow().resolve("/api/run/" + id)).GET().build(),
+              new JsonBodyHandler<>(
+                  MAPPER, new TypeReference<ProvenanceWorkflowRun<ExternalMultiVersionKey>>() {}));
+      if (result.statusCode() == 200) {
+        final var run = result.body().get();
+        final var externalKeys = EXTERNAL_KEY_TYPE.newSet();
+        for (final var externalKey : run.getExternalKeys()) {
+          externalKeys.add(
+              new Tuple(
+                  externalKey.getId(),
+                  externalKey.getProvider(),
+                  externalKey.getVersions().entrySet().stream()
+                      .collect(
+                          Collectors.toMap(
+                              Entry::getKey,
+                              e -> new TreeSet<>(e.getValue()),
+                              (a, b) -> a,
+                              TreeMap::new))));
+        }
+        return Optional.of(
+            new Tuple(
+                Optional.ofNullable(run.getCompleted()).map(ZonedDateTime::toInstant),
+                run.getCreated().toInstant(),
+                externalKeys,
+                run.getId(),
+                new TreeSet<>(run.getInputFiles()),
+                run.getInstanceName(),
+                run.getModified().toInstant(),
+                Optional.ofNullable(run.getStarted()).map(ZonedDateTime::toInstant),
+                run.getWorkflowName(),
+                run.getWorkflowVersion()));
+      }
+      return Optional.empty();
+    }
+  }
+
+  private static final Imyhat EXTERNAL_KEY_TYPE =
+      new ObjectImyhat(
+          Stream.of(
+              new Pair<>("id", Imyhat.STRING),
+              new Pair<>("provider", Imyhat.STRING),
+              new Pair<>("versions", Imyhat.dictionary(Imyhat.STRING, Imyhat.STRING.asList()))));
   static final HttpClient CLIENT = HttpClient.newHttpClient();
   private static final Pattern INVALID = Pattern.compile("[^A-Za-z0-9_]");
   static final ObjectMapper MAPPER = new ObjectMapper();
@@ -153,17 +215,28 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   private final Definer<VidarrPlugin> definer;
   private final MaxInFlightCache mifCache;
   private Optional<URI> url = Optional.empty();
+  private final WorkflowRunInformationCache workflowRunInfo;
 
   public VidarrPlugin(Path fileName, String instanceName, Definer<VidarrPlugin> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);
     this.definer = definer;
     mifCache = new MaxInFlightCache(instanceName);
+    workflowRunInfo = new WorkflowRunInformationCache(instanceName);
   }
 
   @Override
   public void configuration(SectionRenderer renderer) {
     final var u = url;
     u.ifPresent(uri -> renderer.link("URL", uri.toString(), uri.toString()));
+  }
+
+  @ShesmuMethod(
+      type =
+          "o9completed$qdcreated$dexternalKeys$ao3id$sprovider$sversions$msasinput_files$asinstance_name$smodified$dstarted$qdversion$sworkflow$s",
+      name = "workflow_run_info",
+      description = "Gets information about a workflow run")
+  public Optional<Tuple> fetchRun(String id) {
+    return workflowRunInfo.get(id);
   }
 
   private String getMaxInFlightMessage(String workflow) {
