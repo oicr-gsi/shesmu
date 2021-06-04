@@ -154,7 +154,7 @@ public abstract class BinaryOperation {
     return (left, right) ->
         (left.isSame(right) && (left instanceof Imyhat.ListImyhat))
             ? Optional.of(
-                new BinaryOperation(left) {
+                new BinaryOperation(left.unify(right)) {
                   @Override
                   public void render(
                       int line,
@@ -180,8 +180,11 @@ public abstract class BinaryOperation {
                   public String render(
                       EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
                     return String.format(
-                        "$runtime.%s(%s, %s)",
-                        esMethod, left.renderEcma(renderer), right.renderEcma(renderer));
+                        "$runtime.%s(%s, %s, (a, b) => %s)",
+                        esMethod,
+                        left.renderEcma(renderer),
+                        right.renderEcma(renderer),
+                        returnType().apply(EcmaScriptRenderer.COMPARATOR));
                   }
                 })
             : Optional.empty();
@@ -238,10 +241,15 @@ public abstract class BinaryOperation {
 
                 @Override
                 public String render(
-                    EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
+                    EcmaScriptRenderer renderer,
+                    ExpressionNode leftValue,
+                    ExpressionNode rightValue) {
                   return String.format(
-                      "$runtime.%s(%s, %s)",
-                      esMethod, left.renderEcma(renderer), right.renderEcma(renderer));
+                      "$runtime.%s(%s, %s, (a, b) => %s)",
+                      esMethod,
+                      leftValue.renderEcma(renderer),
+                      rightValue.renderEcma(renderer),
+                      right.unify(inner).apply(EcmaScriptRenderer.COMPARATOR));
                 }
               });
         }

@@ -337,17 +337,19 @@ export function regexBind(
 export function replaceUndefined<T>(value: T | undefined): T | null {
   return value === undefined ? null : value;
 }
-export function setAdd<T>(set: Set<T>, item: T): Set<T> {
-  const result = new Set(set);
-  result.add(item);
-  return result;
+export function setAdd<T>(
+  set: T[],
+  item: T,
+  compare: (a: T, b: T) => number
+): T[] {
+  return setNew(set.concat([item]), compare);
 }
-export function setDifference<T>(left: Set<T>, right: Set<T>): Set<T> {
-  const result = new Set(left);
-  for (const element of right) {
-    result.delete(element);
-  }
-  return result;
+export function setDifference<T>(
+  left: T[],
+  right: T[],
+  compare: (a: T, b: T) => number
+): T[] {
+  return left.filter((v) => !setContains(right, v, compare));
 }
 export function dictCompare<K, V>(
   left: [K, V][] | { K: V },
@@ -490,17 +492,19 @@ export function setNew<T>(items: T[], compare: (a: T, b: T) => number): T[] {
       (item, index, arr) => index == 0 || compare(item, arr[index - 1]) != 0
     );
 }
-export function setRemove<T>(set: Set<T>, item: T): Set<T> {
-  const result = new Set(set);
-  result.delete(item);
-  return result;
+export function setRemove<T>(
+  set: T[],
+  item: T,
+  compare: (a: T, b: T) => number
+): T[] {
+  return set.filter((v) => compare(v, item) != 0);
 }
-export function setUnion<T>(left: Set<T>, right: Set<T>): Set<T> {
-  const result = new Set(left);
-  for (const element of right) {
-    result.add(element);
-  }
-  return result;
+export function setUnion<T>(
+  left: T[],
+  right: T[],
+  compare: (a: T, b: T) => number
+): T[] {
+  return setNew(left.concat(right), compare);
 }
 export function stringHash(input: string): number {
   let hash = 0;
@@ -645,8 +649,8 @@ export function versionAtLeast(
 }
 
 export function zip<K, T extends [K], U extends [K], R>(
-  left: Set<T>,
-  right: Set<U>,
+  left: T[],
+  right: U[],
   merger: (left: T | undefined, right: U | undefined) => R
 ): R[] {
   const leftMap = new Map<string, T>();
