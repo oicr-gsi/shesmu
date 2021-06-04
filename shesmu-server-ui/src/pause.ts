@@ -145,112 +145,122 @@ export function initialisePauseDashboard(pauses: Pauses) {
               }
             ),
           ].concat(
-            pauses.map((pause, index) =>
-              tableRow(
-                null,
-                {
-                  contents: filenameFormatter(pause.file),
-                },
-                {
-                  contents: pause.line || "*",
-                },
-                {
-                  contents: pause.column || "*",
-                },
-                {
-                  contents: pause.hash || "*",
-                },
-                {
-                  contents: pause.live ? "🍅 Fresh" : "💀 Dead",
-                },
-                {
-                  contents: [
-                    active[index],
-
-                    buttonDanger(
-                      [{ type: "icon", icon: "skip-forward-fill" }, "Restart"],
-                      "Remove this pause and allow actions to continue.",
-                      () =>
-                        fetchJsonWithBusyDialog(
-                          pause.line ? "pauseolive" : "pausefile",
-                          { ...pause, pause: false },
-                          (isPause) => {
-                            if (!isPause) {
-                              refresher.statusChanged(null);
-                            } else {
-                              dialog((_c) => "Could not clear pause.");
-                            }
-                          }
-                        )
-                    ),
-                    buttonDanger(
-                      [{ type: "icon", icon: "x-octagon-fill" }, "️Purge"],
-                      "Purge related actions and remove this pause.",
-                      () =>
-                        fetchJsonWithBusyDialog(
-                          "purge",
-                          [
-                            {
-                              type: "sourcelocation",
-                              locations: [copyLocation(pause)],
-                            },
-                          ],
-                          (count) =>
-                            fetchJsonWithBusyDialog(
-                              pause.line ? "pauseolive" : "pausefile",
-                              {
-                                ...pause,
-                                pause: false,
-                              },
-                              (isPause) => {
-                                if (!isPause) {
-                                  butterForPurgeCount(count);
-                                  refresher.statusChanged(null);
-                                } else {
-                                  dialog((_c) => "Could not clear pause.");
-                                }
-                              }
-                            )
-                        )
-                    ),
-                    buttonDanger(
-                      [{ type: "icon", icon: "cart-x-fill" }, "️Drain"],
-                      "Purge related actions, download their contents and remove this pause.",
-                      () =>
-                        fetchJsonWithBusyDialog(
-                          "drain",
-                          [
-                            {
-                              type: "sourcelocation",
-                              locations: [copyLocation(pause)],
-                            },
-                          ],
-                          (actions) =>
-                            fetchJsonWithBusyDialog(
-                              pause.line ? "pauseolive" : "pausefile",
-                              {
-                                ...pause,
-                                pause: false,
-                              },
-                              (isPause) => {
-                                if (!isPause) {
-                                  saveFile(
-                                    JSON.stringify(actions, null, 2),
-                                    "application/json",
-                                    "paused-drained-actions.json"
-                                  );
-                                  refresher.statusChanged(null);
-                                } else {
-                                  dialog((_c) => "Could not clear pause.");
-                                }
-                              }
-                            )
-                        )
-                    ),
-                  ],
-                }
+            pauses
+              .sort(
+                (a, b) =>
+                  a.file.localeCompare(b.file) ||
+                  (a.line || 0) - (b.line || 0) ||
+                  (a.column || 0) - (b.column || 0)
               )
-            )
+              .map((pause, index) =>
+                tableRow(
+                  null,
+                  {
+                    contents: filenameFormatter(pause.file),
+                  },
+                  {
+                    contents: pause.line || "*",
+                  },
+                  {
+                    contents: pause.column || "*",
+                  },
+                  {
+                    contents: pause.hash || "*",
+                  },
+                  {
+                    contents: pause.live ? "🍅 Fresh" : "💀 Dead",
+                  },
+                  {
+                    contents: [
+                      active[index],
+
+                      buttonDanger(
+                        [
+                          { type: "icon", icon: "skip-forward-fill" },
+                          "Restart",
+                        ],
+                        "Remove this pause and allow actions to continue.",
+                        () =>
+                          fetchJsonWithBusyDialog(
+                            pause.line ? "pauseolive" : "pausefile",
+                            { ...pause, pause: false },
+                            (isPause) => {
+                              if (!isPause) {
+                                refresher.statusChanged(null);
+                              } else {
+                                dialog((_c) => "Could not clear pause.");
+                              }
+                            }
+                          )
+                      ),
+                      buttonDanger(
+                        [{ type: "icon", icon: "x-octagon-fill" }, "️Purge"],
+                        "Purge related actions and remove this pause.",
+                        () =>
+                          fetchJsonWithBusyDialog(
+                            "purge",
+                            [
+                              {
+                                type: "sourcelocation",
+                                locations: [copyLocation(pause)],
+                              },
+                            ],
+                            (count) =>
+                              fetchJsonWithBusyDialog(
+                                pause.line ? "pauseolive" : "pausefile",
+                                {
+                                  ...pause,
+                                  pause: false,
+                                },
+                                (isPause) => {
+                                  if (!isPause) {
+                                    butterForPurgeCount(count);
+                                    refresher.statusChanged(null);
+                                  } else {
+                                    dialog((_c) => "Could not clear pause.");
+                                  }
+                                }
+                              )
+                          )
+                      ),
+                      buttonDanger(
+                        [{ type: "icon", icon: "cart-x-fill" }, "️Drain"],
+                        "Purge related actions, download their contents and remove this pause.",
+                        () =>
+                          fetchJsonWithBusyDialog(
+                            "drain",
+                            [
+                              {
+                                type: "sourcelocation",
+                                locations: [copyLocation(pause)],
+                              },
+                            ],
+                            (actions) =>
+                              fetchJsonWithBusyDialog(
+                                pause.line ? "pauseolive" : "pausefile",
+                                {
+                                  ...pause,
+                                  pause: false,
+                                },
+                                (isPause) => {
+                                  if (!isPause) {
+                                    saveFile(
+                                      JSON.stringify(actions, null, 2),
+                                      "application/json",
+                                      "paused-drained-actions.json"
+                                    );
+                                    refresher.statusChanged(null);
+                                  } else {
+                                    dialog((_c) => "Could not clear pause.");
+                                  }
+                                }
+                              )
+                          )
+                      ),
+                    ],
+                  }
+                )
+              )
           )
         )
       : "No pauses set right now.";
