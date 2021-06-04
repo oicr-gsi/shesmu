@@ -509,7 +509,7 @@ export function initialiseDefinitionDash(definitions: Definition[]): void {
     );
   });
 
-  data.statusChanged(definitions);
+  data.statusChanged(definitions.sort((a, b) => a.name.localeCompare(b.name)));
   setRootDashboard(
     "definitiondash",
     sidepanel(
