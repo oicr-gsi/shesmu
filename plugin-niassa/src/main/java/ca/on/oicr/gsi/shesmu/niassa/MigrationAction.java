@@ -160,7 +160,7 @@ public final class MigrationAction extends Action {
   @SuppressWarnings("checkstyle:CyclomaticComplexity")
   @Override
   public synchronized ActionState perform(ActionServices actionServices) {
-    if (request.getWorkflowVersion() != null) {
+    if (request.getWorkflowVersion() == null) {
       final var errors = new ArrayList<String>();
       if (limsKeysCollection.shouldZombie(errors::add)) {
         this.errors = errors;
