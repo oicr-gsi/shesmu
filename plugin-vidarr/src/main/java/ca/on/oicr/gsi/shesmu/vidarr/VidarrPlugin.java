@@ -232,7 +232,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
 
   @ShesmuMethod(
       type =
-          "o9completed$qdcreated$dexternalKeys$ao3id$sprovider$sversions$msasinput_files$asinstance_name$smodified$dstarted$qdversion$sworkflow$s",
+          "qo9completed$qdcreated$dexternalKeys$ao3id$sprovider$sversions$msasinput_files$asinstance_name$smodified$dstarted$qdversion$sworkflow$s",
       name = "workflow_run_info",
       description = "Gets information about a workflow run")
   public Optional<Tuple> fetchRun(String id) {
