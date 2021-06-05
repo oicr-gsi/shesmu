@@ -43,7 +43,7 @@ abstract class BaseCerberusFileProvenanceRecord<T extends LimsProvenance>
   public final String accession() {
     return "vidarr:"
         + provenanceRecord.workflow().getInstanceName()
-        + "/"
+        + "/file/"
         + provenanceRecord.record().getId();
   }
 
@@ -134,7 +134,7 @@ abstract class BaseCerberusFileProvenanceRecord<T extends LimsProvenance>
   public final String workflow_run_accession() {
     return "vidarr:"
         + provenanceRecord.workflow().getInstanceName()
-        + "/"
+        + "/run/"
         + provenanceRecord.workflow().getId();
   }
 
