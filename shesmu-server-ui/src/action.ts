@@ -16,7 +16,6 @@ import {
   dropdown,
   group,
   historyState,
-  hr,
   img,
   inputText,
   inputTextArea,
@@ -52,7 +51,7 @@ import {
 } from "./util.js";
 import {
   ActionFilter,
-  BasicQuery,
+  Query,
   createSearch,
   renderFilters,
 } from "./actionfilters.js";
@@ -753,7 +752,7 @@ function collectSearches(
 export function initialiseActionDash(
   sources: SourceLocation[],
   savedQueryName: string | null,
-  userFilters: string | BasicQuery | null,
+  userFilters: Query | null,
   exportSearches: ExportSearchCommand[]
 ) {
   const filenameFormatter = commonPathPrefix(sources.map((s) => s.file));
