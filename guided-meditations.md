@@ -43,24 +43,32 @@ The actions currently present in Shesmu can be searched using the advanced
 action search language. For details, see the _Actions_ page in _Advanced_ mode.
 A search for actions might look something like:
 
-    Actions type = "sftp-symlink"
+```
+Actions type = "sftp-symlink"
+```
 
 The action queries can also include olive expressions using `{}`:
 
-    Actions type = "sftp-symlink" and tag = {active_projects}
+```
+Actions type = "sftp-symlink" and tag = {active_projects}
+```
 
 This only applies to values, not the variables. For example, this is not allowed:
 
-    Actions {If something Then "type" Else "tag} = "whatever"
+```
+Actions {If something Then "type" Else "tag} = "whatever"
+```
 
 Lists versus single items are more forgiving than in the regular action
 queries. For instance, the following is allowed:
 
-    Actions status = {
-      If std::date::now - start_time < 3hours
-        Then [WAITING, THROTTLED]
-        Else [THROTTLED]}
-      and tag in (research, {project})
+```
+Actions status = {
+  If std::date::now - start_time < 3hours
+    Then [WAITING, THROTTLED]
+    Else [THROTTLED]}
+  and tag in (research, {project})
+```
 
 ### Alert Searches
 The alerts currently present in Shesmu can also be searched. There is no alert
@@ -137,54 +145,64 @@ of passing values into the simulation.
 
 
 - `Simulate` [`Let` _n1_ `=` _v1_`,` ...] `Existing "` _path_ `"`
-This simulates an existing script on the server with the complete path to the
-script provided. This might seem useless since the script's information is
-already on the _Olives_ page. However, passing in parameters makes it possible
-to change the way this script operates. For instance, suppose the simulation is
-set as:
+  This simulates an existing script on the server with the complete path to the
+  script provided. This might seem useless since the script's information is
+  already on the _Olives_ page. However, passing in parameters makes it possible
+  to change the way this script operates. For instance, suppose the simulation is
+  set as:
 
-    Simulate Let run = run_name Existing "/srv/shesmu/bcl2fastq.shesmu"
+  ```
+  Simulate
+    Let run = run_name
+    Existing "/srv/shesmu/bcl2fastq.shesmu"
+  ```
 
-That script could be modified to use the constant, shielded by `IfDefined`, in
-a clause like this:
+  That script could be modified to use the constant, shielded by `IfDefined`, in
+  a clause like this:
 
-    Where IfDefined shesmu::simulated::run
-       Then shesmu::simulated::run == run_name
-       Else True
+  ```
+  Where IfDefined shesmu::simulated::run
+     Then shesmu::simulated::run == run_name
+     Else True
+  ```
 
-In normal operation, `shesmu::simulated::run` will not be defined and this
-clause will collapse into `Where True`. However, when invoked by the simulation
-request, it allows the extra condition to be activated and filter the results
-in a more interesting way.
+  In normal operation, `shesmu::simulated::run` will not be defined and this
+  clause will collapse into `Where True`. However, when invoked by the simulation
+  request, it allows the extra condition to be activated and filter the results
+  in a more interesting way.
 
 - `Simulate` [`Let` _n1_ `=` _v1_`,` ...]  [`Refiller` _name_ `=` _type_`,` ... `As` _refiller_]  _script_
-This simulates an entirely new script, just as in the olive simulator. Again,
-values can be provided using the `Let` and will be available in the
-`shesmu::simulated::` namespace. Additionally, refillers can be defined to
-allow outputting data in custom formats. A fake refiller is defined by listing
-the parameters the refiller requires and the types of those parameters. For
-example, a refiller could be defined as:
+  This simulates an entirely new script, just as in the olive simulator. Again,
+  values can be provided using the `Let` and will be available in the
+  `shesmu::simulated::` namespace. Additionally, refillers can be defined to
+  allow outputting data in custom formats. A fake refiller is defined by listing
+  the parameters the refiller requires and the types of those parameters. For
+  example, a refiller could be defined as:
 
-    Refiller
-      run = string,
-      lane = integer,
-      barcode = string,
-      library_name = string As libraries
+  ```
+  Refiller
+    run = string,
+    lane = integer,
+    barcode = string,
+    library_name = string As libraries
+  ```
 
-and then used in the script:
+  and then used in the script:
 
-    Olive
-      ...
-      Refiller libraries With
-        {run, lane, barcode} = ius,
-        library_name = library_name;
+  ```
+  Olive
+    ...
+    Refiller libraries With
+      {run, lane, barcode} = ius,
+      library_name = library_name;
+  ```
 
-Any code that can be normally written in an olive script is allowed and the
-script will have full access to functions and constants available on the
-server.
+  Any code that can be normally written in an olive script is allowed and the
+  script will have full access to functions and constants available on the
+  server.
 
-The script will be checked as part of the meditation's compilation, so values
-injected via `Let` will be checked for correctness in the script.
+  The script will be checked as part of the meditation's compilation, so values
+  injected via `Let` will be checked for correctness in the script.
 
 ## Next Steps
 As the meditation is run, the user can select the next step along the way and
@@ -340,18 +358,20 @@ may not appreciate that. There are three important things to do:
 - Restrict the number of variables required (_i.e._, have a `Let` clause that limits the variables to only the ones necessary)
 - Remove duplicate rows. Normally, Shesmu handles duplicates gracefully, but implementation details here make duplicate rows more of a problem. If selecting a small number of variables that will be mostly duplicated, use a `Group By` to ensure that duplicates are collapsed.
 
-     "Peer in the file system!"
-     Form
-       owner = Text Label "What user are you interested in?"
-     Then
-       Fetch
-         files = Olive
-           Input unix_file
-             Where user == owner Let file, size
-       Then
-         ForDisplay {; file,  size} In files:
-           Begin Bold "{file}" " ({size}) " End
-       Stop
+  ```
+  "Peer in the file system!"
+  Form
+    owner = Text Label "What user are you interested in?"
+  Then
+    Fetch
+      files = Olive
+        Input unix_file
+          Where user == owner Let file, size
+    Then
+      ForDisplay {; file,  size} In files:
+        Begin Bold "{file}" " ({size}) " End
+    Stop
+  ```
 
 - _name_ `=` _constant_
 
@@ -395,28 +415,29 @@ dependency order and cycles are not permitted.
 
 There is a functional, though somewhat useless meditation:
 
+```
+"Hello. How do you feel?"
 
-     "Hello. How do you feel?"
+Choice
+  When "I am tried" Stop
+  When "I am confused"
+     Actions type = "sftp-symlink"
+     Stop
+  When "I'm looking for something more conventional"
+    Form
+      text = name With Label "What is your name?"
+    Then
+      Download "Hello, {name}! Does this meet your expectations"
+        To "example.txt" MimeType "text/plain"
+      Stop
+  When "I yearn for knowledge"
+    Simulate
+      Refiller type = string, count = integer As action_stats
+        Version 1;
+        Input shesmu;
+        Olive
+          Group By type Into count = Count
+          Refill action_stats With type = type, count = count;
 
-     Choice
-       When "I am tried" Stop
-       When "I am confused"
-          Actions type = "sftp-symlink"
-          Stop
-       When "I'm looking for something more conventional"
-         Form
-           text = name With Label "What is your name?"
-         Then
-           Download "Hello, {name}! Does this meet your expectations"
-             To "example.txt" MimeType "text/plain"
-           Stop
-       When "I yearn for knowledge"
-         Simulate
-           Refiller type = string, count = integer As action_stats
-             Version 1;
-             Input shesmu;
-             Olive
-               Group By type Into count = Count
-               Refill action_stats With type = type, count = count;
-
-         Stop
+    Stop
+````
