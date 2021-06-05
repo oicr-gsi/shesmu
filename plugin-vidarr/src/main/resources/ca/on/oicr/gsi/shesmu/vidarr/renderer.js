@@ -90,7 +90,7 @@ const vidarrStateRenderer = {
     objectTable(a.info.arguments, "Arguments from Vidarr", (v) =>
       preformatted(JSON.stringify(v, null, 2))
     ),
-    typeof a.info.engineParameters == "object"
+    typeof a.info.engineParameters == "object" && a.info.engineParameters !== null
       ? objectTable(a.info.engineParameters, "Engine Parameters", (v) =>
           preformatted(JSON.stringify(v, null, 2))
         )
