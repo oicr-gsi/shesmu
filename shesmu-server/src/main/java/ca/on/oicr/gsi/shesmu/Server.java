@@ -41,7 +41,6 @@ import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import ca.on.oicr.gsi.status.*;
 import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -545,7 +544,7 @@ public final class Server implements ServerConfig, ActionServices {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
           try (var os = t.getResponseBody()) {
-            final var jsonOutput = new JsonFactory().createGenerator(os, JsonEncoding.UTF8);
+            final var jsonOutput = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8);
             jsonOutput.writeStartObject();
             for (var inflight : INFLIGHT.entrySet()) {
               jsonOutput.writeNumberField(inflight.getKey(), inflight.getValue().toEpochMilli());
@@ -1393,7 +1392,7 @@ public final class Server implements ServerConfig, ActionServices {
           }
           t.sendResponseHeaders(200, 0);
           try (final var os = t.getResponseBody();
-              final var jsonOutput = new JsonFactory().createGenerator(os, JsonEncoding.UTF8)) {
+              final var jsonOutput = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8)) {
             jsonOutput.writeStartArray();
             for (final var tag :
                 processor.tags(filters).collect(Collectors.toCollection(TreeSet::new))) {
@@ -1524,8 +1523,7 @@ public final class Server implements ServerConfig, ActionServices {
           }
           t.sendResponseHeaders(200, 0);
           try (var os = t.getResponseBody()) {
-            final var jsonOutput = new JsonFactory().createGenerator(os, JsonEncoding.UTF8);
-            jsonOutput.setCodec(RuntimeSupport.MAPPER);
+            final var jsonOutput = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8);
             jsonOutput.writeStartObject();
             jsonOutput.writeNumberField("offset", query.getSkip());
             jsonOutput.writeNumberField("total", processor.size(filters));
@@ -1704,7 +1702,7 @@ public final class Server implements ServerConfig, ActionServices {
           }
           t.sendResponseHeaders(200, 0);
           try (var os = t.getResponseBody();
-              final var jsonOutput = new JsonFactory().createGenerator(os, JsonEncoding.UTF8)) {
+              final var jsonOutput = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8)) {
             jsonOutput.writeStartArray();
             processor
                 .actionIds(
@@ -1743,7 +1741,7 @@ public final class Server implements ServerConfig, ActionServices {
                           .map(filterJson -> filterJson.convert(processor))
                           .toArray(Filter[]::new));
               final var os = t.getResponseBody();
-              final var jsonOutput = new JsonFactory().createGenerator(os, JsonEncoding.UTF8)) {
+              final var jsonOutput = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8)) {
             jsonOutput.setCodec(RuntimeSupport.MAPPER);
             jsonOutput.writeStartArray();
             actions.forEach(
@@ -1814,10 +1812,8 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          final var jfactory = new JsonFactory();
-          try (var os = t.getResponseBody();
-              var jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8)) {
-            jGenerator.setCodec(RuntimeSupport.MAPPER);
+          try (final var os = t.getResponseBody();
+              final var jGenerator = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8)) {
             processor.alerts(jGenerator, a -> true);
           }
         });
@@ -1830,10 +1826,8 @@ public final class Server implements ServerConfig, ActionServices {
               RuntimeSupport.MAPPER
                   .readValue(t.getRequestBody(), AlertFilter.class)
                   .convert(ActionProcessor.ALERT_FILTER_BUILDER);
-          final var jfactory = new JsonFactory();
           try (var os = t.getResponseBody();
-              var jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8)) {
-            jGenerator.setCodec(RuntimeSupport.MAPPER);
+              var jGenerator = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8)) {
             processor.alerts(jGenerator, predicate);
           }
         });
@@ -2402,8 +2396,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          try (var output =
-              RuntimeSupport.MAPPER.getFactory().createGenerator(t.getResponseBody())) {
+          try (var output = RuntimeSupport.MAPPER.createGenerator(t.getResponseBody())) {
             output.writeStartObject();
             output.writeNumberField("time", System.currentTimeMillis());
             output.writeObjectFieldStart("threads");
@@ -2638,9 +2631,8 @@ public final class Server implements ServerConfig, ActionServices {
     }
     t.getResponseHeaders().set("Content-type", "application/json");
     t.sendResponseHeaders(200, 0);
-    final var jfactory = new JsonFactory();
     try (var os = t.getResponseBody();
-        var jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8)) {
+        var jGenerator = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8)) {
       format.writeJson(jGenerator, inputSource, readStale);
     } catch (final IOException e) {
       e.printStackTrace();
