@@ -543,6 +543,10 @@ information. It knows where the current stream value is stored, which will be
 different through many layers of capturing. It also tracks how to access
 signatures.
 
+The ASM bytecode generation library has a class `Type` that describes JVM
+types. A `Type` object can be constructed either by knowing the JVM name for a
+class, or by using `Type.getType(Foo.class)` where _Foo_ is the class.
+
 ### Stream Purity
 Shesmu has two kinds of stream purity: olive-level (type) and `For`-level
 (order). They are conceptually similar, but perform different functions.
