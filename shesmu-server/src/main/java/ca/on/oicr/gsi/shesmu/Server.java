@@ -1327,7 +1327,9 @@ public final class Server implements ServerConfig, ActionServices {
           t.sendResponseHeaders(200, 0);
           final var filters =
               handleJsonQueryParameter(
-                  AlertFilter[].class, getParameters(t).get("filters"), new AlertFilter[0]);
+                  ArrayNode.class,
+                  getParameters(t).get("filters"),
+                  RuntimeSupport.MAPPER.createArrayNode());
           try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
