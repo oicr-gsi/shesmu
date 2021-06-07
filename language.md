@@ -397,10 +397,6 @@ Check if _expr_ is true for all rows. If none are collected, the result is true.
 
 Count the number of matched rows
 
-- `First` _expr_
-
-Collect a value; if none are collected, the group is rejected. Since the order of the input data is not guaranteed, this is effectively picking a random value. `Univalued` is recommended instead.
-
 - `Flatten` _expr_
 
 Collect all values into a list from existing lists (duplicates are removed).

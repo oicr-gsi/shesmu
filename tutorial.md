@@ -90,11 +90,11 @@ The `Group` operation can also be used to “widen” a table in this way:
       Group
         By project, library_name
         Into
-          qc = Where workflow == "BamQC 2.7+" First path,
+          qc = Where workflow == "BamQC 2.7+" Univalued path,
             # Use the output file from BamQC as `qc`
           fingerprint =
             Where workflow == "Fingerprinting"
-            First path,
+            Univalued path,
             # Use the output file from fingerprinting as `fingerprint`
           timestamp = Max timestamp
             # All scoped over project + library_name pairs
@@ -121,7 +121,6 @@ In total, the collectors in a `Group` operation are:
 
 - `List` to collect all values into a list
 - `Flatten` to collect all values into a list for existing lists
-- `First` to collect one value; if none are collected, the group is rejected
 - `Univalued` to collect exactly one value; if none are collected, the group is
   rejected; if more than one are collected, the group is rejected. It is fine
   if the same value is collected multiple times.
@@ -136,7 +135,7 @@ In total, the collectors in a `Group` operation are:
 
 and `Where` clauses can precede any of these.
 
-`First`, `Max`, and `Min` can also take a `Default` to prevent the entire group
+`Univalued`, `Max`, and `Min` can also take a `Default` to prevent the entire group
 from being rejected:
 
     Olive
@@ -146,11 +145,11 @@ from being rejected:
         Into
           qc =
             Where workflow == "BamQC 2.7+"
-            First path Default "/dev/null",
+            Univalued path Default "/dev/null",
             # Use the output file from BamQC as `qc`
           fingerprint =
             Where workflow == "Fingerprinting"
-            First path Default "/dev/null",
+            Univalued path Default "/dev/null",
             # Use the output file from fingerprinting as `fingerprint`
           timestamp = Max timestamp
       Group
@@ -211,7 +210,7 @@ workflow.
       With current_metatype, is_directory
       Into
         files = Where !is_directory List path,
-        validator = First validator_for_metatype(current_metatype),
+        validator = Univalued validator_for_metatype(current_metatype),
         directories = Where is_directory List path
      Run validate_output With
         directories = directories,
@@ -258,7 +257,9 @@ things. The `Let` clause provides this:
           && (For x In workflows: Count) > 1,
         sequencer_run = ius[0],
         lane_number = ius[1],
-        path = For x In paths: Where x[0] First x Default "",
+        path = For {directory, is_absolute} In paths:
+            Where is_absolute
+            Univalued directory Default "",
         timestamp = For x In timestamps: Max x Default epoch
       # Now regroup by sequencer run
       Group
@@ -336,8 +337,8 @@ Any kind of normal manipulation can be done in a `Define` olive:
       Group
         By donor
         Into
-          read_one = Where !is_read_two First path,
-          read_two = Where is_read_two First path;
+          read_one = Where !is_read_two Univalued path,
+          read_two = Where is_read_two Univalued path;
 
     Olive
       paired_fastq()
@@ -888,14 +889,14 @@ to rerun even though the input BAM is not changed.
       Where metatype == "application/bam"
       Max timestamp By donor, tissue_type
       Group
-          reference = Where tissue_type == "R" First path,
+          reference = Where tissue_type == "R" Univalued path,
           reference_signature =
              Where tissue_type == "R"
-             First std::signature::sha1,
-          tumour = Where tissue_type == "T" First path,
+             Univalued std::signature::sha1,
+          tumour = Where tissue_type == "T" Univalued path,
           tumour_signature =
              Where tissue_type == "T"
-             First std::signature::sha1
+             Univalued std::signature::sha1
         By donor
       Run variant_caller With
         input_signatures = [reference_signature, tumour_signature],
@@ -930,14 +931,14 @@ Now, suppose we wish to compare possible variants that are in two organs of inte
       Where metatype == "application/bam"
       Pick Max timestamp By donor, tissue_origin
       Group
-          blood = Where tissue_origin == "Blood" First path,
+          blood = Where tissue_origin == "Blood" Univalued path,
           blood_signature =
             Where tissue_origin == "Blood"
-            First std::signature::sha1,
-          organ = Where tissue_origin == "Brain" First path,
+            Univalued std::signature::sha1,
+          organ = Where tissue_origin == "Brain" Univalued path,
           organ_signature =
             Where tissue_origin == "Brain"
-            First std::signature::sha1
+            Univalued std::signature::sha1
         By donor
       Run variant_caller With
         input_signaturees = [blood_signature, organ_signature],

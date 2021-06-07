@@ -74,14 +74,13 @@ interlocking type systems:
 
 1. The Java type system
 1. The JVM type system
-1. The ASM type system
 1. The Shesmu type system
 1. The JSON type system
 
 Shesmu's type system describe the types of every type that can be used in an
-olive. Because `Type` is used by the ASM library, Shesmu's types are
-represented by `Imyhat` objects (this is an Ancient Egyptian word for _mould of
-conduct_).
+olive. Because the name `Type` is used by the ASM library, the library used by
+Shesmu to generate JVM bytecode, Shesmu's types are represented by `Imyhat`
+objects (this is an Ancient Egyptian word for _mould of conduct_).
 
 Java's type system is similar to, but more sophisticated than, the JVM type
 system. In particular, generic types in Java are [erased on the
@@ -111,10 +110,6 @@ olives cannot handle null values. If you need nullable values, use
 | Optional   | `java.util.Optional`                       | _inner_`?`               | `q`_inner_ |
 | Optional   | `java.util.Optional`                       | `nothing`                | `Q`        |
 | Dict       | `java.util.Map`                            | _k_` -> `_v_             | `m` _k_ _v_ |
-
-The ASM bytecode generation library has a class `Type` that describes JVM
-types. A `Type` object can be constructed either by knowing the JVM name for a
-class, or by using `Type.getType(Foo.class)` where _Foo_ is the class.
 
 If you require a type as part of your configuration, `Imyhat` can be serialised
 and unserialised by Jackson with JSON-enhanced descriptors. See [types in the
@@ -200,6 +195,14 @@ output rows. These are opaque to the grouper and Shesmu will fill in the gaps
 using the olive. The grouper may request that the olive provide data, of any
 Shesmu-compatible type, and export extra values to the olive.
 
+Groupers can take parameters from the olive and provide output variables. Both
+of these can be fixed (the same across all rows) or dynamic (a function that
+takes an input row as a parameter). There are a number of overrides and
+super-constructors to handle different numbers of input and output variables.
+The exact configuration will depend on what information the grouper requires.
+It maybe easiest to implement the grouper and see what information is necessary
+and then work backward to the grouper definition.
+
 1. Create a class _G_ that implements `Grouper` parameterised over _I_ and _O_.
 1. Create a class _D_ that extends `GrouperDefinition` and is annotated with
 `@MetaInfServices`.
@@ -258,6 +261,14 @@ All plugin integration is provided by:
 - adding annotated methods in `PluginFileType`
 - adding annotated methods in `PluginFile`
 - using the `Definer`
+
+A number of plugin features can be added to the `PluginFileType` or the
+`PluginFile`. Anything placed in the `PluginFileType` will be a global
+defintion. When Shesmu administrator creates configuration file, Shesmu will
+spawn an instance of `PluginFile` to read that file. Any annotated methods
+attached the `PluginFile` will be created per-instance. The name of the
+configuration file will be included in the definition if it is created
+per-instance.
 
 ### Source Linker
 Source linkers convert local paths for `.shesmu` files into URLs for accessing
@@ -355,18 +366,18 @@ of remote service that should perform the action.
 
 All of the data provided in the `With` block is done after the action is
 created. Once all the data is loaded into the action, it is put into the set.
-The set deduplicates olives based on their `hashCode` and `equals` method.
-Since the same olive will regenerate the same action many, many times during
-the life of a Shemu server instance, the deduplication must work properly to
-decide that two actions with the “same” parameters are identical. Which
-parameters must be considered for two actions to be identical is entirely
+The set deduplicates actions from olives based on their `hashCode` and `equals`
+method.  Since the same olive will regenerate the same action many, many times
+during the life of a Shemu server instance, the deduplication must work
+properly to decide that two actions with the “same” parameters are identical.
+Which parameters must be considered for two actions to be identical is entirely
 chosen by the implementer.
 
 When the system is going to perform actions, it sorts them by priority (smaller
 numbers are higher priority). If two actions are going to use the same
 resource, then priority is a good way to allocate the resource to the most
 appropriate action. Since new actions are being generated constantly, priority
-inversion may occur. An item can also return a different priorty over its life.
+inversion may occur. An item can also return a different priority over its life.
 
 At some point, an action will be given time to `perform`. There is a limited CPU pool
 for actions to run in, so blocking is strongly discouraged. An action should
@@ -417,10 +428,40 @@ To deliver an action to olives using a `Definer`:
 It is very important to use _A_ and not `Action`, since this type information
 is used to discover the properties of the action.
 
-For details on the parameters to an action, see below.
+For details on the parameters to an action, see the _Action Parameters_ section.
+
+These two methods are a bit different in how they operate:
+
+- `@ShesmuAction` will create one instance per plugin configuration (or one globally, if on `PluginFileType`)
+- `Definer` will dynamically create as many action definitions as requested
+
+For instance, the SFTP plugin allows creating file deletion commands. There's
+only one way to delete a file and each plugin is connected to one remote
+server, so it is in a method that creates one action on `PluginType`, resulting
+in one action definition per instance.
+
+On the other side, the Vidarr plugin will scan the available workflows on the
+Vidarr server listed in its configuration and create one action definition for
+each workflow version. The `Definer` allows creating custom parameters, so in
+the case of creating actions for Vidarr workflow, some parameters are baked
+into the Vidarr submit action, but many are also dynamically created from the
+information provided by the Vidarr server.
+
+A plugin can freely create both kinds of actions. In fact, the Vidarr plugin
+has fixed unload actions and dynamically creates actions for workflows.
+
+Typically, dynamically created actions need extra information, so the `Definer`
+can capture extra information needed by the action's constructor as part of the
+`Supplier`.
 
 #### Action Parameters
-An action needs to take some data from the Shesmu olive. To do this, there are multiple methods:
+An action needs to take some data from the Shesmu olive. Since the number of
+parameters an action might require can be very large, they are not passed to
+the constructor. Instead, Shesmu will create a new action instance, populate it
+with data from the olive (in an arbitrary order), and then send the action on
+to the scheduler. This works a bit like Jackson deserialization or Hibernate
+mapping, where an empty object is created and then populated from the data
+being loaded. There are multiple methods to import data from an olive:
 
 1. Put data in a field or setter method using the `@ActionParameter` annotation.
 1. Put data in a JSON object using the `@JsonParameter` annotation. _A_ must extend `JsonParameterisedAction`.
@@ -450,7 +491,10 @@ writes parameters back as JSON values if the action extends
 ### Refill
 `Refill` olives write the output to an external store. This is similar to a
 dumper, but the dumper must accept any data format given to it, while the
-refiller gets to decide the schema, much like an action.
+refiller gets to decide the schema, much like an action. Refillers are designed
+to allow an olive to upsert or overwrite data in a tabular database. The
+parameters provide the column values and the nature of olives will deliver a
+list of entries.
 
 To create a refiller:
 
@@ -460,19 +504,26 @@ To create a refiller:
 1. Implement the `consume` method that uses the readers to consume the data in
    the provided input stream.
 
+When an olive uses the refiller, a new instance of the refiller will be
+created. Just as olives populate actions with parameter values, actions
+populate refillers with parameter functions and a stream of values. The
+functions can be used to extract the appropriate columns on each incoming
+stream. Any olive has a different internal data format, so the refiller cannot
+know the types of these values; it must deal with arbitrary types and the olive
+will provide it with the functions it requires to manipulate that type.
+
 To deliver a database to olives using `PluginFileType` or `PluginFile`:
 
 1. Create a static method in `PluginFileType` or a virtual method in `PluginFile`, parameterized by `<T>`, that return _F_`<T>`. The returned type is used to discover parameters, so it must the be the correct subtype.
-1. Annotate this method with `@ShesmuShovel`.
+1. Annotate this method with `@ShesmuRefill`.
 1. Name this method with a Shesmu-compatible name or set the `name` property in
-	 the annotation. If the name is associated with an instance, it must contain
-   a `$` which will be substituted for the instance name.
-1. Return a new instance of _P_ from this method.
+	 the annotation.
+1. Return a new instance of _F_ from this method.
 
 To deliver a database to olives using a `Definer`:
 
 1. Call the `defineRefiller` method. This must take an implementation of `RefillerDefiner` which returns an implementation of `RefillerInfo`. These interfaces are there to ensure type safety.
-1. The `RefillerInfo` interface returns _P_`.class`, which is used to discover parameters, so it must be the correct subtype.
+1. The `RefillerInfo` interface returns _F_`.class`, which is used to discover parameters, so it must be the correct subtype.
 1. The `RefillerInfo` interface must return stream of non-annotated parameters.
 
 #### Refiller Parameters and Readers
