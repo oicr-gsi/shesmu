@@ -41,7 +41,7 @@ public class InformationNodeActions extends InformationNode {
                   Optional<InformationParameterNode<Instant>> end) {
                 return String.format(
                     "{type: \"added\", start: %s, end: %s}",
-                    start.map(s -> s.renderEcma(renderer)),
+                    start.map(s -> s.renderEcma(renderer)).orElse("null"),
                     end.map(e -> e.renderEcma(renderer)).orElse("null"));
               }
 
@@ -64,7 +64,7 @@ public class InformationNodeActions extends InformationNode {
                   Optional<InformationParameterNode<Instant>> end) {
                 return String.format(
                     "{type: \"checked\", start: %s, end: %s}",
-                    start.map(s -> s.renderEcma(renderer)),
+                    start.map(s -> s.renderEcma(renderer)).orElse("null"),
                     end.map(e -> e.renderEcma(renderer)).orElse("null"));
               }
 
@@ -80,7 +80,7 @@ public class InformationNodeActions extends InformationNode {
                   Optional<InformationParameterNode<Instant>> end) {
                 return String.format(
                     "{type: \"external\", start: %s, end: %s}",
-                    start.map(s -> s.renderEcma(renderer)),
+                    start.map(s -> s.renderEcma(renderer)).orElse("null"),
                     end.map(e -> e.renderEcma(renderer)).orElse("null"));
               }
 
@@ -160,7 +160,7 @@ public class InformationNodeActions extends InformationNode {
                   Optional<InformationParameterNode<Instant>> end) {
                 return String.format(
                     "{type: \"statuschanged\", start: %s, end: %s}",
-                    start.map(s -> s.renderEcma(renderer)),
+                    start.map(s -> s.renderEcma(renderer)).orElse("null"),
                     end.map(e -> e.renderEcma(renderer)).orElse("null"));
               }
 
