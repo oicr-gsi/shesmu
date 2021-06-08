@@ -10,6 +10,8 @@
             "and": "#/components/schemas/ActionFilterAnd",
             "checked": "#/components/schemas/ActionFilterChecked",
             "checkedago": "#/components/schemas/ActionFilterCheckedAgo",
+            "created": "#/components/schemas/ActionFilterCreated",
+            "createdago": "#/components/schemas/ActionFilterCreatedAgo",
             "external": "#/components/schemas/ActionFilterExternal",
             "externalago": "#/components/schemas/ActionFilterExternalAgo",
             "id": "#/components/schemas/ActionFilterId",
@@ -42,6 +44,12 @@
           },
           {
             "$ref": "#/components/schemas/ActionFilterCheckedAgo"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterCreated"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterCreatedAgo"
           },
           {
             "$ref": "#/components/schemas/ActionFilterExternal"
@@ -90,7 +98,7 @@
       "ActionFilterAdded": {
         "properties": {
           "end": {
-            "description": "miliseconds since UNIX epoch",
+            "description": "milliseconds since UNIX epoch",
             "type": "integer"
           },
           "negate": {
@@ -98,7 +106,7 @@
             "type": "boolean"
           },
           "start": {
-            "description": "miliseconds since UNIX epoch",
+            "description": "milliseconds since UNIX epoch",
             "type": "integer"
           },
           "type": {
@@ -114,7 +122,7 @@
             "type": "boolean"
           },
           "offset": {
-            "description": "miliseconds since the current time",
+            "description": "milliseconds since the current time",
             "type": "integer"
           },
           "type": {
@@ -141,7 +149,7 @@
       "ActionFilterChecked": {
         "properties": {
           "end": {
-            "description": "miliseconds since UNIX epoch",
+            "description": "milliseconds since UNIX epoch",
             "type": "integer"
           },
           "negate": {
@@ -149,7 +157,7 @@
             "type": "boolean"
           },
           "start": {
-            "description": "miliseconds since UNIX epoch",
+            "description": "milliseconds since UNIX epoch",
             "type": "integer"
           },
           "type": {
@@ -165,7 +173,43 @@
             "type": "boolean"
           },
           "offset": {
-            "description": "miliseconds since the current time",
+            "description": "milliseconds since the current time",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterCreated": {
+        "properties": {
+          "end": {
+            "description": "milliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "start": {
+            "description": "milliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterCreatedAgo": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "offset": {
+            "description": "milliseconds since the current time",
             "type": "integer"
           },
           "type": {
@@ -177,7 +221,7 @@
       "ActionFilterExternal": {
         "properties": {
           "end": {
-            "description": "miliseconds since UNIX epoch",
+            "description": "milliseconds since UNIX epoch",
             "type": "integer"
           },
           "negate": {
@@ -185,7 +229,7 @@
             "type": "boolean"
           },
           "start": {
-            "description": "miliseconds since UNIX epoch",
+            "description": "milliseconds since UNIX epoch",
             "type": "integer"
           },
           "type": {
@@ -201,7 +245,7 @@
             "type": "boolean"
           },
           "offset": {
-            "description": "miliseconds since the current time",
+            "description": "milliseconds since the current time",
             "type": "integer"
           },
           "type": {
@@ -322,7 +366,7 @@
       "ActionFilterStatusChanged": {
         "properties": {
           "end": {
-            "description": "miliseconds since UNIX epoch",
+            "description": "milliseconds since UNIX epoch",
             "type": "integer"
           },
           "negate": {
@@ -330,7 +374,7 @@
             "type": "boolean"
           },
           "start": {
-            "description": "miliseconds since UNIX epoch",
+            "description": "milliseconds since UNIX epoch",
             "type": "integer"
           },
           "type": {
@@ -346,7 +390,7 @@
             "type": "boolean"
           },
           "offset": {
-            "description": "miliseconds since the current time",
+            "description": "milliseconds since the current time",
             "type": "integer"
           },
           "type": {
@@ -643,7 +687,7 @@
                   "type": "integer"
                 },
                 "lastUpdate": {
-                  "description": "miliseconds since UNIX epoch",
+                  "description": "milliseconds since UNIX epoch",
                   "type": "integer"
                 }
               },
@@ -673,7 +717,7 @@
             "type": "integer"
           },
           "lastUpdate": {
-            "description": "miliseconds since UNIX epoch",
+            "description": "milliseconds since UNIX epoch",
             "type": "integer"
           },
           "name": {

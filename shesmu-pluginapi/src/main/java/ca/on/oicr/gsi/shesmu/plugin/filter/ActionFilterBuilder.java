@@ -55,6 +55,21 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
         }
 
         @Override
+        public ActionFilter created(Optional<Instant> start, Optional<Instant> end) {
+          final var result = new ActionFilterCreated();
+          result.setStart(start.map(Instant::getEpochSecond).orElse(null));
+          result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
+          return result;
+        }
+
+        @Override
+        public ActionFilter createdAgo(Long offset) {
+          final var result = new ActionFilterCreatedAgo();
+          result.setOffset(offset);
+          return result;
+        }
+
+        @Override
         public ActionFilter external(Optional<Instant> start, Optional<Instant> end) {
           final var result = new ActionFilterExternal();
           result.setStart(start.map(Instant::getEpochSecond).orElse(null));
@@ -214,6 +229,16 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
         @Override
         public Pair<String, Integer> checkedAgo(Long offset) {
           return formatAgo("checked", offset);
+        }
+
+        @Override
+        public Pair<String, Integer> created(Optional<Instant> start, Optional<Instant> end) {
+          return range("created", start, end);
+        }
+
+        @Override
+        public Pair<String, Integer> createdAgo(Long offset) {
+          return formatAgo("created", offset);
         }
 
         @Override
@@ -422,6 +447,21 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    * @param offset the number of milliseconds ago
    */
   F checkedAgo(O offset);
+
+  /**
+   * Check that an action was first created by an olive in the time range provided
+   *
+   * @param start the exclusive cut-off timestamp
+   * @param end the exclusive cut-off timestamp
+   */
+  F created(Optional<I> start, Optional<I> end);
+
+  /**
+   * Check that an action was first created by an olive in a recent range
+   *
+   * @param offset the number of milliseconds ago
+   */
+  F createdAgo(O offset);
 
   /**
    * Check that an action's external timestamp is in the time range provided

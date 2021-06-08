@@ -190,6 +190,8 @@ public final class ActionProcessor
   }
 
   private static class Information {
+
+    public final Instant created = Instant.now();
     final String id;
     Instant lastAdded = Instant.now();
     Instant lastChecked = Instant.EPOCH;
@@ -370,6 +372,19 @@ public final class ActionProcessor
         @Override
         public String name() {
           return "checked";
+        }
+      };
+  private static final BinMember<Instant> CREATED =
+      new BinMember<>() {
+
+        @Override
+        public Optional<Instant> extract(Entry<Action, Information> input) {
+          return Optional.of(input.getValue().created);
+        }
+
+        @Override
+        public String name() {
+          return "created";
         }
       };
   private static final BinMember<Instant> EXTERNAL =
@@ -752,6 +767,28 @@ public final class ActionProcessor
     };
   }
 
+  @Override
+  public Filter created(Optional<Instant> start, Optional<Instant> end) {
+    return new InstantFilter(start, end) {
+
+      @Override
+      protected Optional<Instant> get(Action action, Information info) {
+        return Optional.of(info.created);
+      }
+    };
+  }
+
+  @Override
+  public Filter createdAgo(Long offset) {
+    return new InstantFilter(offset) {
+
+      @Override
+      protected Optional<Instant> get(Action action, Information info) {
+        return Optional.of(info.created);
+      }
+    };
+  }
+
   /**
    * Execute a command on matching actions
    *
@@ -961,6 +998,7 @@ public final class ActionProcessor
                         entry.getValue().id,
                         entry.getValue().lastStateTransition,
                         entry.getValue().lastChecked,
+                        entry.getValue().created,
                         entry.getValue().lastAdded,
                         entry.getValue().lastStateTransition,
                         entry.getValue().lastState,
@@ -1219,6 +1257,7 @@ public final class ActionProcessor
     node.put("actionId", entry.getValue().id);
     node.put("updateInProgress", entry.getValue().updateInProgress);
     node.put("state", entry.getValue().lastState.name());
+    node.put("created", entry.getValue().created.toEpochMilli());
     node.put("lastAdded", entry.getValue().lastAdded.toEpochMilli());
     node.put("lastChecked", entry.getValue().lastChecked.toEpochMilli());
     node.put("lastStatusChange", entry.getValue().lastStateTransition.toEpochMilli());
@@ -1428,15 +1467,31 @@ public final class ActionProcessor
           () -> crosstab(array, actions, SOURCE_FILE, TAG),
           () -> crosstab(array, actions, TYPE, TAG),
           () -> crosstab(array, actions, TAG, TAG),
-          () -> histogram(array, 50, actions, INSTANT_BIN, ADDED, CHECKED, STATUS_CHANGED),
+          () -> histogram(array, 50, actions, INSTANT_BIN, ADDED, CHECKED, CREATED, STATUS_CHANGED),
           () -> histogram(array, 100, actions, INSTANT_BIN, EXTERNAL),
           () ->
               histogramByProperty(
-                  array, 50, actions, ACTION_STATE, INSTANT_BIN, ADDED, CHECKED, STATUS_CHANGED),
+                  array,
+                  50,
+                  actions,
+                  ACTION_STATE,
+                  INSTANT_BIN,
+                  ADDED,
+                  CHECKED,
+                  CREATED,
+                  STATUS_CHANGED),
           () -> histogramByProperty(array, 100, actions, ACTION_STATE, INSTANT_BIN, EXTERNAL),
           () ->
               histogramByProperty(
-                  array, 50, actions, SOURCE_FILE, INSTANT_BIN, ADDED, CHECKED, STATUS_CHANGED),
+                  array,
+                  50,
+                  actions,
+                  SOURCE_FILE,
+                  INSTANT_BIN,
+                  ADDED,
+                  CHECKED,
+                  CREATED,
+                  STATUS_CHANGED),
           () -> histogramByProperty(array, 100, actions, SOURCE_FILE, INSTANT_BIN, EXTERNAL),
         }) {
       if (!wait && Duration.between(start, Instant.now()).toMillis() >= 5000) {
