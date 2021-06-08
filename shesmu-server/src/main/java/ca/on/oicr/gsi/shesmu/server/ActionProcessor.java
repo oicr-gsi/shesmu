@@ -1624,7 +1624,6 @@ public final class ActionProcessor
     final var now = Instant.now();
     final var candidates =
         actions.entrySet().stream()
-            .sorted(Comparator.comparingInt(e -> e.getKey().priority()))
             .filter(
                 entry ->
                     entry.getValue().lastState != ActionState.SUCCEEDED
@@ -1632,6 +1631,17 @@ public final class ActionProcessor
                         && !entry.getValue().updateInProgress
                         && Duration.between(entry.getValue().lastChecked, now).toMinutes()
                             >= Math.max(10, entry.getKey().retryMinutes()))
+            .sorted(
+                Comparator.<Map.Entry<Action, Information>>comparingLong(
+                        e ->
+                            Duration.between(
+                                        now,
+                                        e.getValue().lastChecked == null
+                                            ? e.getValue().created
+                                            : e.getValue().lastChecked)
+                                    .getSeconds()
+                                / 600)
+                    .thenComparingInt(e -> e.getKey().priority()))
             .limit(1000L * ACTION_PERFORM_THREADS - currentRunningActions.get())
             .collect(Collectors.toList());
     currentRunningActionsGauge.set(currentRunningActions.addAndGet(candidates.size()));
