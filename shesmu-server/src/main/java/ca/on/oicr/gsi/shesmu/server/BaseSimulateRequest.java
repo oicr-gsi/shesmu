@@ -707,6 +707,7 @@ public abstract class BaseSimulateRequest {
               final var alertsJson = response.putArray("alerts");
               for (final var a : alerts.entrySet()) {
                 final var alertJson = alertsJson.addObject();
+                alertJson.put("live", true);
                 writeLabels(alertJson.putObject("labels"), a.getKey().first());
                 writeLabels(alertJson.putObject("annotations"), a.getKey().second());
                 final var locations = alertJson.putArray("locations");
