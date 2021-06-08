@@ -27,7 +27,7 @@ final class RunStateMissing extends RunState {
                     .map(
                         k ->
                             String.format(
-                                "LIMS key %s/%s does not have a version that overlaps with LIMS key in Vidarr workflow %s.",
+                                "LIMS key %s/%s does not have a version that overlaps with LIMS key in Vidarr workflow run %s.",
                                 k.getProvider(), k.getId(), id)))
             .collect(Collectors.toList());
   }
