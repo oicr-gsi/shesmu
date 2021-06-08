@@ -28,6 +28,8 @@ import java.util.stream.Stream;
   @JsonSubTypes.Type(value = ActionFilterAnd.class, name = "and"),
   @JsonSubTypes.Type(value = ActionFilterChecked.class, name = "checked"),
   @JsonSubTypes.Type(value = ActionFilterCheckedAgo.class, name = "checkedago"),
+  @JsonSubTypes.Type(value = ActionFilterCreated.class, name = "created"),
+  @JsonSubTypes.Type(value = ActionFilterCreatedAgo.class, name = "createdago"),
   @JsonSubTypes.Type(value = ActionFilterExternal.class, name = "external"),
   @JsonSubTypes.Type(value = ActionFilterExternalAgo.class, name = "externalago"),
   @JsonSubTypes.Type(value = ActionFilterIds.class, name = "id"),
@@ -341,6 +343,19 @@ public abstract class ActionFilter {
         return TemporalBuilder.parse(parser, BUILD_CHECKED, instant, offset, output);
       }
     },
+    CREATED {
+      @Override
+      public <T, S, I, O> Parser parse(
+          Parser parser,
+          Rule<T> actionState,
+          Rule<S> string,
+          Rule<S> strings,
+          Rule<I> instant,
+          Rule<O> offset,
+          Consumer<ActionFilterNode<T, S, I, O>> output) {
+        return TemporalBuilder.parse(parser, BUILD_CREATED, instant, offset, output);
+      }
+    },
     EXTERNAL {
       @Override
       public <T, S, I, O> Parser parse(
@@ -602,6 +617,19 @@ public abstract class ActionFilter {
         public <F, T, S, I, O> F range(
             ActionFilterBuilder<F, T, S, I, O> builder, Optional<I> start, Optional<I> end) {
           return builder.checked(start, end);
+        }
+      };
+  private static final TemporalBuilder BUILD_CREATED =
+      new TemporalBuilder() {
+        @Override
+        public <F, T, S, I, O> F ago(ActionFilterBuilder<F, T, S, I, O> builder, O offset) {
+          return builder.createdAgo(offset);
+        }
+
+        @Override
+        public <F, T, S, I, O> F range(
+            ActionFilterBuilder<F, T, S, I, O> builder, Optional<I> start, Optional<I> end) {
+          return builder.created(start, end);
         }
       };
   private static final TemporalBuilder BUILD_EXTERNAL =

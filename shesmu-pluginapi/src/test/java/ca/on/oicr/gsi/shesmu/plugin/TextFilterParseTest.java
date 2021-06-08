@@ -28,6 +28,16 @@ public class TextFilterParseTest {
     }
 
     @Override
+    public Boolean created(Optional<Instant> start, Optional<Instant> end) {
+      return false;
+    }
+
+    @Override
+    public Boolean createdAgo(Long offset) {
+      return false;
+    }
+
+    @Override
     public Boolean externalAgo(Long offset) {
       return false;
     }

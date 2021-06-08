@@ -75,6 +75,22 @@ public class InformationNodeActions extends InformationNode {
               }
 
               @Override
+              public String created(
+                  Optional<InformationParameterNode<Instant>> start,
+                  Optional<InformationParameterNode<Instant>> end) {
+                return String.format(
+                    "{type: \"created\", start: %s, end: %s}",
+                    start.map(s -> s.renderEcma(renderer)).orElse("null"),
+                    end.map(e -> e.renderEcma(renderer)).orElse("null"));
+              }
+
+              @Override
+              public String createdAgo(InformationParameterNode<Long> offset) {
+                return String.format(
+                    "{type: \"createdago\", offset: %s}", offset.renderEcma(renderer));
+              }
+
+              @Override
               public String external(
                   Optional<InformationParameterNode<Instant>> start,
                   Optional<InformationParameterNode<Instant>> end) {
@@ -275,6 +291,22 @@ public class InformationNodeActions extends InformationNode {
               }
 
               @Override
+              public Boolean created(
+                  Optional<InformationParameterNode<Instant>> start,
+                  Optional<InformationParameterNode<Instant>> end) {
+                return start
+                        .map(s -> s.resolveDefinitions(expressionCompilerServices, errorHandler))
+                        .orElse(true)
+                    & end.map(e -> e.resolveDefinitions(expressionCompilerServices, errorHandler))
+                        .orElse(true);
+              }
+
+              @Override
+              public Boolean createdAgo(InformationParameterNode<Long> offset) {
+                return offset.resolveDefinitions(expressionCompilerServices, errorHandler);
+              }
+
+              @Override
               public Boolean external(
                   Optional<InformationParameterNode<Instant>> start,
                   Optional<InformationParameterNode<Instant>> end) {
@@ -421,6 +453,19 @@ public class InformationNodeActions extends InformationNode {
               }
 
               @Override
+              public Boolean created(
+                  Optional<InformationParameterNode<Instant>> start,
+                  Optional<InformationParameterNode<Instant>> end) {
+                return start.map(s -> s.resolve(defs, errorHandler)).orElse(true)
+                    & end.map(e -> e.resolve(defs, errorHandler)).orElse(true);
+              }
+
+              @Override
+              public Boolean createdAgo(InformationParameterNode<Long> offset) {
+                return offset.resolve(defs, errorHandler);
+              }
+
+              @Override
               public Boolean external(
                   Optional<InformationParameterNode<Instant>> start,
                   Optional<InformationParameterNode<Instant>> end) {
@@ -551,6 +596,19 @@ public class InformationNodeActions extends InformationNode {
 
               @Override
               public Boolean checkedAgo(InformationParameterNode<Long> offset) {
+                return offset.typeCheck(errorHandler);
+              }
+
+              @Override
+              public Boolean created(
+                  Optional<InformationParameterNode<Instant>> start,
+                  Optional<InformationParameterNode<Instant>> end) {
+                return start.map(s -> s.typeCheck(errorHandler)).orElse(true)
+                    & end.map(e -> e.typeCheck(errorHandler)).orElse(true);
+              }
+
+              @Override
+              public Boolean createdAgo(InformationParameterNode<Long> offset) {
                 return offset.typeCheck(errorHandler);
               }
 

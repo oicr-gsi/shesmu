@@ -17,6 +17,7 @@ public final class ShesmuIntrospectionValue {
   private final Action action;
   private final Instant changed;
   private final Instant checked;
+  private final Instant created;
   private final Instant generated;
   private final String id;
   private JsonNode json;
@@ -30,6 +31,7 @@ public final class ShesmuIntrospectionValue {
       String id,
       Instant changed,
       Instant checked,
+      Instant created,
       Instant generated,
       Instant lastStateTransition,
       ActionState state,
@@ -40,6 +42,7 @@ public final class ShesmuIntrospectionValue {
     this.id = id;
     this.changed = changed;
     this.checked = checked;
+    this.created = created;
     this.generated = generated;
     this.lastStateTransition = lastStateTransition;
     this.state = state;
@@ -64,6 +67,11 @@ public final class ShesmuIntrospectionValue {
   @ShesmuVariable
   public Instant checked() {
     return checked;
+  }
+
+  @ShesmuVariable
+  public Instant created() {
+    return created;
   }
 
   @ShesmuVariable
