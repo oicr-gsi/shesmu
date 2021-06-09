@@ -19,7 +19,7 @@ Go to the Shesmu instance of interest, click on the _Actions_ tab. Here, you ca
 - Click on any cell or heading to filter by that criterion. At the bottom of the screen, you will see another set of buttons where you can List the actions, get more Stats on your selection, or display the JSON query that selects these action, if you're into that kind of thing.
 
 ## What's this server trying to do?
-From _Tools_, select _Active Server Processes_ to see a list of things the server is currently chewing on.
+From _Internals_, select _Active Server Processes_ to see a list of things the server is currently chewing on.
 
 ## What does `at3sis` mean?
 From _Tools_, select _Type Converter_ and enter the type descriptor in the box and then hit the button to get a human-friendly type.
