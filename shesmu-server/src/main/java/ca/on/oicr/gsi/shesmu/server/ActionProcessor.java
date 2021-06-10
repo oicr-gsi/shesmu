@@ -1642,24 +1642,7 @@ public final class ActionProcessor
                                     .getSeconds()
                                 / 600)
                     .thenComparingInt(e -> e.getKey().priority()))
-            .sorted(
-                new Comparator<>() {
-                  @Override
-                  public int compare(Entry<Action, Information> o1, Entry<Action, Information> o2) {
-                    ActionState o1State = o1.getValue().lastState,
-                        o2State = o2.getValue().lastState;
-                    // Consider INFLIGHT and QUEUED to be Equal but greater than the rest
-                    if (o1State == o2State
-                        || (o1State == ActionState.INFLIGHT && o2State == ActionState.QUEUED)
-                        || (o1State == ActionState.QUEUED && o2State == ActionState.INFLIGHT))
-                      return 0;
-                    // At this point we know either o1State or o2State is one of the other ones
-                    if (o1State == ActionState.INFLIGHT || o1State == ActionState.QUEUED) return 1;
-                    if (o2State == ActionState.INFLIGHT || o2State == ActionState.QUEUED) return -1;
-                    // At this point both are of some other state
-                    return 0;
-                  }
-                })
+            .sorted(Comparator.comparingInt(x -> x.getValue().lastState.processPriority()))
             .limit(1000L * ACTION_PERFORM_THREADS - currentRunningActions.get())
             .collect(Collectors.toList());
     currentRunningActionsGauge.set(currentRunningActions.addAndGet(candidates.size()));
