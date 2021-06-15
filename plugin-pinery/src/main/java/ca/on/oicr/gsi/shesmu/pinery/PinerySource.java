@@ -214,7 +214,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
           .filter(
               sp ->
                   isRunValid(allRuns.get(sp.getSequencerRunName()))
-                      && hasLane.test(sp.getSequencerRunName(), sp.getLaneNumber()))
+                      && hasLane.test(sp.getSequencerRunName(), sp.getLaneNumber())
+                      && !sp.getSkip())
           .map(
               sp -> {
                 final Set<String> badSetInRecord = new TreeSet<>();
