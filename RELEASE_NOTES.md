@@ -1,5 +1,29 @@
 # Unreleased
 
+# [1.13.0] - 2021-06-16T17:22+00:00
+
+Changes:
+
+* Use processPriority field on ActionState
+* Prioritize QUEUED and INFLIGHT actions as they need to move quickly
+* Change scheduler scoring
+* Add create time to actions
+* Add workflow run information function
+* Modify max-in-flight to remove stamp coupling
+* Sort unfiltered definitions and pause dashboard
+* Show alerts as "Live" in simulator
+* Expand documentation for implementation
+* Upgrade Prometheus Java client
+* Upgrade Cerberus and Vidarr
+* Handle null engine parameters for Vidarr actions in UI
+* Ensure every JSON generator is connected to an object mapper
+* Fix Vidarr IDs in cerberus_fp
+* Fix migration action logic
+* Fix alert query marshalling
+* Fix switching search on olives page
+* Fix bug in converting action queries to ECMAScript
+* Fixes in FAQ
+
 # [1.12.2] - 2021-06-03T18:04+00:00
 
 Changes:
