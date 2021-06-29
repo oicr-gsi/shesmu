@@ -58,8 +58,7 @@ aggregation of these types as long as they are compatible.
 ## Creating Algebraic Values
 Algebraic types can contain values if desired. Without values, algebraic types work much like an `enum` in Java:
 
-
-    TypeAlias suit = HEART | SPADE | CLUB | DIAMOND;
+    TypeAlias suit HEART | SPADE | CLUB | DIAMOND;
     Function symbol_for_suit(suit s)
       Match s
         When HEART Then "♡"
@@ -69,7 +68,7 @@ Algebraic types can contain values if desired. Without values, algebraic types w
 
 However, algebraic types can also carry extra information:
 
-     TypeAlias analysis = SEQUENCING_ONLY | ALIGN {string};
+     TypeAlias analysis SEQUENCING_ONLY | ALIGN {string};
      Function reference_for_analysis(analysis a)
        Match a
          When SEQUENCING_ONLY Then ``
@@ -77,11 +76,19 @@ However, algebraic types can also carry extra information:
 
 The type of information is the same as Shesmu tuples and named tuples/objects. For instance, the above could be:
 
-     TypeAlias analysis = SEQUENCING_ONLY | ALIGN {reference = string};
+     TypeAlias analysis SEQUENCING_ONLY | ALIGN {reference = string};
      Function reference_for_analysis(analysis a)
        Match a
          When SEQUENCING_ONLY Then ``
          WHEN ALIGN{reference = reference} Then `reference`;
+
+Note that TypeAlias declarations must be at the top of the file, following the Version and Input format declarations.
+     
+     Version 1;
+     Input cerberus_fp;
+
+     TypeAlias analysis SEQUENCING_ONLY | ALIGN {reference = string};
+
 
 ## Combining with Algebraic Values
 Shesmu algebraic values are _structural_, meaning that any two algebraic values
