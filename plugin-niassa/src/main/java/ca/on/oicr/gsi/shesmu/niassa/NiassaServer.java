@@ -165,7 +165,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       final MetadataWS metadata = metadataConstructor.get();
       final WorkflowRun run = metadata.getWorkflowRun(key.intValue());
       metadata.clean_up();
-      if (run==null) {
+      if (run == null) {
         return null;
       }
       final Properties ini = new Properties();
@@ -631,9 +631,13 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   }
 
   public WorkflowRunEssentials directoryAndIni(long workflowRun) {
-    WorkflowRunEssentials wre = directoryAndIniCache.get(workflowRun).orElse(WorkflowRunEssentials.EMPTY);
-    if (wre==WorkflowRunEssentials.EMPTY) {
-      definer.log(key, String.format("NiassaServer.DirectoryAndIniCache.fetch: Niassa Workflow Run fetch failed for WorkflowRun SWID: %d",Collections.singletonList("niassa-fetch-error"));
+    WorkflowRunEssentials wre =
+        directoryAndIniCache.get(workflowRun).orElse(WorkflowRunEssentials.EMPTY);
+    if (wre == WorkflowRunEssentials.EMPTY) {
+      definer.log(
+          String.format(
+              "NiassaServer.DirectoryAndIniCache.fetch: Niassa Workflow Run fetch failed for WorkflowRun SWID: %d"),
+          Collections.singletonMap("error", "niassa-fetch"));
     }
     return wre;
   }
