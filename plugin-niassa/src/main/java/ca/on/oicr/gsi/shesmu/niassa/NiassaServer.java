@@ -166,7 +166,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       final WorkflowRun run = metadata.getWorkflowRun(key.intValue());
       metadata.clean_up();
       if (run == null) {
-        return null;
+        return Optional.empty();
       }
       final Properties ini = new Properties();
       ini.load(new StringReader(run.getIniFile()));
@@ -636,7 +636,8 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     if (wre == WorkflowRunEssentials.EMPTY) {
       definer.log(
           String.format(
-              "NiassaServer.DirectoryAndIniCache.fetch: Niassa Workflow Run fetch failed for WorkflowRun SWID: %d"),
+              "NiassaServer.DirectoryAndIniCache.fetch: Niassa Workflow Run fetch failed for WorkflowRun SWID: %d",
+              workflowRun),
           Collections.singletonMap("error", "niassa-fetch"));
     }
     return wre;
