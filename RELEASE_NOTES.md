@@ -1,5 +1,12 @@
 # Unreleased
 
+# [1.14.0] - 2021-07-12T15:30+00:00
+
+Changes:
+
+* Filter out individual run-libraries marked as skipped
+* Fixed NullPointerException when Niassa fetch fails
+
 # [1.13.0] - 2021-06-16T17:22+00:00
 
 Changes:
