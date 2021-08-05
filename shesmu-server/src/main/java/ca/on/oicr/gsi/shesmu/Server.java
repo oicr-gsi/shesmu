@@ -61,7 +61,6 @@ import java.net.*;
 import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
@@ -80,7 +79,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import org.objectweb.asm.ClassVisitor;
 
-@SuppressWarnings("restriction")
 public final class Server implements ServerConfig, ActionServices {
   private class EmergencyThrottlerHandler implements HttpHandler {
     private final boolean state;
@@ -95,6 +93,7 @@ public final class Server implements ServerConfig, ActionServices {
       emergencyThrottle(state);
       t.getResponseHeaders().set("Location", "/");
       t.sendResponseHeaders(302, -1);
+      try (var os = t.getResponseBody()) {}
     }
   }
 
@@ -585,7 +584,6 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          final var parameters = getParameters(t);
 
           try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
@@ -680,7 +678,6 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          final var parameters = getParameters(t);
           try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
@@ -792,7 +789,6 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          final var parameters = getParameters(t);
 
           try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
@@ -1476,26 +1472,27 @@ public final class Server implements ServerConfig, ActionServices {
                   .orElse(null);
           if (match == null) {
             t.sendResponseHeaders(404, 0);
-          } else {
-            t.sendResponseHeaders(200, 0);
-            t.getResponseHeaders().set("Content-type", "image/svg+xml; charset=utf-8");
-            try (final var os = t.getResponseBody()) {
-              final var writer = XMLOutputFactory.newFactory().createXMLStreamWriter(os);
-              writer.writeStartDocument("utf-8", "1.0");
+            try (var os = t.getResponseBody()) {}
+            return;
+          }
+          t.getResponseHeaders().set("Content-type", "image/svg+xml; charset=utf-8");
+          t.sendResponseHeaders(200, 0);
+          try (final var os = t.getResponseBody()) {
+            final var writer = XMLOutputFactory.newFactory().createXMLStreamWriter(os);
+            writer.writeStartDocument("utf-8", "1.0");
 
-              MetroDiagram.draw(
-                  writer,
-                  pluginManager,
-                  match.first().second().filename(),
-                  match.first().second().hash(),
-                  match.second(),
-                  match.first().first() == null ? null : match.first().first().inputCount(),
-                  match.first().second().format(),
-                  processor);
-              writer.writeEndDocument();
-            } catch (XMLStreamException e) {
-              throw new RuntimeException(e);
-            }
+            MetroDiagram.draw(
+                writer,
+                pluginManager,
+                match.first().second().filename(),
+                match.first().second().hash(),
+                match.second(),
+                match.first().first() == null ? null : match.first().first().inputCount(),
+                match.first().second().format(),
+                processor);
+            writer.writeEndDocument();
+          } catch (XMLStreamException e) {
+            throw new RuntimeException(e);
           }
         });
     server.createContext( // This uses createContext instead of add to bypass the fail-fast handler
@@ -1584,6 +1581,7 @@ public final class Server implements ServerConfig, ActionServices {
               .filter(cache -> names.contains(cache.name()))
               .forEach(ValueCache::invalidate);
           t.sendResponseHeaders(201, -1);
+          try (var os = t.getResponseBody()) {}
         });
     addJson(
         "/caches",
@@ -1627,7 +1625,6 @@ public final class Server implements ServerConfig, ActionServices {
           final StatsRequest request;
           try {
             request = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), StatsRequest.class);
-
           } catch (final Exception e) {
             t.sendResponseHeaders(400, 0);
             try (var os = t.getResponseBody()) {}
@@ -1786,17 +1783,17 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/parsefiltertext",
         t -> {
-          t.getResponseHeaders().set("Content-type", "application/json");
           final var text = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
           final var result = ActionFilter.extractFromText(text, RuntimeSupport.MAPPER);
           if (result.isPresent()) {
+            t.getResponseHeaders().set("Content-type", "application/json");
             t.sendResponseHeaders(200, 0);
             try (var os = t.getResponseBody()) {
               RuntimeSupport.MAPPER.writeValue(os, result.get());
             }
           } else {
             t.sendResponseHeaders(400, 0);
-            t.getResponseBody().close();
+            try (var os = t.getResponseBody()) {}
           }
         });
 
@@ -2162,6 +2159,7 @@ public final class Server implements ServerConfig, ActionServices {
             if (guidedMeditations.stream()
                 .noneMatch(p -> p.filename().toString().equals(existingScript))) {
               t.sendResponseHeaders(403, -1);
+              try (var os = t.getResponseBody()) {}
               return;
             }
             final var scriptPath = Paths.get(existingScript);
@@ -2231,7 +2229,6 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           final var request =
               RuntimeSupport.MAPPER.readValue(t.getRequestBody(), TypeParseRequest.class);
-          t.getResponseHeaders().set("Content-type", "application/json");
           final var type =
               typeParsers
                   .getOrDefault(
@@ -2256,11 +2253,12 @@ public final class Server implements ServerConfig, ActionServices {
           if (type.isBad()) {
             t.sendResponseHeaders(400, 0);
             try (var os = t.getResponseBody()) {}
-          } else {
-            t.sendResponseHeaders(200, 0);
-            try (var os = t.getResponseBody()) {
-              RuntimeSupport.MAPPER.writeValue(os, new TypeParseResponse(type));
-            }
+            return;
+          }
+          t.getResponseHeaders().set("Content-type", "application/json");
+          t.sendResponseHeaders(200, 0);
+          try (var os = t.getResponseBody()) {
+            RuntimeSupport.MAPPER.writeValue(os, new TypeParseResponse(type));
           }
         });
 
@@ -2335,6 +2333,7 @@ public final class Server implements ServerConfig, ActionServices {
               jsonDumpers.computeIfAbsent(name, k -> "[]");
               t.getResponseHeaders().set("Content-type", "application/json");
               t.sendResponseHeaders(201, -1);
+              try (var os = t.getResponseBody()) {}
               break;
             case "DELETE":
               t.getResponseHeaders().set("Content-type", "application/json");
@@ -2398,7 +2397,8 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          try (var output = RuntimeSupport.MAPPER.createGenerator(t.getResponseBody())) {
+          try (var os = t.getResponseBody();
+              var output = RuntimeSupport.MAPPER.createGenerator(os)) {
             output.writeStartObject();
             output.writeNumberField("time", System.currentTimeMillis());
             output.writeObjectFieldStart("threads");
@@ -2965,27 +2965,6 @@ public final class Server implements ServerConfig, ActionServices {
     return searchInfo;
   }
 
-  private void showSourceConfig(XMLStreamWriter writer, Path filename) {
-    if (filename != null) {
-      pluginManager
-          .sourceUrl(filename.toString(), 1, 1, "")
-          .findFirst()
-          .ifPresent(
-              l -> {
-                try {
-                  writer.writeStartElement("p");
-                  writer.writeStartElement("a");
-                  writer.writeAttribute("href", l);
-                  writer.writeCharacters("View Configuration File");
-                  writer.writeEndElement();
-                  writer.writeEndElement();
-                } catch (XMLStreamException e) {
-                  throw new RuntimeException(e);
-                }
-              });
-    }
-  }
-
   public void signatureDefsJson(ArrayNode array) {
     definitionRepository
         .signatures()
@@ -3023,7 +3002,7 @@ public final class Server implements ServerConfig, ActionServices {
     pluginManager.log("Shesmu started.", Map.of());
   }
 
-  private <L, V> void storeEntries(ObjectNode entries, LabelledKeyValueCache<?, L, ?, V> cache) {
+  private <L, V> void storeEntries(ObjectNode entries, LabelledKeyValueCache<?, ?, ?, ?> cache) {
     for (final var record : cache) {
       final var node = entries.putObject(record.getKey().toString());
       node.put("collectionSize", record.getValue().collectionSize());
@@ -3031,7 +3010,7 @@ public final class Server implements ServerConfig, ActionServices {
     }
   }
 
-  private <K, V> void storeEntries(ObjectNode entries, KeyValueCache<K, ?, V> cache) {
+  private <K, V> void storeEntries(ObjectNode entries, KeyValueCache<?, ?, ?> cache) {
     for (final var record : cache) {
       final var node = entries.putObject(record.getKey().toString());
       node.put("collectionSize", record.getValue().collectionSize());
