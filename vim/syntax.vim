@@ -101,6 +101,7 @@ syn keyword shesmuKeyword To
 syn keyword shesmuKeyword Tuple
 syn keyword shesmuKeyword TypeAlias
 syn keyword shesmuKeyword Using
+syn keyword shesmuKeyword Version
 syn keyword shesmuKeyword When
 syn keyword shesmuKeyword Where
 syn keyword shesmuKeyword While
