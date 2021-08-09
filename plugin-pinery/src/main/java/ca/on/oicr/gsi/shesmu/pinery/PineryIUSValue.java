@@ -9,8 +9,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-/** IUS information from Pinery */
-public final class PineryIUSValue {
+public abstract class PineryIUSValue {
   private final Optional<String> barcode_kit;
   private final String bases_mask;
   private final Set<String> batches;
@@ -217,55 +216,55 @@ public final class PineryIUSValue {
       return false;
     }
     PineryIUSValue that = (PineryIUSValue) o;
-    return is_sample == that.is_sample
-        && library_size == that.library_size
-        && run_id == that.run_id
-        && run_lane_count == that.run_lane_count
-        && umis == that.umis
-        && barcode_kit.equals(that.barcode_kit)
-        && bases_mask.equals(that.bases_mask)
-        && batches.equals(that.batches)
-        && cell_viability.equals(that.cell_viability)
-        && completed_date.equals(that.completed_date)
-        && container_model.equals(that.container_model)
-        && donor.equals(that.donor)
-        && dv200.equals(that.dv200)
-        && external_donor_id.equals(that.external_donor_id)
-        && external_key.equals(that.external_key)
-        && external_tissue_id.equals(that.external_tissue_id)
-        && flowcellGeometry.equals(that.flowcellGeometry)
-        && group_desc.equals(that.group_desc)
-        && group_id.equals(that.group_id)
-        && instrumentModel.equals(that.instrumentModel)
-        && ius.equals(that.ius)
-        && kit.equals(that.kit)
-        && library_design.equals(that.library_design)
-        && library_name.equals(that.library_name)
-        && library_type.equals(that.library_type)
-        && lims.equals(that.lims)
-        && organism.equals(that.organism)
-        && path.equals(that.path)
-        && project.equals(that.project)
-        && reference_slide_id.equals(that.reference_slide_id)
-        && rin.equals(that.rin)
-        && run_status.equals(that.run_status)
-        && sequencing_control_type.equals(that.sequencing_control_type)
-        && sequencing_kit.equals(that.sequencing_kit)
-        && sequencing_workflow.equals(that.sequencing_workflow)
-        && sex.equals(that.sex)
-        && spike_in.equals(that.spike_in)
-        && spike_in_dilution_factor.equals(that.spike_in_dilution_factor)
-        && spike_in_volume_ul.equals(that.spike_in_volume_ul)
-        && startDate.equals(that.startDate)
-        && subproject.equals(that.subproject)
-        && target_cell_recovery.equals(that.target_cell_recovery)
-        && targeted_resequencing.equals(that.targeted_resequencing)
-        && timestamp.equals(that.timestamp)
-        && tissue_name.equals(that.tissue_name)
-        && tissue_origin.equals(that.tissue_origin)
-        && tissue_prep.equals(that.tissue_prep)
-        && tissue_region.equals(that.tissue_region)
-        && tissue_type.equals(that.tissue_type);
+    return is_sample == that.is_sample()
+        && library_size == that.library_size()
+        && run_id == that.run_id()
+        && run_lane_count == that.run_lane_count()
+        && umis == that.umis()
+        && barcode_kit.equals(that.barcode_kit())
+        && bases_mask.equals(that.bases_mask())
+        && batches.equals(that.batches())
+        && cell_viability.equals(that.cell_viability())
+        && completed_date.equals(that.completed_date())
+        && container_model.equals(that.container_model())
+        && donor.equals(that.donor())
+        && dv200.equals(that.dv200())
+        && external_donor_id.equals(that.external_donor_id())
+        && external_key.equals(that.external_key())
+        && external_tissue_id.equals(that.external_tissue_id())
+        && flowcellGeometry.equals(that.flowcell_geometry())
+        && group_desc.equals(that.group_desc())
+        && group_id.equals(that.group_id())
+        && instrumentModel.equals(that.instrument_model())
+        && ius.equals(that.ius())
+        && kit.equals(that.kit())
+        && library_design.equals(that.library_design())
+        && library_name.equals(that.library_name())
+        && library_type.equals(that.library_type())
+        && lims.equals(that.lims())
+        && organism.equals(that.organism())
+        && path.equals(that.path())
+        && project.equals(that.project())
+        && reference_slide_id.equals(that.reference_slide_id())
+        && rin.equals(that.rin())
+        && run_status.equals(that.run_status())
+        && sequencing_control_type.equals(that.sequencing_control_type())
+        && sequencing_kit.equals(that.sequencing_kit())
+        && sequencing_workflow.equals(that.sequencing_workflow())
+        && sex.equals(that.sex())
+        && spike_in.equals(that.spike_in())
+        && spike_in_dilution_factor.equals(that.spike_in_dilution_factor())
+        && spike_in_volume_ul.equals(that.spike_in_volume_ul())
+        && startDate.equals(that.start_date())
+        && subproject.equals(that.subproject())
+        && target_cell_recovery.equals(that.target_cell_recovery())
+        && targeted_resequencing.equals(that.targeted_resequencing())
+        && timestamp.equals(that.timestamp())
+        && tissue_name.equals(that.tissue_name())
+        && tissue_origin.equals(that.tissue_origin())
+        && tissue_prep.equals(that.tissue_prep())
+        && tissue_region.equals(that.tissue_region())
+        && tissue_type.equals(that.tissue_type());
   }
 
   @ShesmuVariable(signable = true)
