@@ -41,13 +41,18 @@ import java.util.stream.Stream;
 
 public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
-  private final class ItemCache extends ValueCache<Stream<PineryIUSValue>, Stream<PineryIUSValue>> {
-    private ItemCache(Path fileName) {
+  /**
+   * This input format filters out skipped samples and lanes, and provides only items that would be
+   * desirable to analyze.
+   */
+  private final class AnalysisItemCache
+      extends ValueCache<Stream<PineryIUSForAnalysisValue>, Stream<PineryIUSForAnalysisValue>> {
+    private AnalysisItemCache(Path fileName) {
       super("pinery " + fileName.toString(), 30, ReplacingRecord::new);
     }
 
     @Override
-    protected Stream<PineryIUSValue> fetch(Instant lastUpdated) throws Exception {
+    protected Stream<PineryIUSForAnalysisValue> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) {
         return Stream.empty();
       }
@@ -96,7 +101,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                               .set(value)));
     }
 
-    private Stream<PineryIUSValue> lanes(
+    private Stream<PineryIUSForAnalysisValue> lanes(
         String baseUrl,
         int version,
         String provider,
@@ -128,7 +133,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     lp.getLastModified() == null ? Instant.EPOCH : lp.getLastModified().toInstant();
                 addLane.accept(lp.getSequencerRunName(), lp.getLaneNumber());
 
-                return new PineryIUSValue(
+                return new PineryIUSForAnalysisValue(
                     Optional.empty(),
                     run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
                     Set.of(),
@@ -194,7 +199,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
           .filter(Objects::nonNull);
     }
 
-    private Stream<PineryIUSValue> samples(
+    private Stream<PineryIUSForAnalysisValue> samples(
         String baseUrl,
         int version,
         String provider,
@@ -223,8 +228,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     sp.getLastModified() == null ? Instant.EPOCH : sp.getLastModified().toInstant();
                 final RunDto run = allRuns.get(sp.getSequencerRunName());
                 if (run == null) return null;
-                final PineryIUSValue result =
-                    new PineryIUSValue(
+                final PineryIUSForAnalysisValue result =
+                    new PineryIUSForAnalysisValue(
                         limsAttr(sp, "barcode_kit", badSetInRecord::add, false),
                         run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
                         limsAttr(sp, "batches", badSetInRecord::add, false)
@@ -306,6 +311,284 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             .map(Boolean::parseBoolean)
                             .orElse(false),
                         true);
+
+                if (badSetInRecord.isEmpty()) {
+                  return result;
+                } else {
+                  badSetInRecord.forEach(name -> badSetCounts.merge(name, 1, Integer::sum));
+                  return null;
+                }
+              })
+          .filter(Objects::nonNull);
+    }
+  }
+
+  /** This input format includes skipped samples and lanes. */
+  private final class IncludeSkippedItemCache
+      extends ValueCache<
+          Stream<PineryIUSIncludeSkippedValue>, Stream<PineryIUSIncludeSkippedValue>> {
+    private IncludeSkippedItemCache(Path fileName) {
+      super("pinery-include-skipped " + fileName.toString(), 30, ReplacingRecord::new);
+    }
+
+    @Override
+    protected Stream<PineryIUSIncludeSkippedValue> fetch(Instant lastUpdated) throws Exception {
+      if (config.isEmpty()) {
+        return Stream.empty();
+      }
+      final PineryConfiguration cfg = config.get();
+      final Map<String, Integer> badSetCounts = new TreeMap<>();
+      final Map<String, RunDto> allRuns =
+          HTTP_CLIENT
+              .send(
+                  HttpRequest.newBuilder(URI.create(cfg.getUrl() + "/sequencerruns")).GET().build(),
+                  new JsonListBodyHandler<>(MAPPER, RunDto.class))
+              .body()
+              .get()
+              .collect(
+                  Collectors.toMap(
+                      RunDto::getName,
+                      Function.identity(),
+                      // If duplicate run names occur, pick one at random, because the universe is
+                      // spiteful, so we spite it back.
+                      (a, b) -> a));
+      final Set<Pair<String, String>> validLanes = new HashSet<>();
+      return Stream.concat(
+              lanes(
+                  cfg.getUrl(),
+                  cfg.getVersion(),
+                  cfg.getProvider(),
+                  badSetCounts,
+                  allRuns,
+                  (run, lane) -> validLanes.add(new Pair<>(run, lane))),
+              samples(
+                  cfg.getUrl(),
+                  cfg.getVersion(),
+                  cfg.getProvider(),
+                  badSetCounts,
+                  allRuns,
+                  (run, lane) -> validLanes.contains(new Pair<>(run, lane))))
+          .onClose(
+              () ->
+                  badSetCounts.forEach(
+                      (key, value) ->
+                          badSetMap
+                              .labels(
+                                  Stream.concat(
+                                          Stream.of(fileName().toString()),
+                                          Stream.of(key.split(":")))
+                                      .toArray(String[]::new))
+                              .set(value)));
+    }
+
+    private Stream<PineryIUSIncludeSkippedValue> lanes(
+        String baseUrl,
+        int version,
+        String provider,
+        Map<String, Integer> badSetCounts,
+        Map<String, RunDto> allRuns,
+        BiConsumer<String, String> addLane)
+        throws IOException, InterruptedException {
+      return HTTP_CLIENT
+          .send(
+              HttpRequest.newBuilder(
+                      URI.create(baseUrl + "/provenance/v" + version + "/lane-provenance"))
+                  .GET()
+                  .build(),
+              new JsonListBodyHandler<>(MAPPER, LaneProvenanceDto.class))
+          .body()
+          .get()
+          .filter(lp -> isRunValid(allRuns.get(lp.getSequencerRunName())))
+          .map(
+              lp -> {
+                final RunDto run = allRuns.get(lp.getSequencerRunName());
+                if (run == null) {
+                  badSetCounts.merge("run:null", 1, Integer::sum);
+                  return null;
+                }
+                final Instant lastModified =
+                    lp.getLastModified() == null ? Instant.EPOCH : lp.getLastModified().toInstant();
+                addLane.accept(lp.getSequencerRunName(), lp.getLaneNumber());
+
+                return new PineryIUSIncludeSkippedValue(
+                    Optional.empty(),
+                    run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
+                    Set.of(),
+                    Optional.empty(),
+                    Optional.ofNullable(lp.getCreatedDate()).map(ZonedDateTime::toInstant),
+                    maybeGetRunField(run, RunDto::getContainerModel),
+                    "",
+                    Optional.empty(),
+                    "",
+                    new Tuple(
+                        lp.getProvenanceId(),
+                        config.get().shortProvider(),
+                        false,
+                        Map.of("pinery-hash-" + version, lp.getVersion())),
+                    "",
+                    flowcellGeometry(run),
+                    "",
+                    "",
+                    lp.getSequencerRunPlatformModel(),
+                    new Tuple(
+                        lp.getSequencerRunName(),
+                        IUSUtils.parseLaneNumber(lp.getLaneNumber()),
+                        "NoIndex"),
+                    "",
+                    "",
+                    "",
+                    0L,
+                    "",
+                    new Tuple(lp.getLaneProvenanceId(), provider, lastModified, lp.getVersion()),
+                    "",
+                    Paths.get(
+                        run.getRunDirectory() == null || run.getRunDirectory().equals("")
+                            ? "/"
+                            : run.getRunDirectory()),
+                    "",
+                    Optional.empty(),
+                    Optional.empty(),
+                    run.getId(),
+                    runLaneCount(run),
+                    getRunField(run, RunDto::getState),
+                    "",
+                    maybeGetRunField(run, RunDto::getSequencingKit),
+                    maybeGetRunField(run, RunDto::getWorkflowType).orElse(""),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    run.getStartDate() == null || run.getStartDate().isEmpty()
+                        ? Instant.EPOCH
+                        : ZonedDateTime.parse(run.getStartDate()).toInstant(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    lastModified,
+                    false,
+                    false,
+                    lp.getSkip());
+              })
+          .filter(Objects::nonNull);
+    }
+
+    private Stream<PineryIUSIncludeSkippedValue> samples(
+        String baseUrl,
+        int version,
+        String provider,
+        Map<String, Integer> badSetCounts,
+        Map<String, RunDto> allRuns,
+        BiPredicate<String, String> hasLane)
+        throws IOException, InterruptedException {
+      return HTTP_CLIENT
+          .send(
+              HttpRequest.newBuilder(
+                      URI.create(baseUrl + "/provenance/v" + version + "/sample-provenance"))
+                  .GET()
+                  .build(),
+              new JsonListBodyHandler<>(MAPPER, SampleProvenanceDto.class))
+          .body()
+          .get()
+          .filter(
+              sp ->
+                  isRunValid(allRuns.get(sp.getSequencerRunName()))
+                      && hasLane.test(sp.getSequencerRunName(), sp.getLaneNumber()))
+          .map(
+              sp -> {
+                final Set<String> badSetInRecord = new TreeSet<>();
+                final Instant lastModified =
+                    sp.getLastModified() == null ? Instant.EPOCH : sp.getLastModified().toInstant();
+                final RunDto run = allRuns.get(sp.getSequencerRunName());
+                if (run == null) return null;
+                final PineryIUSIncludeSkippedValue result =
+                    new PineryIUSIncludeSkippedValue(
+                        limsAttr(sp, "barcode_kit", badSetInRecord::add, false),
+                        run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
+                        limsAttr(sp, "batches", badSetInRecord::add, false)
+                            .<Set<String>>map(
+                                s ->
+                                    COMMA
+                                        .splitAsStream(s)
+                                        .collect(Collectors.toCollection(TreeSet::new)))
+                            .orElse(Set.of()),
+                        limsAttr(sp, "cell_viability", badSetInRecord::add, false)
+                            .map(Double::parseDouble),
+                        Optional.ofNullable(sp.getCreatedDate()).map(ZonedDateTime::toInstant),
+                        maybeGetRunField(run, RunDto::getContainerModel),
+                        sp.getRootSampleName(),
+                        limsAttr(sp, "dv200", badSetInRecord::add, false).map(Double::parseDouble),
+                        limsAttr(sp, "geo_external_name", badSetInRecord::add, false).orElse(""),
+                        new Tuple(
+                            sp.getProvenanceId(),
+                            config.get().shortProvider(),
+                            false,
+                            Map.of("pinery-hash-" + version, sp.getVersion())),
+                        limsAttr(sp, "geo_tube_id", badSetInRecord::add, false).orElse(""),
+                        flowcellGeometry(run),
+                        limsAttr(sp, "geo_group_id_description", badSetInRecord::add, false)
+                            .orElse(""),
+                        limsAttr(sp, "geo_group_id", badSetInRecord::add, false).orElse(""),
+                        sp.getSequencerRunPlatformModel(),
+                        new Tuple(
+                            sp.getSequencerRunName(),
+                            IUSUtils.parseLaneNumber(sp.getLaneNumber()),
+                            sp.getIusTag()),
+                        limsAttr(sp, "geo_prep_kit", badSetInRecord::add, false).orElse(""),
+                        limsAttr(sp, "geo_library_source_template_type", badSetInRecord::add, true)
+                            .orElse(""),
+                        sp.getSampleName(),
+                        limsAttr(sp, "geo_library_size_code", badSetInRecord::add, false)
+                            .map(IUSUtils::parseLong)
+                            .orElse(0L),
+                        limsAttr(sp, "geo_library_type", badSetInRecord::add, false).orElse(""),
+                        new Tuple(
+                            sp.getSampleProvenanceId(), provider, lastModified, sp.getVersion()),
+                        limsAttr(sp, "geo_organism", badSetInRecord::add, true).orElse(""),
+                        Paths.get(
+                            run.getRunDirectory() == null || run.getRunDirectory().equals("")
+                                ? "/"
+                                : run.getRunDirectory()),
+                        sp.getStudyTitle(),
+                        limsAttr(sp, "reference_slide_id", badSetInRecord::add, false),
+                        limsAttr(sp, "rin", badSetInRecord::add, false).map(Double::parseDouble),
+                        run.getId(),
+                        runLaneCount(run),
+                        getRunField(run, RunDto::getState),
+                        limsAttr(sp, "sequencing_control_type", badSetInRecord::add, false)
+                            .orElse(""),
+                        maybeGetRunField(run, RunDto::getSequencingKit),
+                        maybeGetRunField(run, RunDto::getWorkflowType).orElse(""),
+                        limsAttr(sp, "sex", badSetInRecord::add, false),
+                        limsAttr(sp, "spike_in", badSetInRecord::add, false),
+                        limsAttr(sp, "spike_in_dilution_factor", badSetInRecord::add, false),
+                        limsAttr(sp, "spike_in_volume_ul", badSetInRecord::add, false)
+                            .map(Double::parseDouble),
+                        run.getStartDate() == null || run.getStartDate().isEmpty()
+                            ? Instant.EPOCH
+                            : ZonedDateTime.parse(run.getStartDate()).toInstant(),
+                        limsAttr(sp, "subproject", badSetInRecord::add, false)
+                            .filter(p -> !p.isBlank()),
+                        limsAttr(sp, "target_cell_recovery", badSetInRecord::add, false)
+                            .map(Double::parseDouble),
+                        IUSUtils.tissue(sp.getParentSampleName()),
+                        limsAttr(sp, "geo_tissue_type", badSetInRecord::add, true).orElse(""),
+                        limsAttr(sp, "geo_tissue_origin", badSetInRecord::add, true).orElse(""),
+                        limsAttr(sp, "geo_tissue_preparation", badSetInRecord::add, false)
+                            .orElse(""),
+                        limsAttr(sp, "geo_targeted_resequencing", badSetInRecord::add, false)
+                            .orElse(""),
+                        limsAttr(sp, "geo_tissue_region", badSetInRecord::add, false).orElse(""),
+                        lastModified,
+                        limsAttr(sp, "umis", badSetInRecord::add, false)
+                            .map(Boolean::parseBoolean)
+                            .orElse(false),
+                        true,
+                        sp.getSkip());
 
                 if (badSetInRecord.isEmpty()) {
                   return result;
@@ -415,7 +698,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         .orElse(0);
   }
 
-  private final ItemCache cache;
+  private final AnalysisItemCache cache;
+  private final IncludeSkippedItemCache includeSkippedCache;
   private Set<String> clinicalPipelines;
   private Optional<PineryConfiguration> config = Optional.empty();
   private final PlatformCache platforms;
@@ -424,7 +708,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   public PinerySource(Path fileName, String instanceName) {
     super(fileName, instanceName, MAPPER, PineryConfiguration.class);
     projects = new ProjectCache(fileName);
-    cache = new ItemCache(fileName);
+    cache = new AnalysisItemCache(fileName);
+    includeSkippedCache = new IncludeSkippedItemCache(fileName);
     platforms = new PlatformCache(fileName);
   }
 
@@ -521,8 +806,13 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   @ShesmuInputSource
-  public Stream<PineryIUSValue> streamIUS(boolean readStale) {
+  public Stream<PineryIUSForAnalysisValue> streamIUS(boolean readStale) {
     return readStale ? cache.getStale() : cache.get();
+  }
+
+  @ShesmuInputSource
+  public Stream<PineryIUSIncludeSkippedValue> streamAllIUS(boolean readStale) {
+    return readStale ? includeSkippedCache.getStale() : includeSkippedCache.get();
   }
 
   @ShesmuInputSource
@@ -538,6 +828,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     clinicalPipelines = value.getClinicalPipelines();
     projects.invalidate();
     cache.invalidate();
+    includeSkippedCache.invalidate();
     return Optional.empty();
   }
 }
