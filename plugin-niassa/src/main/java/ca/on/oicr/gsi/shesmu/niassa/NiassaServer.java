@@ -334,7 +334,16 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     @Override
     protected Optional<MaxCheck> fetch(Long workflowSwid, Instant lastUpdated) {
       final MetadataWS metadata = metadataConstructor.get();
-      final Workflow workflow = metadata.getWorkflow(workflowSwid.intValue());
+      Workflow workflow;
+      try {
+        workflow = metadata.getWorkflow(workflowSwid.intValue());
+      } catch (net.sourceforge.seqware.common.err.NotFoundException e) {
+        definer.log(
+            String.format("No workflow %d found for max-in-flight check!", workflowSwid),
+            Collections.emptyMap());
+        metadata.clean_up();
+        return Optional.empty();
+      }
       if (workflow == null) {
         definer.log(
             String.format("No such workflow %d for max-in-flight check!", workflowSwid),
@@ -356,6 +365,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
               .sum();
       currentInFlight.labels(Long.toString(workflowSwid), workflow.getName()).set(count);
       metadata.clean_up();
+      final Workflow finalWorkflow = workflow;
       return Optional.of(
           new MaxCheck() {
             // Every time we successfully start a workflow, we're going to count it as running and
@@ -366,10 +376,14 @@ class NiassaServer extends JsonPluginFile<Configuration> {
             private int started;
 
             public synchronized MaxStatus check(String workflowName) {
-              foundRunning.labels(url(), workflowName, workflow.getName()).set(count + started);
+              foundRunning
+                  .labels(url(), workflowName, finalWorkflow.getName())
+                  .set(count + started);
               if (count + started < maxInFlight.getOrDefault(workflowName, 0)) {
                 started++;
-                currentInFlight.labels(Long.toString(workflowSwid), workflow.getName()).set(count);
+                currentInFlight
+                    .labels(Long.toString(workflowSwid), finalWorkflow.getName())
+                    .set(count);
                 return MaxStatus.RUN;
               } else {
                 return MaxStatus.TOO_MANY_RUNNING;
