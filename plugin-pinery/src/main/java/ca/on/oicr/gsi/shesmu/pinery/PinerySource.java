@@ -53,7 +53,6 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
     @Override
     protected Stream<PineryIUSForAnalysisValue> fetch(Instant lastUpdated) throws Exception {
-      System.out.println("fetching pinery_ius");
       if (config.isEmpty()) {
         return Stream.empty();
       }
@@ -74,7 +73,6 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                       // spiteful, so we spite it back.
                       (a, b) -> a));
       final Set<Pair<String, String>> validLanes = new HashSet<>();
-      System.out.println("/fetch pinery_ius");
       return Stream.concat(
               lanes(
                   cfg.getUrl(),
@@ -809,7 +807,6 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
   @ShesmuInputSource
   public Stream<PineryIUSForAnalysisValue> streamIUS(boolean readStale) {
-    System.out.println("pinery_ius cache size: " + cache.collectionSize());
     return readStale ? cache.getStale() : cache.get();
   }
 
