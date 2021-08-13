@@ -1,5 +1,19 @@
 # Unreleased
 
+# [1.15.0] - 2021-08-13T18:43+00:00
+
+Changes:
+
+* Add Version keyword to syntax
+* Fixed cases in the server where HttpExchange was not closed
+* vidarr -> 0.4.6
+* cerberus -> 0.2.4
+* run-scanner -> 1.13.0
+
+Pinery changes:
+
+* Add `pinery_ius_include_skipped` input format
+
 # [1.14.0] - 2021-07-12T15:30+00:00
 
 Changes:
