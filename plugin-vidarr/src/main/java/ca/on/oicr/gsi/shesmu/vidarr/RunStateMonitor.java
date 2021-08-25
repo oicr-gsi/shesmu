@@ -18,6 +18,13 @@ import java.util.stream.Stream;
 public class RunStateMonitor extends RunState {
 
   private static ActionState actionStatusForWorkflowRun(WorkflowRunStatusResponse response) {
+    // It happens in some rare (and typically, bugged) cases for all operations to succeed but the
+    // engine itself to fail.
+    // This state leaves broken actions stuck in QUEUED. Check early for engine failure to ensure
+    // correct ActionState.
+    if (response.getEnginePhase().equals("FAILED")) {
+      return ActionState.FAILED;
+    }
     if (response.getCompleted() != null) {
       return ActionState.SUCCEEDED;
     }
@@ -78,7 +85,8 @@ public class RunStateMonitor extends RunState {
   public boolean canReattempt() {
     return status.getOperationStatus().equals("FAILED")
         || (status.getEnginePhase() == null
-            || status.getEnginePhase().equals("WAITING_FOR_RESOURCES"));
+            || status.getEnginePhase().equals("WAITING_FOR_RESOURCES")
+            || status.getEnginePhase().equals("FAILED"));
   }
 
   @Override
