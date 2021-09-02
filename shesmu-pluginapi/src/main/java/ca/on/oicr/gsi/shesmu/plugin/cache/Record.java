@@ -7,7 +7,7 @@ import java.time.Instant;
 /**
  * A record stored in a cache of some kind
  *
- * @param <V> the type of cached item
+ * @param <V> the type that can be retrieved from a cache
  */
 public interface Record<V> {
   LatencyHistogram refreshLatency =

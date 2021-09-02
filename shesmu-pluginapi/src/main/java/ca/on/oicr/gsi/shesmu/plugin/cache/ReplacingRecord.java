@@ -27,9 +27,9 @@ public final class ReplacingRecord<V> extends BaseRecord<Stream<V>, List<V>> {
 
   @Override
   protected List<V> update(List<V> oldstate, Instant fetchTime) throws Exception {
-    final var stream = fetcher.update(fetchTime);
+    final Stream<V> stream = fetcher.update(fetchTime);
     if (stream != null) {
-      final var result = stream.collect(Collectors.toList());
+      final List<V> result = stream.collect(Collectors.toList());
       stream.close();
       return result;
     } else {

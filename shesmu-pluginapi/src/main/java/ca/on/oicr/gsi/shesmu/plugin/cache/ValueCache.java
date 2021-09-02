@@ -15,9 +15,10 @@ import java.util.stream.Stream;
  * Store data that must be generated/fetched remotely and cache the results for a set period of
  * time.
  *
- * @param <V> the cached value
+ * @param <S> the state that is stored in the cache
+ * @param <V> the value retrievable from the cache based on the state
  */
-public abstract class ValueCache<I, V> implements Owner {
+public abstract class ValueCache<S, V> implements Owner {
   private static final Map<String, SoftReference<ValueCache<?, ?>>> CACHES =
       new ConcurrentHashMap<>();
   private static final Histogram fetchCpuTime =
@@ -55,7 +56,7 @@ public abstract class ValueCache<I, V> implements Owner {
    * @param name the name, as presented to Prometheus
    * @param ttl the number of minutes an item will remain in cache
    */
-  public ValueCache(String name, int ttl, RecordFactory<I, V> recordCtor) {
+  public ValueCache(String name, int ttl, RecordFactory<S, V> recordCtor) {
     super();
     this.name = name;
     this.ttl = ttl;
@@ -74,7 +75,7 @@ public abstract class ValueCache<I, V> implements Owner {
               }
 
               @Override
-              public I update(Instant lastModifed) throws Exception {
+              public S update(Instant lastModifed) throws Exception {
                 var cpuStart = Owner.CPU_TIME.getAsDouble();
                 try (final var _ignored = fetchTime.start(name)) {
                   return fetch(lastModifed);
@@ -84,6 +85,8 @@ public abstract class ValueCache<I, V> implements Owner {
               }
             });
     ttlValue.labels(name).set(ttl);
+    // WARNING: Passing "this" outside constructor means that objects are
+    // accessible before completely constructed
     CACHES.put(name, new SoftReference<>(this));
   }
 
@@ -97,7 +100,7 @@ public abstract class ValueCache<I, V> implements Owner {
    * @param lastUpdated the last time this item was successfully updated
    * @return the cached value
    */
-  protected abstract I fetch(Instant lastUpdated) throws Exception;
+  protected abstract S fetch(Instant lastUpdated) throws Exception;
 
   /**
    * Get an item from cache
@@ -106,7 +109,7 @@ public abstract class ValueCache<I, V> implements Owner {
    *     is in an error state
    */
   public V get() {
-    final var item = value.refresh(name);
+    final V item = value.refresh(name);
     innerCount.labels(name).set(value.collectionSize());
     return item;
   }
