@@ -17,10 +17,11 @@ import java.util.stream.Stream;
  * time.
  *
  * @param <K> the keys to use to lookup data in the cache
- * @param <V> the cached values
+ * @param <S> the state that is stored in the cache
+ * @param <V> the values retrievable from the cache based on state and key
  */
-public abstract class KeyValueCache<K, I, V> implements Owner, Iterable<Map.Entry<K, Record<V>>> {
-  private class KeyValueUpdater implements Updater<I> {
+public abstract class KeyValueCache<K, S, V> implements Owner, Iterable<Map.Entry<K, Record<V>>> {
+  private class KeyValueUpdater implements Updater<S> {
     private final K key;
 
     private KeyValueUpdater(K key) {
@@ -38,7 +39,7 @@ public abstract class KeyValueCache<K, I, V> implements Owner, Iterable<Map.Entr
     }
 
     @Override
-    public I update(Instant lastModifed) throws Exception {
+    public S update(Instant lastModifed) throws Exception {
       var cpuStart = Owner.CPU_TIME.getAsDouble();
       try (final var _ignored = fetchTime.start(name)) {
         return fetch(key, lastModifed);
@@ -79,7 +80,7 @@ public abstract class KeyValueCache<K, I, V> implements Owner, Iterable<Map.Entr
 
   private long maxCount = 0;
   private final String name;
-  private final RecordFactory<I, V> recordFactory;
+  private final RecordFactory<S, V> recordFactory;
   private final Map<K, Record<V>> records = new ConcurrentHashMap<>();
   private int ttl;
 
@@ -89,12 +90,14 @@ public abstract class KeyValueCache<K, I, V> implements Owner, Iterable<Map.Entr
    * @param name the name, as presented to Prometheus
    * @param ttl the number of minutes an item will remain in cache
    */
-  public KeyValueCache(String name, int ttl, RecordFactory<I, V> recordFactory) {
+  public KeyValueCache(String name, int ttl, RecordFactory<S, V> recordFactory) {
     super();
     this.name = name;
     this.ttl = ttl;
     this.recordFactory = recordFactory;
     ttlValue.labels(name).set(ttl);
+    // WARNING: Passing "this" outside constructor means that objects are
+    // accessible before completely constructed
     CACHES.put(name, new SoftReference<>(this));
   }
 
@@ -106,7 +109,7 @@ public abstract class KeyValueCache<K, I, V> implements Owner, Iterable<Map.Entr
    * @return the cached value
    * @throws Exception if an error occurs, the previous value will be retained
    */
-  protected abstract I fetch(K key, Instant lastUpdated) throws Exception;
+  protected abstract S fetch(K key, Instant lastUpdated) throws Exception;
 
   /**
    * Get an item from cache

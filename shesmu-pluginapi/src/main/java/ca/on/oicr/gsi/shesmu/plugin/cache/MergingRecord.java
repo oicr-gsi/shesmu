@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin.cache;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -39,13 +40,13 @@ public final class MergingRecord<V, I> extends BaseRecord<Stream<V>, List<V>> {
 
   @Override
   protected List<V> update(List<V> oldstate, Instant fetchTime) throws Exception {
-    final var stream = fetcher.update(fetchTime);
+    final Stream<V> stream = fetcher.update(fetchTime);
     if (stream == null) {
       return null;
     }
-    final var buffer = stream.collect(Collectors.toList());
+    final List<V> buffer = stream.collect(Collectors.toList());
     stream.close();
-    final var newIds = buffer.stream().map(getId).collect(Collectors.toSet());
+    final Set<I> newIds = buffer.stream().map(getId).collect(Collectors.toSet());
     return Stream.concat(
             oldstate.stream().filter(item -> !newIds.contains(getId.apply(item))), buffer.stream())
         .collect(Collectors.toList());

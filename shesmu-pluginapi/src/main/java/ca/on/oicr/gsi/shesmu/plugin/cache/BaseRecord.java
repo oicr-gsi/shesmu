@@ -5,23 +5,26 @@ import java.time.Instant;
 
 /**
  * Takes a stream of items and stores them. When updated, it discards the existing items and
- * replaces them all
+ * replaces them all. The retrievable value may differ from the stored state.
+ *
+ * @param <V> the value retrievable from a cache based on the state
+ * @param <S> the state that is stored in a cache
  */
-public abstract class BaseRecord<R, S> implements Record<R> {
+public abstract class BaseRecord<V, S> implements Record<V> {
   private Instant fetchTime = Instant.EPOCH;
-  protected final Updater<R> fetcher;
+  protected final Updater<V> fetcher;
   private boolean initialState = true;
   private boolean regenerating;
-  private S value;
+  private S state;
 
-  public BaseRecord(Updater<R> fetcher, S initialState) {
+  public BaseRecord(Updater<V> fetcher, S initialState) {
     this.fetcher = fetcher;
-    this.value = initialState;
+    this.state = initialState;
   }
 
   @Override
   public int collectionSize() {
-    return collectionSize(value);
+    return collectionSize(state);
   }
 
   protected abstract int collectionSize(S state);
@@ -37,15 +40,15 @@ public abstract class BaseRecord<R, S> implements Record<R> {
   }
 
   @Override
-  public synchronized R readStale() {
+  public synchronized V readStale() {
     if (initialState) {
       throw new InitialCachePopulationException(fetcher.owner().name());
     }
-    return unpack(value);
+    return unpack(state);
   }
 
   @Override
-  public final R refresh(String context) {
+  public final V refresh(String context) {
     final boolean doRefresh;
     boolean shouldThrow;
     synchronized (this) {
@@ -59,10 +62,10 @@ public abstract class BaseRecord<R, S> implements Record<R> {
     }
     if (doRefresh) {
       try (var timer = refreshLatency.start(fetcher.owner().name())) {
-        var result = update(value, fetchTime);
+        S result = update(state, fetchTime);
         if (result != null) {
           synchronized (this) {
-            value = result;
+            state = result;
             fetchTime = Instant.now();
             initialState = false;
           }
@@ -81,10 +84,10 @@ public abstract class BaseRecord<R, S> implements Record<R> {
     if (shouldThrow) {
       throw new InitialCachePopulationException(fetcher.owner().name());
     }
-    return unpack(value);
+    return unpack(state);
   }
 
-  protected abstract R unpack(S state);
+  protected abstract V unpack(S state);
 
   protected abstract S update(S oldstate, Instant fetchTime) throws Exception;
 }
