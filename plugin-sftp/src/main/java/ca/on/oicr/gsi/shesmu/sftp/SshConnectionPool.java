@@ -97,6 +97,12 @@ public class SshConnectionPool implements Supplier<PooledSshConnection>, AutoClo
       Counter.build("shesmu_ssh_pool_conn_destroyed", "The number of SSH connections destroyed")
           .labelNames("host", "port", "user")
           .register();
+  private static final Counter connectionErrors =
+      Counter.build(
+              "shesmu_get_ssh_pool_conn_error",
+              "The number of times getting an SSH connection threw an error")
+          .labelNames("host", "port", "user")
+          .register();
   private final AtomicReference<ConnectionInfo> connectionInfo = new AtomicReference<>();
   private final Deque<PooledSshConnection> connections = new ConcurrentLinkedDeque<>();
   private final Semaphore maxConnections = new Semaphore(100);
@@ -135,6 +141,7 @@ public class SshConnectionPool implements Supplier<PooledSshConnection>, AutoClo
         try {
           return new PooledSshConnection(info);
         } catch (IOException e) {
+          connectionErrors.labels(info.host, Integer.toString(info.port), info.user).inc();
           throw new IOError(e);
         }
       } else {
