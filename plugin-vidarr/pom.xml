@@ -42,7 +42,7 @@
     <dependency>
       <groupId>ca.on.oicr.gsi.vidarr</groupId>
       <artifactId>vidarr-pluginapi</artifactId>
-      <version>0.4.6</version>
+      <version>0.4.7</version>
     </dependency>
   </dependencies>
   <build>
