@@ -1,5 +1,14 @@
 # Unreleased
 
+# [1.15.2] - 2021-09-15T20:03+00:00
+
+Changes:
+
+* Fix case where FAILED Vidarr actions would remain QUEUED indefinitely
+* Fix typo in Vidarr actions
+* cerberus -> 0.2.6
+* vidarr -> 0.4.7
+
 # [1.15.1] - 2021-08-13T20:51+00:00
 
 Changes:
