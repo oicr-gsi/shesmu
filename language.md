@@ -638,6 +638,61 @@ Creates local variables in _name0_ by evaluating _expr1_. These variables are
 then accessible in `_expr1_` and so on. Finally _expr_ is evaluated with all
 the defined names and its result is used. The names can use destructuring.
 
+### Tabulation
+- `Tabulate`
+ _name0_ `= (` _expr00_ `,` _expr01_ `,` ... `);`
+ [ _name1_ `= (` _expr11_ `,` _expr11_ `,` ... `);`]
+ [...]
+ `End`
+
+Performs an order-sensitive matched assignment. This language construct is
+useful for generating data the Vidarr `retry` types. Suppose a Vidarr job with
+two fields: memory and time, and the job should be run with an increasing
+amount of memory and time if it fails. This could be accomplished as follows:
+
+```
+Run vidarr::production::hpc::some_job With
+  arguments =
+     Begin
+        {; memory, timeout} = Tabulate
+             memory = 5Gi, 10Gi;
+             timeout = 1hours, 6hours;
+            End;
+        Return {
+            foo__memory = memory,
+            foo__files = files,
+            foo__timeout = timeout,
+            foo__modules = "foo/1.2.3"
+        };
+     End,
+   ...
+```
+
+This construct checks that all the names have the same number of values (two in
+this case) and turns each of them into an ordered dictionary with the keys as
+strings containing numbers (the format expected by Vidarr).
+
+The names can be destructuring:
+
+```
+Run vidarr::production::hpc::some_job With
+  arguments =
+     Begin
+        {; foo_memory, foo_timeout; bar_timeout} = Tabulate
+             {foo_memory, foo_timeout} = {5Gi, 1hours}, {10Gi, 6hours};
+             bar_timeout = (30mins, 90mins);
+            End;
+        Return {
+            foo__memory = foo_memory,
+            foo__files = files,
+            foo__timeout = foo_timeout,
+            foo__modules = "foo/1.2.3",
+            foo__bar__timeout = bar_timeout
+        };
+     End,
+   ...
+```
+
 ### Optional Coalescence
 - _expr_ `Default` _default_
 

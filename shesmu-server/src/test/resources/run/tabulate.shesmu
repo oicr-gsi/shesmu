@@ -1,0 +1,11 @@
+Version 1;
+Input test;
+
+Olive Run ok With ok =
+   (Tabulate
+      memory = 5Gi, 10Gi;
+      timeout = 1hours, 6hours;
+    End) == {
+      memory = Dict { "0" = 5Gi, "1" = 10Gi },
+      timeout = Dict { "0" = 1hours, "1" = 6hours }
+    };

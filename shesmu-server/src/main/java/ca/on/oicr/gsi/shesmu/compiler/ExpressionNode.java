@@ -181,7 +181,8 @@ public abstract class ExpressionNode implements Renderable {
   }
 
   public static Parser parse(Parser input, Consumer<ExpressionNode> output) {
-    return Parser.scanBinary(ExpressionNode::parse0, COALESCING, input.whitespace(), output);
+    return Parser.scanBinary(ExpressionNode::parse0, COALESCING, input.whitespace(), output)
+        .whitespace();
   }
 
   public static Parser parse0(Parser input, Consumer<ExpressionNode> output) {
@@ -455,6 +456,41 @@ public abstract class ExpressionNode implements Renderable {
           if (result.isGood()) {
             o.accept(
                 new ExpressionNodeBlock(p.line(), p.column(), definitions.get(), expression.get()));
+          }
+          return result;
+        });
+    OUTER.addKeyword(
+        "Tabulate",
+        (p, o) -> {
+          final var definitions =
+              new AtomicReference<List<Pair<DestructuredArgumentNode, List<ExpressionNode>>>>();
+          final var result =
+              p.whitespace()
+                  .list(
+                      definitions::set,
+                      (defp, defo) -> {
+                        final var name = new AtomicReference<DestructuredArgumentNode>();
+                        final var expr = new AtomicReference<List<ExpressionNode>>();
+                        final var defResult =
+                            defp.whitespace()
+                                .then(DestructuredArgumentNode::parse, name::set)
+                                .whitespace()
+                                .symbol("=")
+                                .whitespace()
+                                .list(expr::set, ExpressionNode::parse, ',')
+                                .whitespace()
+                                .symbol(";")
+                                .whitespace();
+                        if (defResult.isGood()) {
+                          defo.accept(new Pair<>(name.get(), expr.get()));
+                        }
+                        return defResult;
+                      })
+                  .whitespace()
+                  .keyword("End")
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(new ExpressionNodeTabulate(p.line(), p.column(), definitions.get()));
           }
           return result;
         });
