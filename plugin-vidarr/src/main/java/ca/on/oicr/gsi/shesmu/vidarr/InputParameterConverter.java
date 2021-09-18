@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
+import ca.on.oicr.gsi.vidarr.BasicType;
 import ca.on.oicr.gsi.vidarr.InputProvisionFormat;
 import ca.on.oicr.gsi.vidarr.InputType;
 import ca.on.oicr.gsi.vidarr.InputType.Visitor;
@@ -138,6 +139,11 @@ final class InputParameterConverter implements InputType.Visitor<Imyhat> {
   }
 
   @Override
+  public Imyhat retry(BasicType basicType) {
+    return Imyhat.dictionary(Imyhat.STRING, basicType.apply(VidarrPlugin.SIMPLE_TO_IMYHAT));
+  }
+
+  @Override
   public Imyhat string() {
     return Imyhat.STRING;
   }
@@ -220,6 +226,11 @@ final class InputParameterConverter implements InputType.Visitor<Imyhat> {
                                     new Pair<>("left", left.apply(InputParameterConverter.this)),
                                     new Pair<>(
                                         "right", right.apply(InputParameterConverter.this))));
+                          }
+
+                          @Override
+                          public Imyhat retry(BasicType basicType) {
+                            return Imyhat.BAD;
                           }
 
                           @Override
