@@ -22,7 +22,12 @@ public class RunStateMonitor extends RunState {
     // engine itself to fail.
     // This state leaves broken actions stuck in QUEUED. Check early for engine failure to ensure
     // correct ActionState.
-    if (response.getEnginePhase().equals("FAILED")) {
+    // If the workflow run is completed, then enginephase will be null, as enginephase belongs to
+    // the
+    // active_workflow_run record associated with the workflow_run, and the active_workflow_run
+    // record is removed
+    // when a workflow run is successful.
+    if (null != response.getEnginePhase() && response.getEnginePhase().equals("FAILED")) {
       return ActionState.FAILED;
     }
     if (response.getCompleted() != null) {
