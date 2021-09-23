@@ -1,0 +1,4 @@
+Version 1;
+Input test;
+
+Olive Run ok With ok = Match `project` When NONE Then False When SOME{p} Then p == "the_foo_study";

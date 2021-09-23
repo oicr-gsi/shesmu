@@ -452,6 +452,13 @@ public final class RuntimeSupport {
     return input.peek(item -> gauge.labels(computeValues.apply(item)).inc());
   }
 
+  @RuntimeInterop
+  public static AlgebraicValue optionalToAlgebraic(Optional<?> input) {
+    return input
+        .map(v -> new AlgebraicValue("SOME", v))
+        .orElseGet(() -> new AlgebraicValue("NONE"));
+  }
+
   public static void packJson(Imyhat type, ObjectNode node, String name, Object value) {
     type.accept(new PackJsonObject(node, name), value);
   }
