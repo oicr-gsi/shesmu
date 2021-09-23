@@ -917,15 +917,25 @@ public abstract class ExpressionNode implements Renderable {
               .symbol(";")
               .<ObjectElementNode>list(
                   fields.get()::addAll,
-                  (cfp, cfo) ->
-                      cfp.whitespace()
+                  (cfp, cfo) -> {
+                    final var cgp = cfp.whitespace().symbol("@");
+                    if (cgp.isGood()) {
+                      return cgp.whitespace()
                           .identifier(
                               n ->
                                   cfo.accept(
-                                      new ObjectElementNodeSingle(
-                                          n,
-                                          new ExpressionNodeVariable(cfp.line(), cfp.column(), n))))
-                          .whitespace(),
+                                      new ObjectElementNodeGang(cfp.line(), cfp.column(), n)))
+                          .whitespace();
+                    }
+                    return cfp.whitespace()
+                        .identifier(
+                            n ->
+                                cfo.accept(
+                                    new ObjectElementNodeSingle(
+                                        n,
+                                        new ExpressionNodeVariable(cfp.line(), cfp.column(), n))))
+                        .whitespace();
+                  },
                   ',')
               .whitespace();
     }

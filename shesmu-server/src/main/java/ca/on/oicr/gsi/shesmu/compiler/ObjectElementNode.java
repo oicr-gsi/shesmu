@@ -13,20 +13,6 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
 public abstract class ObjectElementNode {
-  protected final ExpressionNode expression;
-
-  protected ObjectElementNode(ExpressionNode expression) {
-    this.expression = expression;
-  }
-
-  /** Add all free variable names to the set provided. */
-  public final void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
-    expression.collectFreeVariables(names, predicate);
-  }
-
-  public final void collectPlugins(Set<Path> pluginFileNames) {
-    expression.collectPlugins(pluginFileNames);
-  }
 
   public static Parser parse(Parser parser, Consumer<ObjectElementNode> output) {
     final var restResult = parser.whitespace().symbol("...");
@@ -66,6 +52,11 @@ public abstract class ObjectElementNode {
     }
   }
 
+  /** Add all free variable names to the set provided. */
+  public abstract void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate);
+
+  public abstract void collectPlugins(Set<Path> pluginFileNames);
+
   public abstract Stream<Pair<String, Imyhat>> names();
 
   public abstract Stream<String> render(EcmaScriptRenderer renderer);
@@ -75,20 +66,12 @@ public abstract class ObjectElementNode {
   public abstract Stream<String> renderConstant(EcmaScriptRenderer renderer);
 
   /** Resolve all variable plugins in this expression and its children. */
-  public final boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    return expression.resolve(defs, errorHandler);
-  }
+  public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
   /** Resolve all function plugins in this expression */
-  public final boolean resolveDefinitions(
-      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return expression.resolveDefinitions(expressionCompilerServices, errorHandler);
-  }
-
-  public abstract boolean typeCheckExtra(Consumer<String> errorHandler);
+  public abstract boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler);
 
   /** Perform type checking on this expression and its children. */
-  public final boolean typeCheck(Consumer<String> errorHandler) {
-    return expression.typeCheck(errorHandler) && typeCheckExtra(errorHandler);
-  }
+  public abstract boolean typeCheck(Consumer<String> errorHandler);
 }
