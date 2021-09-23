@@ -135,7 +135,8 @@ Like destructuring assignment with tuples, `FOO {factor}` will extract the
 nested values and make them accessible. Unneeded values can be discarded using
 `_` or the entire value using `_` (_i.e._, `FOO _` will match `FOO` and discard
 any information while `FOO {_}` is look for a tuple-like algebraic value and
-will discard one parameter).
+will discard one parameter). For algebraic values with object fields, it is
+possible to do `FOO *` which will make all the fields available as variables.
 
 By default, a `Match` must be _exhaustive_. That is, it must handle every
 possible algebraic type it is given. If this is undesirable, there are two

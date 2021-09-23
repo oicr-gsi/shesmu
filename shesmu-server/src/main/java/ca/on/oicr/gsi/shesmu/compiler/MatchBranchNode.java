@@ -48,6 +48,12 @@ public abstract class MatchBranchNode {
                     (line, column, name, value) ->
                         new MatchBranchNodeTuple(line, column, name, value, e)));
     CONSTRUCTOR.addKeyword(
+        "*",
+        (p, o) -> {
+          o.accept(MatchBranchNodeWildcard::new);
+          return p;
+        });
+    CONSTRUCTOR.addKeyword(
         "_",
         (p, o) -> {
           o.accept(MatchBranchNodeDiscard::new);
