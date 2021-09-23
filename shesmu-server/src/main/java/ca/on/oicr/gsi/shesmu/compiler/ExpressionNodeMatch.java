@@ -9,10 +9,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -22,17 +19,62 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 public class ExpressionNodeMatch extends ExpressionNode {
+  enum Unpack {
+    ALGEBRAIC {
+      @Override
+      int render(Renderer renderer, ExpressionNode test) {
+        test.render(renderer);
+        final var local = renderer.methodGen().newLocal(test.type().apply(TypeUtils.TO_ASM));
+        renderer.methodGen().storeLocal(local);
+        return local;
+      }
+
+      @Override
+      String renderEcma(EcmaScriptRenderer renderer, ExpressionNode test) {
+        return test.renderEcma(renderer);
+      }
+    },
+    OPTIONAL {
+      @Override
+      int render(Renderer renderer, ExpressionNode test) {
+        test.render(renderer);
+        renderer
+            .methodGen()
+            .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__OPTIONAL_TO_ALGEBRAIC);
+        final var local = renderer.methodGen().newLocal(A_ALGEBRAIC_VALUE_TYPE);
+        renderer.methodGen().storeLocal(local);
+        return local;
+      }
+
+      @Override
+      String renderEcma(EcmaScriptRenderer renderer, ExpressionNode test) {
+        return String.format(
+            "(%1$s !== null ? { type: \"SOME\", contents: [ %1$s ] } : { type: \"NONE\","
+                + " contents: null })",
+            renderer.newConst(test.renderEcma(renderer)));
+      }
+    };
+
+    abstract int render(Renderer renderer, ExpressionNode test);
+
+    abstract String renderEcma(EcmaScriptRenderer renderer, ExpressionNode test);
+  }
 
   private static final Type A_ALGEBRAIC_VALUE_TYPE = Type.getType(AlgebraicValue.class);
+  private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   private static final Type A_STRING_TYPE = Type.getType(String.class);
   private static final Method METHOD_ALGEBRAIC_VALUE__NAME =
       new Method("name", A_STRING_TYPE, new Type[] {});
   private static final Method METHOD__HASH_CODE =
       new Method("hashCode", Type.INT_TYPE, new Type[] {});
+  private static final Method METHOD_RUNTIME_SUPPORT__OPTIONAL_TO_ALGEBRAIC =
+      new Method(
+          "optionalToAlgebraic", A_ALGEBRAIC_VALUE_TYPE, new Type[] {Type.getType(Optional.class)});
   private final MatchAlternativeNode alternative;
   private final List<MatchBranchNode> cases;
   private Imyhat resultType;
   private final ExpressionNode test;
+  private Unpack unpack;
 
   public ExpressionNodeMatch(
       int line,
@@ -62,7 +104,7 @@ public class ExpressionNodeMatch extends ExpressionNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    final var testValue = renderer.newConst(test.renderEcma(renderer));
+    final var testValue = renderer.newConst(unpack.renderEcma(renderer, test));
     final var result = renderer.newLet();
     renderer.mapIf(
         cases.stream(),
@@ -81,9 +123,7 @@ public class ExpressionNodeMatch extends ExpressionNode {
 
   @Override
   public void render(Renderer renderer) {
-    test.render(renderer);
-    final var local = renderer.methodGen().newLocal(test.type().apply(TypeUtils.TO_ASM));
-    renderer.methodGen().storeLocal(local);
+    final var local = unpack.render(renderer, test);
 
     final Map<Integer, List<MatchBranchNode>> paths =
         cases.stream()
@@ -160,115 +200,124 @@ public class ExpressionNodeMatch extends ExpressionNode {
       final var requiredBranches =
           test.type()
               .apply(
-                  new ImyhatTransformer<Map<String, Imyhat>>() {
+                  new ImyhatTransformer<Pair<Unpack, Map<String, Imyhat>>>() {
                     @Override
-                    public Map<String, Imyhat> algebraic(Stream<AlgebraicTransformer> contents) {
-                      return contents
-                          .map(
-                              c ->
-                                  c.visit(
-                                      new AlgebraicVisitor<Pair<String, Imyhat>>() {
-                                        @Override
-                                        public Pair<String, Imyhat> empty(String name) {
-                                          return new Pair<>(name, Imyhat.NOTHING);
-                                        }
+                    public Pair<Unpack, Map<String, Imyhat>> algebraic(
+                        Stream<AlgebraicTransformer> contents) {
+                      return new Pair<>(
+                          Unpack.ALGEBRAIC,
+                          contents
+                              .map(
+                                  c ->
+                                      c.visit(
+                                          new AlgebraicVisitor<Pair<String, Imyhat>>() {
+                                            @Override
+                                            public Pair<String, Imyhat> empty(String name) {
+                                              return new Pair<>(name, Imyhat.NOTHING);
+                                            }
 
-                                        @Override
-                                        public Pair<String, Imyhat> object(
-                                            String name, Stream<Pair<String, Imyhat>> contents) {
-                                          return new Pair<>(name, new ObjectImyhat(contents));
-                                        }
+                                            @Override
+                                            public Pair<String, Imyhat> object(
+                                                String name,
+                                                Stream<Pair<String, Imyhat>> contents) {
+                                              return new Pair<>(name, new ObjectImyhat(contents));
+                                            }
 
-                                        @Override
-                                        public Pair<String, Imyhat> tuple(
-                                            String name, Stream<Imyhat> contents) {
-                                          return new Pair<>(
-                                              name, Imyhat.tuple(contents.toArray(Imyhat[]::new)));
-                                        }
-                                      }))
-                          .collect(Collectors.toMap(Pair::first, Pair::second));
+                                            @Override
+                                            public Pair<String, Imyhat> tuple(
+                                                String name, Stream<Imyhat> contents) {
+                                              return new Pair<>(
+                                                  name,
+                                                  Imyhat.tuple(contents.toArray(Imyhat[]::new)));
+                                            }
+                                          }))
+                              .collect(Collectors.toMap(Pair::first, Pair::second)));
                     }
 
                     @Override
-                    public Map<String, Imyhat> bool() {
-                      test.typeError("algebraic type", test.type(), errorHandler);
+                    public Pair<Unpack, Map<String, Imyhat>> bool() {
+                      test.typeError("algebraic or optional type", test.type(), errorHandler);
                       return null;
                     }
 
                     @Override
-                    public Map<String, Imyhat> date() {
-                      test.typeError("algebraic type", test.type(), errorHandler);
+                    public Pair<Unpack, Map<String, Imyhat>> date() {
+                      test.typeError("algebraic or optional type", test.type(), errorHandler);
                       return null;
                     }
 
                     @Override
-                    public Map<String, Imyhat> floating() {
-                      test.typeError("algebraic type", test.type(), errorHandler);
+                    public Pair<Unpack, Map<String, Imyhat>> floating() {
+                      test.typeError("algebraic or optional type", test.type(), errorHandler);
                       return null;
                     }
 
                     @Override
-                    public Map<String, Imyhat> integer() {
-                      test.typeError("algebraic type", test.type(), errorHandler);
+                    public Pair<Unpack, Map<String, Imyhat>> integer() {
+                      test.typeError("algebraic or optional type", test.type(), errorHandler);
                       return null;
                     }
 
                     @Override
-                    public Map<String, Imyhat> json() {
-                      test.typeError("algebraic type", test.type(), errorHandler);
+                    public Pair<Unpack, Map<String, Imyhat>> json() {
+                      test.typeError("algebraic or optional type", test.type(), errorHandler);
                       return null;
                     }
 
                     @Override
-                    public Map<String, Imyhat> list(Imyhat inner) {
-                      test.typeError("algebraic type", test.type(), errorHandler);
+                    public Pair<Unpack, Map<String, Imyhat>> list(Imyhat inner) {
+                      test.typeError("algebraic or optional type", test.type(), errorHandler);
                       return null;
                     }
 
                     @Override
-                    public Map<String, Imyhat> map(Imyhat key, Imyhat value) {
-                      test.typeError("algebraic type", test.type(), errorHandler);
+                    public Pair<Unpack, Map<String, Imyhat>> map(Imyhat key, Imyhat value) {
+                      test.typeError("algebraic or optional type", test.type(), errorHandler);
                       return null;
                     }
 
                     @Override
-                    public Map<String, Imyhat> object(Stream<Pair<String, Imyhat>> contents) {
-                      test.typeError("algebraic type", test.type(), errorHandler);
+                    public Pair<Unpack, Map<String, Imyhat>> object(
+                        Stream<Pair<String, Imyhat>> contents) {
+                      test.typeError("algebraic or optional type", test.type(), errorHandler);
                       return null;
                     }
 
                     @Override
-                    public Map<String, Imyhat> optional(Imyhat inner) {
-                      test.typeError("algebraic type", test.type(), errorHandler);
+                    public Pair<Unpack, Map<String, Imyhat>> optional(Imyhat inner) {
+                      return new Pair<>(
+                          Unpack.OPTIONAL,
+                          new TreeMap<>(
+                              Map.of("SOME", Imyhat.tuple(inner), "NONE", Imyhat.NOTHING)));
+                    }
+
+                    @Override
+                    public Pair<Unpack, Map<String, Imyhat>> path() {
+                      test.typeError("algebraic or optional type", test.type(), errorHandler);
                       return null;
                     }
 
                     @Override
-                    public Map<String, Imyhat> path() {
-                      test.typeError("algebraic type", test.type(), errorHandler);
+                    public Pair<Unpack, Map<String, Imyhat>> string() {
+                      test.typeError("algebraic or optional type", test.type(), errorHandler);
                       return null;
                     }
 
                     @Override
-                    public Map<String, Imyhat> string() {
-                      test.typeError("algebraic type", test.type(), errorHandler);
-                      return null;
-                    }
-
-                    @Override
-                    public Map<String, Imyhat> tuple(Stream<Imyhat> contents) {
-                      test.typeError("algebraic type", test.type(), errorHandler);
+                    public Pair<Unpack, Map<String, Imyhat>> tuple(Stream<Imyhat> contents) {
+                      test.typeError("algebraic or optional type", test.type(), errorHandler);
                       return null;
                     }
                   });
       if (requiredBranches == null) {
         return false;
       }
+      unpack = requiredBranches.first();
       ok =
           cases.stream()
                   .filter(
                       c -> {
-                        final var branchType = requiredBranches.get(c.name());
+                        final var branchType = requiredBranches.second().get(c.name());
                         if (branchType == null) {
                           errorHandler.accept(
                               String.format(
@@ -276,7 +325,7 @@ public class ExpressionNodeMatch extends ExpressionNode {
                                   line(), column(), c.name(), test.type().name()));
                           return false;
                         }
-                        requiredBranches.remove(c.name());
+                        requiredBranches.second().remove(c.name());
                         var isSame = c.typeCheck(branchType, errorHandler);
                         if (resultType == null) {
                           resultType = c.resultType();
@@ -292,7 +341,8 @@ public class ExpressionNodeMatch extends ExpressionNode {
               == cases.size();
       if (ok) {
         final var alternativeType =
-            alternative.typeCheck(line(), column(), resultType, requiredBranches, errorHandler);
+            alternative.typeCheck(
+                line(), column(), resultType, requiredBranches.second(), errorHandler);
         if (alternativeType.isBad()) {
           return false;
         } else {

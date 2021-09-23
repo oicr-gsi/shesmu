@@ -565,13 +565,14 @@ will produce:
 
 - `Match` _refexpr_ (`When` _algmatch_ `Then` _valueexpr_)\* (`Else` _altexpr_ | `Remainder (`_name_`)` _altexpr_)?
 
-Allows separating the algebraic value returned by _refexpr_ and accessing its
-contents. A `When` branch can be provided for every possible algebraic type
-returned by _refexpr_. If all possible types are matched, the matching is
-_exhaustive_. If the matching is not exhaustive, the remaining cases can be
-handled via `Else` or `Remainder`. `Else` allows an expression to be used in
-all other cases, much like the `Else` in a `Switch`. `Remainder` provides
-access to the case being handled.
+Allows separating the algebraic or optional value returned by _refexpr_ and
+accessing its contents. An optional value is treated as an algebraic value with
+`NONE` and `SOME{x}` entries. A `When` branch can be provided for every
+possible algebraic type returned by _refexpr_. If all possible types are
+matched, the matching is _exhaustive_. If the matching is not exhaustive, the
+remaining cases can be handled via `Else` or `Remainder`. `Else` allows an
+expression to be used in all other cases, much like the `Else` in a `Switch`.
+`Remainder` provides access to the case being handled.
 
 For example:
 
