@@ -608,6 +608,11 @@ For example:
     ...
 
 
+Two special pieces of syntax are allowed in `When`:
+
+- `When` _NAME_ `_` will match the name and discard the value's contents
+- `When` _NAME_ `*` will match the name and turn all fields in an object algebraic value into variables
+
 For details on algebraic values, see [Algebraic Values without Algebra](algebraicguide.md).
 
 ### JSON Conversion

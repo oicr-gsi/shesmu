@@ -1,0 +1,12 @@
+Version 1;
+Input test;
+
+Function x(string p)
+  If p == "the_foo_study" Then OK Else SOMETHING {v = False};
+
+Function y(BAD | SOMETHING {v = boolean} x)
+  Match x
+    When BAD Then False
+    When SOMETHING * Then v;
+
+Olive Run ok With ok = Match x(project) When OK Then True Remainder (r) y(r);
