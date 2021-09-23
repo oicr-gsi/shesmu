@@ -923,7 +923,7 @@ Instead of an expression to create a single element in a tuple, a `...`_expr_
 can be used to insert all the elements in a tuple inline into the new tuple.
 
 #### Named Tuple Literal
-- `{`_field_` = `_expr_`, `_field_` = `_expr_`, =` _name_ `... [`;` _var_ ...]`}`
+- `{`_field_` = `_expr_`, `_field_` = `_expr_`, =` _name_ `... [`;` (_var_ | `@`_gang_) ...]`}`
 
 Creates a new named tuple with the fields as specified. The type of the named
 tuple is determined based on the elements.
@@ -935,7 +935,8 @@ excluded, use the form: `...`_expr_ `Without` _field1_ _field2_ ...
 A field can also be created from a variable of the same name by placing the a
 name after a `;`. For example `{ a = 1; b }` is short hand for `{ a = 1, b = b
 }`. Named fields can be ommited if there are none (_i.e._, `{; b, c}` is the
-short hand for `{b = b, c = c}`).
+short hand for `{b = b, c = c}`). If a gang is used here, this will create all
+the members of the gang as fields.
 
 #### Synthetic Tuple
 - `{@`_name_`}`

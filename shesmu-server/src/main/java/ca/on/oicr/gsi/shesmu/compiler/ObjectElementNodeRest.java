@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
-public class ObjectElementNodeRest extends ObjectElementNode {
+public class ObjectElementNodeRest extends ObjectElementNodeBaseExpression {
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
   private static final Method METHOD_TUPLE__GET =

@@ -9,7 +9,7 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 
-public class ObjectElementNodeSingle extends ObjectElementNode {
+public class ObjectElementNodeSingle extends ObjectElementNodeBaseExpression {
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private final String field;
 
