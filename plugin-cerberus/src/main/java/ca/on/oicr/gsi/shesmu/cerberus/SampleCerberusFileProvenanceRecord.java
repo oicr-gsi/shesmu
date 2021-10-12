@@ -66,7 +66,7 @@ public class SampleCerberusFileProvenanceRecord
 
   @Override
   public String instrument_model() {
-    return provenanceRecord.lims().getSequencerRunName();
+    return provenanceRecord.lims().getSequencerRunPlatformModel();
   }
 
   @Override
