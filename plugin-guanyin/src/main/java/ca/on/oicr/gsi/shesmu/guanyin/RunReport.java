@@ -75,6 +75,7 @@ public class RunReport extends JsonParameterisedAction {
           + "    String guanyin\n"
           + "    String modules\n"
           + "    Int memory\n"
+          + "    Int timeout\n"
           + "    Int record\n"
           + "  }\n"
           + "  command <<<\n"
@@ -82,6 +83,7 @@ public class RunReport extends JsonParameterisedAction {
           + "  >>>\n"
           + " runtime {\n"
           + " memory: \"~{memory} GB\"\n"
+          + " timeout: ~{timeout}\n"
           + " modules: \"~{modules}\"\n"
           + " }\n"
           + "}\n";
@@ -295,6 +297,7 @@ public class RunReport extends JsonParameterisedAction {
         inputs.put("guanyin.report.record", reportRecordId.getAsLong());
         inputs.put("guanyin.report.modules", owner.get().modules());
         inputs.put("guanyin.report.memory", owner.get().memory());
+        inputs.put("guanyin.report.timeout", owner.get().timeout());
         var labels = MAPPER.createObjectNode();
         labels.put(
             "external_id",

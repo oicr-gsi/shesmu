@@ -90,6 +90,10 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
     return configuration.get().getScript();
   }
 
+  public int timeout() {
+    return configuration.get().getTimeout();
+  }
+
   public String cromwellUrl() {
     return configuration.get().getCromwell();
   }
