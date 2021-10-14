@@ -1,5 +1,16 @@
 # Unreleased
 
+# [1.15.3] - 2021-10-14T17:43+00:00
+
+Changes:
+
+* Fix NullPointerException when Vidarr enginePhase is null
+* Add counter for ssh connection pool errors
+* Fix instrumental_model in cerberus_fp non-Niassa sample records
+* Add support for configuring Guanyin report Cromwell task timeout
+* vidarr -> 0.4.8
+* cerberus -> 0.2.7
+
 # [1.15.2] - 2021-09-15T20:03+00:00
 
 Changes:
