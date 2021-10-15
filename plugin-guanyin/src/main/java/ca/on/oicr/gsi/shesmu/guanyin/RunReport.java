@@ -83,7 +83,7 @@ public class RunReport extends JsonParameterisedAction {
           + "  >>>\n"
           + " runtime {\n"
           + " memory: \"~{memory} GB\"\n"
-          + " timeout: ~{timeout}\n"
+          + " timeout: timeout\n"
           + " modules: \"~{modules}\"\n"
           + " }\n"
           + "}\n";
