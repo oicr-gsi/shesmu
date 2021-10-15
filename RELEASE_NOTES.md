@@ -1,5 +1,11 @@
 # Unreleased
 
+# [1.15.4] - 2021-10-15T17:31+00:00
+
+Changes:
+
+* Pass timeout variable directly to task runtine block 
+
 # [1.15.3] - 2021-10-14T17:43+00:00
 
 Changes:
