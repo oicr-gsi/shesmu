@@ -96,7 +96,7 @@ export interface ShesmuRequestType {
 export interface ShesmuResponseType {
   "action-ids": string[];
   allalerts: PrometheusAlert[];
-  command: number;
+  command: { ignored: number; executed: number; purged: number };
   "compile-meditation": MeditationCompilationResponse;
   constant: ValueResponse;
   count: number;
