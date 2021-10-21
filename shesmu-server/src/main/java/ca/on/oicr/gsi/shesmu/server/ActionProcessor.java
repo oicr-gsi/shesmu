@@ -797,57 +797,59 @@ public final class ActionProcessor
    * @param filters the filters to select actions
    * @return the number of actions that were able to execute the command
    */
-  public long command(
+  public CommandStatistics command(
       PluginManager pluginManager, String command, Optional<String> user, Filter... filters) {
     final List<Action> purge = new ArrayList<>();
     final var count =
         startStream(filters)
-            .filter(
-                e -> {
-                  final Map<String, String> labels = new TreeMap<>();
-                  labels.put("action", e.getValue().id);
-                  labels.put("action_type", e.getKey().type());
-                  return e.getKey()
-                      .commands()
-                      .filter(c -> c.command().equals(command))
-                      .reduce(
-                          false,
-                          (accumulator, c) -> {
-                            final var response = c.process(e.getKey(), command, user);
-                            if (response != Response.IGNORED) {
-                              labels.put("command", c.command());
-                              pluginManager.log("Performed command", labels);
-                            }
-                            switch (response) {
-                              case ACCEPTED:
-                                return true;
-                              case PURGE:
-                                purge.add(e.getKey());
-                                stateCount
-                                    .labels(e.getValue().lastState.name(), e.getKey().type())
-                                    .dec();
-                                return true;
-                              case RESET:
-                                if (e.getValue().lastState != ActionState.UNKNOWN) {
-                                  stateCount
-                                      .labels(e.getValue().lastState.name(), e.getKey().type())
-                                      .dec();
-                                  stateCount
-                                      .labels(ActionState.UNKNOWN.name(), e.getKey().type())
-                                      .inc();
-                                  e.getValue().lastStateTransition = Instant.now();
+            .collect(
+                Collectors.partitioningBy(
+                    e -> {
+                      final Map<String, String> labels = new TreeMap<>();
+                      labels.put("action", e.getValue().id);
+                      labels.put("action_type", e.getKey().type());
+                      return e.getKey()
+                          .commands()
+                          .filter(c -> c.command().equals(command))
+                          .reduce(
+                              false,
+                              (accumulator, c) -> {
+                                final var response = c.process(e.getKey(), command, user);
+                                if (response != Response.IGNORED) {
+                                  labels.put("command", c.command());
+                                  pluginManager.log("Performed command", labels);
                                 }
-                                e.getValue().lastState = ActionState.UNKNOWN;
-                                return true;
-                            }
-                            return accumulator;
-                          },
-                          (a, b) -> a || b);
-                })
-            .count();
+                                switch (response) {
+                                  case ACCEPTED:
+                                    return true;
+                                  case PURGE:
+                                    purge.add(e.getKey());
+                                    stateCount
+                                        .labels(e.getValue().lastState.name(), e.getKey().type())
+                                        .dec();
+                                    return true;
+                                  case RESET:
+                                    if (e.getValue().lastState != ActionState.UNKNOWN) {
+                                      stateCount
+                                          .labels(e.getValue().lastState.name(), e.getKey().type())
+                                          .dec();
+                                      stateCount
+                                          .labels(ActionState.UNKNOWN.name(), e.getKey().type())
+                                          .inc();
+                                      e.getValue().lastStateTransition = Instant.now();
+                                    }
+                                    e.getValue().lastState = ActionState.UNKNOWN;
+                                    return true;
+                                }
+                                return accumulator;
+                              },
+                              (a, b) -> a || b);
+                    },
+                    Collectors.counting()));
     purge.forEach(actions::remove);
     purge.forEach(Action::purgeCleanup);
-    return count;
+    return new CommandStatistics(
+        count.getOrDefault(true, 0L), count.getOrDefault(false, 0L), purge.size());
   }
 
   public Map<ActionCommand<?>, Long> commonCommands(Filter... filters) {

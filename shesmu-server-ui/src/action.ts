@@ -569,16 +569,21 @@ function createCallbackForActionCommand(
           },
         ],
       },
-      (count) => {
-        if (count == 0) {
+      (counts) => {
+        if (counts.ignored > 0) {
           dialog(() => [
             "This action is indifferent to your pleas. Maybe the action's internal state has changed? Try refreshing.",
             img("indifferent.gif"),
           ]);
-        } else if (count > 1) {
+        } else if (counts.executed > 1) {
           dialog(() => [
-            `The command executed on ${count} actions!!! This is awkward. The unique action IDs aren't unique!`,
+            `The command executed on ${counts.executed} actions!!! This is awkward. The unique action IDs aren't unique!`,
             img("ohno.gif"),
+          ]);
+        } else if (counts.executed == 0) {
+          dialog(() => [
+            "The action vanished before the command was executed.",
+            img("holtburn.gif"),
           ]);
         }
         reload();
@@ -621,13 +626,17 @@ function createCallbackForBulkCommand(
         command: command.command,
         filters: filters,
       },
-      (count) => {
+      (counts) => {
         butter(
           5000,
           { type: "icon", icon: command.icon },
           "The command ",
           { type: "i", contents: command.buttonText },
-          `executed on ${count} actions.`
+          counts.executed > 0 ? ` executed on ${counts.executed} actions` : "",
+          counts.purged > 0 ? ` (${counts.purged} of which were purged)` : "",
+          counts.executed > 0 && counts.ignored > 0 ? " and" : "",
+          counts.ignored > 0 ? ` was ignored by ${counts.ignored} actions` : "",
+          "."
         );
         reload();
       }
