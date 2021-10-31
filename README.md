@@ -156,7 +156,6 @@ information about how to extend the system. The plugins available are:
 - [Loki loggin](plugin-loki/README.md)
 - [MongoDB](plugin-mongo/README.md)
 - [Nabu file QC](plugin-nabu/README.md)
-- [Niassa](plugin-niassa/README.md)
 - [Pinery](plugin-pinery/README.md)
 - [Prometheus Alert Manager](plugin-prometheus/README.md)
 - [Token Bucket Throttling](plugin-ratelimit/README.md)

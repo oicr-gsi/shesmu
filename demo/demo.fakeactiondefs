@@ -1,35 +1,27 @@
 [
   {
-    "description": "Runs Niassa workflow 17318036 with settings in /home/debian/shesmu/production/gsi.niassa. Considered equivalent to workflows: 2280235, 2967897, 11971238, 13262061, 15033907, 15078370, 15078370, 16543238, 16563239, 16733247",
-    "name": "niassa::gsi::bwaMem_Miseq_2_0",
+    "description": "Workflow bwaMem version 1.0.0 from Vidarr instance https://vidarr-demo.oicr.on.ca on target hpc.",
+    "filename": "/home/debian/shesmu/research/gsi.vidarr",
+    "kind": "action",
+    "name": "vidarr::gsi::hpc::bwaMem_v1_0_0",
     "parameters": [
       {
-        "name": "inputs",
-        "required": true,
-        "type": "ao4accession$slims$o4id$sprovider$stime$dversion$ssignature$sstale$b"
-      },
-      {
-        "name": "wdl_inputs",
-        "required": true,
-        "type": "o1bwaMem$o16adapter1$qsadapter2$qsadapterTrimming$o4addParam$qsjobMemory$qimodules$qstimeout$qibamMerge$o3jobMemory$qimodules$qstimeout$qicountChunkSize$o2jobMemory$qitimeout$qidoTrim$bfastqR1$pfastqR2$pindexBam$o3jobMemory$qimodules$qstimeout$qinumChunk$ioutputFileNamePrefix$sreadGroups$srunBwaMem$o6addParam$qsbwaRef$sjobMemory$qimodules$sthreads$qitimeout$qislicer$o3jobMemory$qimodules$qstimeout$qitrimMinLength$qitrimMinQuality$qi"
-      },
-      {
-        "name": "wdl_options",
+        "name": "engine_parameters",
         "required": true,
         "type": "o2final_call_logs_dir$sfinal_workflow_log_dir$s"
       },
       {
-        "name": "cromwell_host",
+        "name": "arguments",
         "required": true,
-        "type": "s"
+        "type": "o36bwaMem_adapter1$qsbwaMem_adapter2$qsbwaMem_adapterTrimmingLog_jobMemory$qibwaMem_adapterTrimmingLog_timeout$qibwaMem_adapterTrimming_addParam$qsbwaMem_adapterTrimming_jobMemory$qibwaMem_adapterTrimming_modules$qsbwaMem_adapterTrimming_timeout$qibwaMem_bamMerge_jobMemory$qibwaMem_bamMerge_modules$qsbwaMem_bamMerge_timeout$qibwaMem_countChunkSize_jobMemory$qibwaMem_countChunkSize_timeout$qibwaMem_doTrim$qbbwaMem_fastqR1$u2EXTERNAL$o2configuration$sexternalIds$ao2id$sprovider$sINTERNAL$t1sbwaMem_fastqR2$qu2EXTERNAL$o2configuration$sexternalIds$ao2id$sprovider$sINTERNAL$t1sbwaMem_indexBam_jobMemory$qibwaMem_indexBam_modules$qsbwaMem_indexBam_timeout$qibwaMem_numChunk$qibwaMem_outputFileNamePrefix$qsbwaMem_readGroups$sbwaMem_runBwaMem_addParam$qsbwaMem_runBwaMem_bwaRef$sbwaMem_runBwaMem_jobMemory$qibwaMem_runBwaMem_modules$sbwaMem_runBwaMem_threads$qibwaMem_runBwaMem_timeout$qibwaMem_slicerR1_jobMemory$qibwaMem_slicerR1_modules$qsbwaMem_slicerR1_timeout$qibwaMem_slicerR2_jobMemory$qibwaMem_slicerR2_modules$qsbwaMem_slicerR2_timeout$qibwaMem_trimMinLength$qibwaMem_trimMinQuality$qi"
       },
       {
-        "name": "output_prefix",
+        "name": "metadata",
         "required": true,
-        "type": "s"
+        "type": "u2GLOBAL$t1u3ALL$t1o1outputDirectory$sMANUAL$t2o1outputDirectory$sao2id$sprovider$sREMAINING$t1o1outputDirectory$sINDIVIDUAL$o4bwaMem_bwaMemBam$u3ALL$t1o1outputDirectory$sMANUAL$t2o1outputDirectory$sao2id$sprovider$sREMAINING$t1o1outputDirectory$sbwaMem_bwaMemIndex$u3ALL$t1o1outputDirectory$sMANUAL$t2o1outputDirectory$sao2id$sprovider$sREMAINING$t1o1outputDirectory$sbwaMem_cutAdaptAllLogs$u3ALL$t1o1outputDirectory$sMANUAL$t2o1outputDirectory$sao2id$sprovider$sREMAINING$t1o1outputDirectory$sbwaMem_log$u3ALL$t1o1outputDirectory$sMANUAL$t2o1outputDirectory$sao2id$sprovider$sREMAINING$t1o1outputDirectory$s"
       },
       {
-        "name": "reference",
+        "name": "label_reference",
         "required": true,
         "type": "s"
       },
@@ -39,48 +31,51 @@
         "type": "i"
       },
       {
+        "name": "dry_run",
+        "required": false,
+        "type": "b"
+      },
+      {
+        "name": "external_keys",
+        "required": true,
+        "type": "ao4id$sprovider$sstale$bversions$mss"
+      },
+      {
         "name": "services",
         "required": false,
         "type": "as"
-      },
+      }
+    ],
+    "supplementaryInformation": [
       {
-        "name": "major_olive_version",
-        "required": true,
-        "type": "i"
-      },
-      {
-        "name": "supplemental_annotations",
-        "required": false,
-        "type": "mss"
+        "label": "In-flight",
+        "value": "0 of max 100"
       }
     ]
   },
   {
-    "description": "Runs Niassa workflow 17040615 with settings in /home/debian/shesmu/production/gsi.niassa.",
-    "name": "niassa::gsi::bcl2fastq_3_0",
+    "description": "Workflow bamMergePreprocessing version 2.0.2 from Vidarr instance https://vidarr-demo.oicr.on.ca on target hpc.",
+    "filename": "/home/debian/shesmu/research/gsi.vidarr",
+    "kind": "action",
+    "name": "vidarr::gsi::hpc::bamMergePreprocessing_v2_0_2",
     "parameters": [
       {
-        "name": "wdl_outputs",
-        "required": true,
-        "type": "o1bcl2fastq$o1fastqs$ao2fastqs$o4attributes$at2ssfiles$at2sblims_keys$ao5id$sprovider$ssignature$stime$dversion$smetatype$qsname$s"
-      },
-      {
-        "name": "wdl_inputs",
-        "required": true,
-        "type": "o1bcl2fastq$o8basesMask$qslanes$aimismatches$imodules$sprocess$o9bcl2fastq$qsbcl2fastqJail$qsextraOptions$qsignoreMissingBcls$qbignoreMissingFilter$qbignoreMissingPositions$qbmemory$qitemporaryDirectory$qsthreads$qirunDirectory$ssamples$ao2barcodes$asname$stimeout$qi"
-      },
-      {
-        "name": "wdl_options",
+        "name": "engine_parameters",
         "required": true,
         "type": "o2final_call_logs_dir$sfinal_workflow_log_dir$s"
       },
       {
-        "name": "cromwell_host",
+        "name": "arguments",
         "required": true,
-        "type": "s"
+        "type": "o87bamMergePreprocessing_analyzeCovariates_additionalParams$qsbamMergePreprocessing_analyzeCovariates_cores$qibamMergePreprocessing_analyzeCovariates_jobMemory$qibamMergePreprocessing_analyzeCovariates_modules$qsbamMergePreprocessing_analyzeCovariates_outputFileName$qsbamMergePreprocessing_analyzeCovariates_overhead$qibamMergePreprocessing_analyzeCovariates_timeout$qibamMergePreprocessing_applyBaseQualityScoreRecalibration_additionalParams$qsbamMergePreprocessing_applyBaseQualityScoreRecalibration_cores$qibamMergePreprocessing_applyBaseQualityScoreRecalibration_jobMemory$qibamMergePreprocessing_applyBaseQualityScoreRecalibration_modules$qsbamMergePreprocessing_applyBaseQualityScoreRecalibration_outputFileName$qsbamMergePreprocessing_applyBaseQualityScoreRecalibration_overhead$qibamMergePreprocessing_applyBaseQualityScoreRecalibration_suffix$qsbamMergePreprocessing_applyBaseQualityScoreRecalibration_timeout$qibamMergePreprocessing_baseQualityScoreRecalibration_additionalParams$qsbamMergePreprocessing_baseQualityScoreRecalibration_cores$qibamMergePreprocessing_baseQualityScoreRecalibration_intervals$qasbamMergePreprocessing_baseQualityScoreRecalibration_jobMemory$qibamMergePreprocessing_baseQualityScoreRecalibration_knownSites$asbamMergePreprocessing_baseQualityScoreRecalibration_modules$qsbamMergePreprocessing_baseQualityScoreRecalibration_outputFileName$qsbamMergePreprocessing_baseQualityScoreRecalibration_overhead$qibamMergePreprocessing_baseQualityScoreRecalibration_timeout$qibamMergePreprocessing_collectFilesBySample_cores$qibamMergePreprocessing_collectFilesBySample_jobMemory$qibamMergePreprocessing_collectFilesBySample_modules$qsbamMergePreprocessing_collectFilesBySample_timeout$qibamMergePreprocessing_doBqsr$qbbamMergePreprocessing_doFilter$qbbamMergePreprocessing_doIndelRealignment$qbbamMergePreprocessing_doMarkDuplicates$qbbamMergePreprocessing_doSplitNCigarReads$qbbamMergePreprocessing_gatherBQSRReports_additionalParams$qsbamMergePreprocessing_gatherBQSRReports_cores$qibamMergePreprocessing_gatherBQSRReports_jobMemory$qibamMergePreprocessing_gatherBQSRReports_modules$qsbamMergePreprocessing_gatherBQSRReports_outputFileName$qsbamMergePreprocessing_gatherBQSRReports_overhead$qibamMergePreprocessing_gatherBQSRReports_timeout$qibamMergePreprocessing_indelRealign_additionalParams$qsbamMergePreprocessing_indelRealign_cores$qibamMergePreprocessing_indelRealign_gatkJar$qsbamMergePreprocessing_indelRealign_jobMemory$qibamMergePreprocessing_indelRealign_knownAlleles$asbamMergePreprocessing_indelRealign_modules$qsbamMergePreprocessing_indelRealign_overhead$qibamMergePreprocessing_indelRealign_timeout$qibamMergePreprocessing_inputGroups$ao2bamAndBamIndexInputs$ao2bam$u2EXTERNAL$o2configuration$sexternalIds$ao2id$sprovider$sINTERNAL$t1sbamIndex$u2EXTERNAL$o2configuration$sexternalIds$ao2id$sprovider$sINTERNAL$t1soutputIdentifier$sbamMergePreprocessing_intervalsToParallelizeByString$sbamMergePreprocessing_mergeSplitByIntervalBams_additionalParams$qsbamMergePreprocessing_mergeSplitByIntervalBams_cores$qibamMergePreprocessing_mergeSplitByIntervalBams_jobMemory$qibamMergePreprocessing_mergeSplitByIntervalBams_modules$qsbamMergePreprocessing_mergeSplitByIntervalBams_overhead$qibamMergePreprocessing_mergeSplitByIntervalBams_timeout$qibamMergePreprocessing_preprocessBam_defaultRuntimeAttributes$qo5cores$imemory$imodules$soverhead$itimeout$ibamMergePreprocessing_preprocessBam_filterAdditionalParams$qsbamMergePreprocessing_preprocessBam_filterFlags$qibamMergePreprocessing_preprocessBam_filterSuffix$qsbamMergePreprocessing_preprocessBam_markDuplicatesAdditionalParams$qsbamMergePreprocessing_preprocessBam_markDuplicatesSuffix$qsbamMergePreprocessing_preprocessBam_minMapQuality$qibamMergePreprocessing_preprocessBam_opticalDuplicatePixelDistance$qibamMergePreprocessing_preprocessBam_readFilters$qasbamMergePreprocessing_preprocessBam_refactorCigarString$qbbamMergePreprocessing_preprocessBam_removeDuplicates$qbbamMergePreprocessing_preprocessBam_splitNCigarReadsAdditionalParams$qsbamMergePreprocessing_preprocessBam_splitNCigarReadsSuffix$qsbamMergePreprocessing_preprocessBam_temporaryWorkingDir$qsbamMergePreprocessing_preprocessingBamRuntimeAttributes$qao6cores$qiid$qsmemory$qimodules$qsoverhead$qitimeout$qibamMergePreprocessing_realignerTargetCreator_additionalParams$qsbamMergePreprocessing_realignerTargetCreator_cores$qibamMergePreprocessing_realignerTargetCreator_downsamplingType$qsbamMergePreprocessing_realignerTargetCreator_gatkJar$qsbamMergePreprocessing_realignerTargetCreator_jobMemory$qibamMergePreprocessing_realignerTargetCreator_knownIndels$asbamMergePreprocessing_realignerTargetCreator_modules$qsbamMergePreprocessing_realignerTargetCreator_overhead$qibamMergePreprocessing_realignerTargetCreator_timeout$qibamMergePreprocessing_reference$sbamMergePreprocessing_splitStringToArray_cores$qibamMergePreprocessing_splitStringToArray_jobMemory$qibamMergePreprocessing_splitStringToArray_lineSeparator$qsbamMergePreprocessing_splitStringToArray_modules$qsbamMergePreprocessing_splitStringToArray_recordSeparator$qsbamMergePreprocessing_splitStringToArray_timeout$qi"
       },
       {
-        "name": "output_prefix",
+        "name": "metadata",
+        "required": true,
+        "type": "u1INDIVIDUAL$o3bamMergePreprocessing_outputGroups$ao3bam$u3ALL$t1o1outputDirectory$sMANUAL$t2o1outputDirectory$sao2id$sprovider$sREMAINING$t1o1outputDirectory$sbamIndex$u3ALL$t1o1outputDirectory$sMANUAL$t2o1outputDirectory$sao2id$sprovider$sREMAINING$t1o1outputDirectory$soutputIdentifier$sbamMergePreprocessing_recalibrationReport$u3ALL$t1o1outputDirectory$sMANUAL$t2o1outputDirectory$sao2id$sprovider$sREMAINING$t1o1outputDirectory$sbamMergePreprocessing_recalibrationTable$u3ALL$t1o1outputDirectory$sMANUAL$t2o1outputDirectory$sao2id$sprovider$sREMAINING$t1o1outputDirectory$s"
+      },
+      {
+        "name": "label_reference",
         "required": true,
         "type": "s"
       },
@@ -90,55 +85,48 @@
         "type": "i"
       },
       {
+        "name": "dry_run",
+        "required": false,
+        "type": "b"
+      },
+      {
+        "name": "external_keys",
+        "required": true,
+        "type": "ao4id$sprovider$sstale$bversions$mss"
+      },
+      {
         "name": "services",
         "required": false,
         "type": "as"
-      },
+      }
+    ],
+    "supplementaryInformation": [
       {
-        "name": "major_olive_version",
-        "required": true,
-        "type": "i"
-      },
-      {
-        "name": "supplemental_annotations",
-        "required": false,
-        "type": "mss"
+        "label": "In-flight",
+        "value": "0 of max 20"
       }
     ]
   },
   {
-    "description": "Runs Niassa workflow 16733247 with settings in /home/debian/shesmu/production/gsi.niassa. Considered equivalent to workflows: 2280235, 2967897, 11971238, 13262061, 15033907, 15078370, 15078370, 16543238, 16563239",
-    "name": "niassa::gsi::bwaMem_nonMiseq_2_0",
+    "description": "Workflow bcl2fastq version 3.1.3 from Vidarr instance https://vidarr-demo.oicr.on.ca on target hpc.",
+    "filename": "/home/debian/shesmu/research/gsi.vidarr",
+    "kind": "action",
+    "name": "vidarr::gsi::hpc::bcl2fastq_v3_1_3",
     "parameters": [
       {
-        "name": "inputs",
-        "required": true,
-        "type": "ao4accession$slims$o4id$sprovider$stime$dversion$ssignature$sstale$b"
-      },
-      {
-        "name": "wdl_inputs",
-        "required": true,
-        "type": "o1bwaMem$o16adapter1$qsadapter2$qsadapterTrimming$o4addParam$qsjobMemory$qimodules$qstimeout$qibamMerge$o3jobMemory$qimodules$qstimeout$qicountChunkSize$o2jobMemory$qitimeout$qidoTrim$bfastqR1$pfastqR2$pindexBam$o3jobMemory$qimodules$qstimeout$qinumChunk$ioutputFileNamePrefix$sreadGroups$srunBwaMem$o6addParam$qsbwaRef$sjobMemory$qimodules$sthreads$qitimeout$qislicer$o3jobMemory$qimodules$qstimeout$qitrimMinLength$qitrimMinQuality$qi"
-      },
-      {
-        "name": "wdl_options",
+        "name": "engine_parameters",
         "required": true,
         "type": "o2final_call_logs_dir$sfinal_workflow_log_dir$s"
       },
       {
-        "name": "cromwell_host",
+        "name": "arguments",
         "required": true,
-        "type": "s"
+        "type": "o16bcl2fastq_basesMask$qsbcl2fastq_lanes$aibcl2fastq_mismatches$ibcl2fastq_modules$sbcl2fastq_process_bcl2fastq$qsbcl2fastq_process_bcl2fastqJail$qsbcl2fastq_process_extraOptions$qsbcl2fastq_process_ignoreMissingBcls$qbbcl2fastq_process_ignoreMissingFilter$qbbcl2fastq_process_ignoreMissingPositions$qbbcl2fastq_process_memory$qibcl2fastq_process_temporaryDirectory$qsbcl2fastq_process_threads$qibcl2fastq_runDirectory$u2EXTERNAL$o2configuration$sexternalIds$ao2id$sprovider$sINTERNAL$t1sbcl2fastq_samples$ao5acceptableUmiList$qsbarcodes$asinlineUmi$bname$spatterns$qmssbcl2fastq_timeout$qi"
       },
       {
-        "name": "output_prefix",
+        "name": "metadata",
         "required": true,
-        "type": "s"
-      },
-      {
-        "name": "reference",
-        "required": true,
-        "type": "s"
+        "type": "u2GLOBAL$t1ao2fastqs$u3ALL$t1o1outputDirectory$sMANUAL$t2o1outputDirectory$sao2id$sprovider$sREMAINING$t1o1outputDirectory$sname$sINDIVIDUAL$o1bcl2fastq_fastqs$ao2fastqs$u3ALL$t1o1outputDirectory$sMANUAL$t2o1outputDirectory$sao2id$sprovider$sREMAINING$t1o1outputDirectory$sname$s"
       },
       {
         "name": "priority",
@@ -146,77 +134,55 @@
         "type": "i"
       },
       {
+        "name": "dry_run",
+        "required": false,
+        "type": "b"
+      },
+      {
+        "name": "external_keys",
+        "required": true,
+        "type": "ao4id$sprovider$sstale$bversions$mss"
+      },
+      {
         "name": "services",
         "required": false,
         "type": "as"
-      },
+      }
+    ],
+    "supplementaryInformation": [
       {
-        "name": "major_olive_version",
-        "required": true,
-        "type": "i"
-      },
-      {
-        "name": "supplemental_annotations",
-        "required": false,
-        "type": "mss"
+        "label": "In-flight",
+        "value": "0 of max 100"
       }
     ]
   },
   {
-    "description": "Runs Niassa workflow 17030363 with settings in /home/debian/shesmu/production/gsi.niassa. Considered equivalent to workflows: 3254816, 7815155, 9532886, 10345255, 15085825, 15328417, 15333319, 15576673",
-    "name": "niassa::gsi::bam_merge_preprocessing_2_0",
+    "description": "",
+    "filename": "/home/debian/shesmu/research/gsi.vidarr",
+    "kind": "action",
+    "name": "vidarr::gsi::unload_by_external_ids",
     "parameters": [
       {
-        "name": "wdl_outputs",
+        "name": "external_identifiers",
         "required": true,
-        "type": "o1bamMergePreprocessing$o3outputGroups$ao3bam$o4attributes$at2ssfiles$at2sblims_keys$ao5id$sprovider$ssignature$stime$dversion$smetatype$qsbamIndex$o4attributes$at2ssfiles$at2sblims_keys$ao5id$sprovider$ssignature$stime$dversion$smetatype$qsoutputIdentifier$srecalibrationReport$o4attributes$at2ssfiles$at2sblims_keys$ao5id$sprovider$ssignature$stime$dversion$smetatype$qsrecalibrationTable$o4attributes$at2ssfiles$at2sblims_keys$ao5id$sprovider$ssignature$stime$dversion$smetatype$qs"
-      },
-      {
-        "name": "wdl_inputs",
-        "required": true,
-        "type": "o1bamMergePreprocessing$o16analyzeCovariates$o3jobMemory$qimodules$qstimeout$qiapplyBaseQualityScoreRecalibration$o3jobMemory$qimodules$qstimeout$qibaseQualityScoreRecalibration$o4jobMemory$qiknownSites$asmodules$qstimeout$qidoBqsr$qbdoFilter$qbdoIndelRealignment$qbdoMarkDuplicates$qbdoSplitNCigarReads$qbgatherBQSRReports$o3jobMemory$qimodules$qstimeout$qiindelRealign$o4jobMemory$qiknownAlleles$asmodules$qstimeout$qiinputGroups$ao2bamAndBamIndexInputs$ao2bam$pbamIndex$poutputIdentifier$sintervalsToParallelizeByString$smergeSplitByIntervalBams$o3jobMemory$qimodules$qstimeout$qipreprocessBam$o9filterFlags$qijobMemory$qimarkDuplicatesAdditionalParams$qsminMapQuality$qimodules$qsopticalDuplicatePixelDistance$qioverhead$qitemporaryWorkingDir$qstimeout$qirealignerTargetCreator$o5downsamplingType$qsjobMemory$qiknownIndels$asmodules$qstimeout$qireference$s"
-      },
-      {
-        "name": "wdl_options",
-        "required": true,
-        "type": "o2final_call_logs_dir$sfinal_workflow_log_dir$s"
-      },
-      {
-        "name": "cromwell_host",
-        "required": true,
-        "type": "s"
-      },
-      {
-        "name": "output_prefix",
-        "required": true,
-        "type": "s"
-      },
-      {
-        "name": "reference",
-        "required": true,
-        "type": "s"
-      },
-      {
-        "name": "priority",
-        "required": false,
-        "type": "i"
-      },
-      {
-        "name": "services",
-        "required": false,
-        "type": "as"
-      },
-      {
-        "name": "major_olive_version",
-        "required": true,
-        "type": "i"
-      },
-      {
-        "name": "supplemental_annotations",
-        "required": false,
-        "type": "mss"
+        "type": "ao2id$sprovider$s"
       }
-    ]
+    ],
+    "supplementaryInformation": []
+  },
+  {
+    "description": "",
+    "filename": "/home/debian/shesmu/research/gsi.vidarr",
+    "kind": "action",
+    "name": "vidarr::gsi::unload_by_workflow_runs",
+    "parameters": [
+      {
+        "name": "workflow_runs",
+        "required": true,
+        "type": "as"
+      }
+    ],
+    "supplementaryInformation": []
   },
   {
     "description": "Opens (or re-opens) a JIRA ticket. Defined in /home/debian/shesmu/production/genomics.jira.",

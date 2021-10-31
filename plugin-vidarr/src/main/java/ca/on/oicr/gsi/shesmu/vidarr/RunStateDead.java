@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-public class RunStateDead extends RunState {
+final class RunStateDead extends RunState {
 
   @Override
   public boolean canReattempt() {

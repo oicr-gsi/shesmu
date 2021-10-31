@@ -176,7 +176,7 @@ Finally, the olive's run time is recorded using the time stored earlier:
         ANEWARRAY java/lang/String
         DUP
         ICONST_0
-        LDC "/home/amasella/spb-seqware-production/shesmu/local/example.shesmu"
+        LDC "/home/amasella/shesmu/local/example.shesmu"
         AASTORE
         DUP
         ICONST_1
@@ -315,7 +315,7 @@ Then sends the action in to the consumer with data about the olive that generate
         INVOKEVIRTUAL ca/on/oicr/gsi/shesmu/core/NothingAction.prepare ()V
         ALOAD 1
         ALOAD 3
-        LDC "/home/amasella/spb-seqware-production/shesmu/local/example.shesmu"
+        LDC "/home/amasella/shesmu/local/example.shesmu"
         ICONST_2
         BIPUSH 6
         LDC 1546533662036

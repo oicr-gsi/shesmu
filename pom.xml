@@ -165,7 +165,6 @@
     <module>plugin-loki</module>
     <module>plugin-mongo</module>
     <module>plugin-nabu</module>
-    <module>plugin-niassa</module>
     <module>plugin-pinery</module>
     <module>plugin-prometheus</module>
     <module>plugin-ratelimit</module>
