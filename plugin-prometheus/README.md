@@ -36,11 +36,6 @@ Here are recommended rules for monitoring Shesmu's state:
           description: Shesmu {{$labels.instance}} has failed to compile {{$labels.filename}}.
             The source file is probably wrong.
           summary: Unable to compile {{$labels.filename}}
-      - alert: BadSource
-        expr: max_over_time(shesmu_niassa_worflow_bad[5m]) > 0
-        annotations:
-          description: Shesmu {{$labels.instance}} has failed to parse {{$labels.filename}}.
-          summary: Unable to parse {{$labels.filename}}
 
 To check for actions being in a state for too long, use these rules, adjusting the timeouts as desired:
 

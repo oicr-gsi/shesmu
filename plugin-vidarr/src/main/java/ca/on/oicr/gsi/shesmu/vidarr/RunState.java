@@ -12,13 +12,11 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * As Shesmu communicates with Vidarr, the action needs to track whats going on. In the Niassa
- * workflow action, there were many states to track and this resulted in a lot of fields that were
- * used in different combinations. To avoid all that, this class is designed as a state machine
- * where each implementation can determine what to do and returns a next state. This makes it much
- * cleaner to reset state.
+ * As Shesmu communicates with Vidarr, the action needs to track whats going
+ * on. This class is designed as a state machine where each implementation can
+ * determine what to do and returns a next state.
  */
-public abstract class RunState {
+abstract class RunState {
 
   public static final class PerformResult {
     private final ActionState actionState;

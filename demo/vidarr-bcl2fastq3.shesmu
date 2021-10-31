@@ -1,6 +1,6 @@
 Version 1;
 Input pinery_ius;
-Import fake::demo::niassa::gsi::*;
+Import fake::demo::vidarr::gsi::hpc::*;
 
 Olive
   Description "BCL2FASTQ for pinery-miso"
@@ -11,7 +11,7 @@ Olive
     run_status == "Completed"
 
   Let
-    sample_info = If is_sample Then [{barcode = ius[2], name = library_name, signature = std::signature::sha1, lims = lims, group_id = group_id, project = project}] Else [],
+    sample_info = If is_sample Then [{barcode = ius[2], name = library_name, external_key = vidarr::sign(external_key, std::signature::sha1), group_id = group_id, project = project}] Else [],
     lane_or_sample_ius = ius,
     lane_or_sample_is_sample = is_sample,
     lane_or_sample_instrument_model = instrument_model,
@@ -142,55 +142,49 @@ Olive
           filename = "{sample.name}_{run_name}_{For l In lane_numbers: Min l Default 0}_{sample.barcode}"
         }
   Flatten sample In samples
-  Run bcl2fastq_3_0
+  Run bcl2fastq_v3_1_3
   Tag "instrument:{instrument_model}"
   Tag "project:{sample.project}"
   With
-    cromwell_host = config::misc::cromwell_host,
-    output_prefix = table::output_for_project::get(""), # No project since all FASTQs go in default space
-    wdl_inputs = {
-          bcl2fastq = {
-            basesMask = `trimmed_bases_mask`,
-            lanes = lane_numbers,
-            mismatches = 1,
-            modules = "bcl2fastq/2.20.0.422 bcl2fastq-jail/3.0.0",
-            process = {
-              bcl2fastq = ``,
-              bcl2fastqJail = ``,
-              extraOptions = ``,
-              ignoreMissingBcls = ``,
-              ignoreMissingFilter = ``,
-              ignoreMissingPositions = ``,
-              memory =
-                Switch instrument_model
-                  When "NextSeq 550" Then `18`
-                  Else `14`,
-              temporaryDirectory = `"$TMP"`,
-              threads = ``
-            },
-            runDirectory = "{run_dir}",
-            samples = [ {
-                barcodes = sample.real_barcodes,
-                name = sample.filename
-              } ],
-            timeout = ``
-          }
-    },
-    wdl_outputs = {
-      bcl2fastq = {
-        fastqs = [ {
-            name = sample.filename,
-            fastqs = {
-              attributes = [],
-              files = [],
-              lims_keys = [{...sample.lims, signature = sample.signature}],
-              metatype = ``
-            }
-          } ]
-      }
-    },
-    wdl_options = {
+    external_keys = [{...sample.external_key}],
+    engine_parameters = {
       final_workflow_log_dir = config::misc::final_workflow_log_dir,
       final_call_logs_dir = config::misc::final_call_logs_dir
     },
-    major_olive_version = 0;
+    arguments = {
+      bcl2fastq_basesMask = `trimmed_bases_mask`,
+      bcl2fastq_lanes = lane_numbers,
+      bcl2fastq_mismatches = 1,
+      bcl2fastq_modules = "bcl2fastq/2.20.0.422 bcl2fastq-jail/3.0.0",
+      bcl2fastq_process_bcl2fastq = ``,
+      bcl2fastq_process_bcl2fastqJail = ``,
+      bcl2fastq_process_extraOptions = ``,
+      bcl2fastq_process_ignoreMissingBcls = ``,
+      bcl2fastq_process_ignoreMissingFilter = ``,
+      bcl2fastq_process_ignoreMissingPositions = ``,
+      bcl2fastq_process_memory =
+        Switch instrument_model
+          When "NextSeq 550" Then `18`
+          Else `14`,
+      bcl2fastq_process_temporaryDirectory = `"$TMP"`,
+      bcl2fastq_process_threads = ``,
+      bcl2fastq_runDirectory = EXTERNAL {
+        configuration = "{run_dir}",
+        externalIds = [{ id = sample.external_key.id, provider = sample.external_key.provider }]
+      },
+      bcl2fastq_samples = [ {
+          acceptableUmiList = ``,
+          barcodes = sample.real_barcodes,
+          inlineUmi = False,
+          name = sample.filename,
+          patterns = ``
+        } ],
+      bcl2fastq_timeout = ``
+    },
+    metadata = GLOBAL { [ {
+      fastqs = MANUAL {
+        { outputDirectory = table::output_for_project::get("") }, # No project since all FASTQs go in default space
+        [ { id = sample.external_key.id, provider = sample.external_key.provider } ]
+      },
+      name = sample.name
+    } ] };

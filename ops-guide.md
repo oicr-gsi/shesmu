@@ -209,9 +209,6 @@ using the JIRA searches or any actions that file JIRA issues.
 Every data format (_e.g._, `cerberus_fp`) can also be throttled and olives that
 use this data will not run.
 
-Some actions also have additional throttles built into them. Niassa actions
-will not launch if `niassa-launch` or the name of the `.nissawf` is throttled.
-
 To engage a throttle, there are several ways:
 
 - using a maintenance schedule: a file named _throttle_`.maintenance` contains a list of times to engage a throttle. These are useful for planned events, such as IT maintenance. There's a graphical [maintenance schedule editor](maintenance-editor).
@@ -278,7 +275,7 @@ requesting frequent updates. An old last transition time indicates that the
 problem is internal to the action.
 
 The _external modification time_ is some time that the action self-reports that
-it thinks is useful. For Niassa and Vidarr workflows, this is the last
+it thinks is useful. For Vidarr workflows, this is the last
 modification time of the workflow run. JIRA actions show the last modification
 time of the ticket they are associated with.
 
@@ -306,87 +303,6 @@ Files can be deleted from disk by the SFTP delete action. To have a human
 review before deleting, the olive can set `automatic = False` and then a
 command will be available for a human to approve the action. These actions
 appear in the `HALP` state until they are approved.
-
-### Niassa Actions
-Niassa actions have several important commands meant to replace access to the
-command line:
-
-- ✈️ Ignore Max-in-flight Limit / 🚲 Respect Max-in-flight Limit: Actions will
-  normally not launch a workflow if a certain number are running. This allows
-  overriding that limit. It does nothing once the workflow has launched.
-- 🚀 Use High Priority / 🚀 Use Normal Priority: When Shesmu is working through
-  its action set, it will try to service actions from highest priority to lowest.
-  This increases the prioirty of an action so it can be checked more. This does
-  *not* affect scheduling priority on the cluster. This is only useful when
-  Shesmu is overloaded or has some resource starvation problem.
-- 💔 Reset Workflow Run Connection: Shesmu will scan Niassa for matching
-  workflow runs to find a match. The candiates are shown in _Prior Workflow
-  Runs_. Once it chooses a candidate or launches a workflow run, it will become
-  attached to it and only get status information from that workflow run. This
-  forces it to start the process over again and find a new candidate. This is
-  useful if workflow runs have been skipped outside of Shesmu.
-- ℹ️ Refresh Run Information: Shesmu will download information about a workflow
-  run from Niassa (working directory, INI file, Cromwell information) and cache
-  it for display. This triggers the information to be downloaded again.
-- 🚧 Retry: This uses Niassa _retry_ command on a workflow run. This command is
-  almost always useless, particularly if something happened in Cromwell. It can
-  be used to reattempt failed provisioning.
-- 🚧 Skip All Partially Matched Workflow Runs / 🚧 Skip Historic Workflow Runs
-  / 🚧 Skip and Re-run: These skip candiate workflow runs from the _Previous
-	Workflow Runs_ section. _Skip All Partially Matched Workflow Runs_ is
-	displayed when a candidiate cannot be selected (usually due to a
-	HALP/staleness problem).  _Skip Historic Workflow Runs_ skips all but the
-	most recent run. Usually this is a sign of a Shesmu bug or a manual relaunch
-	of a workflow run without a manual skip of the previous version. _Skip and
-	Re-run_ is available in most other cases where a candiate has been selected
-	(or a new workflow was launched). Due to caching problems, sometimes the
-	workflow run will be marked as skipped but Shesmu will still see stale
-	information where it is live. Try purging the action to trigger a cache
-  refresh.
-- 🔓️ Ignore LIMS Key Lock / 🔒️ Respect LIMS Key Lock: Shesmu caches information
-  from Niassa because making frequent requests to Niassa causes it to be sad.
-	When an action uses a LIMS key, it marks it so that no other action can use
-	it until the cache is refreshed. This sometimes gets a workflow stuck.
-	Ignoring the lock will allow the workflow to launch even if it thinks the
-	LIMS key it requires has been marked by another action. This does make it
-	possible for two unlocked actions to launch duplicate workflows if changes
-	have been made in LIMS.  `
-
-The Niassa action also generates some useful tags:
-- `prior-runs:`[`none`, `one`, `many`]: How many unskipped previous workflow
-   runs are associated with this action.
-- `skipped-runs:`[`none`, `one`, `many`]: How many skipped previous workflow
-  runs are associated with this action.
-- `workflow-name:`_name_: The name of the workflow from the `.niassawf` file.
-
-Niassa actions have a few states they can be in:
-
-- `FAILED` -- This can happen for a few reasons: the workflow itself failed,
-  the workflow SWID is bad, an internal error occurred tying to launch the
-  workflow.
-- `HALP` -- The workflow runs that are in the database almost-but-not-quite
-  matches to this action. Review the _Prior Workflow Runs_ and correct LIMS or
-  rerun the workflow.
-
-- `INFLIGHT` -- The workflow is running.
-- `QUEUED` -- The workflow is submitted to Niassa, but Niassa has not launched
-  it.
-- `THROTTLED` -- Niassa is overloaded or launching has been blocked. This can
-  happen frequently due to database overload on the Niassa serer.
-- `WAITING` -- This can be caused by man things:
-	- when initially fetching data from Niassa, one action will update the cache
-	  and the others will have to wait for that action to download analysis
-    provenance data from Niassa.
-	- too many workflows running, exceeding the max-in-flight limit; if urgent,
-	  override the max-in-flight limit
-	- there is conflict over LIMS keys; this is a problem where Shesmu's cache is
-	  stale and it cannot be sure that the workflow has already launched. It
-		should eventually clear when the cache does. If impatient, purging the
-    action will force a cache refresh.
-  - the workflow run is in a submitted state in Niassa
-- `ZOMBIE` -- the workflow has input which is stale; normal procedures for
-  fixing stale records will eventually generate a non-stale version of this
-  action.
 
 ### Vidarr Actions
 Vidarr actions have several important commands meant to replace access to the

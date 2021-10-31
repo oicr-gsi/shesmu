@@ -2,6 +2,10 @@
 
 * Adds metrics for cache refresh start and end times
 
+Niassa plugin:
+
+* Obliterate this plugin and any references to that nightmare.
+
 # [1.19.3] - 2022-06-22T19:04+00:00
 
 * Display `cerberus_fp` `workflow_version` even when workflow version contains four parts (3 for the version and one for the Niassa workflow accession)

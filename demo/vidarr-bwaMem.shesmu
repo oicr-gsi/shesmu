@@ -1,0 +1,298 @@
+Version 1;
+Input cerberus_fp;
+Import fake::demo::vidarr::gsi::hpc::*;
+
+Function get_bwamem_params(string reference)
+  Switch reference
+    When "hg19" Then
+      `{
+        bwaRef = "$HG19_BWA_INDEX_ROOT/hg19_random.fa",
+        modules = "samtools/1.9 bwa/0.7.12 hg19-bwa-index/0.7.12"
+      }`
+    When "hg38" Then
+    `{
+        bwaRef = "$HG38_BWA_INDEX_ROOT/hg38_random.fa",
+        modules = "samtools/1.9 bwa/0.7.12 hg38-bwa-index/0.7.12"
+    }`
+    Else
+    ``;
+
+Function get_chunk_number(integer file_size)
+  If file_size < 2500000000 Then
+       1
+  Else If file_size/2500000000 > 10 Then
+       10
+  Else
+       file_size/2500000000;
+
+Function get_doTrim(string library_design, string kit)
+  If kit In ["10X Genome Linked Reads"] Then
+    True
+  Else If library_design In ["EX", "TS"] Then
+    True
+  Else
+      False;
+
+Define bwamem(boolean linked_reads)
+Where
+    metatype =="chemical/seq-na-fastq-gzip"
+    && (kit == "10X Genome Linked Reads") == linked_reads
+    && workflow In ["bcl2fastq", "CASAVA", "chromium_mkfastq", "FileImportForAnalysis"]
+    && library_design In ["WG", "EX" ,"TS", "NN", "CH", "AS", "CM"]
+    && tissue_type != "X"
+    && config::project_info::get(project).cancer_pipeline != ``
+
+Group By ius, library_name, project, workflow_run_accession, organism
+  Into
+    read_count = Univalued olive::common::extract_read_count(file_attributes),
+    fastq1 = Where olive::common::extract_read_number(path, file_attributes) == `1` Univalued INTERNAL{accession},
+    input1 = Where olive::common::extract_read_number(path, file_attributes) == `1` Univalued vidarr::sign(external_key, std::signature::sha1),
+    fastq2 = Where olive::common::extract_read_number(path, file_attributes) == `2` Univalued INTERNAL{accession},
+    input2 = Where olive::common::extract_read_number(path, file_attributes) == `2` Univalued vidarr::sign(external_key, std::signature::sha1),
+    rg = Univalued "'@RG\tID:{ius[0]}-{ius[2]}_{ius[1]}\tLB:{library_name}\tPL:ILLUMINA\tPU:{ius[0]}-{ius[2]}_{ius[1]}\tSM:{donor}_{tissue_origin}_{tissue_type}{If group_id == "" Then "" Else "_{group_id}"}'",
+    output_file_name = Univalued "{library_name}{If group_id == "" Then "" Else "_{group_id}"}_{ius[0]}_{ius[1]}_{ius[2]}",
+    numchunk = Where olive::common::extract_read_number(path, file_attributes) == `1` Univalued get_chunk_number(file_size),
+    dotrim = Univalued get_doTrim(library_design, kit),
+    timestamp = Max timestamp
+  Pick Max timestamp By ius,library_name, project
+  Where `read_count? > 0` Default True
+  Flatten reference In config::project_info::get(project).reference_for_species[std::string::upper(organism)] Default []
+  Require bwamem = get_bwamem_params(reference)
+    OnReject
+      Alert
+        alertname = "NoReference",
+        severity = "pipeline",
+        environment = config::misc::environment,
+        workflow = "bwaMem",
+        reference = reference,
+        project = project
+      For 30mins
+    Resume;
+
+Olive
+  Description "Run bwaMem on non-MiSeq fastq files"
+  Tag vidarr
+  Where instrument_model != "Illumina MiSeq"
+  bwamem(False)
+  Run bwaMem_v1_0_0
+  Tag "project:{project}"
+  Tag "reference:{reference}"
+  Tag "number_chunk:{numchunk}"
+  With
+    external_keys = [input1, input2],
+    metadata = GLOBAL { ALL {{ outputDirectory = table::output_for_project::get(project) }} },
+    label_reference = reference,
+    arguments = {
+        bwaMem_fastqR1 = fastq1,
+        bwaMem_fastqR2 = `fastq2`,
+        bwaMem_outputFileNamePrefix = `output_file_name`,
+        bwaMem_readGroups = rg,
+        bwaMem_doTrim = `dotrim`,
+        bwaMem_trimMinLength = ``,
+        bwaMem_trimMinQuality = ``,
+        bwaMem_adapter1 = ``,
+        bwaMem_adapter2 = ``,
+        bwaMem_numChunk = `numchunk`,
+        bwaMem_countChunkSize_jobMemory = ``,
+        bwaMem_countChunkSize_timeout = ``,
+        bwaMem_slicerR1_modules = ``,
+        bwaMem_slicerR1_jobMemory = ``,
+        bwaMem_slicerR1_timeout = ``,
+        bwaMem_slicerR2_modules = ``,
+        bwaMem_slicerR2_jobMemory = ``,
+        bwaMem_slicerR2_timeout = ``,
+        bwaMem_adapterTrimming_modules = ``,
+        bwaMem_adapterTrimming_addParam = ``,
+        bwaMem_adapterTrimming_jobMemory = ``,
+        bwaMem_adapterTrimming_timeout = ``,
+        bwaMem_adapterTrimmingLog_jobMemory = ``,
+        bwaMem_adapterTrimmingLog_timeout = ``,
+        bwaMem_runBwaMem_bwaRef = bwamem.bwaRef,
+        bwaMem_runBwaMem_modules = bwamem.modules,
+        bwaMem_runBwaMem_threads = ``,
+        bwaMem_runBwaMem_addParam = ``,
+        bwaMem_runBwaMem_jobMemory = ``,
+        bwaMem_runBwaMem_timeout = ``,
+        bwaMem_bamMerge_modules = ``,
+        bwaMem_bamMerge_jobMemory = ``,
+        bwaMem_bamMerge_timeout = ``,
+        bwaMem_indexBam_modules = ``,
+        bwaMem_indexBam_jobMemory = ``,
+        bwaMem_indexBam_timeout = ``
+  },
+  engine_parameters = {
+    final_workflow_log_dir = config::misc::final_workflow_log_dir,
+    final_call_logs_dir = config::misc::final_call_logs_dir
+  };
+
+Olive
+  Description "Run bwaMem on MiSeq fastq files"
+  Tag vidarr
+  Where instrument_model == "Illumina MiSeq"
+  bwamem(False)
+  Run bwaMem_v1_0_0
+  Tag "project:{project}"
+  Tag "reference:{reference}"
+  Tag "number_chunk:{numchunk}"
+  With
+    external_keys = [input1, input2],
+    metadata = GLOBAL { ALL {{ outputDirectory = table::output_for_project::get(project) }} },
+    label_reference = reference,
+    arguments = {
+        bwaMem_fastqR1 = fastq1,
+        bwaMem_fastqR2 = `fastq2`,
+        bwaMem_outputFileNamePrefix = `output_file_name`,
+        bwaMem_readGroups = rg,
+        bwaMem_doTrim = `dotrim`,
+        bwaMem_trimMinLength = ``,
+        bwaMem_trimMinQuality = ``,
+        bwaMem_adapter1 = ``,
+        bwaMem_adapter2 = ``,
+        bwaMem_numChunk = `numchunk`,
+        bwaMem_countChunkSize_jobMemory = ``,
+        bwaMem_countChunkSize_timeout = ``,
+        bwaMem_slicerR1_modules = ``,
+        bwaMem_slicerR1_jobMemory = ``,
+        bwaMem_slicerR1_timeout = ``,
+        bwaMem_slicerR2_modules = ``,
+        bwaMem_slicerR2_jobMemory = ``,
+        bwaMem_slicerR2_timeout = ``,
+        bwaMem_adapterTrimming_modules = ``,
+        bwaMem_adapterTrimming_addParam = ``,
+        bwaMem_adapterTrimming_jobMemory = ``,
+        bwaMem_adapterTrimming_timeout = ``,
+        bwaMem_adapterTrimmingLog_jobMemory = ``,
+        bwaMem_adapterTrimmingLog_timeout = ``,
+        bwaMem_runBwaMem_bwaRef = bwamem.bwaRef,
+        bwaMem_runBwaMem_modules = bwamem.modules,
+        bwaMem_runBwaMem_threads = ``,
+        bwaMem_runBwaMem_addParam = ``,
+        bwaMem_runBwaMem_jobMemory = ``,
+        bwaMem_runBwaMem_timeout = ``,
+        bwaMem_bamMerge_modules = ``,
+        bwaMem_bamMerge_jobMemory = ``,
+        bwaMem_bamMerge_timeout = ``,
+        bwaMem_indexBam_modules = ``,
+        bwaMem_indexBam_jobMemory = ``,
+        bwaMem_indexBam_timeout = ``
+  },
+  engine_parameters = {
+    final_workflow_log_dir = config::misc::final_workflow_log_dir,
+    final_call_logs_dir = config::misc::final_call_logs_dir
+  };
+
+
+Olive
+  Description "Run bwaMem on non-Miseq 10X Genome Linked Reads"
+  Tag vidarr
+  Tag kit_10x_genome_linked_reads
+  Where instrument_model != "Illumina MiSeq"
+  bwamem(True)
+  Run bwaMem_v1_0_0
+  Tag "project:{project}"
+  Tag "reference:{reference}"
+  Tag "number_chunk:{numchunk}"
+  With
+    external_keys = [input1, input2],
+    metadata = GLOBAL { ALL {{ outputDirectory = table::output_for_project::get(project) }} },
+    label_reference = reference,
+    arguments = {
+        bwaMem_fastqR1 = fastq1,
+        bwaMem_fastqR2 = `fastq2`,
+        bwaMem_outputFileNamePrefix = `output_file_name`,
+        bwaMem_readGroups = rg,
+        bwaMem_doTrim = `dotrim`,
+        bwaMem_trimMinLength = ``,
+        bwaMem_trimMinQuality = ``,
+        bwaMem_adapter1 = ``,
+        bwaMem_adapter2 = ``,
+        bwaMem_numChunk = `numchunk`,
+        bwaMem_countChunkSize_jobMemory = ``,
+        bwaMem_countChunkSize_timeout = ``,
+        bwaMem_slicerR1_modules = ``,
+        bwaMem_slicerR1_jobMemory = ``,
+        bwaMem_slicerR1_timeout = ``,
+        bwaMem_slicerR2_modules = ``,
+        bwaMem_slicerR2_jobMemory = ``,
+        bwaMem_slicerR2_timeout = ``,
+        bwaMem_adapterTrimming_modules = ``,
+        bwaMem_adapterTrimming_addParam = `"--cut 23"`,
+        bwaMem_adapterTrimming_jobMemory = ``,
+        bwaMem_adapterTrimming_timeout = ``,
+        bwaMem_adapterTrimmingLog_jobMemory = ``,
+        bwaMem_adapterTrimmingLog_timeout = ``,
+        bwaMem_runBwaMem_bwaRef = bwamem.bwaRef,
+        bwaMem_runBwaMem_modules = bwamem.modules,
+        bwaMem_runBwaMem_threads = ``,
+        bwaMem_runBwaMem_addParam = ``,
+        bwaMem_runBwaMem_jobMemory = ``,
+        bwaMem_runBwaMem_timeout = ``,
+        bwaMem_bamMerge_modules = ``,
+        bwaMem_bamMerge_jobMemory = ``,
+        bwaMem_bamMerge_timeout = ``,
+        bwaMem_indexBam_modules = ``,
+        bwaMem_indexBam_jobMemory = ``,
+        bwaMem_indexBam_timeout = ``
+  },
+  engine_parameters = {
+    final_workflow_log_dir = config::misc::final_workflow_log_dir,
+    final_call_logs_dir = config::misc::final_call_logs_dir
+  };
+
+
+Olive
+  Description "Run bwaMem on Miseq 10X Genome Linked Reads"
+  Tag vidarr
+  Tag kit_10x_genome_linked_reads
+  Where instrument_model == "Illumina MiSeq"
+  bwamem(True)
+  Run bwaMem_v1_0_0
+  Tag "project:{project}"
+  Tag "reference:{reference}"
+  Tag "number_chunk:{numchunk}"
+  With
+    external_keys = [input1, input2],
+    metadata = GLOBAL { ALL {{ outputDirectory = table::output_for_project::get(project) }} },
+    label_reference = reference,
+    arguments = {
+        bwaMem_fastqR1 = fastq1,
+        bwaMem_fastqR2 = `fastq2`,
+        bwaMem_outputFileNamePrefix = `output_file_name`,
+        bwaMem_readGroups = rg,
+        bwaMem_doTrim = `dotrim`,
+        bwaMem_trimMinLength = ``,
+        bwaMem_trimMinQuality = ``,
+        bwaMem_adapter1 = ``,
+        bwaMem_adapter2 = ``,
+        bwaMem_numChunk = `numchunk`,
+        bwaMem_countChunkSize_jobMemory = ``,
+        bwaMem_countChunkSize_timeout = ``,
+        bwaMem_slicerR1_modules = ``,
+        bwaMem_slicerR1_jobMemory = ``,
+        bwaMem_slicerR1_timeout = ``,
+        bwaMem_slicerR2_modules = ``,
+        bwaMem_slicerR2_jobMemory = ``,
+        bwaMem_slicerR2_timeout = ``,
+        bwaMem_adapterTrimming_modules = ``,
+        bwaMem_adapterTrimming_addParam = `"--cut 23"`,
+        bwaMem_adapterTrimming_jobMemory = ``,
+        bwaMem_adapterTrimming_timeout = ``,
+        bwaMem_adapterTrimmingLog_jobMemory = ``,
+        bwaMem_adapterTrimmingLog_timeout = ``,
+        bwaMem_runBwaMem_bwaRef = bwamem.bwaRef,
+        bwaMem_runBwaMem_modules = bwamem.modules,
+        bwaMem_runBwaMem_threads = ``,
+        bwaMem_runBwaMem_addParam = ``,
+        bwaMem_runBwaMem_jobMemory = ``,
+        bwaMem_runBwaMem_timeout = ``,
+        bwaMem_bamMerge_modules = ``,
+        bwaMem_bamMerge_jobMemory = ``,
+        bwaMem_bamMerge_timeout = ``,
+        bwaMem_indexBam_modules = ``,
+        bwaMem_indexBam_jobMemory = ``,
+        bwaMem_indexBam_timeout = ``
+  },
+  engine_parameters = {
+    final_workflow_log_dir = config::misc::final_workflow_log_dir,
+    final_call_logs_dir = config::misc::final_call_logs_dir
+  };

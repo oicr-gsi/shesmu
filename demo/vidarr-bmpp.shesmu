@@ -1,0 +1,252 @@
+Version 1;
+Input cerberus_fp;
+Import fake::demo::vidarr::gsi::hpc::*;
+
+Define select()
+  Where
+    library_design In ["EX", "TS", "WG"]
+    && !(instrument_model In ["Illumina MiSeq"]);
+
+Function get_bmpp_files(string reference)
+  Switch reference
+    When "hg19" Then
+      `{
+        known_indels = ["/srv/reference/hg19-dbsnp-leftaligned-138/dbsnp_138.hg19.leftAligned.vcf.gz"],
+        known_alleles = ["/srv/reference/hg19-dbsnp-leftaligned-138/dbsnp_138.hg19.leftAligned.vcf.gz"],
+        known_sites = ["/srv/reference/hg19-dbsnp-leftaligned-138/dbsnp_138.hg19.leftAligned.vcf.gz"]
+      }`
+    When "hg38" Then
+      `{
+        known_indels = ["/srv/reference/hg38-dbsnp-138/dbsnp_138.hg38.vcf.gz"],
+        known_alleles = ["/srv/reference/hg38-dbsnp-138/dbsnp_138.hg38.vcf.gz"],
+        known_sites = ["/srv/reference/hg38-dbsnp-138/dbsnp_138.hg38.vcf.gz"]
+      }`
+    Else
+    ``;
+
+Olive
+  Description "bamMergePreprocessing grouped by donor"
+  Tag vidarr
+  Tag research
+  Tag bmpp
+
+  select()
+  Where workflow In ["BwaMem", "bwaMem"]
+
+  Group By workflow_run_accession, ius, reference = olive::common::extract_reference(workflow_run_attributes)
+  Into
+    timestamp = Max timestamp,
+    merged_library_name = Univalued "{@merged_library}",
+    merged_library_tuple = Univalued {@merged_library},
+    bamAndBamIndex = {
+        bam = Where metatype == "application/bam" Univalued INTERNAL{accession},
+        bamIndex = Where metatype == "application/bam-index" Univalued INTERNAL{accession}
+      },
+    bamInput = Where metatype == "application/bam" Univalued vidarr::sign(external_key, std::signature::sha1),
+    bamIndexInput = Where metatype == "application/bam-index" Univalued vidarr::sign(external_key, std::signature::sha1),
+    library_design = Univalued library_design,
+    targeted_resequencing = Univalued targeted_resequencing,
+    picard_optical_duplicate_pixel_distance = Univalued olive::common::get_optical_distance(instrument_model),
+    instrument_model = Univalued instrument_model,
+    project = Univalued project,
+    donor = Univalued donor
+  Pick Max timestamp By ius, reference
+  Dump All To bam_dump
+
+  Require reference_info = `olive::common::get_reference_interval_info(reference?, library_design, targeted_resequencing)`
+    OnReject
+      Alert
+        alertname = "NoReference",
+        severity = "pipeline",
+        environment = config::misc::environment,
+        workflow = "bamMergePreprocessing",
+        reference = reference Default "Unknown",
+        project = project
+      For 30mins
+    Resume
+  Require bmpp_data = `get_bmpp_files(reference?)`
+    OnReject
+      Alert
+        alertname = "NoReference",
+        severity = "pipeline",
+        environment = config::misc::environment,
+        workflow = "bamMergePreprocessing",
+        reference = reference Default "Unknown",
+        project = project
+      For 30mins
+    Resume
+
+  # group bams by merged library
+  Group By instrument_model, project, donor, library_design, merged_library_tuple, merged_library_name, reference, targeted_resequencing
+  Into
+    bamAndBamIndexes = List bamAndBamIndex,
+    reference_file = Univalued reference_info.reference_file,
+    known_indels = Univalued bmpp_data.known_indels,
+    known_alleles = Univalued bmpp_data.known_alleles,
+    known_sites = Univalued bmpp_data.known_sites,
+    intervals_to_parallelize_by = Univalued reference_info.chromosomes,
+    external_keys = Flatten [bamInput, bamIndexInput],
+    iuses = List ius,
+    picard_optical_duplicate_pixel_distance = Univalued picard_optical_duplicate_pixel_distance
+
+  Let
+    instrument_model,
+    project,
+    donor,
+    reference = OnlyIf reference,
+    targeted_resequencing,
+    library_design,
+    reference_file,
+    known_indels,
+    known_alleles,
+    known_sites,
+    intervals_to_parallelize_by,
+    picard_optical_duplicate_pixel_distance,
+    merged_library_data = {
+      outputIdentifier = merged_library_name,
+      bamAndBamIndexInputs = bamAndBamIndexes
+    },
+    external_keys = external_keys,
+    not_ready = `(redict::merging_ready_checker::get[{instrument_model, merged_library_tuple}]?) - iuses` Default [],
+    output_group =
+      Begin
+        outputDirectory = table::output_for_project::get(project);
+        ids = For i In external_keys: List { id = i.id, provider = i.provider };
+        Return {
+          outputIdentifier = merged_library_name,
+          bam = MANUAL { {; outputDirectory}, ids },
+          bamIndex = MANUAL { {; outputDirectory}, ids }
+      };
+    End
+  Dump All To merged_libary_dump
+
+  # group merged library bams by donor (for cocleaning)
+  Group By instrument_model, project, donor, reference, targeted_resequencing, library_design
+  Into
+    external_keys = Flatten external_keys,
+    input_groups = List merged_library_data,
+    output_groups = List output_group,
+    reference_file = Univalued reference_file,
+    known_indels = Univalued known_indels,
+    known_alleles = Univalued known_alleles,
+    known_sites = Univalued known_sites,
+    intervals_to_parallelize_by = Univalued intervals_to_parallelize_by,
+    picard_optical_duplicate_pixel_distance = Univalued picard_optical_duplicate_pixel_distance,
+    not_ready = Flatten not_ready
+  Dump All To donor_merged_library_dump
+  Reject (For _ In not_ready: Count) > 0
+    OnReject
+      Dump project, donor, library_design, targeted_resequencing, instrument_model, not_ready To merging_not_ready_research
+    Resume
+  Run bamMergePreprocessing_v2_0_2
+  Tag "reference:{reference}"
+  Tag "project:{project}"
+  Tag "merged_library_count:{For i In input_groups: Count}"
+  Tag "library_design:{library_design}"
+  Tag "instrument_model:{instrument_model}"
+  Tag "targeted_resequencing:{targeted_resequencing}"
+  With
+    external_keys = external_keys,
+    arguments = {
+        bamMergePreprocessing_analyzeCovariates_additionalParams = ``,
+        bamMergePreprocessing_analyzeCovariates_cores = ``,
+        bamMergePreprocessing_analyzeCovariates_jobMemory = `24`,
+        bamMergePreprocessing_analyzeCovariates_modules = ``,
+        bamMergePreprocessing_analyzeCovariates_outputFileName = ``,
+        bamMergePreprocessing_analyzeCovariates_overhead = ``,
+        bamMergePreprocessing_analyzeCovariates_timeout = `24`,
+        bamMergePreprocessing_applyBaseQualityScoreRecalibration_additionalParams = ``,
+        bamMergePreprocessing_applyBaseQualityScoreRecalibration_cores = ``,
+        bamMergePreprocessing_applyBaseQualityScoreRecalibration_jobMemory = `24`,
+        bamMergePreprocessing_applyBaseQualityScoreRecalibration_modules = ``,
+        bamMergePreprocessing_applyBaseQualityScoreRecalibration_outputFileName = ``,
+        bamMergePreprocessing_applyBaseQualityScoreRecalibration_overhead = ``,
+        bamMergePreprocessing_applyBaseQualityScoreRecalibration_suffix = ``,
+        bamMergePreprocessing_applyBaseQualityScoreRecalibration_timeout = `24`,
+        bamMergePreprocessing_baseQualityScoreRecalibration_additionalParams = ``,
+        bamMergePreprocessing_baseQualityScoreRecalibration_cores = ``,
+        bamMergePreprocessing_baseQualityScoreRecalibration_intervals = ``,
+        bamMergePreprocessing_baseQualityScoreRecalibration_jobMemory = `24`,
+        bamMergePreprocessing_baseQualityScoreRecalibration_knownSites = known_sites,
+        bamMergePreprocessing_baseQualityScoreRecalibration_modules = ``,
+        bamMergePreprocessing_baseQualityScoreRecalibration_outputFileName = ``,
+        bamMergePreprocessing_baseQualityScoreRecalibration_overhead = ``,
+        bamMergePreprocessing_baseQualityScoreRecalibration_timeout = `24`,
+        bamMergePreprocessing_collectFilesBySample_cores = ``,
+        bamMergePreprocessing_collectFilesBySample_jobMemory = ``,
+        bamMergePreprocessing_collectFilesBySample_modules = ``,
+        bamMergePreprocessing_collectFilesBySample_timeout = ``,
+        bamMergePreprocessing_doBqsr = `True`,
+        bamMergePreprocessing_doFilter = `True`,
+        bamMergePreprocessing_doIndelRealignment = `True`,
+        bamMergePreprocessing_doMarkDuplicates = `True`,
+        bamMergePreprocessing_doSplitNCigarReads = `False`, # TODO: WT/MR == True
+        bamMergePreprocessing_gatherBQSRReports_additionalParams = ``,
+        bamMergePreprocessing_gatherBQSRReports_cores = ``,
+        bamMergePreprocessing_gatherBQSRReports_jobMemory = `24`,
+        bamMergePreprocessing_gatherBQSRReports_modules = ``,
+        bamMergePreprocessing_gatherBQSRReports_outputFileName = ``,
+        bamMergePreprocessing_gatherBQSRReports_overhead = ``,
+        bamMergePreprocessing_gatherBQSRReports_timeout = `24`,
+        bamMergePreprocessing_indelRealign_additionalParams = ``,
+        bamMergePreprocessing_indelRealign_cores = ``,
+        bamMergePreprocessing_indelRealign_gatkJar = ``,
+        bamMergePreprocessing_indelRealign_jobMemory = `24`,
+        bamMergePreprocessing_indelRealign_knownAlleles = known_alleles,
+        bamMergePreprocessing_indelRealign_modules = ``,
+        bamMergePreprocessing_indelRealign_overhead = ``,
+        bamMergePreprocessing_indelRealign_timeout = `48`,
+        bamMergePreprocessing_inputGroups = input_groups,
+        bamMergePreprocessing_intervalsToParallelizeByString = intervals_to_parallelize_by,
+        bamMergePreprocessing_mergeSplitByIntervalBams_additionalParams = ``,
+        bamMergePreprocessing_mergeSplitByIntervalBams_cores = ``,
+        bamMergePreprocessing_mergeSplitByIntervalBams_jobMemory = `24`,
+        bamMergePreprocessing_mergeSplitByIntervalBams_modules = ``,
+        bamMergePreprocessing_mergeSplitByIntervalBams_overhead = ``,
+        bamMergePreprocessing_mergeSplitByIntervalBams_timeout = `24`,
+        bamMergePreprocessing_preprocessBam_defaultRuntimeAttributes = ``,
+        bamMergePreprocessing_preprocessBam_filterAdditionalParams = ``,
+        bamMergePreprocessing_preprocessBam_filterFlags = `256`,
+        bamMergePreprocessing_preprocessBam_filterSuffix = ``,
+        bamMergePreprocessing_preprocessBam_markDuplicatesAdditionalParams = `"--TMP_DIR=$TMP"`, # use local disk for tmp
+        bamMergePreprocessing_preprocessBam_markDuplicatesSuffix = ``,
+        bamMergePreprocessing_preprocessBam_minMapQuality = ``,
+        bamMergePreprocessing_preprocessBam_opticalDuplicatePixelDistance = `picard_optical_duplicate_pixel_distance`,
+        bamMergePreprocessing_preprocessBam_readFilters = ``,
+        bamMergePreprocessing_preprocessBam_refactorCigarString = ``,
+        bamMergePreprocessing_preprocessBam_removeDuplicates = ``,
+        bamMergePreprocessing_preprocessBam_splitNCigarReadsAdditionalParams = ``,
+        bamMergePreprocessing_preprocessBam_splitNCigarReadsSuffix = ``,
+        bamMergePreprocessing_preprocessBam_temporaryWorkingDir = `"$TMP"`,
+        bamMergePreprocessing_preprocessingBamRuntimeAttributes = ``,
+        bamMergePreprocessing_realignerTargetCreator_additionalParams = ``,
+        bamMergePreprocessing_realignerTargetCreator_cores = ``,
+        bamMergePreprocessing_realignerTargetCreator_downsamplingType = If library_design == "TS" Then `"NONE"` Else ``,
+        bamMergePreprocessing_realignerTargetCreator_gatkJar = ``,
+        bamMergePreprocessing_realignerTargetCreator_jobMemory = `24`,
+        bamMergePreprocessing_realignerTargetCreator_knownIndels = known_indels,
+        bamMergePreprocessing_realignerTargetCreator_modules = ``,
+        bamMergePreprocessing_realignerTargetCreator_overhead = ``,
+        bamMergePreprocessing_realignerTargetCreator_timeout = `48`,
+        bamMergePreprocessing_reference = reference_file,
+        bamMergePreprocessing_splitStringToArray_cores = ``,
+        bamMergePreprocessing_splitStringToArray_jobMemory = ``,
+        bamMergePreprocessing_splitStringToArray_lineSeparator = ``,
+        bamMergePreprocessing_splitStringToArray_modules = ``,
+        bamMergePreprocessing_splitStringToArray_recordSeparator = ``,
+        bamMergePreprocessing_splitStringToArray_timeout = ``
+    },
+    metadata =
+      Begin
+        outputDirectory = table::output_for_project::get(project);
+        Return INDIVIDUAL {
+          bamMergePreprocessing_outputGroups = output_groups,
+          bamMergePreprocessing_recalibrationReport = ALL {{; outputDirectory }},
+          bamMergePreprocessing_recalibrationTable = ALL {{; outputDirectory }}
+        };
+      End,
+    engine_parameters = {
+      final_workflow_log_dir = config::misc::final_workflow_log_dir,
+      final_call_logs_dir = config::misc::final_call_logs_dir
+    },
+    label_reference = reference;

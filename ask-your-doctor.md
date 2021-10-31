@@ -60,9 +60,7 @@ containing configuration files that active plugins.
 
 The configuration of any plugin varies depending on its complexity. There is a
 plugin that makes a list of strings from lines in a file; that's an easy one to
-configure. There's a plugin that wires the
-[Niassa](https://github.com/oicr-gsi/niassa) workflow engine into Shesmu; that
-one is hard to configure.
+configure.
 
 Realistically, for your needs, there may not be plugins that interface with
 your systems and writing them will be necessary. The [plugin
@@ -72,8 +70,7 @@ path and creating appropriate configuration files in the Shesmu configuration
 directory.
 
 Some of the simpler plugins have been designed, built, tested, and deployed in
-an hour. The Niassa plugin represents months of work and is very complex
-because it both serves input data and actions.
+an hour.
 
 Shesmu's security model is that the REST API is largely read-only and
 configuration on disk determines most of its behaviour. It has one REST
@@ -102,7 +99,7 @@ To perform a deploy, we recommend the following steps:
 1. Develop an input format for this data. See [the implementation guide](implementation.md).
 1. Deploy a test instance and get comfortable with writing an olive using the simulation dashboard on your test instance (_Tool_ → _Olive Simulator_).
 1. Determine what information you need for an action. In particular:
-    - what information is required (is it uniform? each JIRA action takes identical parameters but each Niassa workflow is a snowflake)
+    - what information is required (is it uniform? each JIRA action takes identical parameters but each Vidarr workflow is a snowflake)
     - what are the criteria that make actions unique
     - how to determine if an action is already completed
     - how to launch and action and check its progress

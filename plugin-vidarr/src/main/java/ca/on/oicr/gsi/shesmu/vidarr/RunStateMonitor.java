@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-public class RunStateMonitor extends RunState {
+final class RunStateMonitor extends RunState {
 
   private static ActionState actionStatusForWorkflowRun(WorkflowRunStatusResponse response) {
     // It happens in some rare (and typically, bugged) cases for all operations to succeed but the
