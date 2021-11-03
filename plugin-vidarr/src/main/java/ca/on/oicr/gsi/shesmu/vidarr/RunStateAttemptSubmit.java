@@ -125,6 +125,11 @@ public final class RunStateAttemptSubmit extends RunState {
   }
 
   @Override
+  public boolean unload(URI vidarrUrl) {
+    return false;
+  }
+
+  @Override
   public void writeJson(ObjectMapper mapper, ObjectNode node) {
     node.put("runState", "attempt");
     node.put("attempt", attempt);

@@ -33,6 +33,22 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class SubmitAction extends Action {
+  private static final ActionCommand<SubmitAction> UNLOAD =
+      new ActionCommand<>(
+          SubmitAction.class,
+          "VIDARR-UNLOAD",
+          FrontEndIcon.CART_X_FILL,
+          "Unload and Purge",
+          Preference.ALLOW_BULK,
+          Preference.PROMPT) {
+        @Override
+        protected Response execute(SubmitAction action, Optional<String> user) {
+          return action.owner.get().url().map(action.state::unload).orElse(false)
+              ? Response.PURGE
+              : Response.IGNORED;
+        }
+      };
+
   private static final ActionCommand<SubmitAction> DELETE =
       new ActionCommand<>(
           SubmitAction.class,
@@ -145,7 +161,7 @@ public final class SubmitAction extends Action {
 
   @Override
   public Stream<ActionCommand<?>> commands() {
-    return state.canReattempt() ? Stream.of(DELETE, REATTEMPT, RESET) : Stream.of(RESET);
+    return state.canReattempt() ? Stream.of(DELETE, REATTEMPT, RESET) : Stream.of(UNLOAD, RESET);
   }
 
   @ActionParameter(name = "dry_run", required = false)

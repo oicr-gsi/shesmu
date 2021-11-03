@@ -48,6 +48,11 @@ public class RunStateDead extends RunState {
   }
 
   @Override
+  public boolean unload(URI vidarrUrl) {
+    return false;
+  }
+
+  @Override
   public void writeJson(ObjectMapper mapper, ObjectNode node) {
     node.put("runState", "dead");
   }

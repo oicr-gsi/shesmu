@@ -145,6 +145,11 @@ public class RunStateMonitor extends RunState {
   }
 
   @Override
+  public boolean unload(URI vidarrUrl) {
+    return false;
+  }
+
+  @Override
   public void writeJson(ObjectMapper mapper, ObjectNode node) {
     node.put("runState", "monitor");
     node.putPOJO("info", status);

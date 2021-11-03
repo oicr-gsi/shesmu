@@ -59,5 +59,7 @@ public abstract class RunState {
 
   public abstract Stream<String> tags();
 
+  public abstract boolean unload(URI vidarrUrl);
+
   public abstract void writeJson(ObjectMapper mapper, ObjectNode node);
 }
