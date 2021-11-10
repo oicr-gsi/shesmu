@@ -1,5 +1,18 @@
 # Unreleased
 
+# [1.16.0] - 2021-11-10T19:08+00:00
+
+Changes:
+
+* Detailed counts about accepted and ignored actions when running bulk commands
+* Allow creating object fields from a gang
+* Allow wildcard binding in match
+* Allow Match to operate on optional types
+* Add Tabulate syntax for Vidarr retry support
+* Fix action parameter sorting
+* Vidarr -> 0.4.10
+* Cerberus -> 0.2.8
+
 # [1.15.4] - 2021-10-15T17:31+00:00
 
 Changes:
