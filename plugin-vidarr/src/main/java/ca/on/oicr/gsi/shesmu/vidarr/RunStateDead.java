@@ -48,7 +48,7 @@ public class RunStateDead extends RunState {
   }
 
   @Override
-  public boolean unload(URI vidarrUrl) {
+  public boolean unload(URI vidarrUrl) { // ZOMBIE
     return false;
   }
 

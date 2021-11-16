@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 public class RunStateMonitor extends RunState {
-
   private static ActionState actionStatusForWorkflowRun(WorkflowRunStatusResponse response) {
     // It happens in some rare (and typically, bugged) cases for all operations to succeed but the
     // engine itself to fail.
@@ -145,8 +144,32 @@ public class RunStateMonitor extends RunState {
   }
 
   @Override
-  public boolean unload(URI vidarrUrl) {
-    return false;
+  public boolean unload(URI vidarrUrl) { // SUCCEEDED
+    if (!canReattempt()) {
+      HttpRequest.BodyPublisher body;
+      try {
+        body =
+            HttpRequest.BodyPublishers.ofString(
+                String.format(
+                    "{\"filter\": {\"type\": \"vidarr-workflow-run-id\", \"id\": \"%s\"}}",
+                    status.getId()));
+      } catch (final Exception e) {
+        e.printStackTrace();
+        return false;
+      }
+      try {
+        final var response =
+            VidarrPlugin.CLIENT.send(
+                HttpRequest.newBuilder(vidarrUrl.resolve("/api/unload")).POST(body).build(),
+                BodyHandlers.discarding());
+        return response.statusCode() == 200;
+      } catch (InterruptedException | IOException e) {
+        e.printStackTrace();
+        return false;
+      }
+    } else {
+      return false;
+    }
   }
 
   @Override
