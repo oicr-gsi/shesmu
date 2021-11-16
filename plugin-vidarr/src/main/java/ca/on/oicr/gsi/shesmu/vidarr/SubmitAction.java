@@ -161,7 +161,9 @@ public final class SubmitAction extends Action {
 
   @Override
   public Stream<ActionCommand<?>> commands() {
-    return state.canReattempt() ? Stream.of(DELETE, REATTEMPT, RESET) : Stream.of(UNLOAD, RESET);
+    return state.canReattempt()
+        ? Stream.of(DELETE, REATTEMPT, RESET)
+        : state instanceof RunStateMonitor ? Stream.of(UNLOAD, RESET) : Stream.of(RESET);
   }
 
   @ActionParameter(name = "dry_run", required = false)

@@ -144,7 +144,7 @@ public class RunStateMonitor extends RunState {
   }
 
   @Override
-  public boolean unload(URI vidarrUrl) { // SUCCEEDED
+  public boolean unload(URI vidarrUrl) {
     if (!canReattempt()) {
       HttpRequest.BodyPublisher body;
       try {
