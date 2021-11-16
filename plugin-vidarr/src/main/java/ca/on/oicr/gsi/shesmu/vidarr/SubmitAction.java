@@ -40,6 +40,7 @@ public final class SubmitAction extends Action {
           FrontEndIcon.CART_X_FILL,
           "Unload and Purge",
           Preference.ALLOW_BULK,
+          Preference.ANNOY_USER,
           Preference.PROMPT) {
         @Override
         protected Response execute(SubmitAction action, Optional<String> user) {
