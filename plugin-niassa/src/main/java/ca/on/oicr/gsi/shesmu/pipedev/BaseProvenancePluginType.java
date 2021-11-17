@@ -465,6 +465,8 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
   private static final Pattern COMMA = Pattern.compile(",");
   public static final Map<FileProvenanceFilter, Set<String>> PROVENANCE_FILTER =
       new EnumMap<>(FileProvenanceFilter.class);
+  public static final Map<FileProvenanceFilter, Set<String>> PROVENANCE_SKIPPED_FILTER =
+      new EnumMap<>(FileProvenanceFilter.class);
   private static final Gauge badFilePathError =
       Gauge.build(
               "shesmu_file_provenance_bad_file_path",
@@ -495,6 +497,14 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
     PROVENANCE_FILTER.put(
         FileProvenanceFilter.workflow_run_status, Collections.singleton("completed"));
     PROVENANCE_FILTER.put(FileProvenanceFilter.skip, Collections.singleton("false"));
+  }
+
+  static {
+    PROVENANCE_SKIPPED_FILTER.put(
+        FileProvenanceFilter.processing_status, Collections.singleton("success"));
+    PROVENANCE_SKIPPED_FILTER.put(
+        FileProvenanceFilter.workflow_run_status, Collections.singleton("completed"));
+    PROVENANCE_SKIPPED_FILTER.put(FileProvenanceFilter.skip, Collections.singleton("true"));
   }
 
   private final String name;
