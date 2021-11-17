@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
 import ca.on.oicr.gsi.provenance.model.FileProvenance;
 import ca.on.oicr.gsi.provenance.model.IusLimsKey;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
+import ca.on.oicr.gsi.shesmu.gsicommon.CerberusFileProvenanceSkippedValue;
 import ca.on.oicr.gsi.shesmu.gsicommon.CerberusFileProvenanceValue;
 import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
@@ -206,15 +207,192 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
       }
     }
 
+    private class SkippedItemCache
+        extends ValueCache<
+            Stream<CerberusFileProvenanceSkippedValue>,
+            Stream<CerberusFileProvenanceSkippedValue>> {
+      private SkippedItemCache() {
+        super(name + "-skipped " + fileName().toString(), 60, ReplacingRecord::new);
+      }
+
+      @Override
+      protected Stream<CerberusFileProvenanceSkippedValue> fetch(Instant lastUpdated) {
+        final AtomicInteger badFilePaths = new AtomicInteger();
+        final AtomicInteger badSets = new AtomicInteger();
+        final AtomicInteger badVersions = new AtomicInteger();
+        final Map<String, Integer> badSetCounts = new TreeMap<>();
+        return client
+            .map(BaseProvenancePluginType.this::fetch)
+            .orElseGet(Stream::empty)
+            .filter(
+                fp ->
+                    (fp.getSkip() == null || fp.getSkip().equals("true"))
+                        && fp.getStatus() != FileProvenance.Status.ERROR)
+            .filter(
+                fp -> {
+                  if (fp.getFilePath() == null) {
+                    badFilePaths.incrementAndGet();
+                    return false;
+                  }
+                  return true;
+                })
+            .map(
+                fp -> {
+                  final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
+                  final Set<String> badSetInRecord = new TreeSet<>();
+                  final Optional<LimsKey> limsKey =
+                      IUSUtils.singleton(
+                              fp.getIusLimsKeys(),
+                              reason -> badSetInRecord.add("limskey:" + reason),
+                              true)
+                          .map(IusLimsKey::getLimsKey);
+                  final Optional<Tuple> workflowVersion =
+                      IUSUtils.parseWorkflowVersion(fp.getWorkflowVersion());
+                  if (!workflowVersion.isPresent()) {
+                    badVersions.incrementAndGet();
+                    badRecord.set(true);
+                  }
+                  final CerberusFileProvenanceSkippedValue result =
+                      new PipeDevCerberusFileProvenanceSkippedValue(
+                          fp.getFileSWID().toString(),
+                          limsAttr(fp, "barcode_kit", badSetInRecord::add),
+                          limsAttr(fp, "batches", badSetInRecord::add)
+                              .<Set<String>>map(
+                                  s ->
+                                      COMMA
+                                          .splitAsStream(s)
+                                          .collect(Collectors.toCollection(TreeSet::new)))
+                              .orElse(Set.of()),
+                          limsAttr(fp, "cell_viability", badSetInRecord::add)
+                              .map(Double::parseDouble),
+                          fp.getLastModified().toInstant(),
+                          IUSUtils.singleton(
+                                  fp.getRootSampleNames(),
+                                  reason -> badSetInRecord.add("samplenames:" + reason),
+                                  false)
+                              .orElse(""),
+                          limsAttr(fp, "geo_external_name", badSetInRecord::add).orElse(""),
+                          new Tuple(
+                              limsKey.map(LimsKey::getId).orElse(""),
+                              limsKey.map(LimsKey::getProvider).orElse(""),
+                              fp.getStatus() == FileProvenance.Status.STALE,
+                              Collections.singletonMap(
+                                  "pinery-legacy", limsKey.map(LimsKey::getVersion).orElse(""))),
+                          limsAttr(fp, "geo_tube_id", badSetInRecord::add).orElse(""),
+                          fp.getFileAttributes(),
+                          IUSUtils.parseLong(fp.getFileSize()),
+                          limsAttr(fp, "geo_group_id_description", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_group_id", badSetInRecord::add).orElse(""),
+                          IUSUtils.singleton(
+                                  fp.getSequencerRunPlatformNames(),
+                                  reason -> badSetInRecord.add("instrument_model: " + reason),
+                                  true)
+                              .orElse(""),
+                          fp.getWorkflowRunInputFileSWIDs().stream()
+                              .map(Object::toString)
+                              .collect(Collectors.toSet()),
+                          packIUS(fp),
+                          limsAttr(fp, "geo_prep_kit", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_library_source_template_type", badSetInRecord::add)
+                              .orElse(""),
+                          IUSUtils.singleton(
+                                  fp.getSampleNames(),
+                                  reason -> badSetInRecord.add("librarynames:" + reason),
+                                  false)
+                              .orElse(""),
+                          limsAttr(fp, "geo_library_size_code", badSetInRecord::add)
+                              .map(IUSUtils::parseLong)
+                              .orElse(0L),
+                          limsAttr(fp, "geo_library_type", badSetInRecord::add).orElse(""),
+                          new Tuple(
+                              limsKey.map(LimsKey::getId).orElse(""),
+                              limsKey.map(LimsKey::getProvider).orElse(""),
+                              limsKey
+                                  .map(LimsKey::getLastModified)
+                                  .map(ZonedDateTime::toInstant)
+                                  .orElse(Instant.EPOCH),
+                              limsKey.map(LimsKey::getVersion).orElse("")),
+                          fp.getFileMetaType(),
+                          fp.getFileMd5sum(),
+                          limsAttr(fp, "geo_organism", badSetInRecord::add).orElse(""),
+                          Paths.get(fp.getFilePath()),
+                          IUSUtils.singleton(
+                                  fp.getStudyTitles(),
+                                  reason -> badSetInRecord.add("study:" + reason),
+                                  false)
+                              .orElse(""),
+                          limsAttr(fp, "reference_slide_id", badSetInRecord::add),
+                          limsAttr(fp, "sequencing_control_type", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "sex", badSetInRecord::add),
+                          limsAttr(fp, "spike_in", badSetInRecord::add),
+                          limsAttr(fp, "spike_in_dilution_factor", badSetInRecord::add),
+                          limsAttr(fp, "spike_in_volume_ul", badSetInRecord::add)
+                              .map(Double::parseDouble),
+                          limsAttr(fp, "subproject", badSetInRecord::add).filter(p -> !p.isBlank()),
+                          limsAttr(fp, "target_cell_recovery", badSetInRecord::add)
+                              .map(Double::parseDouble),
+                          limsAttr(fp, "geo_targeted_resequencing", badSetInRecord::add).orElse(""),
+                          fp.getLastModified().toInstant(),
+                          IUSUtils.singleton(
+                                  fp.getParentSampleNames(),
+                                  reason -> badSetInRecord.add("parents:" + reason),
+                                  false)
+                              .map(IUSUtils::tissue)
+                              .orElse(""),
+                          limsAttr(fp, "geo_tissue_origin", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_tissue_preparation", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_tissue_region", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_tissue_type", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "umis", badSetInRecord::add)
+                              .map("true"::equalsIgnoreCase)
+                              .orElse(false),
+                          fp.getWorkflowName(),
+                          fp.getWorkflowSWID().toString(),
+                          fp.getWorkflowAttributes(),
+                          Optional.ofNullable(fp.getWorkflowRunSWID())
+                              .map(Object::toString)
+                              .orElse(""),
+                          fp.getWorkflowRunAttributes(),
+                          workflowVersion.orElse(IUSUtils.UNKNOWN_VERSION));
+
+                  if (!badSetInRecord.isEmpty()) {
+                    badSets.incrementAndGet();
+                    badSetInRecord.forEach(name -> badSetCounts.merge(name, 1, Integer::sum));
+                    return null;
+                  }
+                  return badRecord.get() ? null : result;
+                })
+            .filter(Objects::nonNull)
+            .onClose(
+                () -> {
+                  badFilePathError.labels(fileName().toString()).set(badFilePaths.get());
+                  badSetError.labels(fileName().toString()).set(badSets.get());
+                  badWorkflowVersions.labels(fileName().toString()).set(badVersions.get());
+                  badSetCounts.forEach(
+                      (key, value) ->
+                          badSetMap
+                              .labels(
+                                  Stream.concat(
+                                          Stream.of(fileName().toString()),
+                                          COLON.splitAsStream(key))
+                                      .toArray(String[]::new))
+                              .set(value));
+                });
+      }
+    }
+
     private final ItemCache cache;
 
     private Optional<C> client = Optional.empty();
 
     private boolean ok;
 
+    private final SkippedItemCache skippedCache;
+
     public FileConfiguration(Path fileName, String instanceName) {
       super(fileName, instanceName);
       cache = new ItemCache();
+      skippedCache = new SkippedItemCache();
     }
 
     @Override
@@ -235,6 +413,13 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
     @ShesmuInputSource
     public Stream<CerberusFileProvenanceValue> stream(boolean readStale) {
       return readStale ? cache.getStale() : cache.get();
+    }
+
+    @ShesmuInputSource
+    public Stream<CerberusFileProvenanceSkippedValue> streamSkipped(boolean readStale) {
+      return readStale
+          ? skippedCache.getStale()
+          : skippedCache.get(); // todo: who needs to call stream?
     }
 
     @Override
