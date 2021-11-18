@@ -2,7 +2,10 @@ package ca.on.oicr.gsi.shesmu.vidarr;
 
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.vidarr.JsonBodyHandler;
+import ca.on.oicr.gsi.vidarr.UnloadTextSelector;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
+import ca.on.oicr.gsi.vidarr.api.UnloadFilterWorkflowRunId;
+import ca.on.oicr.gsi.vidarr.api.UnloadRequest;
 import ca.on.oicr.gsi.vidarr.api.WorkflowRunStatusResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -146,22 +149,21 @@ public class RunStateMonitor extends RunState {
   @Override
   public boolean unload(URI vidarrUrl) {
     if (!canReattempt()) {
-      HttpRequest.BodyPublisher body;
-      try {
-        body =
-            HttpRequest.BodyPublishers.ofString(
-                String.format(
-                    "{\"filter\": {\"type\": \"vidarr-workflow-run-id\", \"id\": \"%s\"}}",
-                    status.getId()));
-      } catch (final Exception e) {
-        e.printStackTrace();
-        return false;
-      }
+      final UnloadRequest request = new UnloadRequest();
+      final UnloadFilterWorkflowRunId filter = new UnloadFilterWorkflowRunId();
+      request.setRecursive(true);
+      filter.setId(UnloadTextSelector.of(status.getId()));
+      request.setFilter(filter);
       try {
         final var response =
             VidarrPlugin.CLIENT.send(
-                HttpRequest.newBuilder(vidarrUrl.resolve("/api/unload")).POST(body).build(),
-                BodyHandlers.discarding());
+                HttpRequest.newBuilder(vidarrUrl.resolve("/api/unload"))
+                    .header("content-type", "application/json")
+                    .POST(
+                        HttpRequest.BodyPublishers.ofByteArray(
+                            VidarrPlugin.MAPPER.writeValueAsBytes(request)))
+                    .build(),
+                new JsonBodyHandler<>(VidarrPlugin.MAPPER, String.class));
         return response.statusCode() == 200;
       } catch (InterruptedException | IOException e) {
         e.printStackTrace();
