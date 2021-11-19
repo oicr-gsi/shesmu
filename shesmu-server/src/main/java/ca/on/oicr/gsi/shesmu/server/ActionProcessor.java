@@ -10,7 +10,6 @@ import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
-import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Response;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
@@ -799,6 +798,7 @@ public final class ActionProcessor
    */
   public CommandStatistics command(
       PluginManager pluginManager, String command, Optional<String> user, Filter... filters) {
+    final List<Filter> collateralDamage = new ArrayList<>();
     final List<Action> purge = new ArrayList<>();
     final var count =
         startStream(filters)
@@ -813,43 +813,73 @@ public final class ActionProcessor
                           .filter(c -> c.command().equals(command))
                           .reduce(
                               false,
-                              (accumulator, c) -> {
-                                final var response = c.process(e.getKey(), command, user);
-                                if (response != Response.IGNORED) {
-                                  labels.put("command", c.command());
-                                  pluginManager.log("Performed command", labels);
-                                }
-                                switch (response) {
-                                  case ACCEPTED:
-                                    return true;
-                                  case PURGE:
-                                    purge.add(e.getKey());
-                                    stateCount
-                                        .labels(e.getValue().lastState.name(), e.getKey().type())
-                                        .dec();
-                                    return true;
-                                  case RESET:
-                                    if (e.getValue().lastState != ActionState.UNKNOWN) {
-                                      stateCount
-                                          .labels(e.getValue().lastState.name(), e.getKey().type())
-                                          .dec();
-                                      stateCount
-                                          .labels(ActionState.UNKNOWN.name(), e.getKey().type())
-                                          .inc();
-                                      e.getValue().lastStateTransition = Instant.now();
-                                    }
-                                    e.getValue().lastState = ActionState.UNKNOWN;
-                                    return true;
-                                }
-                                return accumulator;
-                              },
+                              (accumulator, c) ->
+                                  c.process(e.getKey(), command, user)
+                                      .apply(
+                                          new ActionCommand.ResponseVisitor<Boolean, Filter>() {
+                                            @Override
+                                            public Boolean accepted() {
+                                              labels.put("command", c.command());
+                                              pluginManager.log("Performed command", labels);
+                                              return true;
+                                            }
+
+                                            @Override
+                                            public Boolean ignored() {
+                                              return accumulator;
+                                            }
+
+                                            @Override
+                                            public Boolean purge() {
+                                              labels.put("command", c.command());
+                                              pluginManager.log("Performed command", labels);
+                                              purge.add(e.getKey());
+                                              stateCount
+                                                  .labels(
+                                                      e.getValue().lastState.name(),
+                                                      e.getKey().type())
+                                                  .dec();
+                                              return true;
+                                            }
+
+                                            @Override
+                                            public Boolean reset() {
+                                              labels.put("command", c.command());
+                                              pluginManager.log("Performed command", labels);
+                                              if (e.getValue().lastState != ActionState.UNKNOWN) {
+                                                stateCount
+                                                    .labels(
+                                                        e.getValue().lastState.name(),
+                                                        e.getKey().type())
+                                                    .dec();
+                                                stateCount
+                                                    .labels(
+                                                        ActionState.UNKNOWN.name(),
+                                                        e.getKey().type())
+                                                    .inc();
+                                                e.getValue().lastStateTransition = Instant.now();
+                                              }
+                                              e.getValue().lastState = ActionState.UNKNOWN;
+                                              return true;
+                                            }
+
+                                            @Override
+                                            public Boolean murder(Filter filter) {
+                                              collateralDamage.add(filter);
+                                              return purge();
+                                            }
+                                          },
+                                          this),
                               (a, b) -> a || b);
                     },
                     Collectors.counting()));
     purge.forEach(actions::remove);
     purge.forEach(Action::purgeCleanup);
     return new CommandStatistics(
-        count.getOrDefault(true, 0L), count.getOrDefault(false, 0L), purge.size());
+        count.getOrDefault(true, 0L),
+        count.getOrDefault(false, 0L),
+        purge.size(),
+        purge(or(collateralDamage.stream())));
   }
 
   public Map<ActionCommand<?>, Long> commonCommands(Filter... filters) {
