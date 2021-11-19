@@ -1,6 +1,8 @@
 package ca.on.oicr.gsi.shesmu.plugin.action;
 
 import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
+import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -31,18 +33,95 @@ public abstract class ActionCommand<A extends Action> {
   }
 
   /** The result of updating the action */
-  public enum Response {
+  public abstract static class Response {
     /** The action executed this command, but no visible state changes occurred. */
-    ACCEPTED,
+    public static final Response ACCEPTED =
+        new Response() {
+          @Override
+          public <F, R> R apply(
+              ResponseVisitor<R, F> visitor,
+              ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
+            return visitor.accepted();
+          }
+        };
     /** This action was not able to execute this command. */
-    IGNORED,
+    public static final Response IGNORED =
+        new Response() {
+          @Override
+          public <F, R> R apply(
+              ResponseVisitor<R, F> visitor,
+              ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
+            return visitor.ignored();
+          }
+        };
     /** The action executed this command and now needs to be purged. */
-    PURGE,
+    public static final Response PURGE =
+        new Response() {
+          @Override
+          public <F, R> R apply(
+              ResponseVisitor<R, F> visitor,
+              ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
+            return visitor.purge();
+          }
+        };
     /**
      * The action executed this command and needs to put back in the {@link ActionState#UNKNOWN}
      * state
      */
-    RESET
+    public static final Response RESET =
+        new Response() {
+          @Override
+          public <F, R> R apply(
+              ResponseVisitor<R, F> visitor,
+              ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
+            return visitor.reset();
+          }
+        };
+
+    /**
+     * Create an action which purges itself and triggers other actions matching a filter to be
+     * purged
+     *
+     * @param murderer the filter to select actions to be purged
+     */
+    public static Response murder(Murderer murderer) {
+      return new Response() {
+
+        @Override
+        public <F, R> R apply(
+            ResponseVisitor<R, F> visitor,
+            ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
+          return visitor.murder(murderer.murder(builder));
+        }
+      };
+    }
+
+    public abstract <F, R> R apply(
+        ResponseVisitor<R, F> visitor,
+        ActionFilterBuilder<F, ActionState, String, Instant, Long> builder);
+  }
+
+  /** Create an action filter for purging actions */
+  public interface Murderer {
+    <F> F murder(ActionFilterBuilder<F, ActionState, String, Instant, Long> builder);
+  }
+
+  /**
+   * Visit an acction command response
+   *
+   * @param <R> the return type from the visitor
+   * @param <F> the action filter output type
+   */
+  public interface ResponseVisitor<R, F> {
+    R accepted();
+
+    R ignored();
+
+    R purge();
+
+    R reset();
+
+    R murder(F filter);
   }
 
   private final String buttonText;

@@ -570,21 +570,28 @@ function createCallbackForActionCommand(
         ],
       },
       (counts) => {
+        let info: UIElement[] = [];
         if (counts.ignored > 0) {
-          dialog(() => [
+          info = [
             "This action is indifferent to your pleas. Maybe the action's internal state has changed? Try refreshing.",
             img("indifferent.gif"),
-          ]);
+          ];
         } else if (counts.executed > 1) {
-          dialog(() => [
+          info = [
             `The command executed on ${counts.executed} actions!!! This is awkward. The unique action IDs aren't unique!`,
             img("ohno.gif"),
-          ]);
+          ];
         } else if (counts.executed == 0) {
-          dialog(() => [
+           [
             "The action vanished before the command was executed.",
             img("holtburn.gif"),
-          ]);
+          ];
+        }
+        if (counts.collateralDamage > 0) {
+          info.push(` An additional ${counts.collateralDamage} actions were taken out in the mêlée.`);
+        }
+        if (info.length) {
+          dialog(() => info);
         }
         reload();
       }
@@ -636,7 +643,8 @@ function createCallbackForBulkCommand(
           counts.purged > 0 ? ` (${counts.purged} of which were purged)` : "",
           counts.executed > 0 && counts.ignored > 0 ? " and" : "",
           counts.ignored > 0 ? ` was ignored by ${counts.ignored} actions` : "",
-          "."
+          ".",
+          counts.collateralDamage > 0 ? `An additional ${counts.collateralDamage} actions were taken out in the mêlée.` : ""
         );
         reload();
       }
