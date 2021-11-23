@@ -417,9 +417,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
 
     @ShesmuInputSource
     public Stream<CerberusFileProvenanceSkippedValue> streamSkipped(boolean readStale) {
-      return readStale
-          ? skippedCache.getStale()
-          : skippedCache.get(); // todo: who needs to call stream?
+      return readStale ? skippedCache.getStale() : skippedCache.get();
     }
 
     @Override

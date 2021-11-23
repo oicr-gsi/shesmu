@@ -130,11 +130,6 @@ public interface CerberusFileProvenanceSkippedValue {
   @ShesmuVariable(signable = true)
   Optional<Double> spike_in_volume_ul();
 
-  /* todo: do we care about stale for skipped records?
-  @ShesmuVariable
-  boolean stale();
-   */
-
   @ShesmuVariable(signable = true)
   Optional<String> subproject();
 
