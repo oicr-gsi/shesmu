@@ -226,8 +226,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
             .orElseGet(Stream::empty)
             .filter(
                 fp ->
-                    (fp.getSkip() == null || fp.getSkip().equals("true"))
-                        && fp.getStatus() != FileProvenance.Status.ERROR)
+                    (fp.getSkip().equals("true")) && fp.getStatus() != FileProvenance.Status.ERROR)
             .filter(
                 fp -> {
                   if (fp.getFilePath() == null) {
