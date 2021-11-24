@@ -31,9 +31,12 @@ abstract class BaseCerberusFileProvenanceSkippedRecord<T extends LimsProvenance>
 
   // Do we care about stale records if they've been failed?
   protected final ProvenanceRecord<T> provenanceRecord;
+  private final boolean stale;
   protected final Map<String, JsonNode> workflowRunLabels;
 
-  protected BaseCerberusFileProvenanceSkippedRecord(ProvenanceRecord<T> provenanceRecord) {
+  protected BaseCerberusFileProvenanceSkippedRecord(
+      boolean stale, ProvenanceRecord<T> provenanceRecord) {
+    this.stale = stale;
     this.provenanceRecord = provenanceRecord;
     workflowRunLabels = labelsToMap(provenanceRecord.workflow());
   }
@@ -56,6 +59,7 @@ abstract class BaseCerberusFileProvenanceSkippedRecord<T extends LimsProvenance>
     return new Tuple(
         provenanceRecord.lims().getProvenanceId(),
         provenanceRecord.provider(),
+        stale,
         Map.of(
             "pinery-hash-" + provenanceRecord.formatRevision(),
             provenanceRecord.lims().getVersion()));
@@ -99,6 +103,11 @@ abstract class BaseCerberusFileProvenanceSkippedRecord<T extends LimsProvenance>
   @Override
   public final Path path() {
     return Path.of(provenanceRecord.record().getPath());
+  }
+
+  @Override
+  public final boolean stale() {
+    return stale;
   }
 
   @Override

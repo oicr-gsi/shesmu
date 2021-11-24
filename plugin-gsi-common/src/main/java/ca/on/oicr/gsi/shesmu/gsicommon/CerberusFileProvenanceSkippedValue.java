@@ -121,6 +121,9 @@ public interface CerberusFileProvenanceSkippedValue {
   @ShesmuVariable(signable = true)
   Optional<String> sex();
 
+  @ShesmuVariable
+  boolean skip();
+
   @ShesmuVariable(signable = true)
   Optional<String> spike_in();
 
@@ -129,6 +132,9 @@ public interface CerberusFileProvenanceSkippedValue {
 
   @ShesmuVariable(signable = true)
   Optional<Double> spike_in_volume_ul();
+
+  @ShesmuVariable
+  boolean stale();
 
   @ShesmuVariable(signable = true)
   Optional<String> subproject();

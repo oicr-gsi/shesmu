@@ -11,8 +11,8 @@ public class LaneCerberusFileProvenanceSkippedRecord
     extends BaseCerberusFileProvenanceSkippedRecord<LaneProvenanceDto> {
 
   protected LaneCerberusFileProvenanceSkippedRecord(
-      ProvenanceRecord<LaneProvenanceDto> provenanceRecord) {
-    super(provenanceRecord);
+      boolean stale, ProvenanceRecord<LaneProvenanceDto> provenanceRecord) {
+    super(stale, provenanceRecord);
   }
 
   @Override
@@ -116,6 +116,11 @@ public class LaneCerberusFileProvenanceSkippedRecord
   @Override
   public Optional<String> sex() {
     return Optional.empty();
+  }
+
+  @Override
+  public boolean skip() {
+    return provenanceRecord.lims().getSkip();
   }
 
   @Override

@@ -323,10 +323,12 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                           limsAttr(fp, "reference_slide_id", badSetInRecord::add),
                           limsAttr(fp, "sequencing_control_type", badSetInRecord::add).orElse(""),
                           limsAttr(fp, "sex", badSetInRecord::add),
+                          fp.getSkip().equals("true"),
                           limsAttr(fp, "spike_in", badSetInRecord::add),
                           limsAttr(fp, "spike_in_dilution_factor", badSetInRecord::add),
                           limsAttr(fp, "spike_in_volume_ul", badSetInRecord::add)
                               .map(Double::parseDouble),
+                          fp.getStatus() == FileProvenance.Status.STALE,
                           limsAttr(fp, "subproject", badSetInRecord::add).filter(p -> !p.isBlank()),
                           limsAttr(fp, "target_cell_recovery", badSetInRecord::add)
                               .map(Double::parseDouble),
