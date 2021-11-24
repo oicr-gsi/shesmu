@@ -29,7 +29,6 @@ abstract class BaseCerberusFileProvenanceSkippedRecord<T extends LimsProvenance>
     return workflowRunLabels;
   }
 
-  // Do we care about stale records if they've been failed?
   protected final ProvenanceRecord<T> provenanceRecord;
   private final boolean stale;
   protected final Map<String, JsonNode> workflowRunLabels;
