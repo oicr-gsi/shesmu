@@ -64,7 +64,8 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
                           SampleProvenanceDto.class,
                           r -> {
                             if (r.lims().getSkip()) {
-                              output_skipped.add(new SampleCerberusFileProvenanceSkippedRecord(r));
+                              output_skipped.add(
+                                  new SampleCerberusFileProvenanceSkippedRecord(stale, r));
                             } else {
                               output.add(new SampleCerberusFileProvenanceRecord(stale, r));
                             }
@@ -73,7 +74,8 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
                           LaneProvenanceDto.class,
                           r -> {
                             if (r.lims().getSkip()) {
-                              output_skipped.add(new LaneCerberusFileProvenanceSkippedRecord(r));
+                              output_skipped.add(
+                                  new LaneCerberusFileProvenanceSkippedRecord(stale, r));
                             } else {
                               output.add(new LaneCerberusFileProvenanceRecord(stale, r));
                             }

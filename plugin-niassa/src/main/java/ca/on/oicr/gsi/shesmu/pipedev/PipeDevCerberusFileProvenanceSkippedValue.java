@@ -42,9 +42,11 @@ public final class PipeDevCerberusFileProvenanceSkippedValue
   private final Optional<String> reference_slide_id;
   private final String sequencing_control_type;
   private final Optional<String> sex;
+  private final boolean skip;
   private final Optional<String> spike_in;
   private final Optional<String> spike_in_dilution_factor;
   private final Optional<Double> spike_in_volume_ul;
+  private final boolean stale;
   private final Optional<String> subproject;
   private final Optional<Double> target_cell_recovery;
   private final String targeted_resequencing;
@@ -92,9 +94,11 @@ public final class PipeDevCerberusFileProvenanceSkippedValue
       Optional<String> reference_slide_id,
       String sequencing_control_type,
       Optional<String> sex,
+      boolean skip,
       Optional<String> spike_in,
       Optional<String> spike_in_dilution_factor,
       Optional<Double> spike_in_volume_ul,
+      boolean stale,
       Optional<String> subproject,
       Optional<Double> target_cell_recovery,
       String targeted_resequencing,
@@ -142,9 +146,11 @@ public final class PipeDevCerberusFileProvenanceSkippedValue
     this.reference_slide_id = reference_slide_id;
     this.sequencing_control_type = sequencing_control_type;
     this.sex = sex;
+    this.skip = skip;
     this.spike_in = spike_in;
     this.spike_in_dilution_factor = spike_in_dilution_factor;
     this.spike_in_volume_ul = spike_in_volume_ul;
+    this.stale = stale;
     this.subproject = subproject;
     this.target_cell_recovery = target_cell_recovery;
     this.targeted_resequencing = targeted_resequencing;
@@ -234,9 +240,11 @@ public final class PipeDevCerberusFileProvenanceSkippedValue
         && reference_slide_id.equals(that.reference_slide_id)
         && sequencing_control_type.equals(that.sequencing_control_type)
         && sex.equals(that.sex)
+        && skip == that.skip
         && spike_in.equals(that.spike_in)
         && spike_in_dilution_factor.equals(that.spike_in_dilution_factor)
         && spike_in_volume_ul.equals(that.spike_in_volume_ul)
+        && stale == that.stale
         && target_cell_recovery.equals(that.target_cell_recovery)
         && targeted_resequencing.equals(that.targeted_resequencing)
         && timestamp.equals(that.timestamp)
@@ -285,9 +293,11 @@ public final class PipeDevCerberusFileProvenanceSkippedValue
         reference_slide_id,
         sequencing_control_type,
         sex,
+        skip,
         spike_in,
         spike_in_dilution_factor,
         spike_in_volume_ul,
+        stale,
         target_cell_recovery,
         targeted_resequencing,
         timestamp,
@@ -410,6 +420,11 @@ public final class PipeDevCerberusFileProvenanceSkippedValue
   }
 
   @Override
+  public boolean skip() {
+    return skip;
+  }
+
+  @Override
   public Optional<String> spike_in() {
     return spike_in;
   }
@@ -422,6 +437,11 @@ public final class PipeDevCerberusFileProvenanceSkippedValue
   @Override
   public Optional<Double> spike_in_volume_ul() {
     return spike_in_volume_ul;
+  }
+
+  @Override
+  public boolean stale() {
+    return stale;
   }
 
   @Override

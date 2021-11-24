@@ -17,8 +17,8 @@ public class SampleCerberusFileProvenanceSkippedRecord
   private static final Pattern COMMA = Pattern.compile(",");
 
   protected SampleCerberusFileProvenanceSkippedRecord(
-      ProvenanceRecord<SampleProvenanceDto> provenanceRecord) {
-    super(provenanceRecord);
+      boolean stale, ProvenanceRecord<SampleProvenanceDto> provenanceRecord) {
+    super(stale, provenanceRecord);
   }
 
   @Override
@@ -131,6 +131,11 @@ public class SampleCerberusFileProvenanceSkippedRecord
   @Override
   public Optional<String> sex() {
     return limsAttr("sex");
+  }
+
+  @Override
+  public boolean skip() {
+    return provenanceRecord.lims().getSkip();
   }
 
   @Override
