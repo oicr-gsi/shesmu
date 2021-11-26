@@ -9,6 +9,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.vidarr.api.ExternalKey;
@@ -45,7 +46,14 @@ public final class SubmitAction extends Action {
         @Override
         protected Response execute(SubmitAction action, Optional<String> user) {
           return action.owner.get().url().map(action.state::unload).orElse(false)
-              ? Response.PURGE
+              ? Response.murder(
+                  new Murderer() {
+                    @Override
+                    public <F> F murder(
+                        ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
+                      // FIXME return builder.
+                    }
+                  })
               : Response.IGNORED;
         }
       };
