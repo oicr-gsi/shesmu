@@ -1,5 +1,17 @@
 # Unreleased
 
+# [1.17.0] - 2021-12-09T13:39+00:00
+
+* Remove JSON Schema support
+* Allow action commands to remove other actions
+* Remove command line tools no one uses
+* Add cerberus_fp_skipped input format
+* Add pipedev-skipped cache configuration
+* Don't include records with a null skip value in CFPSkippedValue
+* Add skip and stale attributes to cerberus_fp_skipped
+* Vidarr -> 0.4.11
+* Cerberus -> 0.2.9
+
 # [1.16.0] - 2021-11-10T19:08+00:00
 
 Changes:
