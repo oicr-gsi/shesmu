@@ -40,7 +40,8 @@ public final class SubmitAction extends Action {
           FrontEndIcon.PLUG,
           "Delete and Purge",
           Preference.ALLOW_BULK,
-          Preference.PROMPT) {
+          Preference.PROMPT,
+          Preference.ANNOY_USER) {
         @Override
         protected Response execute(SubmitAction action, Optional<String> user) {
           return action.owner.get().url().map(action.state::delete).orElse(false)
