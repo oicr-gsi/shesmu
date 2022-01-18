@@ -88,10 +88,14 @@ public class RunStateMonitor extends RunState {
 
   @Override
   public boolean canReattempt() {
+    // Failed operations may reattempt
     return status.getOperationStatus().equals("FAILED")
-        || (status.getEnginePhase() == null
-            || status.getEnginePhase().equals("WAITING_FOR_RESOURCES")
-            || status.getEnginePhase().equals("FAILED"));
+        // as may engine failures
+        || (status.getEnginePhase() != null
+            && (status.getEnginePhase().equals("WAITING_FOR_RESOURCES")
+                || status.getEnginePhase().equals("FAILED")))
+        // Succeeded actions may not but otherwise-empty engine status probably
+        || (status.getEnginePhase() == null && !status.getOperationStatus().equals("N/A"));
   }
 
   @Override
