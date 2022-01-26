@@ -1,5 +1,12 @@
 # Unreleased
 
+# [1.18.0] - 2022-01-26T19:25+00:00
+
+* Don't show "Retry Failed Workflow" button on Succeeded workflow runs
+* Add resistance to "Delete & Purge"
+* Runscanner -> 1.13.1
+* Vidarr -> 0.4.12
+
 # [1.17.0] - 2021-12-09T13:39+00:00
 
 * Remove JSON Schema support
