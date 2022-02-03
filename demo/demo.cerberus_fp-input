@@ -6,6 +6,14 @@
     "completed_date": 1576677864361,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "read_count": [
@@ -60,6 +68,10 @@
     "umis": false,
     "workflow": "bcl2fastq",
     "workflow_accession": "15031683",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15580315",
     "workflow_run_attributes": {},
     "workflow_run_labels": {},
@@ -76,6 +88,14 @@
     "completed_date": 1576677863203,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 22077478,
@@ -123,6 +143,10 @@
     "umis": false,
     "workflow": "bcl2fastq",
     "workflow_accession": "15031683",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15580315",
     "workflow_run_attributes": {},
     "workflow_run_labels": {},
@@ -139,6 +163,14 @@
     "completed_date": 1576677864311,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "read_count": [
@@ -193,6 +225,10 @@
     "umis": false,
     "workflow": "bcl2fastq",
     "workflow_accession": "15031683",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15580315",
     "workflow_run_attributes": {},
     "workflow_run_labels": {},
@@ -209,6 +245,14 @@
     "completed_date": 1576677868849,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "read_count": [
@@ -263,6 +307,10 @@
     "umis": false,
     "workflow": "bcl2fastq",
     "workflow_accession": "15031683",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15580315",
     "workflow_run_attributes": {},
     "workflow_run_labels": {},
@@ -279,6 +327,14 @@
     "completed_date": 1576684058877,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "tool": [
@@ -336,6 +392,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15580640",
     "workflow_run_attributes": {
       "reference": [
@@ -356,6 +416,14 @@
     "completed_date": 1576684060392,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 79376012,
@@ -406,6 +474,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15580640",
     "workflow_run_attributes": {
       "reference": [
@@ -426,6 +498,14 @@
     "completed_date": 1576684162634,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 4264168,
@@ -476,6 +556,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15580640",
     "workflow_run_attributes": {
       "reference": [
@@ -496,6 +580,14 @@
     "completed_date": 1576684058881,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "tool": [
@@ -553,6 +645,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15580640",
     "workflow_run_attributes": {
       "reference": [
@@ -573,6 +669,14 @@
     "completed_date": 1576683989272,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "tool": [
@@ -630,6 +734,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15580670",
     "workflow_run_attributes": {
       "reference": [
@@ -650,6 +758,14 @@
     "completed_date": 1576684105211,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 3801536,
@@ -700,6 +816,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15580670",
     "workflow_run_attributes": {
       "reference": [
@@ -720,6 +840,14 @@
     "completed_date": 1576683987850,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "tool": [
@@ -777,6 +905,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15580670",
     "workflow_run_attributes": {
       "reference": [
@@ -797,6 +929,14 @@
     "completed_date": 1576683993576,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 49563990,
@@ -847,6 +987,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15580670",
     "workflow_run_attributes": {
       "reference": [
@@ -867,6 +1011,14 @@
     "completed_date": 1576690289661,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 34830,
@@ -916,6 +1068,10 @@
     "umis": false,
     "workflow": "BamQC",
     "workflow_accession": "14439932",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15580994",
     "workflow_run_attributes": {
       "reference": [
@@ -936,6 +1092,14 @@
     "completed_date": 1576690167006,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 34481,
@@ -985,6 +1149,10 @@
     "umis": false,
     "workflow": "BamQC",
     "workflow_accession": "14439932",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581001",
     "workflow_run_attributes": {
       "reference": [
@@ -1005,6 +1173,14 @@
     "completed_date": 1576693865682,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 150440,
@@ -1055,6 +1231,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581195",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -1084,6 +1264,14 @@
     "completed_date": 1576693844266,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 726582,
@@ -1134,6 +1322,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581195",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -1163,6 +1355,14 @@
     "completed_date": 1576693849599,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 1795,
@@ -1213,6 +1413,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581195",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -1242,6 +1446,14 @@
     "completed_date": 1576693860616,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 102102,
@@ -1292,6 +1504,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581195",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -1321,6 +1537,14 @@
     "completed_date": 1576693855709,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 6241198,
@@ -1371,6 +1595,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581195",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -1400,6 +1628,14 @@
     "completed_date": 1576693831506,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 1058,
@@ -1450,6 +1686,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581195",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -1479,6 +1719,14 @@
     "completed_date": 1576693835964,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 2551,
@@ -1529,6 +1777,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581195",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -1558,6 +1810,14 @@
     "completed_date": 1576693975847,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 6297387,
@@ -1608,6 +1868,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581198",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -1637,6 +1901,14 @@
     "completed_date": 1576693980606,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 101518,
@@ -1687,6 +1959,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581198",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -1716,6 +1992,14 @@
     "completed_date": 1576693958859,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 3390,
@@ -1766,6 +2050,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581198",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -1795,6 +2083,14 @@
     "completed_date": 1576693987307,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 155152,
@@ -1845,6 +2141,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581198",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -1874,6 +2174,14 @@
     "completed_date": 1576693953957,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 1101,
@@ -1924,6 +2232,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581198",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -1953,6 +2265,14 @@
     "completed_date": 1576693963858,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 759753,
@@ -2003,6 +2323,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581198",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -2032,6 +2356,14 @@
     "completed_date": 1576693969963,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 2388,
@@ -2082,6 +2414,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581198",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -2111,6 +2447,14 @@
     "completed_date": 1576693948347,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 56247,
@@ -2160,6 +2504,10 @@
     "umis": false,
     "workflow": "bam_qc_metrics",
     "workflow_accession": "15494348",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581201",
     "workflow_run_attributes": {
       "major_olive_version": [
@@ -2186,6 +2534,14 @@
     "completed_date": 1576694064168,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 57865,
@@ -2235,6 +2591,10 @@
     "umis": false,
     "workflow": "bam_qc_metrics",
     "workflow_accession": "15494348",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581204",
     "workflow_run_attributes": {
       "major_olive_version": [
@@ -2261,6 +2621,14 @@
     "completed_date": 1576696766086,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "hotspots_file": [
@@ -2314,6 +2682,10 @@
     "umis": false,
     "workflow": "FingerprintCollector",
     "workflow_accession": "2736945",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581324",
     "workflow_run_attributes": {
       "reference": [
@@ -2334,6 +2706,14 @@
     "completed_date": 1576696645225,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "hotspots_file": [
@@ -2387,6 +2767,10 @@
     "umis": false,
     "workflow": "FingerprintCollector",
     "workflow_accession": "2736945",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581324",
     "workflow_run_attributes": {
       "reference": [
@@ -2407,6 +2791,14 @@
     "completed_date": 1576696766885,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "hotspots_file": [
@@ -2460,6 +2852,10 @@
     "umis": false,
     "workflow": "FingerprintCollector",
     "workflow_accession": "2736945",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581324",
     "workflow_run_attributes": {
       "reference": [
@@ -2480,6 +2876,14 @@
     "completed_date": 1576696707238,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "hotspots_file": [
@@ -2533,6 +2937,10 @@
     "umis": false,
     "workflow": "FingerprintCollector",
     "workflow_accession": "2736945",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581330",
     "workflow_run_attributes": {
       "reference": [
@@ -2553,6 +2961,14 @@
     "completed_date": 1576696708882,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "hotspots_file": [
@@ -2606,6 +3022,10 @@
     "umis": false,
     "workflow": "FingerprintCollector",
     "workflow_accession": "2736945",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581330",
     "workflow_run_attributes": {
       "reference": [
@@ -2626,6 +3046,14 @@
     "completed_date": 1576696583342,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "hotspots_file": [
@@ -2679,6 +3107,10 @@
     "umis": false,
     "workflow": "FingerprintCollector",
     "workflow_accession": "2736945",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15581330",
     "workflow_run_attributes": {
       "reference": [
@@ -2699,6 +3131,14 @@
     "completed_date": 1576914382376,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "read_count": [
@@ -2753,6 +3193,10 @@
     "umis": false,
     "workflow": "bcl2fastq",
     "workflow_accession": "5300924",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15609099",
     "workflow_run_attributes": {},
     "workflow_run_labels": {},
@@ -2769,6 +3213,14 @@
     "completed_date": 1576912161764,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "read_count": [
@@ -2823,6 +3275,10 @@
     "umis": false,
     "workflow": "bcl2fastq",
     "workflow_accession": "5300924",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15609099",
     "workflow_run_attributes": {},
     "workflow_run_labels": {},
@@ -2839,6 +3295,14 @@
     "completed_date": 1576913189827,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "read_count": [
@@ -2893,6 +3357,10 @@
     "umis": false,
     "workflow": "bcl2fastq",
     "workflow_accession": "5300924",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15609099",
     "workflow_run_attributes": {},
     "workflow_run_labels": {},
@@ -2909,6 +3377,14 @@
     "completed_date": 1576910979881,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "read_count": [
@@ -2963,6 +3439,10 @@
     "umis": false,
     "workflow": "bcl2fastq",
     "workflow_accession": "5300924",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15609099",
     "workflow_run_attributes": {},
     "workflow_run_labels": {},
@@ -2979,6 +3459,14 @@
     "completed_date": 1577173760597,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 71992843756,
@@ -3029,6 +3517,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15620368",
     "workflow_run_attributes": {
       "reference": [
@@ -3049,6 +3541,14 @@
     "completed_date": 1577169886424,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "tool": [
@@ -3106,6 +3606,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15620368",
     "workflow_run_attributes": {
       "reference": [
@@ -3126,6 +3630,14 @@
     "completed_date": 1577173839316,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 8925392,
@@ -3176,6 +3688,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15620368",
     "workflow_run_attributes": {
       "reference": [
@@ -3196,6 +3712,14 @@
     "completed_date": 1577169883997,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "tool": [
@@ -3253,6 +3777,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15620368",
     "workflow_run_attributes": {
       "reference": [
@@ -3273,6 +3801,14 @@
     "completed_date": 1577177011977,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 69428365816,
@@ -3323,6 +3859,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15620386",
     "workflow_run_attributes": {
       "reference": [
@@ -3343,6 +3883,14 @@
     "completed_date": 1577177085498,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 8906528,
@@ -3393,6 +3941,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15620386",
     "workflow_run_attributes": {
       "reference": [
@@ -3413,6 +3965,14 @@
     "completed_date": 1577173127168,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "tool": [
@@ -3470,6 +4030,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15620386",
     "workflow_run_attributes": {
       "reference": [
@@ -3490,6 +4054,14 @@
     "completed_date": 1577173127860,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "tool": [
@@ -3547,6 +4119,10 @@
     "umis": false,
     "workflow": "BwaMem",
     "workflow_accession": "13262061",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15620386",
     "workflow_run_attributes": {
       "reference": [
@@ -3567,6 +4143,14 @@
     "completed_date": 1577210241055,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 45786,
@@ -3616,6 +4200,10 @@
     "umis": false,
     "workflow": "BamQC",
     "workflow_accession": "14439932",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642333",
     "workflow_run_attributes": {
       "reference": [
@@ -3636,6 +4224,14 @@
     "completed_date": 1577180084147,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "hotspots_file": [
@@ -3689,6 +4285,10 @@
     "umis": false,
     "workflow": "FingerprintCollector",
     "workflow_accession": "2736945",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642508",
     "workflow_run_attributes": {
       "reference": [
@@ -3709,6 +4309,14 @@
     "completed_date": 1577180207670,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "hotspots_file": [
@@ -3762,6 +4370,10 @@
     "umis": false,
     "workflow": "FingerprintCollector",
     "workflow_accession": "2736945",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642508",
     "workflow_run_attributes": {
       "reference": [
@@ -3782,6 +4394,14 @@
     "completed_date": 1577180207678,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "hotspots_file": [
@@ -3835,6 +4455,10 @@
     "umis": false,
     "workflow": "FingerprintCollector",
     "workflow_accession": "2736945",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642508",
     "workflow_run_attributes": {
       "reference": [
@@ -3855,6 +4479,14 @@
     "completed_date": 1577334880960,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "aligner": [
@@ -3911,6 +4543,10 @@
     "umis": false,
     "workflow": "BamMergePreprocessing",
     "workflow_accession": "15576673",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642623",
     "workflow_run_attributes": {
       "reference": [
@@ -3931,6 +4567,14 @@
     "completed_date": 1577234098149,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -3984,6 +4628,10 @@
     "umis": false,
     "workflow": "BamMergePreprocessing",
     "workflow_accession": "15576673",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642623",
     "workflow_run_attributes": {
       "reference": [
@@ -4004,6 +4652,14 @@
     "completed_date": 1577318480157,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -4057,6 +4713,10 @@
     "umis": false,
     "workflow": "BamMergePreprocessing",
     "workflow_accession": "15576673",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642623",
     "workflow_run_attributes": {
       "reference": [
@@ -4077,6 +4737,14 @@
     "completed_date": 1577288351429,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -4130,6 +4798,10 @@
     "umis": false,
     "workflow": "BamMergePreprocessing",
     "workflow_accession": "15576673",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642623",
     "workflow_run_attributes": {
       "reference": [
@@ -4150,6 +4822,14 @@
     "completed_date": 1577272752018,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -4203,6 +4883,10 @@
     "umis": false,
     "workflow": "BamMergePreprocessing",
     "workflow_accession": "15576673",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642623",
     "workflow_run_attributes": {
       "reference": [
@@ -4223,6 +4907,14 @@
     "completed_date": 1577214473743,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 45646,
@@ -4272,6 +4964,10 @@
     "umis": false,
     "workflow": "BamQC",
     "workflow_accession": "14439932",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642693",
     "workflow_run_attributes": {
       "reference": [
@@ -4292,6 +4988,14 @@
     "completed_date": 1577183682723,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "hotspots_file": [
@@ -4345,6 +5049,10 @@
     "umis": false,
     "workflow": "FingerprintCollector",
     "workflow_accession": "2736945",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642894",
     "workflow_run_attributes": {
       "reference": [
@@ -4365,6 +5073,14 @@
     "completed_date": 1577183561365,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "hotspots_file": [
@@ -4418,6 +5134,10 @@
     "umis": false,
     "workflow": "FingerprintCollector",
     "workflow_accession": "2736945",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642894",
     "workflow_run_attributes": {
       "reference": [
@@ -4438,6 +5158,14 @@
     "completed_date": 1577183683418,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "hotspots_file": [
@@ -4491,6 +5219,10 @@
     "umis": false,
     "workflow": "FingerprintCollector",
     "workflow_accession": "2736945",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642894",
     "workflow_run_attributes": {
       "reference": [
@@ -4511,6 +5243,14 @@
     "completed_date": 1577185030543,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 6058564,
@@ -4561,6 +5301,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642949",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -4590,6 +5334,14 @@
     "completed_date": 1577185035826,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 103950,
@@ -4640,6 +5392,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642949",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -4669,6 +5425,14 @@
     "completed_date": 1577185040003,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 157525,
@@ -4719,6 +5483,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642949",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -4748,6 +5516,14 @@
     "completed_date": 1577185022018,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 543592,
@@ -4798,6 +5574,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642949",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -4827,6 +5607,14 @@
     "completed_date": 1577185025668,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 2035,
@@ -4877,6 +5665,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642949",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -4906,6 +5698,14 @@
     "completed_date": 1577185015349,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 2887,
@@ -4956,6 +5756,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642949",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -4985,6 +5789,14 @@
     "completed_date": 1577185010698,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 1010,
@@ -5035,6 +5847,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642949",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -5064,6 +5880,14 @@
     "completed_date": 1577185092759,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 6235053,
@@ -5114,6 +5938,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642953",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -5143,6 +5971,14 @@
     "completed_date": 1577185077496,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 1178,
@@ -5193,6 +6029,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642953",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -5222,6 +6062,14 @@
     "completed_date": 1577185088572,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 3582,
@@ -5272,6 +6120,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642953",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -5301,6 +6153,14 @@
     "completed_date": 1577185096525,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 103062,
@@ -5351,6 +6211,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642953",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -5380,6 +6244,14 @@
     "completed_date": 1577185100481,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 157140,
@@ -5430,6 +6302,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642953",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -5459,6 +6335,14 @@
     "completed_date": 1577185081208,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 5046,
@@ -5509,6 +6393,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642953",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -5538,6 +6426,14 @@
     "completed_date": 1577185084923,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 744573,
@@ -5588,6 +6484,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15642953",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -5617,6 +6517,14 @@
     "completed_date": 1577341643507,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -5671,6 +6579,10 @@
     "umis": false,
     "workflow": "BamMergePreprocessing",
     "workflow_accession": "15576673",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15643019",
     "workflow_run_attributes": {
       "reference": [
@@ -5691,6 +6603,14 @@
     "completed_date": 1577341643507,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -5745,6 +6665,10 @@
     "umis": false,
     "workflow": "BamMergePreprocessing",
     "workflow_accession": "15576673",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15643019",
     "workflow_run_attributes": {
       "reference": [
@@ -5765,6 +6689,14 @@
     "completed_date": 1577398215815,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "aligner": [
@@ -5822,6 +6754,10 @@
     "umis": false,
     "workflow": "BamMergePreprocessing",
     "workflow_accession": "15576673",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15643019",
     "workflow_run_attributes": {
       "reference": [
@@ -5842,6 +6778,14 @@
     "completed_date": 1577246100304,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -5896,6 +6840,10 @@
     "umis": false,
     "workflow": "BamMergePreprocessing",
     "workflow_accession": "15576673",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15643019",
     "workflow_run_attributes": {
       "reference": [
@@ -5916,6 +6864,14 @@
     "completed_date": 1577246100777,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -5970,6 +6926,10 @@
     "umis": false,
     "workflow": "BamMergePreprocessing",
     "workflow_accession": "15576673",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15643019",
     "workflow_run_attributes": {
       "reference": [
@@ -5990,6 +6950,14 @@
     "completed_date": 1577381620021,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -6044,6 +7012,10 @@
     "umis": false,
     "workflow": "BamMergePreprocessing",
     "workflow_accession": "15576673",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15643019",
     "workflow_run_attributes": {
       "reference": [
@@ -6064,6 +7036,14 @@
     "completed_date": 1577381620143,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -6118,6 +7098,10 @@
     "umis": false,
     "workflow": "BamMergePreprocessing",
     "workflow_accession": "15576673",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15643019",
     "workflow_run_attributes": {
       "reference": [
@@ -6138,6 +7122,14 @@
     "completed_date": 1577358090455,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -6192,6 +7184,10 @@
     "umis": false,
     "workflow": "BamMergePreprocessing",
     "workflow_accession": "15576673",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15643019",
     "workflow_run_attributes": {
       "reference": [
@@ -6212,6 +7208,14 @@
     "completed_date": 1577358090455,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -6266,6 +7270,10 @@
     "umis": false,
     "workflow": "BamMergePreprocessing",
     "workflow_accession": "15576673",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15643019",
     "workflow_run_attributes": {
       "reference": [
@@ -6286,6 +7294,14 @@
     "completed_date": 1577397858764,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "aligner": [
@@ -6343,6 +7359,10 @@
     "umis": false,
     "workflow": "BamMergePreprocessing",
     "workflow_accession": "15576673",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15643019",
     "workflow_run_attributes": {
       "reference": [
@@ -6363,6 +7383,14 @@
     "completed_date": 1577262003306,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 70326,
@@ -6412,6 +7440,10 @@
     "umis": false,
     "workflow": "bam_qc_metrics",
     "workflow_accession": "15494348",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15643444",
     "workflow_run_attributes": {
       "major_olive_version": [
@@ -6438,6 +7470,14 @@
     "completed_date": 1577251626382,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 71017,
@@ -6487,6 +7527,10 @@
     "umis": false,
     "workflow": "bam_qc_metrics",
     "workflow_accession": "15494348",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15643596",
     "workflow_run_attributes": {
       "major_olive_version": [
@@ -6513,6 +7557,14 @@
     "completed_date": 1578342373879,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 218112,
@@ -6563,6 +7615,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15724922",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -6586,6 +7642,14 @@
     "completed_date": 1578342383716,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 223580,
@@ -6636,6 +7700,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15724922",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -6659,6 +7727,14 @@
     "completed_date": 1578342379533,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 219639,
@@ -6709,6 +7785,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15724922",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -6732,6 +7812,14 @@
     "completed_date": 1578342368534,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 222987,
@@ -6782,6 +7870,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15724922",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -6805,6 +7897,14 @@
     "completed_date": 1578389244224,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 234810,
@@ -6855,6 +7955,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15728787",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -6878,6 +7982,14 @@
     "completed_date": 1578389240399,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 675014,
@@ -6928,6 +8040,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15728787",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -6951,6 +8067,14 @@
     "completed_date": 1578389252191,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 232494,
@@ -7001,6 +8125,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15728787",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -7024,6 +8152,14 @@
     "completed_date": 1578389248362,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 678210,
@@ -7074,6 +8210,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15728787",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -7097,6 +8237,14 @@
     "completed_date": 1578397589138,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 217838,
@@ -7147,6 +8295,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15731382",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -7170,6 +8322,14 @@
     "completed_date": 1578397584809,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 223740,
@@ -7220,6 +8380,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15731382",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -7243,6 +8407,14 @@
     "completed_date": 1578397597850,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 219175,
@@ -7293,6 +8465,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15731382",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -7316,6 +8492,14 @@
     "completed_date": 1578397593495,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 222267,
@@ -7366,6 +8550,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15731382",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -7389,6 +8577,14 @@
     "completed_date": 1578432215869,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 673379,
@@ -7439,6 +8635,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15733688",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -7462,6 +8662,14 @@
     "completed_date": 1578432211709,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 677549,
@@ -7512,6 +8720,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15733688",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -7535,6 +8747,14 @@
     "completed_date": 1578432219691,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 234658,
@@ -7585,6 +8805,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15733688",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -7608,6 +8832,14 @@
     "completed_date": 1578432224238,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 231166,
@@ -7658,6 +8890,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15733688",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -7681,6 +8917,14 @@
     "completed_date": 1578675601583,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 103066,
@@ -7731,6 +8975,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15786581",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -7760,6 +9008,14 @@
     "completed_date": 1578675593535,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 3441,
@@ -7810,6 +9066,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15786581",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -7839,6 +9099,14 @@
     "completed_date": 1578675589482,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 696381,
@@ -7889,6 +9157,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15786581",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -7918,6 +9190,14 @@
     "completed_date": 1578675585642,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 4906,
@@ -7968,6 +9248,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15786581",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -7997,6 +9281,14 @@
     "completed_date": 1578675597693,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 6231690,
@@ -8047,6 +9339,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15786581",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -8076,6 +9372,14 @@
     "completed_date": 1578675605257,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 157129,
@@ -8126,6 +9430,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15786581",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -8155,6 +9463,14 @@
     "completed_date": 1578675580994,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 1171,
@@ -8205,6 +9521,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15786581",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -8234,6 +9554,14 @@
     "completed_date": 1578857218376,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 6642,
@@ -8283,6 +9611,10 @@
     "umis": false,
     "workflow": "wgsMetrics",
     "workflow_accession": "15580635",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15845646",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -8312,6 +9644,14 @@
     "completed_date": 1578865847804,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 6691,
@@ -8361,6 +9701,10 @@
     "umis": false,
     "workflow": "wgsMetrics",
     "workflow_accession": "15580635",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15848335",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -8390,6 +9734,14 @@
     "completed_date": 1578890939726,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 19384,
@@ -8439,6 +9791,10 @@
     "umis": false,
     "workflow": "InsertSizeMetrics",
     "workflow_accession": "15580636",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15861096",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -8468,6 +9824,14 @@
     "completed_date": 1578890943365,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 27430,
@@ -8517,6 +9881,10 @@
     "umis": false,
     "workflow": "InsertSizeMetrics",
     "workflow_accession": "15580636",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15861096",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -8546,6 +9914,14 @@
     "completed_date": 1578904912146,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 25504,
@@ -8595,6 +9971,10 @@
     "umis": false,
     "workflow": "InsertSizeMetrics",
     "workflow_accession": "15580636",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15864183",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -8624,6 +10004,14 @@
     "completed_date": 1578904916463,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 17945,
@@ -8673,6 +10061,10 @@
     "umis": false,
     "workflow": "InsertSizeMetrics",
     "workflow_accession": "15580636",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15864183",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -8702,6 +10094,14 @@
     "completed_date": 1578926432128,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 157431,
@@ -8752,6 +10152,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15870001",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -8781,6 +10185,14 @@
     "completed_date": 1578926407232,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 2703,
@@ -8831,6 +10243,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15870001",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -8860,6 +10276,14 @@
     "completed_date": 1578926425087,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 103996,
@@ -8910,6 +10334,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15870001",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -8939,6 +10367,14 @@
     "completed_date": 1578926416272,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 1853,
@@ -8989,6 +10425,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15870001",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -9018,6 +10458,14 @@
     "completed_date": 1578926411980,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 632494,
@@ -9068,6 +10516,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15870001",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -9097,6 +10549,14 @@
     "completed_date": 1578926403065,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 1048,
@@ -9147,6 +10607,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15870001",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -9176,6 +10640,14 @@
     "completed_date": 1578926420577,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 6056357,
@@ -9226,6 +10698,10 @@
     "umis": false,
     "workflow": "ichorCNA",
     "workflow_accession": "15580633",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15870001",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -9255,6 +10731,14 @@
     "completed_date": 1579001694419,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -9318,6 +10802,10 @@
     "umis": false,
     "workflow": "Mutect",
     "workflow_accession": "15580637",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15880980",
     "workflow_run_attributes": {
       "major_olive_version": [
@@ -9344,6 +10832,14 @@
     "completed_date": 1579001694419,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -9407,6 +10903,10 @@
     "umis": false,
     "workflow": "Mutect",
     "workflow_accession": "15580637",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15880980",
     "workflow_run_attributes": {
       "major_olive_version": [
@@ -9433,6 +10933,14 @@
     "completed_date": 1579001608243,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -9496,6 +11004,10 @@
     "umis": false,
     "workflow": "Mutect",
     "workflow_accession": "15580637",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15880980",
     "workflow_run_attributes": {
       "major_olive_version": [
@@ -9522,6 +11034,14 @@
     "completed_date": 1579001608243,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -9585,6 +11105,10 @@
     "umis": false,
     "workflow": "Mutect",
     "workflow_accession": "15580637",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15880980",
     "workflow_run_attributes": {
       "major_olive_version": [
@@ -9611,6 +11135,14 @@
     "completed_date": 1579001489040,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 72,
@@ -9661,6 +11193,10 @@
     "umis": false,
     "workflow": "Mutect",
     "workflow_accession": "15580637",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15880980",
     "workflow_run_attributes": {
       "major_olive_version": [
@@ -9687,6 +11223,14 @@
     "completed_date": 1579001489040,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 72,
@@ -9737,6 +11281,10 @@
     "umis": false,
     "workflow": "Mutect",
     "workflow_accession": "15580637",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15880980",
     "workflow_run_attributes": {
       "major_olive_version": [
@@ -9763,6 +11311,14 @@
     "completed_date": 1580426347633,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4313_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 60731,
@@ -9812,6 +11368,10 @@
     "umis": false,
     "workflow": "bam_qc_metrics",
     "workflow_accession": "15980550",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15988834",
     "workflow_run_attributes": {
       "major_olive_version": [
@@ -9838,6 +11398,14 @@
     "completed_date": 1580615875363,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 77056,
@@ -9887,6 +11455,10 @@
     "umis": false,
     "workflow": "bam_qc_metrics",
     "workflow_accession": "15980550",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "15991937",
     "workflow_run_attributes": {
       "major_olive_version": [
@@ -9913,6 +11485,14 @@
     "completed_date": 1580692209377,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35685",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 79488,
@@ -9963,6 +11543,10 @@
     "umis": false,
     "workflow": "bam_qc_metrics",
     "workflow_accession": "15980550",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16013499",
     "workflow_run_attributes": {
       "major_olive_version": [
@@ -9989,6 +11573,14 @@
     "completed_date": 1580805121609,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4314_1_LDI35686",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Ly_R_nn_1-1",
     "file_attributes": {},
     "file_size": 77205,
@@ -10039,6 +11631,10 @@
     "umis": false,
     "workflow": "bam_qc_metrics",
     "workflow_accession": "15980550",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16023490",
     "workflow_run_attributes": {
       "major_olive_version": [
@@ -10065,6 +11661,14 @@
     "completed_date": 1588802429576,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4409_2_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "read_count": [
@@ -10119,6 +11723,10 @@
     "umis": false,
     "workflow": "bcl2fastq",
     "workflow_accession": "15031683",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16851292",
     "workflow_run_attributes": {},
     "workflow_run_labels": {},
@@ -10135,6 +11743,14 @@
     "completed_date": 1588802505501,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4409_2_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "read_count": [
@@ -10189,6 +11805,10 @@
     "umis": false,
     "workflow": "bcl2fastq",
     "workflow_accession": "15031683",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16851292",
     "workflow_run_attributes": {},
     "workflow_run_labels": {},
@@ -10205,6 +11825,14 @@
     "completed_date": 1588837778720,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4409_2_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -10259,6 +11887,10 @@
     "umis": false,
     "workflow": "STAR",
     "workflow_accession": "10067501",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16857464",
     "workflow_run_attributes": {
       "reference": [
@@ -10279,6 +11911,14 @@
     "completed_date": 1588837981561,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4409_2_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -10333,6 +11973,10 @@
     "umis": false,
     "workflow": "STAR",
     "workflow_accession": "10067501",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16857464",
     "workflow_run_attributes": {
       "reference": [
@@ -10353,6 +11997,14 @@
     "completed_date": 1588838128937,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4409_2_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -10407,6 +12059,10 @@
     "umis": false,
     "workflow": "STAR",
     "workflow_accession": "10067501",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16857464",
     "workflow_run_attributes": {
       "reference": [
@@ -10427,6 +12083,14 @@
     "completed_date": 1588838072222,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4409_2_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -10481,6 +12145,10 @@
     "umis": false,
     "workflow": "STAR",
     "workflow_accession": "10067501",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16857464",
     "workflow_run_attributes": {
       "reference": [
@@ -10501,6 +12169,14 @@
     "completed_date": 1588899264726,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4409_2_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 254901,
@@ -10551,6 +12227,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16889487",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -10574,6 +12254,14 @@
     "completed_date": 1588899276705,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4409_2_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 757163,
@@ -10624,6 +12312,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16889487",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -10647,6 +12339,14 @@
     "completed_date": 1588899268888,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4409_2_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 760727,
@@ -10697,6 +12397,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16889487",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -10720,6 +12424,14 @@
     "completed_date": 1588899272800,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4409_2_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 254516,
@@ -10770,6 +12482,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16889487",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -10793,6 +12509,14 @@
     "completed_date": 1588975556465,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4407_1_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "read_count": [
@@ -10847,6 +12571,10 @@
     "umis": false,
     "workflow": "bcl2fastq",
     "workflow_accession": "15031683",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16919999",
     "workflow_run_attributes": {},
     "workflow_run_labels": {},
@@ -10863,6 +12591,14 @@
     "completed_date": 1588975535353,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4407_1_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "read_count": [
@@ -10917,6 +12653,10 @@
     "umis": false,
     "workflow": "bcl2fastq",
     "workflow_accession": "15031683",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16919999",
     "workflow_run_attributes": {},
     "workflow_run_labels": {},
@@ -10933,6 +12673,14 @@
     "completed_date": 1588997606751,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4407_1_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -10987,6 +12735,10 @@
     "umis": false,
     "workflow": "STAR",
     "workflow_accession": "10067501",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16927143",
     "workflow_run_attributes": {
       "reference": [
@@ -11007,6 +12759,14 @@
     "completed_date": 1588997606024,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4407_1_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -11061,6 +12821,10 @@
     "umis": false,
     "workflow": "STAR",
     "workflow_accession": "10067501",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16927143",
     "workflow_run_attributes": {
       "reference": [
@@ -11081,6 +12845,14 @@
     "completed_date": 1588997720164,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4407_1_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -11135,6 +12907,10 @@
     "umis": false,
     "workflow": "STAR",
     "workflow_accession": "10067501",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16927143",
     "workflow_run_attributes": {
       "reference": [
@@ -11155,6 +12931,14 @@
     "completed_date": 1588997607345,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4407_1_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -11209,6 +12993,10 @@
     "umis": false,
     "workflow": "STAR",
     "workflow_accession": "10067501",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16927143",
     "workflow_run_attributes": {
       "reference": [
@@ -11229,6 +13017,14 @@
     "completed_date": 1589046641714,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4407_1_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 96654,
@@ -11278,6 +13074,10 @@
     "umis": false,
     "workflow": "rnaSeqQC",
     "workflow_accession": "16673726",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16935790",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -11307,6 +13107,14 @@
     "completed_date": 1589081983105,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4409_2_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 117299,
@@ -11356,6 +13164,10 @@
     "umis": false,
     "workflow": "rnaSeqQC",
     "workflow_accession": "16673726",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16948485",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -11385,6 +13197,14 @@
     "completed_date": 1589080385739,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4407_1_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 241435,
@@ -11435,6 +13255,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16949611",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -11458,6 +13282,14 @@
     "completed_date": 1589080375931,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4407_1_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 242289,
@@ -11508,6 +13340,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16949611",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -11531,6 +13367,14 @@
     "completed_date": 1589080380509,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4407_1_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 253946,
@@ -11581,6 +13425,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16949611",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -11604,6 +13452,14 @@
     "completed_date": 1589080370213,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4407_1_LDI37124",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 255119,
@@ -11654,6 +13510,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16949611",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -11677,6 +13537,14 @@
     "completed_date": 1589213234998,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4404_1_LDI36893",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "read_count": [
@@ -11731,6 +13599,10 @@
     "umis": false,
     "workflow": "bcl2fastq",
     "workflow_accession": "15031683",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16984235",
     "workflow_run_attributes": {},
     "workflow_run_labels": {},
@@ -11747,6 +13619,14 @@
     "completed_date": 1589213233822,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4404_1_LDI36893",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "read_count": [
@@ -11801,6 +13681,10 @@
     "umis": false,
     "workflow": "bcl2fastq",
     "workflow_accession": "15031683",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16984235",
     "workflow_run_attributes": {},
     "workflow_run_labels": {},
@@ -11817,6 +13701,14 @@
     "completed_date": 1589222067652,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4404_1_LDI36893",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -11871,6 +13763,10 @@
     "umis": false,
     "workflow": "STAR",
     "workflow_accession": "10067501",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16989016",
     "workflow_run_attributes": {
       "reference": [
@@ -11891,6 +13787,14 @@
     "completed_date": 1589222067651,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4404_1_LDI36893",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -11945,6 +13849,10 @@
     "umis": false,
     "workflow": "STAR",
     "workflow_accession": "10067501",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16989016",
     "workflow_run_attributes": {
       "reference": [
@@ -11965,6 +13873,14 @@
     "completed_date": 1589222175586,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4404_1_LDI36893",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -12019,6 +13935,10 @@
     "umis": false,
     "workflow": "STAR",
     "workflow_accession": "10067501",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16989016",
     "workflow_run_attributes": {
       "reference": [
@@ -12039,6 +13959,14 @@
     "completed_date": 1589222067113,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4404_1_LDI36893",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {
       "cvterms": [
@@ -12093,6 +14021,10 @@
     "umis": false,
     "workflow": "STAR",
     "workflow_accession": "10067501",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "16989016",
     "workflow_run_attributes": {
       "reference": [
@@ -12113,6 +14045,14 @@
     "completed_date": 1589238511800,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4404_1_LDI36893",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 274053,
@@ -12163,6 +14103,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "17002626",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -12186,6 +14130,14 @@
     "completed_date": 1589238523470,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4404_1_LDI36893",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 252982,
@@ -12236,6 +14188,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "17002626",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -12259,6 +14215,14 @@
     "completed_date": 1589238516067,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4404_1_LDI36893",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 260258,
@@ -12309,6 +14273,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "17002626",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -12332,6 +14300,14 @@
     "completed_date": 1589238519877,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4404_1_LDI36893",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 247432,
@@ -12382,6 +14358,10 @@
     "umis": false,
     "workflow": "FastQC",
     "workflow_accession": "15703668",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "17002626",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
@@ -12405,6 +14385,14 @@
     "completed_date": 1589352411111,
     "donor": "ABC_0001",
     "external_donor_id": "ABC_0001",
+    "external_key": {
+      "id": "4404_1_LDI36893",
+      "provider": "pinery-miso",
+      "stale": false,
+      "versions": {
+        "pinery-hash-2": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
     "external_tissue_id": "ABC_0001_Lv_P_nn_1-1",
     "file_attributes": {},
     "file_size": 96357,
@@ -12454,6 +14442,10 @@
     "umis": false,
     "workflow": "rnaSeqQC",
     "workflow_accession": "16673726",
+    "workflow_engine": {
+      "contents": null,
+      "type": "NIASSA"
+    },
     "workflow_run_accession": "17020279",
     "workflow_run_attributes": {
       "cromwell-workflow-id": [
