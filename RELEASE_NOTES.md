@@ -1,5 +1,9 @@
 # Unreleased
 
+Changes:
+
+* Track dumper creation so that they can be stopped and finalized.
+
 # [1.18.0] - 2022-01-26T19:25+00:00
 
 * Don't show "Retry Failed Workflow" button on Succeeded workflow runs
@@ -36,7 +40,7 @@ Changes:
 
 Changes:
 
-* Pass timeout variable directly to task runtine block 
+* Pass timeout variable directly to task runtine block
 
 # [1.15.3] - 2021-10-14T17:43+00:00
 
@@ -214,7 +218,7 @@ Changes:
 Changes:
 
 * Force HTTP/1.1 in Guanyin requests
-* Allow guided meditation to access olives 
+* Allow guided meditation to access olives
 * Allow setting a custom set of clinical projects in Pinery
 * Use new Java 14 APIs in generated olive code
 * Relocate bootstrap methods to `RuntimeSupport`
@@ -230,7 +234,7 @@ Changes:
 * Add a greedy bin splitting function
 * Fix bug in streaming JSON lists
 * Add a tool to include genome chromosome information
-* Expose `subproject` in `pinery_ius` and `cerberus_fp` 
+* Expose `subproject` in `pinery_ius` and `cerberus_fp`
 * Force array length to be integral
 * Correctly update alert `endsAt` property
 
@@ -623,7 +627,7 @@ UI Changes:
   be difficult to recognise. This shifts all the counts down by a half row so
   that the count is between the clause that produced and the clause that consumed
   it.
- 
+
 Simulator Changes:
 
 * Improve extra definitions buttons (make the styling consistent and add a download button)
@@ -638,7 +642,7 @@ SFTP Plugin Changes:
 
 * Improve the SFTP refiller
   This makes a few improvements to the SFTP refiller:
-  
+
   - perform reading stdout and stderr and writing to stdin in separate threads to
     avoid buffering
   - when reading the first line from the child, it checks that it is `OK` or
