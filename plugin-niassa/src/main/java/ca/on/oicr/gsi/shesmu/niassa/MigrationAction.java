@@ -264,11 +264,12 @@ public final class MigrationAction extends Action {
         final var user = server.get().vidarrDbUser().orElse(null);
         final var password = server.get().vidarrDbPassword().orElse(null);
 
-        // Get hash id's for all input file SWIDs from matches and populate metadata
         if (vidarrDBUrl == null) {
           this.errors = List.of("Vidarr not configured");
           return ActionState.HALP;
         }
+
+        // Get hash id's for all input file SWIDs from matches and populate metadata
         try (Connection conn = DriverManager.getConnection(vidarrDBUrl, user, password)) {
           Statement statement = conn.createStatement();
           final var inputFiles = matches.get(0).state().inputFiles();
@@ -315,8 +316,25 @@ public final class MigrationAction extends Action {
         // "123_1_LDI100" }]]}}
         final var outputFileMigration = metadata.putArray("migration");
         final var outputFiles = matches.get(0).state().files();
+        // Niassa occasionally provisions out duplicate files with distinct file SWIDs.
+        // Select only the outputFiles with the most recent file SWID per output path.
+        Map<String, Integer> pathAndLatestFileSwid = new HashMap<>();
         outputFiles.forEach(
             file -> {
+              var previouslySeenSwidForPath = pathAndLatestFileSwid.get(file.getPath());
+              if (previouslySeenSwidForPath == null
+                  || previouslySeenSwidForPath < file.getAccession()) {
+                pathAndLatestFileSwid.put(file.getPath(), file.getAccession());
+              }
+              // if the previouslySeenSwidForPath is larger (more recent) than the current file's
+              // accession, keep it and ignore the current file
+            });
+        outputFiles.forEach(
+            file -> {
+              // exit early if this record has been deselected in the step above
+              if (pathAndLatestFileSwid.get(file.getPath()) != file.getAccession()) {
+                return;
+              }
               final var fileNode = outputFileMigration.addObject();
               final var outputNode = fileNode.putObject("fileMetadata");
               outputNode.put("type", "MANUAL");
