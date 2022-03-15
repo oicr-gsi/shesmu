@@ -1,5 +1,7 @@
 # Unreleased
 
+# [1.18.1] - 2022-03-15T21:59+00:00
+
 Changes:
 
 * Track dumper creation so that they can be stopped and finalized.
