@@ -1,10 +1,13 @@
 # Unreleased
 
-# [1.18.1] - 2022-03-15T21:59+00:00
+# [1.18.2] - 2022-03-16T20:41+00:00
 
 Changes:
 
+* Pick max fileSWID by path for migration
 * Track dumper creation so that they can be stopped and finalized.
+* Update demo data to current data formats
+* Vidarr -> 0.5.0
 
 # [1.18.0] - 2022-01-26T19:25+00:00
 
