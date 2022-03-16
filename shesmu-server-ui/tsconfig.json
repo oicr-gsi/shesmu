@@ -21,6 +21,7 @@
     "target": "es2020",
     "typeRoots": [
       "./types"
-    ]
+    ],
+    "useUnknownInCatchVariables": false
   }
 }
