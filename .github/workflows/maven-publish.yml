@@ -21,7 +21,7 @@ jobs:
       with:
         node-version: 12
     - name: Install TypeScript Compiler
-      run: npm install -g typescript
+      run: npm install -g typescript@3.9.9
     - name: Compile Shesmu Server UI with TypeScript Compiler
       run: tsc -p shesmu-server-ui
     - name: Setup Repo credentials
