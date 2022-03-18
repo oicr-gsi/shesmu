@@ -50,10 +50,12 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
     }
 
     @Override
-    public Optional<TargetWithContext> captureOptional(ExpressionNode expression) {
+    public Optional<TargetWithContext> captureOptional(
+        ExpressionNode expression, int line, int column, Consumer<String> errorHandler) {
       if (expression.resolveDefinitions(
-          new OptionalCaptureCompilerServices(expressionCompilerServices, errorHandler, layer - 1),
-          errorHandler)) {
+          new OptionalCaptureCompilerServices(
+              expressionCompilerServices, this.errorHandler, layer - 1),
+          this.errorHandler)) {
         final var target = new UnboxableExpression(expression);
         captures.computeIfAbsent(layer, k -> new ArrayList<>()).add(target);
         return Optional.of(target);
@@ -334,14 +336,16 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
                           layer.stream()
                                   .filter(
                                       capture -> {
-                                        var captureOk = capture.expression.typeCheck(errorHandler);
-                                        if (!capture
-                                            .expression
-                                            .type()
-                                            .isSame(capture.expression.type().asOptional())) {
+                                        final var captureOk =
+                                            capture.expression.typeCheck(errorHandler);
+                                        if (captureOk
+                                            && !capture
+                                                .expression
+                                                .type()
+                                                .isSame(capture.expression.type().asOptional())) {
                                           capture.expression.typeError(
                                               "optional", capture.expression.type(), errorHandler);
-                                          captureOk = false;
+                                          return false;
                                         }
                                         return captureOk;
                                       })

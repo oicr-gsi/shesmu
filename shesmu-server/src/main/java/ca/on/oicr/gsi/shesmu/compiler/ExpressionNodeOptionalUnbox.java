@@ -56,13 +56,12 @@ public class ExpressionNodeOptionalUnbox extends ExpressionNode {
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    final var candidate = expressionCompilerServices.captureOptional(expression);
+    final var candidate =
+        expressionCompilerServices.captureOptional(expression, line(), column(), errorHandler);
     if (candidate.isPresent()) {
       target = candidate.get();
       return true;
     } else {
-      errorHandler.accept(
-          String.format("%d:%d: Optional operation “?” must be inside of ``.", line(), column()));
       return false;
     }
   }
