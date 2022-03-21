@@ -299,11 +299,6 @@ public abstract class RootBuilder {
 
   public final void createDumper(
       String dumper, Renderer renderer, List<Pair<String, Imyhat>> columns) {
-    final var fieldName = "dump$" + dumper;
-    classVisitor
-        .visitField(Opcodes.ACC_PRIVATE, fieldName, A_DUMPER_TYPE.getDescriptor(), null, null)
-        .visitEnd();
-    runMethod.loadThis();
     renderer.emitNamed("Olive Services");
     renderer.methodGen().push(dumper);
     renderer.methodGen().push(columns.size());
@@ -325,10 +320,6 @@ public abstract class RootBuilder {
       renderer.methodGen().arrayStore(A_IMYHAT_TYPE);
     }
     renderer.methodGen().invokeInterface(A_OLIVE_SERVICES_TYPE, METHOD_OLIVE_SERVICES__FIND_DUMPER);
-    runMethod.putField(selfType, fieldName, A_DUMPER_TYPE);
-    runMethod.loadThis();
-    runMethod.getField(selfType, fieldName, A_DUMPER_TYPE);
-    dumpers.add(fieldName);
   }
 
   public void defineConstant(String name, Type type, Consumer<GeneratorAdapter> loader) {
