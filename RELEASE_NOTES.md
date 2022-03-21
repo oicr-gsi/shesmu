@@ -1,5 +1,7 @@
 # Unreleased
 
+* Revert "Track dumper creation so that they can be stopped and finalized." (See: GP-3243)
+
 # [1.18.4] - 2022-03-18T18:47+00:00
 
 * Fix confusing errors when ? fails for other reasons1~
