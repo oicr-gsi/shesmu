@@ -303,7 +303,7 @@ public abstract class RootBuilder {
     classVisitor
         .visitField(Opcodes.ACC_PRIVATE, fieldName, A_DUMPER_TYPE.getDescriptor(), null, null)
         .visitEnd();
-    runMethod.loadThis();
+    renderer.methodGen().loadThis();
     renderer.emitNamed("Olive Services");
     renderer.methodGen().push(dumper);
     renderer.methodGen().push(columns.size());
@@ -325,9 +325,9 @@ public abstract class RootBuilder {
       renderer.methodGen().arrayStore(A_IMYHAT_TYPE);
     }
     renderer.methodGen().invokeInterface(A_OLIVE_SERVICES_TYPE, METHOD_OLIVE_SERVICES__FIND_DUMPER);
-    runMethod.putField(selfType, fieldName, A_DUMPER_TYPE);
-    runMethod.loadThis();
-    runMethod.getField(selfType, fieldName, A_DUMPER_TYPE);
+    renderer.methodGen().putField(selfType, fieldName, A_DUMPER_TYPE);
+    renderer.methodGen().loadThis();
+    renderer.methodGen().getField(selfType, fieldName, A_DUMPER_TYPE);
     dumpers.add(fieldName);
   }
 
