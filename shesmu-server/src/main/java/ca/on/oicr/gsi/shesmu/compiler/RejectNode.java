@@ -10,6 +10,8 @@ public interface RejectNode {
 
   void collectPlugins(Set<Path> pluginFileNames);
 
+  void renderOnClose(Renderer closeRenderer);
+
   void render(RootBuilder builder, Renderer renderer);
 
   Stream<LoadableValue> requiredCaptures(RootBuilder builder);

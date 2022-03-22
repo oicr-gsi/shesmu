@@ -144,6 +144,11 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
   }
 
   @Override
+  public void renderOnClose(Renderer closeRenderer) {
+    // Do nothing
+  }
+
+  @Override
   public void collectPluginsExtra(Set<Path> pluginFileNames) {
     labels.forEach(arg -> arg.collectPlugins(pluginFileNames));
     annotations.forEach(arg -> arg.collectPlugins(pluginFileNames));

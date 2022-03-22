@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import static org.objectweb.asm.Type.VOID_TYPE;
+
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
@@ -19,8 +21,9 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
 
   private static final Type A_DUMPER_TYPE = Type.getType(Dumper.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
-  private static final Method DUMPER__WRITE =
+  private static final Method METHOD_DUMPER__WRITE =
       new Method("write", Type.VOID_TYPE, new Type[] {Type.getType(Object[].class)});
+  private static final Method METHOD_DUMPER__STOP = new Method("stop", VOID_TYPE, new Type[] {});
   private final int column;
   private final String dumper;
   private DumperDefinition dumperDefinition;
@@ -95,20 +98,30 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
       BaseOliveBuilder oliveBuilder,
       Function<String, CallableDefinitionRenderer> definitions) {
     final var shouldCapture = captureVariable();
-    final var renderer =
-        oliveBuilder.peek(
-            "Dump " + dumper,
-            line,
-            column,
-            Stream.concat(
-                    requiredCaptures(builder),
-                    oliveBuilder.loadableValues().filter(v -> shouldCapture.test(v.name())))
-                .toArray(LoadableValue[]::new));
+    final var captures =
+        Stream.concat(
+                requiredCaptures(builder),
+                oliveBuilder.loadableValues().filter(v -> shouldCapture.test(v.name())))
+            .toArray(LoadableValue[]::new);
+    final var renderer = oliveBuilder.peek("Dump " + dumper, line, column, captures);
     renderer.methodGen().visitCode();
     render(builder, renderer);
     renderer.methodGen().visitInsn(Opcodes.RETURN);
     renderer.methodGen().visitMaxs(0, 0);
     renderer.methodGen().visitEnd();
+
+    final var closeRenderer = oliveBuilder.onClose("Dump " + dumper, line, column, captures);
+    closeRenderer.methodGen().visitCode();
+    renderOnClose(closeRenderer);
+    closeRenderer.methodGen().visitInsn(Opcodes.RETURN);
+    closeRenderer.methodGen().visitMaxs(0, 0);
+    closeRenderer.methodGen().visitEnd();
+  }
+
+  @Override
+  public final void renderOnClose(Renderer closeRenderer) {
+    closeRenderer.emitNamed(selfName);
+    closeRenderer.methodGen().invokeInterface(A_DUMPER_TYPE, METHOD_DUMPER__STOP);
   }
 
   @Override
@@ -123,7 +136,7 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
       renderer.methodGen().valueOf(columnDefinition(it).second().apply(TypeUtils.TO_ASM));
       renderer.methodGen().arrayStore(A_OBJECT_TYPE);
     }
-    renderer.methodGen().invokeInterface(A_DUMPER_TYPE, DUMPER__WRITE);
+    renderer.methodGen().invokeInterface(A_DUMPER_TYPE, METHOD_DUMPER__WRITE);
   }
 
   protected abstract void renderColumn(int index, Renderer renderer);
@@ -132,9 +145,27 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
   public final Stream<LoadableValue> requiredCaptures(RootBuilder builder) {
     return Stream.of(
         new LoadableValue() {
+          private int local = -1;
+
           @Override
           public void accept(Renderer renderer) {
-            dumperDefinition.create(builder, renderer);
+            /*
+             * Okay, we're going to be a little sneaky and gross here. A
+             * loadable value is normally responsible for getting a particular
+             * value and pushing it on the stack...once. This loadable value
+             * will be used twice: once for creating the lambda where this
+             * dumper is used and once for creating the Stream.onClose lambda.
+             * We only want to create the dumper once, and pass the same
+             * instance to both of those lambdas, so we will create a local
+             * variable, stuff the dumper into a local and retrieve it when
+             * required for generating the subsequent lambda.
+             */
+            if (local == -1) {
+              dumperDefinition.create(builder, renderer);
+              local = renderer.methodGen().newLocal(A_DUMPER_TYPE);
+              renderer.methodGen().storeLocal(local);
+            }
+            renderer.methodGen().loadLocal(local);
           }
 
           @Override

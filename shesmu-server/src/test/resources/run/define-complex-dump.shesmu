@@ -1,0 +1,14 @@
+Version 1;
+Input test;
+
+# We export this, but the unit testing framework doesn't have a way to consume
+# it; however, it does exercise all the bytecode generation pathways involved
+# in exporting.
+Export Define foo({string, integer} s, [string] projects)
+ Dump All To foo
+ Where project In projects || project == s[0] && ActionName == `"ok"`;
+
+Olive
+ foo({"a", 3}, ["the_foo_study"])
+ Dump All To bar
+ Run ok With ok = True;

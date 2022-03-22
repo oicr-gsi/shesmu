@@ -47,6 +47,7 @@ public final class LambdaBuilder {
   private static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
+  private static final Type A_RUNNABLE_TYPE = Type.getType(Runnable.class);
   private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
   private static final Type A_TO_DOUBLE_FUNCTION_TYPE = Type.getType(ToDoubleFunction.class);
   private static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
@@ -59,6 +60,33 @@ public final class LambdaBuilder {
           "metafactory",
           "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
           false);
+  public static final LambdaType RUNNABLE =
+      new LambdaType() {
+        @Override
+        public Type interfaceType() {
+          return A_RUNNABLE_TYPE;
+        }
+
+        @Override
+        public String methodName() {
+          return "run";
+        }
+
+        @Override
+        public Stream<Type> parameterTypes(AccessMode accessMode) {
+          return Stream.empty();
+        }
+
+        @Override
+        public int parameters() {
+          return 0;
+        }
+
+        @Override
+        public Type returnType(AccessMode accessMode) {
+          return VOID_TYPE;
+        }
+      };
 
   private static void assertNonPrimitive(Type type) {
     if (type.getSort() != Type.OBJECT && type.getSort() != Type.ARRAY) {
@@ -1121,6 +1149,15 @@ public final class LambdaBuilder {
             Type.getMethodType(
                 lambda.returnType(AccessMode.BOXED),
                 lambda.parameterTypes(AccessMode.BOXED).toArray(Type[]::new)));
+  }
+
+  /**
+   * Create a new renderer (method generator) for the body of the lambda that does not have stream
+   * access.
+   */
+  public Renderer renderer() {
+    return new RendererNoStream(
+        owner, methodGen(), RootBuilder.proxyCaptured(0, capturedVariables), null);
   }
 
   /**
