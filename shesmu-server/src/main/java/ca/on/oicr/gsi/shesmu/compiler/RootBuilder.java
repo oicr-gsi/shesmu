@@ -72,7 +72,6 @@ public abstract class RootBuilder {
           "buildGauge",
           A_GAUGE_TYPE,
           new Type[] {A_STRING_TYPE, A_STRING_TYPE, A_STRING_ARRAY_TYPE});
-  private static final Method METHOD_DUMPER__STOP = new Method("stop", VOID_TYPE, new Type[] {});
   private static final Method METHOD_GAUGE__CLEAR = new Method("clear", VOID_TYPE, new Type[] {});
   private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
   private static final Method METHOD_OLIVE_SERVICES__FIND_DUMPER =
@@ -158,15 +157,12 @@ public abstract class RootBuilder {
 
   private final GeneratorAdapter ctor;
 
-  private final Set<String> dumpers = new HashSet<>();
-
   private final Set<String> gauges = new HashSet<>();
   final String hash;
   private final InputFormatDefinition inputFormatDefinition;
   private final String path;
   private final GeneratorAdapter runMethod;
   private final GeneratorAdapter runPrepare;
-  private final Label runStartLabel;
   private final Type selfType;
   private final Supplier<Stream<SignatureDefinition>> signatures;
   private final Set<String> usedFormats = new HashSet<>();
@@ -218,7 +214,6 @@ public abstract class RootBuilder {
     runMethod.loadThis();
     runMethod.loadArg(0);
     runMethod.invokeVirtual(selfType, METHOD_ACTION_GENERATOR__RUN_PREPARE);
-    runStartLabel = runMethod.mark();
 
     classInitMethod =
         new GeneratorAdapter(
@@ -362,27 +357,8 @@ public abstract class RootBuilder {
     classInitMethod.visitMaxs(0, 0);
     classInitMethod.visitEnd();
 
-    dumpers.forEach(
-        dumper -> {
-          runMethod.loadThis();
-          runMethod.getField(selfType, dumper, A_DUMPER_TYPE);
-          runMethod.invokeInterface(A_DUMPER_TYPE, METHOD_DUMPER__STOP);
-        });
-    final var endOfRun = runMethod.mark();
-
     runMethod.visitInsn(Opcodes.RETURN);
 
-    if (!dumpers.isEmpty()) {
-      // Generate a finally block to clean up all our dumpers
-      runMethod.catchException(runStartLabel, endOfRun, null);
-      dumpers.forEach(
-          dumper -> {
-            runMethod.loadThis();
-            runMethod.getField(selfType, dumper, A_DUMPER_TYPE);
-            runMethod.invokeInterface(A_DUMPER_TYPE, METHOD_DUMPER__STOP);
-          });
-      runMethod.throwException();
-    }
     runMethod.visitMaxs(0, 0);
     runMethod.visitEnd();
 

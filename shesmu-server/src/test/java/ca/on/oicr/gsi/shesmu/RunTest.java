@@ -89,10 +89,12 @@ public class RunTest {
       if (columns.length != types.length) {
         bad++;
       }
+      // We assume this test is bad unless it cleans up the dumper, as is required by that API.
+      bad++;
       return new Dumper() {
         @Override
         public void stop() {
-          // Do nothing.
+          bad--;
         }
 
         @Override

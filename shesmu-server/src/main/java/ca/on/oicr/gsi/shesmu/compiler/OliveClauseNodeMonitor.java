@@ -67,6 +67,11 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
   }
 
   @Override
+  public void renderOnClose(Renderer closeRenderer) {
+    // Do nothing
+  }
+
+  @Override
   public int column() {
     return column;
   }

@@ -17,6 +17,7 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
@@ -101,33 +102,31 @@ public class OliveClauseNodeReject extends OliveClauseNode {
     final Set<String> freeVariables = new HashSet<>();
     expression.collectFreeVariables(freeVariables, Flavour::needsCapture);
     handlers.forEach(handler -> handler.collectFreeVariables(freeVariables));
-    final var renderer =
-        oliveBuilder.filter(
-            line,
-            column,
-            Stream.of(
-                    Stream.of(
-                        new LoadableValue() {
+    final var captures =
+        Stream.of(
+                Stream.of(
+                    new LoadableValue() {
 
-                          @Override
-                          public void accept(Renderer renderer) {
-                            oliveBuilder.loadOliveServices(renderer.methodGen());
-                          }
+                      @Override
+                      public void accept(Renderer renderer) {
+                        oliveBuilder.loadOliveServices(renderer.methodGen());
+                      }
 
-                          @Override
-                          public String name() {
-                            return "Olive Services";
-                          }
+                      @Override
+                      public String name() {
+                        return "Olive Services";
+                      }
 
-                          @Override
-                          public Type type() {
-                            return A_OLIVE_SERVICES_TYPE;
-                          }
-                        }),
-                    handlers.stream().flatMap(handler -> handler.requiredCaptures(builder)),
-                    oliveBuilder.loadableValues().filter(v -> freeVariables.contains(v.name())))
-                .flatMap(Function.identity())
-                .toArray(LoadableValue[]::new));
+                      @Override
+                      public Type type() {
+                        return A_OLIVE_SERVICES_TYPE;
+                      }
+                    }),
+                handlers.stream().flatMap(handler -> handler.requiredCaptures(builder)),
+                oliveBuilder.loadableValues().filter(v -> freeVariables.contains(v.name())))
+            .flatMap(Function.identity())
+            .toArray(LoadableValue[]::new);
+    final var renderer = oliveBuilder.filter(line, column, captures);
 
     renderer.methodGen().visitCode();
     expression.render(renderer);
@@ -141,6 +140,13 @@ public class OliveClauseNodeReject extends OliveClauseNode {
     renderer.methodGen().returnValue();
     renderer.methodGen().visitMaxs(0, 0);
     renderer.methodGen().visitEnd();
+
+    final var closeRenderer = oliveBuilder.onClose("Reject", line, column, captures);
+    closeRenderer.methodGen().visitCode();
+    handlers.forEach(handler -> handler.renderOnClose(closeRenderer));
+    closeRenderer.methodGen().visitInsn(Opcodes.RETURN);
+    closeRenderer.methodGen().visitMaxs(0, 0);
+    closeRenderer.methodGen().visitEnd();
 
     oliveBuilder.measureFlow(line, column);
   }

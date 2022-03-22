@@ -18,6 +18,7 @@ import ca.on.oicr.gsi.shesmu.runtime.SignatureAccessor;
 import io.prometheus.client.Gauge;
 import java.util.*;
 import java.util.function.*;
+import java.util.stream.BaseStream;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Handle;
@@ -96,6 +97,7 @@ public abstract class BaseOliveBuilder {
   }
 
   public static final String ACTION_NAME = "Action Name";
+  private static final Type A_BASE_STREAM_TYPE = Type.getType(BaseStream.class);
   private static final Type A_BICONSUMER_TYPE = Type.getType(BiConsumer.class);
   private static final Type A_BIFUNCTION_TYPE = Type.getType(BiFunction.class);
   private static final Type A_BIPREDICATE_TYPE = Type.getType(BiPredicate.class);
@@ -111,6 +113,7 @@ public abstract class BaseOliveBuilder {
   protected static final Type A_OLIVE_SERVICES_TYPE = Type.getType(OliveServices.class);
   protected static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
+  private static final Type A_RUNNABLE_TYPE = Type.getType(Runnable.class);
   private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   protected static final Type A_SIGNATURE_ACCESSOR_TYPE = Type.getType(SignatureAccessor.class);
   protected static final Type A_STREAM_TYPE = Type.getType(Stream.class);
@@ -216,6 +219,8 @@ public abstract class BaseOliveBuilder {
       new Method("filter", A_STREAM_TYPE, new Type[] {A_PREDICATE_TYPE});
   private static final Method METHOD_STREAM__MAP =
       new Method("map", A_STREAM_TYPE, new Type[] {A_FUNCTION_TYPE});
+  private static final Method METHOD_STREAM__ON_CLOSE =
+      new Method("onClose", A_BASE_STREAM_TYPE, new Type[] {A_RUNNABLE_TYPE});
   private static final Method METHOD_STREAM__PEEK =
       new Method("peek", A_STREAM_TYPE, new Type[] {A_CONSUMER_TYPE});
   public static final String SIGNER_ACCESSOR_NAME = "Signer Accessor";
@@ -635,6 +640,22 @@ public abstract class BaseOliveBuilder {
           renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_MONITOR);
         });
     return lambda.renderer(type, this::emitSigner);
+  }
+
+  public Renderer onClose(String action, int line, int column, LoadableValue[] capturedVariables) {
+    final var lambda =
+        new LambdaBuilder(
+            owner,
+            String.format("%s %d:%d", action, line, column),
+            LambdaBuilder.RUNNABLE,
+            capturedVariables);
+    steps.add(
+        renderer -> {
+          lambda.push(renderer);
+          renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__ON_CLOSE);
+          renderer.methodGen().checkCast(A_STREAM_TYPE);
+        });
+    return lambda.renderer();
   }
 
   public Renderer peek(String action, int line, int column, LoadableValue[] capturedVariables) {
