@@ -154,6 +154,23 @@ empty optional. If `"missingUsesDefaults"` is true, then, the values in
 The types are JSON-enhanced descriptors. See [types in the language
 description](../language.md#types) for details.
 
+It is also possible to use data from a remote server using a `.remotejsonconfig`:
+
+    {
+       "types": {
+          "foo": "s",
+          "bar": "qi",
+          "quux" "i"
+       },
+       "defaults": { "quux": 9000 },
+       "missingUsesDefaults": false,
+       "ttl": 10,
+       "url": "http://example.com/data"
+    }
+
+In this case, no `"values"` is provided. Instead, it will be fetched from `"url"` and be refreshed
+every `"ttl"` minutes. All other configuration is the same as `.jsonconfig`.
+
 ## Refillable Dictionary
 This is a mechanism for inter-olive communication. It allows one olive to fill
 a dictionary and others to read values out of it. In a file ending in
