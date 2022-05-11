@@ -1,5 +1,7 @@
 # Unreleased
 
+* Doc improvement to clarify how ties are handled in `Pick Max`/`Pick Min`
+
 # [1.18.5] - 2022-03-21T19:41+00:00
 
 * Revert "Track dumper creation so that they can be stopped and finalized." (See: GP-3243)

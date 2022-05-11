@@ -343,8 +343,9 @@ This may be used in `Reject` and `Require` clauses. This does not reshape the da
  - `Pick` `Max` _expr_ `By` _expr1_[`,` _expr2_[`,` ...]]
  - `Pick` `Min` _expr_ `By` _expr1_[`,` _expr2_[`,` ...]]
 
-Performs a grouping by _expr1_, _expr2_, ... and then allows the row with the
-largest or smallest value of _expr_ to pass and discards the rest.
+Performs a grouping by _expr1_, _expr2_, ... and then allows a single row with the
+largest or smallest value of _expr_ to pass and discards the rest. If there is a tie,
+an arbitrary row with the largest or smallest value of _expr_ will be passed on.
 
 This does not reshape the data.
 
