@@ -59,11 +59,14 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
                 }
 
                 @Override
-                public void file(boolean stale, ProvenanceRecord<LimsProvenance> provenanceRecord) {
+                public void file(
+                    boolean stale,
+                    boolean skip,
+                    ProvenanceRecord<LimsProvenance> provenanceRecord) {
                   if (!provenanceRecord.asSubtype(
                           SampleProvenanceDto.class,
                           r -> {
-                            if (r.lims().getSkip()) {
+                            if (skip) {
                               output_skipped.add(
                                   new SampleCerberusFileProvenanceSkippedRecord(stale, r));
                             } else {
@@ -73,7 +76,7 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
                       && !provenanceRecord.asSubtype(
                           LaneProvenanceDto.class,
                           r -> {
-                            if (r.lims().getSkip()) {
+                            if (skip) {
                               output_skipped.add(
                                   new LaneCerberusFileProvenanceSkippedRecord(stale, r));
                             } else {
