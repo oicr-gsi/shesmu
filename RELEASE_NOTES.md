@@ -1,7 +1,10 @@
 # Unreleased
 
+* Fix bug where dumpers are not cleaned up
 * Doc improvement to clarify how ties are handled in `Pick Max`/`Pick Min`
 * Use the aggregate skip status from cerberus to categorize cerberus_fp records
+* Runscanner -> 1.13.2
+* Vidarr -> 0.7.0
 * Cerberus -> 0.2.10
 
 # [1.18.5] - 2022-03-21T19:41+00:00
