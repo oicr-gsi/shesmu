@@ -284,6 +284,7 @@ public final class MigrationAction extends Action {
                       + ")");
 
           final var arrayNode = MAPPER.createArrayNode();
+          List<String> foundFileIds = new ArrayList<>();
           var count = 0;
           while (rs.next()) {
             String hashId = rs.getString("hash_id");
@@ -291,10 +292,19 @@ public final class MigrationAction extends Action {
             node.put("type", "INTERNAL");
             node.putArray("contents").add("vidarr:_/file/" + hashId);
             arrayNode.add(node);
+            foundFileIds.add("vidarr:_/file/" + hashId);
             count++;
           }
           if (count != inputFiles.size()) {
-            this.errors = List.of("Input files have not been converted");
+            this.errors = new ArrayList<>();
+            errors.add(
+                String.format(
+                    "Input files have not been converted for workflow run %i", workflowRunSWID));
+            errors.add(
+                String.format(
+                    "Need entries for file SWIDs %s but only found files %s in vidarr database",
+                    inputFiles.stream().map(String::valueOf).collect(Collectors.joining(", ")),
+                    foundFileIds.stream().collect(Collectors.joining(", "))));
             return ActionState.WAITING;
           }
 
