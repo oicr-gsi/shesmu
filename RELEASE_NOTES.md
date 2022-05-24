@@ -1,5 +1,7 @@
 # Unreleased
 
+* Fix syntax for string formatting in migration action
+
 # [1.19.0] - 2022-05-24T14:08+00:00
 
 * Add more informative text to 'input files not yet converted' WAITING migration actions
@@ -9,6 +11,10 @@
 * Runscanner -> 1.13.2
 * Vidarr -> 0.7.0
 * Cerberus -> 0.2.10
+
+Issues:
+
+* Syntax error in MigrationAction
 
 # [1.18.5] - 2022-03-21T19:41+00:00
 

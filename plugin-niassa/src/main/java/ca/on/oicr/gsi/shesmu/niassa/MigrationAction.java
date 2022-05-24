@@ -299,7 +299,7 @@ public final class MigrationAction extends Action {
             this.errors = new ArrayList<>();
             errors.add(
                 String.format(
-                    "Input files have not been converted for workflow run %i", workflowRunSWID));
+                    "Input files have not been converted for workflow run %d", workflowRunSWID));
             errors.add(
                 String.format(
                     "Need entries for file SWIDs %s but only found files %s in vidarr database",
