@@ -1,5 +1,7 @@
 # Unreleased
 
+# [1.19.0] - 2022-05-24T14:08+00:00
+
 * Add more informative text to 'input files not yet converted' WAITING migration actions
 * Fix bug where dumpers are not cleaned up
 * Doc improvement to clarify how ties are handled in `Pick Max`/`Pick Min`
