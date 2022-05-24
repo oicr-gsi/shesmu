@@ -1,5 +1,7 @@
 # Unreleased
 
+# [1.19.1] - 2022-05-24T20:17+00:00
+
 * Fix syntax for string formatting in migration action
 
 # [1.19.0] - 2022-05-24T14:08+00:00
