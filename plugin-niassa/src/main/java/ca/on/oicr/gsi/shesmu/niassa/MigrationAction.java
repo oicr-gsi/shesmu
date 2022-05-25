@@ -297,12 +297,13 @@ public final class MigrationAction extends Action {
           }
           if (count != inputFiles.size()) {
             this.errors = new ArrayList<>();
-            errors.add(
+            this.errors.add(
                 String.format(
-                    "Input files have not been converted for workflow run %d", workflowRunSWID));
-            errors.add(
+                    "Input files have not been converted for workflow run SWID %d.",
+                    workflowRunSWID));
+            this.errors.add(
                 String.format(
-                    "Need entries for file SWIDs %s but only found files %s in vidarr database",
+                    "Need entries for file SWIDs [%s] but only found files [%s] in vidarr database",
                     inputFiles.stream().map(String::valueOf).collect(Collectors.joining(", ")),
                     foundFileIds.stream().collect(Collectors.joining(", "))));
             return ActionState.WAITING;
