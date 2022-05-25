@@ -1,5 +1,7 @@
 # Unreleased
 
+# [1.19.2] - 2022-05-25T15:33+00:00
+
 * Assign migration action error strings to correct errors list
 
 # [1.19.1] - 2022-05-24T20:17+00:00
