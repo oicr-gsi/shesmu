@@ -1,5 +1,7 @@
 # Unreleased
 
+* Assign migration action error strings to correct errors list
+
 # [1.19.1] - 2022-05-24T20:17+00:00
 
 * Fix syntax for string formatting in migration action
