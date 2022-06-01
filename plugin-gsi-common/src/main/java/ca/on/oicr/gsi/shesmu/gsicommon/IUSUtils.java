@@ -17,6 +17,8 @@ public final class IUSUtils {
   public static final Tuple UNKNOWN_VERSION = new Tuple(0L, 0L, 0L);
   private static final Pattern WORKFLOW_VERSION2 = Pattern.compile("^(\\d+)\\.(\\d+)$");
   private static final Pattern WORKFLOW_VERSION3 = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)$");
+  private static final Pattern WORKFLOW_VERSION4 =
+      Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$");
 
   public static Map<String, Set<String>> attributes(
       SortedMap<String, SortedSet<String>> attributes) {
@@ -62,6 +64,17 @@ public final class IUSUtils {
       final var m2 = WORKFLOW_VERSION2.matcher(input);
       if (m2.matches()) {
         return Optional.of(new Tuple(Long.parseLong(m2.group(1)), Long.parseLong(m2.group(2)), 0L));
+      }
+      // Migrated Niassa workflow versions might have 4 components: three version components
+      // followed by the Niassa workflow accession. For Shesmu purposes, drop the Niassa workflow
+      // accession.
+      final var m4 = WORKFLOW_VERSION4.matcher(input);
+      if (m4.matches()) {
+        return Optional.of(
+            new Tuple(
+                Long.parseLong(m4.group(1)),
+                Long.parseLong(m4.group(2)),
+                Long.parseLong(m4.group(3))));
       }
     }
     return Optional.empty();

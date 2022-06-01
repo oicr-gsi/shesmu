@@ -1,5 +1,7 @@
 # Unreleased
 
+* Display workflow_version even when workflow version contains four parts (3 for the version and one for the Niassa workflow accession)
+
 # [1.19.2] - 2022-05-25T15:33+00:00
 
 * Assign migration action error strings to correct errors list
