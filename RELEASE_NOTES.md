@@ -1,6 +1,10 @@
 # Unreleased
 
-* Display workflow_version even when workflow version contains four parts (3 for the version and one for the Niassa workflow accession)
+# [1.19.3] - 2022-06-22T19:04+00:00
+
+* Display `cerberus_fp` `workflow_version` even when workflow version contains four parts (3 for the version and one for the Niassa workflow accession)
+* Vidarr -> 0.8.0
+* Cerberus -> 0.2.11
 
 # [1.19.2] - 2022-05-25T15:33+00:00
 
