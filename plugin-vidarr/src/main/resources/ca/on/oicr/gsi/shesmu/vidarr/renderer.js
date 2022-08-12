@@ -7,6 +7,17 @@ const vidarrDebugInfo = {
           : text(f.message)
       );
     }
+    function vidarrCromwellLink(path, stashed) {
+      if (path && stashed) {
+        return link(stashed, breakSlashes(path), "View Log");
+      } else if (path) {
+        return breakSlashes(path);
+      } else if (stashed) {
+        return link(stashed, "View Log");
+      } else {
+        return "N/A";
+      }
+    }
 
     return [
       table(
@@ -36,11 +47,11 @@ const vidarrDebugInfo = {
           ["Execution Status", (x) => x.executionStatus || "Unknown"],
           [
             "Standard Error",
-            (x) => (x.stderr ? breakSlashes(x.stderr) : "N/A"),
+            (x) => vidarrCromwellLink(x.stderr, x.stderr_stashed),
           ],
           [
             "Standard Output",
-            (x) => (x.stdout ? breakSlashes(x.stdout) : "N/A"),
+            (x) => vidarrCromwellLink(x.stdout, x.stdout_stashed),
           ],
           ["Failures", (x) => cromwellFailure(x.failures)]
         )
