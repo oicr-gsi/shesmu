@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin.cache;
 
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import io.prometheus.client.Counter;
+import io.prometheus.client.Gauge;
 import java.time.Instant;
 
 /**
@@ -10,6 +11,18 @@ import java.time.Instant;
  * @param <V> the type that can be retrieved from a cache
  */
 public interface Record<V> {
+  Gauge refreshStartTime =
+      Gauge.build(
+              "shesmu_cache_refresh_start_timestamp",
+              "The UNIX time when a cache refresh was last started.")
+          .labelNames("name")
+          .register();
+  Gauge refreshEndTime =
+      Gauge.build(
+              "shesmu_cache_refresh_end_timestamp",
+              "The UNIX time when a cache refresh was finished.")
+          .labelNames("name")
+          .register();
   LatencyHistogram refreshLatency =
       new LatencyHistogram(
           "shesmu_cache_refresh_latency",
