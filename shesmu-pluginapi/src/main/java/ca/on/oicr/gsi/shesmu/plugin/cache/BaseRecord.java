@@ -62,11 +62,15 @@ public abstract class BaseRecord<V, S> implements Record<V> {
     }
     if (doRefresh) {
       try (var timer = refreshLatency.start(fetcher.owner().name())) {
+        refreshStartTime.labels(fetcher.owner().name()).setToCurrentTime();
         S result = update(state, fetchTime);
         if (result != null) {
           synchronized (this) {
             state = result;
             fetchTime = Instant.now();
+            refreshEndTime
+                .labels(fetcher.owner().name())
+                .setToCurrentTime(); // TODO why can't i use fetchTime
             initialState = false;
           }
           shouldThrow = false;
