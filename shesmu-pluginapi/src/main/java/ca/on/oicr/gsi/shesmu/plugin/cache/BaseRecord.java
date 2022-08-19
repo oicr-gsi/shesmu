@@ -70,7 +70,7 @@ public abstract class BaseRecord<V, S> implements Record<V> {
             fetchTime = Instant.now();
             refreshEndTime
                 .labels(fetcher.owner().name())
-                .setToCurrentTime(); // TODO why can't i use fetchTime
+                .setToCurrentTime(); // Can't use the Instant we just created unfortunately
             initialState = false;
           }
           shouldThrow = false;
