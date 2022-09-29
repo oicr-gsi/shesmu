@@ -1,6 +1,7 @@
 # Unreleased
 
 * Adds metrics for cache refresh start and end times
+* Makes source vidarr server explicit for `cerberus_fp` `input_file` IDs
 
 Niassa plugin:
 

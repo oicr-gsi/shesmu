@@ -76,7 +76,10 @@ abstract class BaseCerberusFileProvenanceRecord<T extends LimsProvenance>
 
   @Override
   public final Set<String> input_files() {
-    return new TreeSet<>(provenanceRecord.workflow().getInputFiles());
+    return new TreeSet<>(
+        provenanceRecord.workflow().getInputFiles().stream()
+            .map(i -> i.replace("_", provenanceRecord.workflow().getInstanceName()))
+            .collect(Collectors.toList()));
   }
 
   @Override
