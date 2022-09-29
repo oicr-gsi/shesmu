@@ -1,6 +1,7 @@
 # Unreleased
 
 * Adds metrics for cache refresh start and end times
+* Makes source vidarr server explicit for `cerberus_fp` `input_file` IDs
 
 # [1.19.3] - 2022-06-22T19:04+00:00
 
