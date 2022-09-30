@@ -77,7 +77,11 @@ export function renderResponse(
       return [
         {
           name: "Implementation Error",
-          contents: [e.toString(), br(), preformatted(response?.functionBody)],
+          contents: [
+            e instanceof Error ? e.toString() : "",
+            br(),
+            preformatted(response?.functionBody),
+          ],
         },
       ];
     }

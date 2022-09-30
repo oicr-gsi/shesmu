@@ -400,7 +400,7 @@ function buildForm<T>(
       br(),
     ];
   } catch (e) {
-    return e.toString();
+    return e instanceof Error ? e.toString() : "Unknown error";
   }
 }
 function makeFetchEntry<T, K extends keyof T>(
@@ -522,7 +522,7 @@ function makeFormEntry<T, K extends keyof T>(
 ) {
   let field: InputField<T[K]>;
   if (definition === undefined) {
-    throw new Error(`Illegal configuration. Key ${key} is not found.`);
+    throw new Error(`Illegal configuration. Key ${String(key)} is not found.`);
   }
   if (definition.type == "text") {
     field = (inputText() as unknown) as InputField<T[K]>;
@@ -645,7 +645,11 @@ function makeFormEntry<T, K extends keyof T>(
             try {
               value = JSON.parse(data);
             } catch (e) {
-              dialog((c) => ["Failed to parse JSON:", br(), e.toString()]);
+              dialog((c) => [
+                "Failed to parse JSON:",
+                br(),
+                e instanceof Error ? e.toString() : "Unknown error",
+              ]);
             }
           })
       ),
@@ -1009,7 +1013,9 @@ export function renderWizard(
             try {
               return step();
             } catch (e) {
-              dialog((_) => e.toString());
+              dialog((_) =>
+                e instanceof Error ? e.toString() : "Unknown error"
+              );
               return null;
             }
           }
