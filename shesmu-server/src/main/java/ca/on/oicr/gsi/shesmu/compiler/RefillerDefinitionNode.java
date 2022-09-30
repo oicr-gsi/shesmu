@@ -133,7 +133,7 @@ public final class RefillerDefinitionNode implements RefillerDefinition {
     if (ok) {
       outputType =
           arguments.entrySet().stream()
-              .map(e -> e.getKey() + ": " + e.getValue().descriptor())
+              .map(e -> e.getKey() + ": \"" + e.getValue().descriptor() + "\"")
               .collect(Collectors.joining(", ", "{", "}"));
     }
     return ok;
