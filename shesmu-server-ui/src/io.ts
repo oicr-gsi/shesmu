@@ -96,7 +96,12 @@ export interface ShesmuRequestType {
 export interface ShesmuResponseType {
   "action-ids": string[];
   allalerts: PrometheusAlert[];
-  command: { collateralDamage: number; ignored: number; executed: number; purged: number };
+  command: {
+    collateralDamage: number;
+    ignored: number;
+    executed: number;
+    purged: number;
+  };
   "compile-meditation": MeditationCompilationResponse;
   constant: ValueResponse;
   count: number;
@@ -589,52 +594,51 @@ export function serverStateModel<
     value: ShesmuResponseType[R] | null
   ) => ShesmuRequestType[R] | null
 ): StatefulModel<I | null> {
-  const split: StatefulModel<
-    [I, ShesmuResponseType[R] | null] | null
-  > = splitModel(model, (output) =>
-    mapModel(
-      requestTupleModel(
-        input,
-        promiseTupleModel(
-          mapModel(
-            output,
-            (info: [I | null, ShesmuResponseType[R] | null] | null) => {
-              const input = info?.[0];
-              const response = info?.[1];
-              if (
-                input === null ||
-                input === undefined ||
-                response === null ||
-                response === undefined
-              ) {
-                return null;
-              } else {
-                return {
-                  input: input,
-                  response: response,
-                  setter: (value) => split.statusChanged([input, value]),
-                };
+  const split: StatefulModel<[I, ShesmuResponseType[R] | null] | null> =
+    splitModel(model, (output) =>
+      mapModel(
+        requestTupleModel(
+          input,
+          promiseTupleModel(
+            mapModel(
+              output,
+              (info: [I | null, ShesmuResponseType[R] | null] | null) => {
+                const input = info?.[0];
+                const response = info?.[1];
+                if (
+                  input === null ||
+                  input === undefined ||
+                  response === null ||
+                  response === undefined
+                ) {
+                  return null;
+                } else {
+                  return {
+                    input: input,
+                    response: response,
+                    setter: (value) => split.statusChanged([input, value]),
+                  };
+                }
               }
-            }
+            )
           )
-        )
-      ),
-      (
-        info: [I, ShesmuResponseType[R] | null] | null
-      ): [I | null, ShesmuRequestType[R] | null] => {
-        if (info) {
-          const serverRequest = makeRequest(info[0], info[1]);
-          if (serverRequest === null) {
-            return [info[0], null];
+        ),
+        (
+          info: [I, ShesmuResponseType[R] | null] | null
+        ): [I | null, ShesmuRequestType[R] | null] => {
+          if (info) {
+            const serverRequest = makeRequest(info[0], info[1]);
+            if (serverRequest === null) {
+              return [info[0], null];
+            } else {
+              return [info[0], serverRequest];
+            }
           } else {
-            return [info[0], serverRequest];
+            return [null, null];
           }
-        } else {
-          return [null, null];
         }
-      }
-    )
-  );
+      )
+    );
   return mapModel(split, (input: I | null) =>
     input !== null ? ([input, null] as [I, ShesmuResponseType[R] | null]) : null
   );

@@ -145,9 +145,10 @@ interface ScriptFile extends SourceLocation {
   olives: Olive[];
 }
 
-export function infoForProduces(
-  produces: OliveType
-): { icon: IconName; description: string } {
+export function infoForProduces(produces: OliveType): {
+  icon: IconName;
+  description: string;
+} {
   switch (produces) {
     case "ACTIONS":
       return { icon: "camera-reels", description: "Produces actions" };
@@ -307,16 +308,22 @@ export function initialiseOliveDash(
     "toolbar",
     "main"
   );
-  const { ui: statsUi, toolbar: statsToolbar, model: statsModel } = actionStats(
+  const {
+    ui: statsUi,
+    toolbar: statsToolbar,
+    model: statsModel,
+  } = actionStats(
     (...limits) => search.addPropertySearch(...limits),
     (typeName, start, end, ...limits) =>
       search.addRangeSearch(typeName, start, end, ...limits),
     filenameFormatter,
     standardExports.concat(exportSearches)
   );
-  const { actions, bulkCommands, model: actionsModel } = actionDisplay(
-    exportSearches
-  );
+  const {
+    actions,
+    bulkCommands,
+    model: actionsModel,
+  } = actionDisplay(exportSearches);
   const search = createSearch(
     actionFilterState,
     combineModels(statsModel, actionsModel),

@@ -277,9 +277,10 @@ export function formatTimeSpan(duration: number): string {
 /**
  * Compute the duration between an aboslute timestamp and the current time.
  */
-export function computeDuration(
-  timeInMs: number
-): { ago: string; absolute: string } {
+export function computeDuration(timeInMs: number): {
+  ago: string;
+  absolute: string;
+} {
   const span = new Date().getTime() - timeInMs;
   let ago = formatTimeSpan(span);
   if (ago) {
@@ -344,7 +345,7 @@ export function individualPropertyModel<T extends object>(
 ): PropertyModels<T> {
   const current: T = { ...initial };
   let busyKeys = new Set<string>();
-  return (Object.fromEntries(
+  return Object.fromEntries(
     Object.keys(initial).map(
       (key) =>
         [
@@ -369,7 +370,7 @@ export function individualPropertyModel<T extends object>(
           },
         ] as [keyof T, StatefulModel<T[keyof T]>]
     )
-  ) as unknown) as PropertyModels<T>;
+  ) as unknown as PropertyModels<T>;
 }
 
 /**

@@ -2090,9 +2090,10 @@ const months: string[] = [
 /**
  * Create a date picker that can be disabled
  */
-export function dateEditor(
-  initial: number | null
-): { ui: UIElement; getter: () => number | null } {
+export function dateEditor(initial: number | null): {
+  ui: UIElement;
+  getter: () => number | null;
+} {
   const enabled = inputCheckbox("Unbounded", !initial);
   const selected = typeof initial == "number" ? new Date(initial) : new Date();
   const year = inputNumber(selected.getFullYear(), 1970, null);
@@ -2554,9 +2555,10 @@ export function header(title: string): UIElement {
  * @param ui the UI elements to enclose
  * @returns a new UI element and a model that, when set to true, will show the inner UI elements
  */
-export function hidden(
-  ...ui: UIElement[]
-): { ui: UIElement; model: StatefulModel<boolean> } {
+export function hidden(...ui: UIElement[]): {
+  ui: UIElement;
+  model: StatefulModel<boolean>;
+} {
   const container = createUiFromTag("span", ...ui);
   container.element.style.display = "none";
   return {
@@ -3252,9 +3254,7 @@ export function paginatedList<T>(
 /**
  * Create a mutable section of UI.
  */
-export function pane(
-  mode: "blank" | "small" | "medium" | "large"
-): {
+export function pane(mode: "blank" | "small" | "medium" | "large"): {
   ui: ComplexElement<HTMLElement>;
   model: StatefulModel<UIElement>;
 } {
@@ -3890,9 +3890,10 @@ export function singleState<T>(
  * Create a little read circle with a number in it
  * @param title a callback to generate a tooltip for the current count
  */
-export function spotCounter(
-  title: (input: number) => string
-): { ui: UIElement; model: StatefulModel<number> } {
+export function spotCounter(title: (input: number) => string): {
+  ui: UIElement;
+  model: StatefulModel<number>;
+} {
   const element = createUiFromTag("span");
   element.element.className = "spot";
   return {
@@ -3942,9 +3943,10 @@ export function statefulList<T>(model: StatefulModel<T[]>): UpdateableList<T> {
 /**
  * Create a stateful list connected to a state synchronizer.
  */
-export function statefulListBind<T>(
-  synchronizer: StateSynchronizer<T[]>
-): { list: UpdateableList<T>; register: (model: StatefulModel<T[]>) => void } {
+export function statefulListBind<T>(synchronizer: StateSynchronizer<T[]>): {
+  list: UpdateableList<T>;
+  register: (model: StatefulModel<T[]>) => void;
+} {
   let model: StatefulModel<T[]> | null = null;
   let list: T[] = [...synchronizer.get()];
   synchronizer.listen((x, internal) => {
@@ -4009,7 +4011,7 @@ export function synchronizerFields<
       listener(x, internal);
     }
   });
-  return (Object.fromEntries(
+  return Object.fromEntries(
     Object.keys(parent.get()).map((key) => {
       let currentListener: StateListener<T[K]> = null;
       listeners.push((input: T, internal: boolean) => {
@@ -4040,7 +4042,7 @@ export function synchronizerFields<
         } as StateSynchronizer<T[K]>,
       ];
     })
-  ) as unknown) as SynchronizedFields<T>;
+  ) as unknown as SynchronizedFields<T>;
 }
 
 /**

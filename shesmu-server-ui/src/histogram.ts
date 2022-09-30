@@ -95,9 +95,9 @@ export function histogram(
       rows.forEach((row, rowIndex) => {
         if (row.counts.length != labels.length - 1) {
           throw new Error(
-            `Row ${rowIndex} has ${
-              row.counts.length
-            } but expected ${labels.length - 1}`
+            `Row ${rowIndex} has ${row.counts.length} but expected ${
+              labels.length - 1
+            }`
           );
         }
         const logMax = Math.log(Math.max(...row.counts));

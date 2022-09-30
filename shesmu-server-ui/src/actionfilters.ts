@@ -861,22 +861,20 @@ function editTimeHorizon(
 export function filtersForPropertySearch(
   ...limits: PropertySearch[]
 ): ActionFilter[] {
-  return limits.map(
-    (limit): ActionFilter => {
-      switch (limit.type) {
-        case "status":
-          return { type: "status", states: [limit.value] };
-        case "tag":
-          return { type: "tag", tags: [limit.value] };
-        case "sourcefile":
-          return { type: "sourcefile", files: [limit.value] };
-        case "type":
-          return { type: "type", types: [limit.value] };
-        default:
-          throw new Error("Unhandled limit");
-      }
+  return limits.map((limit): ActionFilter => {
+    switch (limit.type) {
+      case "status":
+        return { type: "status", states: [limit.value] };
+      case "tag":
+        return { type: "tag", tags: [limit.value] };
+      case "sourcefile":
+        return { type: "sourcefile", files: [limit.value] };
+      case "type":
+        return { type: "type", types: [limit.value] };
+      default:
+        throw new Error("Unhandled limit");
     }
-  );
+  });
 }
 
 /**

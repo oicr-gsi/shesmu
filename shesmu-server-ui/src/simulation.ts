@@ -615,10 +615,8 @@ export function initialiseSimulationDashboard(
   typeFormats: { [format: string]: string }
 ) {
   let fileName = scriptName || "unknown.shesmu";
-  let fakeActionDefinitions: MutableStore<
-    string,
-    FakeActionParameters
-  > = new Map();
+  let fakeActionDefinitions: MutableStore<string, FakeActionParameters> =
+    new Map();
   let fakeConstantDefinitions: MutableStore<string, FakeConstant> = new Map();
   let fakeRefillerDefinitions: MutableStore<
     string,
@@ -702,29 +700,27 @@ export function initialiseSimulationDashboard(
         ]
       )
   );
-  const {
-    ui: fakeConstantsUi,
-    model: fakeConstantsModel,
-  } = singleState((items: Iterable<[string, FakeConstant]>) =>
-    table(
-      Array.from(items),
-      ["Name", ([name, _declaration]) => name],
-      [
-        "Value",
-        ([_name, declaration]) =>
-          preformatted(JSON.stringify(declaration.value, null, 2)),
-      ],
-      [
-        "",
-        ([name, _declaration]) => [
-          buttonAccessory(
-            [{ type: "icon", icon: "trash" }, "Delete"],
-            "Delete constant definition.",
-            () => fakeConstantDefinitions.delete(name)
-          ),
+  const { ui: fakeConstantsUi, model: fakeConstantsModel } = singleState(
+    (items: Iterable<[string, FakeConstant]>) =>
+      table(
+        Array.from(items),
+        ["Name", ([name, _declaration]) => name],
+        [
+          "Value",
+          ([_name, declaration]) =>
+            preformatted(JSON.stringify(declaration.value, null, 2)),
         ],
-      ]
-    )
+        [
+          "",
+          ([name, _declaration]) => [
+            buttonAccessory(
+              [{ type: "icon", icon: "trash" }, "Delete"],
+              "Delete constant definition.",
+              () => fakeConstantDefinitions.delete(name)
+            ),
+          ],
+        ]
+      )
   );
   const { ui: fakeRefillersUi, model: fakeRefillersModel } = singleState(
     (items: Iterable<[string, FakeRefillerParameters]>) =>

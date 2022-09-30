@@ -358,10 +358,10 @@ export function dictCompare<K, V>(
 ): number {
   let leftEntries = Array.isArray(left)
     ? left
-    : ((Object.entries(left) as unknown) as [K, V][]);
+    : (Object.entries(left) as unknown as [K, V][]);
   let rightEntries = Array.isArray(right)
     ? right
-    : ((Object.entries(right) as unknown) as [K, V][]);
+    : (Object.entries(right) as unknown as [K, V][]);
   if (leftEntries.length == rightEntries.length) {
     for (let i = 0; i < leftEntries.length; i++) {
       const result = compare(
@@ -392,7 +392,7 @@ export function dictContains<K, V>(
       haystack.length - 1
     );
   } else {
-    return haystack.hasOwnProperty((needle as unknown) as string);
+    return haystack.hasOwnProperty(needle as unknown as string);
   }
 }
 export function dictEqual<K, V>(
@@ -402,10 +402,10 @@ export function dictEqual<K, V>(
 ): boolean {
   let leftEntries = Array.isArray(left)
     ? left
-    : ((Object.entries(left) as unknown) as [K, V][]);
+    : (Object.entries(left) as unknown as [K, V][]);
   let rightEntries = Array.isArray(right)
     ? right
-    : ((Object.entries(right) as unknown) as [K, V][]);
+    : (Object.entries(right) as unknown as [K, V][]);
   if (leftEntries.length == rightEntries.length) {
     for (let i = 0; i < leftEntries.length; i++) {
       if (
@@ -438,7 +438,7 @@ export function dictNew<K, V>(
 export function dictIterator<K, V>(items: [K, V][] | { K: V }): [K, V][] {
   return Array.isArray(items)
     ? items
-    : ((Object.entries(items) as unknown) as [K, V][]);
+    : (Object.entries(items) as unknown as [K, V][]);
 }
 export function setCompare<T>(
   left: T[],
