@@ -188,7 +188,7 @@ type FetchOperationDictionary<K, V> = {
   operations: { key: K; value: FetchOperation<V> }[];
   compare: (a: K, b: K) => number;
 };
-type InformationNested = Information[] | InformationNested[];
+export type InformationNested = Information | InformationNested[];
 
 type StatusInidcator = "GOOD" | "FAILED" | "WAITING" | "UNKNOWN";
 
@@ -250,14 +250,24 @@ export function register(name: string, wizard: () => WizardNext) {
     start: (status, filenameFormatter, exportSearches) => {
       const { information, then } = wizard();
       status.statusChanged("UNKNOWN");
-      return [
-        information
-          .flat(Number.MAX_VALUE)
-          .map((i) => renderInformation(i, filenameFormatter, exportSearches)),
+      let result: UIElement[] = [];
+      function add(i: InformationNested) {
+        if (Array.isArray(i)) {
+          for (const element of i) {
+            add(element);
+          }
+        } else {
+          result.push(renderInformation(i, filenameFormatter, exportSearches));
+        }
+      }
+      add(information);
+
+      result.push(
         then == null
           ? "Well, that was fast."
-          : renderWizard(then, status, filenameFormatter, exportSearches),
-      ];
+          : renderWizard(then, status, filenameFormatter, exportSearches)
+      );
+      return result;
     },
   });
 }
@@ -992,13 +1002,20 @@ export function renderWizard(
         exportSearches
       );
     }
+    const result: UIElement[] = [];
+    function add(i: InformationNested) {
+      if (Array.isArray(i)) {
+        for (const element of i) {
+          add(element);
+        }
+      } else {
+        result.push(renderInformation(i, filenameFormatter, exportSearches));
+      }
+    }
+    add(next.information);
+    result.push(final);
 
-    return [
-      next.information
-        .flat(Number.MAX_VALUE)
-        .map((i) => renderInformation(i, filenameFormatter, exportSearches)),
-      final,
-    ];
+    return result;
   });
   let inner: UIElement = "Unknown Step";
   switch (wizard.type) {
@@ -1051,20 +1068,27 @@ export function renderWizard(
           break;
         case 1:
           const { information, then } = wizard.processor(wizard.items[0].extra);
-          inner = [
-            information
-              .flat(Number.MAX_VALUE)
-              .map((i) =>
-                renderInformation(i, filenameFormatter, exportSearches)
-              ),
+          const result: UIElement[] = [];
+          function add(i: InformationNested) {
+            if (Array.isArray(i)) {
+              for (const element of i) {
+                add(element);
+              }
+            } else {
+              renderInformation(i, filenameFormatter, exportSearches);
+            }
+          }
+          add(information);
+          result.push(
             then == null
               ? [
                   br(),
                   { type: "icon", icon: "flower2" },
                   endings[Math.floor(Math.random() * endings.length)],
                 ]
-              : renderWizard(then, status, filenameFormatter, exportSearches),
-          ];
+              : renderWizard(then, status, filenameFormatter, exportSearches)
+          );
+          inner = result;
           break;
         default:
           const combinedStatuses = reducingModel(
@@ -1092,30 +1116,37 @@ export function renderWizard(
               ...wizard.items.map(({ title, extra }, index) => {
                 const { information, then } = wizard.processor(extra);
                 const childStatus = singleState(iconForStatus);
+                const contents: UIElement[] = [];
+                function add(i: InformationNested) {
+                  if (Array.isArray(i)) {
+                    for (const element of i) {
+                      add(i);
+                    }
+                  } else {
+                    renderInformation(i, filenameFormatter, exportSearches);
+                  }
+                }
+                add(information);
+                contents.push(
+                  then == null
+                    ? [
+                        br(),
+                        { type: "icon", icon: "flower2" } as UIElement,
+                        "This branch bears no more fruit.",
+                      ]
+                    : renderWizard(
+                        then,
+                        combineModels(
+                          childStatus.model,
+                          combinedStatuses[index]
+                        ),
+                        filenameFormatter,
+                        exportSearches
+                      )
+                );
                 return {
                   name: [title, " ", childStatus.ui],
-                  contents: [
-                    information
-                      .flat(Number.MAX_VALUE)
-                      .map((i) =>
-                        renderInformation(i, filenameFormatter, exportSearches)
-                      ),
-                    then == null
-                      ? [
-                          br(),
-                          { type: "icon", icon: "flower2" } as UIElement,
-                          "This branch bears no more fruit.",
-                        ]
-                      : renderWizard(
-                          then,
-                          combineModels(
-                            childStatus.model,
-                            combinedStatuses[index]
-                          ),
-                          filenameFormatter,
-                          exportSearches
-                        ),
-                  ],
+                  contents,
                 };
               })
             ),

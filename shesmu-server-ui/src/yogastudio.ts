@@ -11,6 +11,7 @@ import {
   singleState,
   table,
   tabsModel,
+  UIElement,
 } from "./html.js";
 import {
   FilenameFormatter,
@@ -23,6 +24,7 @@ import {
   iconForStatus,
   renderInformation,
   renderWizard,
+  InformationNested,
 } from "./guided_meditations.js";
 import * as runtime from "./runtime.js";
 import {
@@ -49,24 +51,29 @@ export function renderResponse(
     try {
       const { information, then } = wizard();
       const status = singleState(iconForStatus);
+      let contents: UIElement[] = [];
+      function add(i: InformationNested) {
+        if (Array.isArray(i)) {
+          for (const element of i) {
+            add(element);
+          }
+        } else {
+          contents.push(
+            renderInformation(i, filenameFormatter, exportSearches)
+          );
+        }
+      }
+      add(information);
+
+      contents.push(
+        then == null
+          ? "Well, that was fast."
+          : renderWizard(then, status.model, filenameFormatter, exportSearches)
+      );
       return [
         {
           name: ["Meditation ", status.ui],
-          contents: [
-            information
-              .flat(Number.MAX_VALUE)
-              .map((i) =>
-                renderInformation(i, filenameFormatter, exportSearches)
-              ),
-            then == null
-              ? "Well, that was fast."
-              : renderWizard(
-                  then,
-                  status.model,
-                  filenameFormatter,
-                  exportSearches
-                ),
-          ],
+          contents,
         },
         {
           name: "JavaScript Code",

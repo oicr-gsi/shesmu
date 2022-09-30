@@ -1624,7 +1624,7 @@ function addElements(
   let find: FindHandler = null;
   function add(result: UIElement, last: boolean) {
     if (Array.isArray(result)) {
-      elements.forEach((result, index, arr) =>
+      result.forEach((result, index, arr) =>
         add(result, last && index == arr.length - 1)
       );
     } else if (result === null) {
