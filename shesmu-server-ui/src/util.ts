@@ -338,7 +338,7 @@ export function filterModel<T>(
  * @param model the model to break apart
  * @param initial the initial state for the model
  */
-export function individualPropertyModel<T>(
+export function individualPropertyModel<T extends object>(
   model: StatefulModel<T>,
   initial: T
 ): PropertyModels<T> {

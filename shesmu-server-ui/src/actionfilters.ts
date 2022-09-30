@@ -789,7 +789,9 @@ function editRegex(original: BasicRegex, callback: TextHandler) {
         try {
           new RegExp(pattern.value);
         } catch (e) {
-          error.model.statusChanged(e.message);
+          error.model.statusChanged(
+            e instanceof Error ? e.toString() : "Unknown error"
+          );
           return;
         }
         close();
