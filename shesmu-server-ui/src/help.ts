@@ -110,14 +110,14 @@ const tips: (HelpTip | null)[][] = [
     },
   ],
   [
-   {
+    {
       summary: "Create guided meditations",
       description:
         "Guided meditations are interactive troubleshooting guides built by your institution to help solve data problems. For details on creating one, see the manual.",
       hotspot: null,
       area: "meditation",
-    } 
-  ]
+    },
+  ],
 ];
 
 /**

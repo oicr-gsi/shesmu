@@ -484,27 +484,25 @@ export function actionStats(
   exportSearches: ExportSearchCommand[]
 ): { ui: UIElement; toolbar: UIElement; model: StatefulModel<ActionFilter[]> } {
   const filters = temporaryState<ActionFilter[]>([]);
-  const { model, ui } = singleState(
-    (stats: Stat[] | null): UIElement => {
-      if (stats?.length) {
-        const results = stats.map((stat) =>
-          renderStat(
-            stat,
-            addPropertySeach,
-            addRangeSearch,
-            filenameFormatter,
-            exportSearches,
-            filters.get()
-          )
-        );
-        return [
-          text("Click any cell or table heading to filter results."),
-          results,
-        ];
-      }
-      return "No statistics are available.";
+  const { model, ui } = singleState((stats: Stat[] | null): UIElement => {
+    if (stats?.length) {
+      const results = stats.map((stat) =>
+        renderStat(
+          stat,
+          addPropertySeach,
+          addRangeSearch,
+          filenameFormatter,
+          exportSearches,
+          filters.get()
+        )
+      );
+      return [
+        text("Click any cell or table heading to filter results."),
+        results,
+      ];
     }
-  );
+    return "No statistics are available.";
+  });
   const waitForStats = locallyStored<boolean>(
     "shesmu_wait_for_slow_stats",
     false

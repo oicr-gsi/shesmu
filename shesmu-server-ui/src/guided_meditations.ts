@@ -427,11 +427,11 @@ function makeFetchPromise<T>(parameter: FetchOperation<T>): Promise<T> {
   switch (parameter.type) {
     case "action-ids":
       return fetchAsPromise("action-ids", [parameter.filter]).then(
-        (ids) => (ids.sort() as unknown) as T
+        (ids) => ids.sort() as unknown as T
       );
     case "action-tags":
       return fetchAsPromise("tags", [parameter.filter]).then(
-        (ids) => (ids.sort() as unknown) as T
+        (ids) => ids.sort() as unknown as T
       );
     case "constant":
       return fetchAsPromise("constant", parameter.name).then((constant) => {
@@ -442,7 +442,7 @@ function makeFetchPromise<T>(parameter: FetchOperation<T>): Promise<T> {
       });
     case "count":
       return fetchAsPromise("count", [parameter.filter]).then(
-        (count) => (count as unknown) as T
+        (count) => count as unknown as T
       );
     case "function":
       return fetchAsPromise("function", {
@@ -466,17 +466,17 @@ function makeFetchPromise<T>(parameter: FetchOperation<T>): Promise<T> {
       }).then((result) => {
         const items = result.refillers?.["export_to_meditation"];
         if (items) {
-          return (setNew(items, parameter.compare) as unknown) as T;
+          return setNew(items, parameter.compare) as unknown as T;
         } else {
           throw new Error(result.errors.join("\n") || "Unknown error.");
         }
       });
     case "list":
-      return (makeFetchPromiseList(parameter) as unknown) as Promise<T>;
+      return makeFetchPromiseList(parameter) as unknown as Promise<T>;
     case "flatten":
-      return (makeFetchPromiseFlatten(parameter) as unknown) as Promise<T>;
+      return makeFetchPromiseFlatten(parameter) as unknown as Promise<T>;
     case "dictionary":
-      return makeFetchPromiseDict(parameter).then((r) => (r as unknown) as T);
+      return makeFetchPromiseDict(parameter).then((r) => r as unknown as T);
   }
 }
 
@@ -535,9 +535,9 @@ function makeFormEntry<T, K extends keyof T>(
     throw new Error(`Illegal configuration. Key ${String(key)} is not found.`);
   }
   if (definition.type == "text") {
-    field = (inputText() as unknown) as InputField<T[K]>;
+    field = inputText() as unknown as InputField<T[K]>;
   } else if (definition.type == "number") {
-    field = (inputNumber(0, 0, null) as unknown) as InputField<T[K]>;
+    field = inputNumber(0, 0, null) as unknown as InputField<T[K]>;
   } else if (definition.type == "offset") {
     const units = temporaryState([3600_000, "hours"] as [number, string]);
     const offset = inputNumber(0, 0, null);
@@ -557,12 +557,12 @@ function makeFormEntry<T, K extends keyof T>(
         ),
       ],
       get value(): T[K] {
-        return ((offset.value * units.get()[0]) as unknown) as T[K];
+        return (offset.value * units.get()[0]) as unknown as T[K];
       },
       enabled: true,
     };
   } else if (definition.type == "boolean") {
-    field = (inputCheckbox("", false) as unknown) as InputField<T[K]>;
+    field = inputCheckbox("", false) as unknown as InputField<T[K]>;
   } else if (definition.type == "select") {
     const value = temporaryState<[DisplayElement, T[K]]>(definition.items[0]);
     field = {
@@ -638,7 +638,7 @@ function makeFormEntry<T, K extends keyof T>(
         selectedDisplay.ui,
       ],
       get value(): T[K] {
-        return (Array.from(selected.values()) as unknown) as T[K];
+        return Array.from(selected.values()) as unknown as T[K];
       },
     };
   } else if (definition.type == "upload-json") {
@@ -664,7 +664,7 @@ function makeFormEntry<T, K extends keyof T>(
           })
       ),
       get value(): T[K] {
-        return (value as unknown) as T[K];
+        return value as unknown as T[K];
       },
     };
   } else if (definition.type == "upload-table") {
@@ -804,7 +804,7 @@ function makeFormEntry<T, K extends keyof T>(
         tsvDisplay.ui,
       ],
       get value(): T[K] {
-        return (value as unknown) as T[K];
+        return value as unknown as T[K];
       },
     };
   } else {
@@ -834,9 +834,11 @@ export function renderInformation(
         filenameFormatter,
         standardExports.concat(exportSearches)
       );
-      const { actions, bulkCommands, model: actionsModel } = actionDisplay(
-        exportSearches
-      );
+      const {
+        actions,
+        bulkCommands,
+        model: actionsModel,
+      } = actionDisplay(exportSearches);
       const search = createSearch(
         temporaryState({}),
         combineModels(statsModel, actionsModel),

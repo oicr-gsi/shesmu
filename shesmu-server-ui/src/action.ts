@@ -329,9 +329,7 @@ export function statusDescription(status: Status): string {
 /**
  * Create a UI element that can fetch and display actions from the server given a set of filters
  */
-export function actionDisplay(
-  exportSearches: ExportSearchCommand[]
-): {
+export function actionDisplay(exportSearches: ExportSearchCommand[]): {
   actions: UIElement;
   bulkCommands: UIElement;
   model: StatefulModel<ActionFilter[]>;
@@ -582,13 +580,15 @@ function createCallbackForActionCommand(
             img("ohno.gif"),
           ];
         } else if (counts.executed == 0) {
-           [
+          [
             "The action vanished before the command was executed.",
             img("holtburn.gif"),
           ];
         }
         if (counts.collateralDamage > 0) {
-          info.push(` An additional ${counts.collateralDamage} actions were taken out in the mêlée.`);
+          info.push(
+            ` An additional ${counts.collateralDamage} actions were taken out in the mêlée.`
+          );
         }
         if (info.length) {
           dialog(() => info);
@@ -644,7 +644,9 @@ function createCallbackForBulkCommand(
           counts.executed > 0 && counts.ignored > 0 ? " and" : "",
           counts.ignored > 0 ? ` was ignored by ${counts.ignored} actions` : "",
           ".",
-          counts.collateralDamage > 0 ? `An additional ${counts.collateralDamage} actions were taken out in the mêlée.` : ""
+          counts.collateralDamage > 0
+            ? `An additional ${counts.collateralDamage} actions were taken out in the mêlée.`
+            : ""
         );
         reload();
       }
@@ -774,28 +776,32 @@ export function initialiseActionDash(
   exportSearches: ExportSearchCommand[]
 ) {
   const filenameFormatter = commonPathPrefix(sources.map((s) => s.file));
-  const {
-    filters: filterSynchonizer,
-    saved: savedSynchonizer,
-  } = synchronizerFields(
-    historyState(
-      "actiondash",
-      {
-        filters: userFilters === null ? {} : userFilters,
-        saved: savedQueryName || "All Actions",
-      },
-      (input) =>
-        `${input.saved} with ${
-          typeof input.filters == "string" ? input.filters : "Basic Search"
-        }`
-    )
-  );
+  const { filters: filterSynchonizer, saved: savedSynchonizer } =
+    synchronizerFields(
+      historyState(
+        "actiondash",
+        {
+          filters: userFilters === null ? {} : userFilters,
+          saved: savedQueryName || "All Actions",
+        },
+        (input) =>
+          `${input.saved} with ${
+            typeof input.filters == "string" ? input.filters : "Basic Search"
+          }`
+      )
+    );
   let localSearches: MutableStore<string, ActionFilter[]> = new Map();
 
-  const { actions: actionUi, bulkCommands, model: actionModel } = actionDisplay(
-    exportSearches
-  );
-  const { ui: statsUi, toolbar: statsToolbar, model: statsModel } = actionStats(
+  const {
+    actions: actionUi,
+    bulkCommands,
+    model: actionModel,
+  } = actionDisplay(exportSearches);
+  const {
+    ui: statsUi,
+    toolbar: statsToolbar,
+    model: statsModel,
+  } = actionStats(
     (...limits) => addPropertySearch(...limits),
     (typeName, start, end, ...limits) =>
       addRangeSearch(typeName, start, end, ...limits),
@@ -838,19 +844,14 @@ export function initialiseActionDash(
     statsModel,
     saveModel
   );
-  const {
-    buttons,
-    entryBar,
-    model,
-    addPropertySearch,
-    addRangeSearch,
-  } = createSearch(
-    filterSynchonizer,
-    combinedActionsModel,
-    true,
-    filenameFormatter,
-    sources
-  );
+  const { buttons, entryBar, model, addPropertySearch, addRangeSearch } =
+    createSearch(
+      filterSynchonizer,
+      combinedActionsModel,
+      true,
+      filenameFormatter,
+      sources
+    );
   const { model: deleteModel, ui: deleteUi } = singleState(
     (input: SearchDefinition) =>
       localSearches.get(input[0])
@@ -888,11 +889,9 @@ export function initialiseActionDash(
           ]
         : blank()
   );
-  const {
-    ui: baseSearchUi,
-    model: baseSearchModel,
-  } = singleState(([_, filters]: [string, ActionFilter[]]) =>
-    tile(["filters"], renderFilters(filters, filenameFormatter))
+  const { ui: baseSearchUi, model: baseSearchModel } = singleState(
+    ([_, filters]: [string, ActionFilter[]]) =>
+      tile(["filters"], renderFilters(filters, filenameFormatter))
   );
   const { model: searchModel, ui: searchSelector } = singleState(
     (searches: SearchDefinition[]): UIElement =>

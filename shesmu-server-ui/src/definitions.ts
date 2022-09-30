@@ -354,18 +354,20 @@ export function initialiseDefinitionDash(definitions: Definition[]): void {
       ];
     }
   );
-  const { ui: treeUi, buttons: treeButtons, data, grouping } = tree(
-    detailsModel,
-    (definition) => [
-      { type: "icon", icon: iconForKind(definition.kind) },
-      definition.name.split(/::/).map((n, i) => {
-        const chunks = n
-          .split(/_/)
-          .map((nn, ni) => (ni > 0 ? [null, "_", null, nn] : nn));
-        return i > 0 ? [null, "::", null, chunks] : chunks;
-      }),
-    ]
-  );
+  const {
+    ui: treeUi,
+    buttons: treeButtons,
+    data,
+    grouping,
+  } = tree(detailsModel, (definition) => [
+    { type: "icon", icon: iconForKind(definition.kind) },
+    definition.name.split(/::/).map((n, i) => {
+      const chunks = n
+        .split(/_/)
+        .map((nn, ni) => (ni > 0 ? [null, "_", null, nn] : nn));
+      return i > 0 ? [null, "::", null, chunks] : chunks;
+    }),
+  ]);
   const savedGroupOrder = locallyStored<GroupOrder>(
     "shesmu_group_order",
     "namespace"
@@ -616,13 +618,9 @@ export function parseDescriptor<T>(
     }
     case "t":
     case "o":
-      return parseComplex(
-        type,
-        transformer,
-        (): T => {
-          throw new Error("Malformed descriptor");
-        }
-      );
+      return parseComplex(type, transformer, (): T => {
+        throw new Error("Malformed descriptor");
+      });
     case "u": {
       let match;
       if ((match = /^([0-9]*)([^0-9].*)$/.exec(type.substring(1))) === null) {
