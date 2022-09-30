@@ -1450,10 +1450,18 @@ export interface LinkElement {
   /** The URL to link to */
   url: string;
   /** The display text to use */
-  contents: string;
+  contents: LinkContents;
   /** The tooltop for the link */
   title: string;
 }
+
+export type LinkContents =
+  | LinkContents[]
+  | string
+  | number
+  | null
+  | FormattedElement
+  | IconElement;
 
 /**
  * A mapping type for UI elements that have a multi-pane display
@@ -1614,96 +1622,101 @@ function addElements(
 ): { find: FindHandler; reveal: (() => void) | null } {
   const reveals: (() => void)[] = [];
   let find: FindHandler = null;
-  elements
-    .flat(Number.MAX_VALUE)
-    .forEach((result: Exclude<UIElement, UIElement[]>, index, arr) => {
-      if (result === null) {
-        target.appendChild(document.createElement("wbr"));
-      } else if (typeof result == "string") {
-        target.appendChild(document.createTextNode(result));
-      } else if (typeof result == "number") {
-        target.appendChild(document.createTextNode(result.toString()));
-      } else {
-        switch (result.type) {
-          case "a":
-            {
-              const element = document.createElement("a");
-              element.innerText = `${result.contents} 🔗`;
-              element.target = "_blank";
-              element.href = result.url;
-              element.title = result.title;
-              target.appendChild(element);
-            }
-            break;
-          case "b":
-          case "i":
-          case "p":
-            {
-              const element = createUiFromTag(result.type, result.contents);
-              // Safe to discard find and reveal since only display elements should be present
-              target.appendChild(element.element);
-            }
-            break;
-          case "tt":
-            {
-              const element = createUiFromTag("span", result.contents);
-              // Safe to discard find and reveal since only display elements should be present
-              target.appendChild(element.element);
-              element.element.style.fontFamily = "monospace";
-            }
-            break;
+  function add(result: UIElement, last: boolean) {
+    if (Array.isArray(result)) {
+      elements.forEach((result, index, arr) =>
+        add(result, last && index == arr.length - 1)
+      );
+    } else if (result === null) {
+      target.appendChild(document.createElement("wbr"));
+    } else if (typeof result == "string") {
+      target.appendChild(document.createTextNode(result));
+    } else if (typeof result == "number") {
+      target.appendChild(document.createTextNode(result.toString()));
+    } else {
+      switch (result.type) {
+        case "a":
+          {
+            const element = document.createElement("a");
+            addElements(element, result.contents, " 🔗");
+            element.target = "_blank";
+            element.href = result.url;
+            element.title = result.title;
+            target.appendChild(element);
+          }
+          break;
+        case "b":
+        case "i":
+        case "p":
+          {
+            const element = createUiFromTag(result.type, result.contents);
+            // Safe to discard find and reveal since only display elements should be present
+            target.appendChild(element.element);
+          }
+          break;
+        case "tt":
+          {
+            const element = createUiFromTag("span", result.contents);
+            // Safe to discard find and reveal since only display elements should be present
+            target.appendChild(element.element);
+            element.element.style.fontFamily = "monospace";
+          }
+          break;
 
-          case "s":
-            {
-              const element = createUiFromTag("span", result.contents);
-              // Safe to discard find and reveal since only display elements should be present
-              target.appendChild(element.element);
-              element.element.style.textDecoration = "line-through";
+        case "s":
+          {
+            const element = createUiFromTag("span", result.contents);
+            // Safe to discard find and reveal since only display elements should be present
+            target.appendChild(element.element);
+            element.element.style.textDecoration = "line-through";
+          }
+          break;
+        case "ui":
+          {
+            target.appendChild(result.element);
+            if (result.reveal) {
+              reveals.push(result.reveal);
             }
-            break;
-          case "ui":
-            {
-              target.appendChild(result.element);
-              if (result.reveal) {
-                reveals.push(result.reveal);
-              }
-              if (result.find) {
-                if (find) {
-                  const oldFind = find;
-                  const newFind = result.find;
-                  find = () => oldFind() || newFind();
-                } else {
-                  find = result.find;
-                }
-              }
-            }
-            break;
-          case "icon":
-            {
-              const svg = document.createElementNS(
-                "http://www.w3.org/2000/svg",
-                "svg"
-              );
-              svg.classList.add("icon");
-              svg.setAttribute("width", "1.2em");
-              svg.setAttribute("height", "1.2em");
-              svg.setAttribute("fill", "currentColor");
-              const use = document.createElementNS(
-                "http://www.w3.org/2000/svg",
-                "use"
-              );
-              use.setAttribute("href", `bootstrap-icons.svg#${result.icon}`);
-              svg.appendChild(use);
-              target.appendChild(svg);
-              if (index == arr.length - 1) {
-                // Icons are padded on the right side for better layout, but the last icon should have this padding turned off.
-                svg.style.marginRight = "0px";
+            if (result.find) {
+              if (find) {
+                const oldFind = find;
+                const newFind = result.find;
+                find = () => oldFind() || newFind();
+              } else {
+                find = result.find;
               }
             }
-            break;
-        }
+          }
+          break;
+        case "icon":
+          {
+            const svg = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "svg"
+            );
+            svg.classList.add("icon");
+            svg.setAttribute("width", "1.2em");
+            svg.setAttribute("height", "1.2em");
+            svg.setAttribute("fill", "currentColor");
+            const use = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "use"
+            );
+            use.setAttribute("href", `bootstrap-icons.svg#${result.icon}`);
+            svg.appendChild(use);
+            target.appendChild(svg);
+            if (last) {
+              // Icons are padded on the right side for better layout, but the last icon should have this padding turned off.
+              svg.style.marginRight = "0px";
+            }
+          }
+          break;
       }
-    });
+    }
+  }
+  elements.forEach((result, index, arr) =>
+    add(result, index == arr.length - 1)
+  );
   return {
     find: find,
     reveal: reveals.length ? () => reveals.forEach((r) => r()) : null,
