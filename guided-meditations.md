@@ -56,7 +56,7 @@ Actions type = "sftp-symlink" and tag = {active_projects}
 This only applies to values, not the variables. For example, this is not allowed:
 
 ```
-Actions {If something Then "type" Else "tag} = "whatever"
+Actions {If something Then "type" Else "tag"} = "whatever"
 ```
 
 Lists versus single items are more forgiving than in the regular action
@@ -416,28 +416,33 @@ dependency order and cycles are not permitted.
 There is a functional, though somewhat useless meditation:
 
 ```
-"Hello. How do you feel?"
-
-Choice
-  When "I am tried" Stop
-  When "I am confused"
-     Actions type = "sftp-symlink"
-     Stop
-  When "I'm looking for something more conventional"
-    Form
-      text = name With Label "What is your name?"
-    Then
-      Download "Hello, {name}! Does this meet your expectations"
-        To "example.txt" MimeType "text/plain"
+Start
+  Print "Hello. How do you feel?"
+  Choice
+    When "I am tired" Stop
+    When "I am confused"
+      Actions type = "sftp-symlink"
       Stop
-  When "I yearn for knowledge"
-    Simulate
-      Refiller type = string, count = integer As action_stats
-        Version 1;
-        Input shesmu;
-        Olive
-          Group By type Into count = Count
-          Refill action_stats With type = type, count = count;
-
-    Stop
+    When "I am anxious"
+      Fetch
+        count = ActionCount type = "sftp-symlink"
+      Then
+      Print "There are {count} symlink actions."
+      Stop
+    When "I'm looking for something more conventional"
+      Form
+        name = Text With Label "What is your name?"
+      Then
+        Download "Hello, {name}! Does this meet your expectations"
+          To "example.txt" MimeType "text/plain"
+        Stop
+    When "I yearn for knowledge"
+      Simulate
+        Refiller type = string, count = integer As action_stats
+          Version 1;
+          Input shesmu;
+          Olive
+            Group By type Into count = Count
+            Refill action_stats With type = type, count = count;
+      Stop;
 ````
