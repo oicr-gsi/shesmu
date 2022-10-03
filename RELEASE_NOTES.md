@@ -4,7 +4,7 @@
 
 Niassa plugin:
 
-* Obliterate this plugin and any references to that nightmare.
+* Obliterate this plugin and any references to it.
 
 # [1.19.3] - 2022-06-22T19:04+00:00
 
