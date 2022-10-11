@@ -877,7 +877,7 @@
   },
   "info": {
     "contact": {
-      "email": "andre.masella@oicr.on.ca"
+      "url": "https://github.com/oicr-gsi/shesmu/issues/new"
     },
     "description": "This API is implemented by [Shesmu](https://github.com/oicr-gsi/shesmu).",
     "license": {
