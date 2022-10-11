@@ -1040,14 +1040,9 @@
         "operationId": "getConstant",
         "requestBody": {
           "content": {
-            "application/json": {
+            "text/plain": {
               "schema": {
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  }
-                },
-                "type": "object"
+                "type:" "string"
               }
             }
           },
