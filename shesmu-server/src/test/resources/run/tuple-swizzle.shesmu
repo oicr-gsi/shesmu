@@ -1,0 +1,6 @@
+Version 1;
+Input test;
+
+Olive
+ Run ok With ok = {a = 1, b = "hi", c = 2}.{c, a} == {2, 1} &&
+     `{a = 1, b = "hi", c = 2}`.{b, a} == `{"hi", 1}`;

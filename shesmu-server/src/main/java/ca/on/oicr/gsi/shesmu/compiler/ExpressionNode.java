@@ -679,6 +679,20 @@ public abstract class ExpressionNode implements Renderable {
     SUFFIX_TIGHT.addSymbol(
         ".",
         (p, o) -> {
+          final var swizzleParser = p.whitespace().symbol("{");
+          if (swizzleParser.isGood()) {
+            final var fields = new AtomicReference<List<String>>();
+            final var swizzleResult =
+                swizzleParser
+                    .<String>list(
+                        fields::set, (fp, fo) -> fp.whitespace().identifier(fo).whitespace(), ',')
+                    .symbol("}")
+                    .whitespace();
+            if (swizzleParser.isGood()) {
+              o.accept(node -> new ExpressionNodeSwizzle(p.line(), p.column(), node, fields.get()));
+            }
+            return swizzleResult;
+          }
           final var index = new AtomicReference<String>();
           final var result = p.whitespace().identifier(index::set).whitespace();
           if (result.isGood()) {

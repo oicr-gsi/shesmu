@@ -940,6 +940,16 @@ scalar or array), the result is a JSON `null` value.
 The _expr_ can also be an optional of a named tuple or JSON object. If it is,
 the result will be an optional of the appropriate type.
 
+#### Swizzled Named Tuple Access
+- _expr_ `.{` _field1_`,` _field2_ `,` ... `}`
+
+Extracts multiple fields from a named tuple and constructs a tuple with the
+results. The result type will be based on the type of that field in the named
+tuple. If _field_ is not in the named tuple, an error occurs.
+
+The _expr_ can also be an optional of a named tuple. If it is, the result will
+be an optional of the appropriate type.
+
 ### Terminals
 
 #### Action Name Literal
