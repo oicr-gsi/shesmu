@@ -1,5 +1,7 @@
 # Unreleased
 
+# [1.20.0] - 2022-10-13T17:52+00:00
+
 * Adds metrics for cache refresh start and end times
 * Makes source vidarr server explicit for `cerberus_fp` `input_file` IDs
 * Changes swagger contact info to new github issue
