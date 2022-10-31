@@ -1,5 +1,7 @@
 # Unreleased
 
+* Upgrade to Java 17
+
 # [1.20.0] - 2022-10-13T17:52+00:00
 
 * Adds metrics for cache refresh start and end times
