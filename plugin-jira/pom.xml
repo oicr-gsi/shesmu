@@ -42,17 +42,17 @@
     <dependency>
       <groupId>com.atlassian.jira</groupId>
       <artifactId>jira-rest-java-client-api</artifactId>
-      <version>5.1.6</version>
+      <version>5.2.4</version>
     </dependency>
     <dependency>
       <groupId>com.atlassian.jira</groupId>
       <artifactId>jira-rest-java-client-core</artifactId>
-      <version>5.1.6</version>
+      <version>5.2.4</version>
     </dependency>
     <dependency>
       <groupId>io.atlassian.fugue</groupId>
       <artifactId>fugue</artifactId>
-      <version>4.7.2</version>
+      <version>5.0.0</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
