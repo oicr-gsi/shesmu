@@ -181,7 +181,7 @@ public interface CerberusFileProvenanceValue {
   @ShesmuVariable
   String workflow_accession();
 
-  @ShesmuVariable(type = "u1VIDARR$t0")
+  @ShesmuVariable(type = "u2NIASSA$t0VIDARR$t0")
   AlgebraicValue workflow_engine();
 
   @ShesmuVariable
