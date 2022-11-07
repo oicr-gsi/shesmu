@@ -1,6 +1,7 @@
 # Unreleased
 
 * Upgrade to Java 17
+* Add back NIASSA algebraic type so olives may filter
 
 # [1.20.0] - 2022-10-13T17:52+00:00
 
