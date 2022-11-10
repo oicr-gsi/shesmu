@@ -7,34 +7,37 @@ import java.util.Optional;
 
 public class NabuValue {
   private final Optional<String> comment;
-  private final boolean deleted;
+  private final String fileid;
   private final Path filepath;
   private final long fileqcid;
-  private final String fileswid;
+  private final Optional<String> fileswid;
   private final String project;
   private final Instant qcdate;
   private final Optional<Boolean> qcpassed;
+  private final String workflow;
   private final String username;
 
   public NabuValue(
       long fileqcid,
       Optional<String> comment,
-      boolean deleted,
+      String fileid,
       Path filepath,
-      String fileswid,
+      Optional<String> fileswid,
       String project,
       Instant qcdate,
       Optional<Boolean> qcpassed,
+      String workflow,
       String username) {
     super();
     this.fileqcid = fileqcid;
     this.comment = comment;
-    this.deleted = deleted;
+    this.fileid = fileid;
     this.filepath = filepath;
     this.fileswid = fileswid;
     this.project = project;
     this.qcdate = qcdate;
     this.qcpassed = qcpassed;
+    this.workflow = workflow;
     this.username = username;
   }
 
@@ -44,8 +47,8 @@ public class NabuValue {
   }
 
   @ShesmuVariable
-  public boolean deleted() {
-    return deleted;
+  public String fileid() {
+    return fileid;
   }
 
   @ShesmuVariable
@@ -59,7 +62,7 @@ public class NabuValue {
   }
 
   @ShesmuVariable
-  public String fileswid() {
+  public Optional<String> fileswid() {
     return fileswid;
   }
 
@@ -76,6 +79,11 @@ public class NabuValue {
   @ShesmuVariable
   public Optional<Boolean> qcpassed() {
     return qcpassed;
+  }
+
+  @ShesmuVariable
+  public String workflow() {
+    return workflow;
   }
 
   @ShesmuVariable
