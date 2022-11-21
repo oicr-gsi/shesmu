@@ -1,0 +1,4 @@
+Version 1;
+Input test;
+
+Olive Run ok With ok = (Order {1, 2}) == {1, 2} && (Order {"b", "a"}) == {"a", "b"};

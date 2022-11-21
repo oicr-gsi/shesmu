@@ -1,6 +1,8 @@
 package ca.on.oicr.gsi.shesmu.plugin;
 
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,6 +66,13 @@ public final class Tuple {
     var result = 1;
     result = prime * result + Arrays.hashCode(elements);
     return result;
+  }
+
+  @SuppressWarnings("unchecked")
+  public Tuple order(Imyhat type) {
+    final var array = Arrays.copyOf(elements, elements.length);
+    Arrays.sort(array, (Comparator<Object>) type.comparator());
+    return new Tuple(array);
   }
 
   /** Get all the elements in the tuple */

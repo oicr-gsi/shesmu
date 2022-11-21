@@ -1,0 +1,4 @@
+Version 1;
+Input test;
+
+Function foo() Order {"a", 1};

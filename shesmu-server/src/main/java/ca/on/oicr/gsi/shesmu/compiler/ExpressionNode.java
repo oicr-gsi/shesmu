@@ -494,6 +494,16 @@ public abstract class ExpressionNode implements Renderable {
           }
           return result;
         });
+    TERMINAL.addKeyword(
+        "Order",
+        (p, o) -> {
+          final var expr = new AtomicReference<ExpressionNode>();
+          final var result = p.whitespace().then(ExpressionNode::parse1, expr::set).whitespace();
+          if (result.isGood()) {
+            o.accept(new ExpressionNodeOrder(p.line(), p.column(), expr.get()));
+          }
+          return result;
+        });
     OUTER.addRaw("expression", ExpressionNode::parse1);
     LOGICAL_DISJUNCTION.addSymbol(
         "||",
@@ -762,6 +772,7 @@ public abstract class ExpressionNode implements Renderable {
           }
           return result;
         });
+
     TERMINAL.addSymbol(
         "[",
         (p, o) -> {

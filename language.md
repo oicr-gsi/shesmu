@@ -617,6 +617,22 @@ Two special pieces of syntax are allowed in `When`:
 
 For details on algebraic values, see [Algebraic Values without Algebra](algebraicguide.md).
 
+- `Order` _expr_
+
+Rearrange the values in a tuple in ascending order. The types of the values
+must be homogenous and orderable. For example that `Order {"b", "c", "a"}`
+would result in `{"a", "b", "c"}`. While `Order {"a", 1}` is an error.
+
+This can be useful to ensure ranges provided by user data are in order:
+
+```
+Begin
+ {min, max} = Order {min_from_user, max_from_user};
+ Return max - min;
+End
+```
+
+
 ### JSON Conversion
 - _expr_ `As` _type_
 
