@@ -58,6 +58,12 @@
       <groupId>ca.on.oicr.gsi.runscanner</groupId>
       <artifactId>runscanner-dto</artifactId>
       <version>1.13.3</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-annotations</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
