@@ -1,6 +1,7 @@
 # Unreleased
 
 * Update Nabu plugin to use version 3 API
+* Fix bad bytecode using signatures after `Flatten` or `Require`
 
 # [1.21.0] - 2022-11-08T13:26+00:00
 
