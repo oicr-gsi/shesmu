@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
+
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import java.util.function.Consumer;
@@ -51,7 +53,7 @@ public class FlattenBuilder {
             Stream.concat(
                     Stream.of(originalType, unrollType),
                     copySignatures
-                        ? owner.signatureVariables().map(SignatureDefinition::storageType)
+                        ? owner.signatureVariables().map(s -> s.type().apply(TO_ASM))
                         : Stream.empty())
                 .toArray(Type[]::new));
     final var ctor = new GeneratorAdapter(Opcodes.ACC_PUBLIC, ctorType, null, null, classVisitor);
@@ -84,12 +86,14 @@ public class FlattenBuilder {
                   ctor.loadThis();
                   ctor.loadArg(index++);
                   ctor.putField(
-                      flattenType, signatureDefinition.name(), signatureDefinition.storageType());
+                      flattenType,
+                      signatureDefinition.name(),
+                      signatureDefinition.type().apply(TO_ASM));
                   classVisitor
                       .visitField(
                           Opcodes.ACC_PRIVATE,
                           signatureDefinition.name(),
-                          signatureDefinition.storageType().getDescriptor(),
+                          signatureDefinition.type().apply(TO_ASM).getDescriptor(),
                           null,
                           null)
                       .visitEnd();
@@ -103,8 +107,7 @@ public class FlattenBuilder {
   }
 
   public void add(Target target) {
-    final var getMethod =
-        new Method(target.name(), target.type().apply(TypeUtils.TO_ASM), new Type[] {});
+    final var getMethod = new Method(target.name(), target.type().apply(TO_ASM), new Type[] {});
     final var getter =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, getMethod, null, null, classVisitor);
     getter.visitCode();

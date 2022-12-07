@@ -1,0 +1,8 @@
+Version 1;
+Input test;
+
+Olive
+    Flatten p In [project]
+  Let
+    test = {signature = std::signature::sha1; p}
+  Run ok With ok = test.p == "the_foo_study";
