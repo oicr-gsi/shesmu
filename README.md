@@ -86,6 +86,18 @@ Which will build all of the plugins available. Then run with:
       --mount type=bind,source=/srv/shesmu,target=/srv/shesmu \
       shesmu:latest
 
+Shesmu's Dockerfile also supports caching of dependency fetching through
+the use of Docker's [BuildKit](https://docs.docker.com/build/buildkit/).
+
+To enable this, add the following to your /etc/docker/daemon.json config:
+```
+{
+  "features": {
+    "buildkit" : true
+  }
+}
+```
+
 ### Local Setup
 Now, compile the main server using Maven 3.5 with Java 8:
 
