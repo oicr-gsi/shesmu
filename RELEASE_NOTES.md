@@ -1,6 +1,10 @@
 # Unreleased
 
+# [1.22.0] - 2023-01-04T19:19+00:00
+
 * Update Nabu plugin to use version 3 API
+* Add swizzle operation
+* Guided meditation fixes
 * Fix bad bytecode using signatures after `Flatten` or `Require`
 * Adds new remote jsonconfig plugin
 * Update Docker build to support BuiltKit, typescript 4.3.2 and Java 17.
