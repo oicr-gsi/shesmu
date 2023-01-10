@@ -111,6 +111,10 @@ public class SftpServer extends JsonPluginFile<Configuration> {
               "The number of errors communicating with the SFTP server while trying to create a symlink.")
           .labelNames("target")
           .register();
+  private static final Gauge refillItemsSent =
+      Gauge.build("shesmu_sftp_refill_items_sent", "The number of items sent to the refiller")
+          .labelNames("filename", "name")
+          .register();
   private Optional<Configuration> configuration = Optional.empty();
   private final SshConnectionPool connections = new SshConnectionPool();
   private final Definer<SftpServer> definer;
@@ -285,6 +289,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     try (final var connection = connections.get()) {
 
       refillLastUpdate.labels(fileName().toString(), name).setToCurrentTime();
+      refillItemsSent.labels(fileName().toString(), name).set(data.size());
       try (final var latency = refillLatency.start(fileName().toString(), name);
           final var session = connection.client().startSession()) {
 
