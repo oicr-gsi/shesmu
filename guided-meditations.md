@@ -244,6 +244,12 @@ The selected value will be assigned to _name_ in subsequent steps.  _labelexpr_
 is text display elements to show to the left of the input widget. If _values_
 is an empty list, the meditation will be stopped.
 
+- _name_ `= Paste /`_regex_`/ With Label` _labelexpr_
+Creates a large text area where a user can paste text and any parts of matching
+_regex_ will be extracted as a list of strings. This is meant to allow pasting
+lists of identifiers from chat, email, tickets, other applications and
+extracting easily recognized identifiers.
+
 - _name_ `= Select` _optionvalue_ `As` _optionlabel_ ... `With Label` _labelexpr_
 Creates a drop down list. The _optionlabel_ is display text that will be shown.
 There is no restriction on the type of _optionvalue_, though they all must be
@@ -435,6 +441,13 @@ Start
       Then
         Download "Hello, {name}! Does this meet your expectations"
           To "example.txt" MimeType "text/plain"
+        Stop
+    When "I have so many things"
+      Form
+        things = Paste /[A-Z]\d{3,}/ With Label "Can you list all the things?"
+      Then
+        RepeatFor thing In things: Table
+            Column "A Thing" "Try not to let {thing} bother you."
         Stop
     When "I yearn for knowledge"
       Simulate

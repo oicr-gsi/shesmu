@@ -1,5 +1,8 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import static ca.on.oicr.gsi.shesmu.compiler.ExpressionNode.REGEX;
+import static ca.on.oicr.gsi.shesmu.compiler.ExpressionNode.regexParser;
+
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
@@ -76,6 +79,19 @@ public abstract class FormNode implements Target {
                   .whitespace();
           if (result.isGood()) {
             o.accept((label, name) -> new FormNodeSelect(label, name, options.get()));
+          }
+          return result;
+        });
+    FORM_TYPE.addKeyword(
+        "Paste",
+        (p, o) -> {
+          final var regex = new AtomicReference<Pair<String, Integer>>();
+          final var result =
+              p.whitespace().regex(REGEX, regexParser(regex), "Regular expression.").whitespace();
+          if (result.isGood()) {
+            o.accept(
+                (label, name) ->
+                    new FormNodePaste(label, name, regex.get().first(), regex.get().second()));
           }
           return result;
         });
