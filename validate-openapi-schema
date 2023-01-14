@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exec curl -X 'POST' 'https://validator.swagger.io/validator/debug' -H 'accept: application/yaml' -H 'Content-Type: application/json' -d "@$(dirname "$0")/shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/swagger.json"
