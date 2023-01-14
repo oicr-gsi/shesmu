@@ -1,5 +1,7 @@
 # Unreleased
 
+* Fix OpenAPI schema
+
 # [1.23.0] - 2023-02-15T19:54+00:00
 
 * Add a gauge to monitor the number of items sent to a refiller
