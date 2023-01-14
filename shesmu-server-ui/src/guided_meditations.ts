@@ -22,9 +22,11 @@ import {
   br,
   button,
   buttonAccessory,
+  createUiFromTag,
   dialog,
   dragOrder,
   dropdown,
+  flexGroup,
   hr,
   inputCheckbox,
   inputNumber,
@@ -42,6 +44,7 @@ import {
   tableRow,
   tabs,
   temporaryState,
+  unorderedList,
 } from "./html.js";
 import { fetchAsPromise, loadFile, refreshable, saveFile } from "./io.js";
 import { actionStats } from "./stats.js";
@@ -119,6 +122,13 @@ type FormElement<T> =
       ? {
           label: DisplayElement;
           type: "boolean";
+        }
+      : never)
+  | (T extends string[]
+      ? {
+          label: DisplayElement;
+          type: "paste";
+          regex: RegExp;
         }
       : never)
   | (T extends string[]
@@ -563,6 +573,34 @@ function makeFormEntry<T, K extends keyof T>(
     };
   } else if (definition.type == "boolean") {
     field = inputCheckbox("", false) as unknown as InputField<T[K]>;
+  } else if (definition.type == "paste") {
+    const value = temporaryState<string[]>([]);
+    const list = singleState((items: string[]) => unorderedList(...items));
+    const model = combineModels(list.model, value);
+    const input = createUiFromTag("textarea");
+    const { regex } = definition;
+
+    input.element.addEventListener("input", (_) => {
+      const output = new Set<string>();
+      for (const [value] of input.element.value.matchAll(regex)) {
+        output.add(value);
+      }
+      model.statusChanged([...output].sort());
+    });
+
+    field = {
+      set enabled(state: boolean) {
+        input.element.disabled = !state;
+      },
+      ui: flexGroup(
+        "row",
+        { width: 1, contents: input },
+        { width: 2, contents: list.ui }
+      ),
+      get value(): T[K] {
+        return value.get() as unknown as T[K];
+      },
+    };
   } else if (definition.type == "select") {
     const value = temporaryState<[DisplayElement, T[K]]>(definition.items[0]);
     field = {

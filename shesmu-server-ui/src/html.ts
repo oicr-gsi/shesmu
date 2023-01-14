@@ -4627,6 +4627,16 @@ function treeSplitPaths(
     });
   return indented(children.concat(leaves));
 }
+/**
+ * Unordered list of items
+ */
+export function unorderedList(...contents: DisplayElement[]): UIElement {
+  const element = createUiFromTag(
+    "ul",
+    contents.map((item) => createUiFromTag("li", item))
+  );
+  return element;
+}
 // Preload images
 new Image().src = "press.svg";
 new Image().src = "dead.svg";
