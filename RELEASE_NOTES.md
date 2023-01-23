@@ -1,7 +1,7 @@
 # Unreleased
 
 * Add a gauge to monitor the number of items sent to a refiller
-* Runscanner -> 1.14.0
+* Runscanner -> 1.15.0
 
 # [1.22.0] - 2023-01-04T19:19+00:00
 
