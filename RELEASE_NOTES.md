@@ -1,7 +1,7 @@
 # Unreleased
 
 * Add a gauge to monitor the number of items sent to a refiller
-* Runscanner -> 1.15.0
+* Runscanner -> 1.15.1
 * Add a _paste_ input source to guided meditations to extract matching strings
 
 # [1.22.0] - 2023-01-04T19:19+00:00
