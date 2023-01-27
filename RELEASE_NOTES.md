@@ -3,6 +3,7 @@
 * Add a gauge to monitor the number of items sent to a refiller
 * Runscanner -> 1.15.1
 * Add a _paste_ input source to guided meditations to extract matching strings
+	* Add functions for returning list of names of `Accredited` and `Accredited with Clinical Report` projects from Pinery plugin
 
 # [1.22.0] - 2023-01-04T19:19+00:00
 
