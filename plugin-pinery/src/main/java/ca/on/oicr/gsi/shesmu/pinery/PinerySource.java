@@ -734,12 +734,39 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
   @ShesmuMethod(
       name = "clinical_projects",
-      description = "Projects marked clinical from in Pinery defined in {file}.")
+      description = "Projects marked clinical from Pinery defined in {file}.")
   public Set<String> clinicalProjects() {
     return projects
         .get()
         .filter(
             project -> project.getPipeline() != null && isClinicalPipeline(project.getPipeline()))
+        .map(SampleProjectDto::getName)
+        .collect(Collectors.toCollection(TreeSet::new));
+  }
+
+  @ShesmuMethod(
+      name = "accredited_projects",
+      description = "Projects with Accredited pipeline from Pinery defined in {file}.")
+  public Set<String> accreditedProjects() {
+    return projects
+        .get()
+        .filter(
+            project -> project.getPipeline() != null && "Accredited".equals(project.getPipeline()))
+        .map(SampleProjectDto::getName)
+        .collect(Collectors.toCollection(TreeSet::new));
+  }
+
+  @ShesmuMethod(
+      name = "accredited_with_clinical_report_projects",
+      description =
+          "Projects with Accredited with Clinical Report pipeline from Pinery defined in {file}.")
+  public Set<String> accreditedWithClinicalReportProjects() {
+    return projects
+        .get()
+        .filter(
+            project ->
+                project.getPipeline() != null
+                    && "Accredited with Clinical Report".equals(project.getPipeline()))
         .map(SampleProjectDto::getName)
         .collect(Collectors.toCollection(TreeSet::new));
   }
