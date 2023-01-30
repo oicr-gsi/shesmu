@@ -630,6 +630,10 @@ public final class ActionProcessor
       isDuplicate = false;
     } else {
       information = actions.get(action);
+      // This addresses a race condition where the action is concurrently purged
+      if (information == null) {
+        return true;
+      }
       information.lastAdded = Instant.now();
       isDuplicate = true;
     }
