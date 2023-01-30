@@ -12,6 +12,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
 import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
+import ca.on.oicr.gsi.shesmu.core.refillers.PurgeRefiller;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
 import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
@@ -249,8 +250,10 @@ public final class Server implements ServerConfig, ActionServices {
     RuntimeSupport.MAPPER.registerModule(module);
     server = HttpServer.create(new InetSocketAddress(port), 0);
     server.setExecutor(wwwExecutor);
-    definitionRepository = DefinitionRepository.concat(new StandardDefinitions(), pluginManager);
     processor = new ActionProcessor(localname().resolve("/alerts"), pluginManager, this);
+    definitionRepository =
+        DefinitionRepository.concat(
+            new StandardDefinitions(), pluginManager, PurgeRefiller.of(processor));
     compiler = new CompiledGenerator(executor, definitionRepository, processor::isPaused);
     staticActions = new StaticActions(processor, definitionRepository);
     guidedMeditations =
