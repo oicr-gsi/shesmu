@@ -144,7 +144,6 @@ final class RunStateMonitor extends RunState {
   @Override
   public Stream<String> tags() {
     return Stream.of(
-        "vidarr-workflow-run:" + status.getId(),
         status.getCompleted() == null ? "vidarr-state:active" : "vidarr-state:finished");
   }
 

@@ -321,8 +321,6 @@ The Vidarr actions also generates some useful tags:
 - `vidarr-target:`_name_: The _target_ on the Vidarr instance.
 - `vidarr-workflow:`_name_[`/`_version_`]: The workflow that this action will
   run, both with and without the version.
-- `vidarr-workflow-run:`_id_: The Vidarr identifier for the matched workflow
-  run.
 - `vidarr-state:`[`active`|`attempt`|`conflict`|`dead`|`finished`|`missing`]:
 	The action uses a state machine while its communicating with Vidarr. This is
   the current state of that machine.
