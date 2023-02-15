@@ -47,7 +47,6 @@ git commit -a -m "Update release notes for release"
 # Do the Maven release step
 mvn release:prepare -DreleaseVersion=${NEW_VERSION} -DtagNameFormat=v@{version} --batch-mode release:clean
 git checkout v${NEW_VERSION}
-tsc -p shesmu-server-ui
 mvn deploy
 git checkout master
 # Trigger GitHub Actions to build the Maven project and build the Docker image
