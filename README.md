@@ -45,9 +45,7 @@ Build dependencies:
 
 - Java 14 or later
 - Maven 3.5 or later
-- TypeScript 4.3.2 (the version supplied with Ubuntu and Debian in
-  `node-typescript` is too old. Use `sudo npm -g i typescript` to install a
-  newer copy. However, versions newer than 4.3.2 will fail to compile.)
+- NPM
 - Docker (optional) for container builds
 
 Optional runtime dependencies:
@@ -101,7 +99,6 @@ To enable this, add the following to your /etc/docker/daemon.json config:
 ### Local Setup
 Now, compile the main server using Maven 3.5 with Java 8:
 
-    tsc -p shesmu-server-ui
     mvn install
 
 This will create `shesmu-server/target/shesmu.jar`. If you require any

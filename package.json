@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "typescript": "^4.3.2"
+  },
+  "scripts": {
+    "build": "npm install && tsc -p shesmu-server-ui"
+  }
+}
