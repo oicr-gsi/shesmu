@@ -609,7 +609,7 @@ receive data cached from a previous fetch and the input source is
 free to not make the effort to refresh it. 
 
 Input source data is not cached by the server between calls to the 
-@ShesmuInputSource method. Caching data is the plugin's responsibility.
+`@ShesmuInputSource` method. Caching data is the plugin's responsibility.
 The Shesmu plugin API package provides `ValueCache` and implementations
 for assisting with this task.
  
