@@ -608,6 +608,11 @@ it needs fresh data. If false, the server is happy to
 read stale data and the input source is free to not make the effort 
 to refresh it. 
 
+Input source data is not cached by the server between calls to the 
+@ShesmuInputSource method. Caching data is the plugins responsibility.
+The Shesmu plugin API package provides `ValueCache` and implementations
+for assisting with this task.
+ 
 
 ### Input Sources (JSON)
 Shesmu will automatically create a JSON representation for every input format
