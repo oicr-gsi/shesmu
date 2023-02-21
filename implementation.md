@@ -597,9 +597,17 @@ exist. Suppose the type of the format is _T_. To add a source of data:
 The method may also return a subclass of _T_, but not a wildcard (_e.g._,
 `Stream<? extends `_T_`>`).
 
-The `boolean`, if desired, indicates whether the fetch should trigger a
-refresh. If false, the client is happy to read stale data and the input source
-is free to not make the effort to refresh it.
+The Shesmu server will call the `@ShesmuInputSource` in different situations,
+including at the start of olive execution, and when a simulator request
+is made. Different situations have different needs with regards to how 
+fresh the input data should be.
+The `boolean` argument, if included, is sent by the Shesmu server to 
+indicate to the plugin whether 
+the fetch should trigger a refresh. If true, the server has indicated that
+it needs fresh data. If false, the server is happy to 
+read stale data and the input source is free to not make the effort 
+to refresh it. 
+
 
 ### Input Sources (JSON)
 Shesmu will automatically create a JSON representation for every input format
