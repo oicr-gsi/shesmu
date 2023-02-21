@@ -605,11 +605,11 @@ The `boolean` argument, if included, is sent by the Shesmu server to
 indicate to the plugin whether 
 the fetch should trigger a refresh. If true, the server has indicated that
 it needs fresh data. If false, the server is happy to 
-read stale data and the input source is free to not make the effort 
-to refresh it. 
+receive data cached from a previous fetch and the input source is 
+free to not make the effort to refresh it. 
 
 Input source data is not cached by the server between calls to the 
-@ShesmuInputSource method. Caching data is the plugins responsibility.
+@ShesmuInputSource method. Caching data is the plugin's responsibility.
 The Shesmu plugin API package provides `ValueCache` and implementations
 for assisting with this task.
  
