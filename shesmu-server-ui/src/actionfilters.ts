@@ -1079,7 +1079,7 @@ export function renderFilters(
       case "regex":
         return tile(
           [],
-          (f.negate ? "Matches " : "Does Not Match ") +
+          (f.negate ? "Does Not Match " : "Matches ") +
             (f.matchCase ? "Case-Sensitive" : "Case-Insensitive") +
             " Regular Expression",
           br(),
@@ -1130,7 +1130,7 @@ export function renderFilters(
       case "tag-regex":
         return tile(
           [],
-          (f.negate ? "Matches " : "Does Not Match ") +
+          (f.negate ? "Does Not Match " : "Matches ") +
             (f.matchCase
               ? "Case-Sensitive Regular"
               : "Case-Insensitive Regular") +
@@ -1141,7 +1141,7 @@ export function renderFilters(
       case "text":
         return tile(
           [],
-          (f.negate ? "Matches " : "Does Not Match ") +
+          (f.negate ? "Does Not Match " : "Matches ") +
             (f.matchCase ? "Case-Sensitive" : "Case-Insensitive") +
             " Text Search",
           br(),
