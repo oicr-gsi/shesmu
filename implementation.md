@@ -368,7 +368,7 @@ All of the data provided in the `With` block is done after the action is
 created. Once all the data is loaded into the action, it is put into the set.
 The set deduplicates actions from olives based on their `hashCode` and `equals`
 method.  Since the same olive will regenerate the same action many, many times
-during the life of a Shemu server instance, the deduplication must work
+during the life of a Shesmu server instance, the deduplication must work
 properly to decide that two actions with the “same” parameters are identical.
 Which parameters must be considered for two actions to be identical is entirely
 chosen by the implementer.
