@@ -1,6 +1,7 @@
 # Unreleased
 
 * Fix OpenAPI schema
+* Fix Basic filter view saying 'Matches' for negated regex matching
 
 # [1.23.0] - 2023-02-15T19:54+00:00
 
