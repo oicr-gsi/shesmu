@@ -373,8 +373,10 @@ properly to decide that two actions with the “same” parameters are identical
 Which parameters must be considered for two actions to be identical is entirely
 chosen by the implementer.
 
-When the system is going to perform actions, it sorts them by priority (smaller
-numbers are higher priority). If two actions are going to use the same
+When the system is going to perform actions, it sorts them by how long it has 
+been since the last action, an Action's `priority` (smaller numbers are higher 
+priority), and prioritizes `Action`s in certain `ActionState`s. If two 
+actions are going to use the same
 resource, then priority is a good way to allocate the resource to the most
 appropriate action. Since new actions are being generated constantly, priority
 inversion may occur. An item can also return a different priority over its life.

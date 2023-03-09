@@ -1652,7 +1652,6 @@ public final class ActionProcessor
   }
 
   private void update() {
-
     final var now = Instant.now();
     final var candidates =
         actions.entrySet().stream()
@@ -1663,6 +1662,11 @@ public final class ActionProcessor
                         && !entry.getValue().updateInProgress
                         && Duration.between(entry.getValue().lastChecked, now).toMinutes()
                             >= Math.max(10, entry.getKey().retryMinutes()))
+            /**
+             * Sort by time since last checked, and then priority, to avoid starving actions of
+             * attention because of priority then sort by their ActionState's processPriority so
+             * that certain ActionStates get checked first.
+             */
             .sorted(
                 Comparator.<Map.Entry<Action, Information>>comparingLong(
                         e ->
