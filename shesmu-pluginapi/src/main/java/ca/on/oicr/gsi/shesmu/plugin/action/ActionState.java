@@ -47,7 +47,7 @@ public enum ActionState {
   ZOMBIE(1, 2);
 
   /**
-   * sortPriority: available to plugins and the server for sorting issues <br>
+   * sortPriority: available to plugins and the server for sorting Actions by type <br>
    * processPriority: used by the server to prioritize checking the status of certain types of
    * actions first, as having up-to-date information from a remote server on these actions is more
    * important.
