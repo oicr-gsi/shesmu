@@ -1664,7 +1664,7 @@ public final class ActionProcessor
                             >= Math.max(10, entry.getKey().retryMinutes()))
             /**
              * Sort by time since last checked, and then priority, to avoid starving actions of
-             * attention because of priority then sort by their ActionState's processPriority so
+             * attention because of priority, then sort by their ActionState's processPriority so
              * that certain ActionStates get checked first.
              */
             .sorted(
