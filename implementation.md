@@ -380,6 +380,8 @@ actions are going to use the same
 resource, then priority is a good way to allocate the resource to the most
 appropriate action. Since new actions are being generated constantly, priority
 inversion may occur. An item can also return a different priority over its life.
+A plugin may choose to expose `priority` as an `@ActionParameter` so it can be 
+set procedurally by an olive.
 
 At some point, an action will be given time to `perform`. There is a limited CPU pool
 for actions to run in, so blocking is strongly discouraged. An action should
