@@ -967,11 +967,6 @@ public class CompiledGenerator implements DefinitionRepository {
             .filter(s -> s.running.isDone())
             .flatMap(s -> s.generator.inputs())
             .collect(Collectors.toSet());
-    // Allow inhibitions to be set on a per-input format and skip fetching this data.
-    final Set<String> inhibitedFormats =
-        usedFormats.stream()
-            .filter(consumer::isOverloaded)
-            .collect(Collectors.toCollection(TreeSet::new));
     final var cache =
         new InputProvider() {
           final Map<String, List<Object>> data =
@@ -980,26 +975,28 @@ public class CompiledGenerator implements DefinitionRepository {
                   .filter(
                       format ->
                           usedFormats.contains(format.name())
-                              && !inhibitedFormats.contains(format.name()))
+                              && !consumer.isOverloaded(format.name()))
+                  .flatMap(format -> {
+                    try (var timer = INPUT_FETCH_TIME.start(format.name());
+                        var inflight =
+                            Server.inflightCloseable("Fetching " + format.name())) {
+                      final var results =
+                          input.fetch(format.name(), false).toList();
+                      INPUT_RECORDS.labels(format.name()).set(results.size());
+                      return Stream.of(new Pair<>(format.name(), results));
+                    } catch (final Exception e) {
+                      e.printStackTrace();
+                      // If we failed to load this format, pretend like it was inhibited and
+                      // don't run dependent olives
+                      return Stream.empty();
+                    }
+                  })
                   .collect(
-                      Collectors.toMap(
-                          InputFormatDefinition::name,
-                          format -> {
-                            try (var timer = INPUT_FETCH_TIME.start(format.name());
-                                var inflight =
-                                    Server.inflightCloseable("Fetching " + format.name())) {
-                              final var results =
-                                  input.fetch(format.name(), false).collect(Collectors.toList());
-                              INPUT_RECORDS.labels(format.name()).set(results.size());
-                              return results;
-                            } catch (final Exception e) {
-                              e.printStackTrace();
-                              // If we failed to load this format, pretend like it was inhibited and
-                              // don't run dependent olives
-                              inhibitedFormats.add(format.name());
-                              return List.of();
-                            }
-                          }));
+                      Collectors.toMap(Pair::first, Pair::second));
+
+          public boolean isReady(String format) {
+          return data.containsKey(format);
+          }
 
           @Override
           public Stream<Object> fetch(String format) {
@@ -1013,15 +1010,14 @@ public class CompiledGenerator implements DefinitionRepository {
                 script.running
                     .isDone()) // This is a potential race condition: an olive finished while we
         // were collecting the input. Since we check for the data the olive requires being
-        // present, it's safe to run the olive even if it wasn't done when when previously checked.
+        // present, it's safe to run the olive even if it wasn't done when we previously checked.
         .filter(
             script ->
                 script
                     .generator
                     .inputs()
-                    .noneMatch(
-                        inhibitedFormats
-                            ::contains)) // Don't run any olives that require data we don't
+                    .allMatch(
+                        cache::isReady)) // Don't run any olives that require data we don't
         // have.
         .forEach(
             script -> {
