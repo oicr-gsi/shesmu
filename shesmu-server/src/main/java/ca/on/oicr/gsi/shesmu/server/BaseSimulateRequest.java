@@ -37,6 +37,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.Counter;
 import io.prometheus.client.exporter.common.TextFormat;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -73,6 +74,12 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 public abstract class BaseSimulateRequest {
+  private static final Counter CACHE_REFRESH =
+      Counter.build(
+              "shesmu_simulate_refresh",
+              "The number of simulation requests and the cache freshess requested.")
+          .labelNames("mode", "format")
+          .register();
 
   protected static final class FakeActionDefinition extends ActionDefinition {
 
@@ -533,10 +540,12 @@ public abstract class BaseSimulateRequest {
                         .collect(
                             Collectors.toMap(
                                 Function.identity(),
-                                name ->
-                                    inputSource
-                                        .fetch(name, readStale)
-                                        .collect(Collectors.toList())));
+                                name -> {
+                                  CACHE_REFRESH.labels(readStale ? "cached" : "fresh", name).inc();
+                                  return inputSource
+                                      .fetch(name, readStale)
+                                      .collect(Collectors.toList());
+                                }));
                 for (final var input : inputs.entrySet()) {
                   counts.put(input.getKey(), (long) input.getValue().size());
                 }
