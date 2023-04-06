@@ -93,13 +93,15 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
                     }
                   }
                 }));
-      } catch (IllegalArgumentException e) {
+      } catch (
+          IllegalArgumentException
+              e) { // ensure lane or sample provenance issue propagates upstream
         throw e;
-      } catch (Exception e) {
+      } catch (Exception e) { // Exception is coming form Cerberus itself, not the plug-in
         return Optional.of(
             new FileProvenanceOutput(
                 fileProvenance().collect(Collectors.toList()),
-                errors,
+                errors().collect(Collectors.toList()),
                 fileProvenanceSkipped().collect(Collectors.toList())));
       }
       errorRecords.labels(fileName().toString()).set(errors.size());
