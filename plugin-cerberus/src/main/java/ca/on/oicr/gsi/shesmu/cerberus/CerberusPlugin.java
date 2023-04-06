@@ -44,54 +44,64 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
       final List<CerberusErrorValue> errors = new ArrayList<>();
       final List<CerberusFileProvenanceSkippedValue> output_skipped = new ArrayList<>();
       final var staleCount = new AtomicInteger();
-      JoinSource.join(
-          vidarrData,
-          limsData,
-          VidarrWorkflowRunSource::key,
-          LimsProvenanceInfo::key,
-          FileProvenanceConsumer.of(
-              new FileProvenanceConsumer() {
-                @Override
-                public void error(
-                    ProvenanceWorkflowRun<ExternalKey> vidarrWorkflow,
-                    Stream<LimsProvenanceInfo> stream) {
-                  errors.add(new CerberusErrorValue(vidarrWorkflow, stream));
-                }
+      try {
+        JoinSource.join(
+            vidarrData,
+            limsData,
+            VidarrWorkflowRunSource::key,
+            LimsProvenanceInfo::key,
+            FileProvenanceConsumer.of(
+                new FileProvenanceConsumer() {
+                  @Override
+                  public void error(
+                      ProvenanceWorkflowRun<ExternalKey> vidarrWorkflow,
+                      Stream<LimsProvenanceInfo> stream) {
+                    errors.add(new CerberusErrorValue(vidarrWorkflow, stream));
+                  }
 
-                @Override
-                public void file(
-                    boolean stale,
-                    boolean skip,
-                    ProvenanceRecord<LimsProvenance> provenanceRecord) {
-                  if (!provenanceRecord.asSubtype(
-                          SampleProvenanceDto.class,
-                          r -> {
-                            if (skip) {
-                              output_skipped.add(
-                                  new SampleCerberusFileProvenanceSkippedRecord(stale, r));
-                            } else {
-                              output.add(new SampleCerberusFileProvenanceRecord(stale, r));
-                            }
-                          })
-                      && !provenanceRecord.asSubtype(
-                          LaneProvenanceDto.class,
-                          r -> {
-                            if (skip) {
-                              output_skipped.add(
-                                  new LaneCerberusFileProvenanceSkippedRecord(stale, r));
-                            } else {
-                              output.add(new LaneCerberusFileProvenanceRecord(stale, r));
-                            }
-                          })) {
-                    throw new IllegalArgumentException(
-                        provenanceRecord.lims().getClass()
-                            + " is neither lane or sample provenance.");
+                  @Override
+                  public void file(
+                      boolean stale,
+                      boolean skip,
+                      ProvenanceRecord<LimsProvenance> provenanceRecord) {
+                    if (!provenanceRecord.asSubtype(
+                            SampleProvenanceDto.class,
+                            r -> {
+                              if (skip) {
+                                output_skipped.add(
+                                    new SampleCerberusFileProvenanceSkippedRecord(stale, r));
+                              } else {
+                                output.add(new SampleCerberusFileProvenanceRecord(stale, r));
+                              }
+                            })
+                        && !provenanceRecord.asSubtype(
+                            LaneProvenanceDto.class,
+                            r -> {
+                              if (skip) {
+                                output_skipped.add(
+                                    new LaneCerberusFileProvenanceSkippedRecord(stale, r));
+                              } else {
+                                output.add(new LaneCerberusFileProvenanceRecord(stale, r));
+                              }
+                            })) {
+                      throw new IllegalArgumentException(
+                          provenanceRecord.lims().getClass()
+                              + " is neither lane or sample provenance.");
+                    }
+                    if (stale) {
+                      staleCount.incrementAndGet();
+                    }
                   }
-                  if (stale) {
-                    staleCount.incrementAndGet();
-                  }
-                }
-              }));
+                }));
+      } catch (IllegalArgumentException e) {
+        throw e;
+      } catch (Exception e) {
+        return Optional.of(
+            new FileProvenanceOutput(
+                fileProvenance().collect(Collectors.toList()),
+                errors,
+                fileProvenanceSkipped().collect(Collectors.toList())));
+      }
       errorRecords.labels(fileName().toString()).set(errors.size());
       staleRecords.labels(fileName().toString()).set(staleCount.get());
       goodRecords
