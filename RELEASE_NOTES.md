@@ -2,6 +2,8 @@
 
 * Fix OpenAPI schema
 * Fix Basic filter view saying 'Matches' for negated regex matching
+* Fix GitHub Pages build by replacing grafana-datasource logo.svg with the original file
+* Redesign input format cache
 
 # [1.23.0] - 2023-02-15T19:54+00:00
 

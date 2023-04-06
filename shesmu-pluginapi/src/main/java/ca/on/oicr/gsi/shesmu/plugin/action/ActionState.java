@@ -45,6 +45,16 @@ public enum ActionState {
    * didn't really succeed. More reached a state of terminal stuckness.
    */
   ZOMBIE(1, 2);
+
+  /**
+   * sortPriority: available to plugins and the server for sorting Actions by type <br>
+   * processPriority: used by the server to prioritize checking the status of certain types of
+   * actions first, as having up-to-date information from a remote server on these actions is more
+   * important.
+   *
+   * <p>Both are intended to be used by Comparators, so lower values indicate higher priority. Both
+   * are separate from an individual Action's priority value.
+   */
   private final int sortPriority, processPriority;
 
   ActionState(int sortPriority, int processPriority) {
