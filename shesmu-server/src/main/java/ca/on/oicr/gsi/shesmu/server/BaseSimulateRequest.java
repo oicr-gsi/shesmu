@@ -638,7 +638,7 @@ public abstract class BaseSimulateRequest {
                     format -> inputs.get(format).stream());
               } catch (InitialCachePopulationException e) {
                 exceptionThrown.set(true);
-                errors.add(String.format("Failed to populate %s cache", e.getMessage()));
+                errors.add(e.getMessage());
               }
 
               final var writer = new StringWriter();

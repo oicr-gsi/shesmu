@@ -42,7 +42,7 @@ public abstract class BaseRecord<V, S> implements Record<V> {
   @Override
   public synchronized V readStale() {
     if (initialState) {
-      throw new InitialCachePopulationException(fetcher.owner().name());
+      throw new InitialCachePopulationException(fetcher.owner().name(), "Uninitialized");
     }
     return unpack(state);
   }
@@ -76,6 +76,7 @@ public abstract class BaseRecord<V, S> implements Record<V> {
           shouldThrow = false;
         }
       } catch (final Exception e) {
+        context += " " + e.getMessage();
         System.err.printf("Exception occurred while refreshing cache %s is as follows:\n", context);
         e.printStackTrace();
         staleRefreshError.labels(fetcher.owner().name()).inc();
@@ -86,7 +87,7 @@ public abstract class BaseRecord<V, S> implements Record<V> {
       }
     }
     if (shouldThrow) {
-      throw new InitialCachePopulationException(fetcher.owner().name());
+      throw new InitialCachePopulationException(fetcher.owner().name(), context);
     }
     return unpack(state);
   }

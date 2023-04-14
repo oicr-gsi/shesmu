@@ -71,7 +71,7 @@ public class InvalidatableRecord<V> implements Record<Optional<V>> {
       e.printStackTrace();
     }
     if (initialState) {
-      throw new InitialCachePopulationException(fetcher.owner().name());
+      throw new InitialCachePopulationException(fetcher.owner().name(), "Uninitialized");
     }
     return value;
   }
