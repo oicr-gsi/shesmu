@@ -66,9 +66,6 @@ public class SftpServer extends JsonPluginFile<Configuration> {
 
         return Optional.of(attributes == null ? NXFILE : attributes);
       } catch (SFTPException e) {
-        if (e.getStatusCode() == Response.StatusCode.PERMISSION_DENIED) {
-          return Optional.empty();
-        }
         throw e;
       }
     }
