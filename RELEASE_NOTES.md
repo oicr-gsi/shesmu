@@ -6,6 +6,7 @@
 * Redesign input format cache
 * Export simulation cache staleness count requests
 * Fix NPE when action is concurrently purged
+* Improve error reporting in Simulator when populating caches
 
 # [1.23.0] - 2023-02-15T19:54+00:00
 
