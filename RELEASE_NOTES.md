@@ -1,5 +1,7 @@
 # Unreleased
 
+# [1.24.0] - 2023-04-18T18:08+00:00
+
 * Fix OpenAPI schema
 * Fix Basic filter view saying 'Matches' for negated regex matching
 * Fix GitHub Pages build by replacing grafana-datasource logo.svg with the original file
