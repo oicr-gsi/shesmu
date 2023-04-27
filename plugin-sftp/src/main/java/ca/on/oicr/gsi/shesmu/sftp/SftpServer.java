@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.sftp;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
@@ -44,35 +45,63 @@ import java.util.stream.Stream;
 import net.schmizz.sshj.common.Message;
 import net.schmizz.sshj.common.SSHPacket;
 import net.schmizz.sshj.connection.channel.direct.Signal;
-import net.schmizz.sshj.sftp.FileAttributes;
 import net.schmizz.sshj.sftp.FileMode;
+import net.schmizz.sshj.sftp.FileMode.Type;
 import net.schmizz.sshj.sftp.Response;
+import net.schmizz.sshj.sftp.Response.StatusCode;
 import net.schmizz.sshj.sftp.SFTPException;
 
 public class SftpServer extends JsonPluginFile<Configuration> {
 
   private class FileAttributeCache
-      extends KeyValueCache<Path, Optional<FileAttributes>, Optional<FileAttributes>> {
+      extends KeyValueCache<
+          Pair<Path, Boolean>, Optional<AlgebraicValue>, Optional<AlgebraicValue>> {
     public FileAttributeCache(Path fileName) {
       super("sftp " + fileName.toString(), 10, SimpleRecord::new);
     }
 
     @Override
-    protected Optional<FileAttributes> fetch(Path fileName, Instant lastUpdated)
+    protected Optional<AlgebraicValue> fetch(Pair<Path, Boolean> fileName, Instant lastUpdated)
         throws IOException {
 
       try (final var connection = connections.get()) {
-        final var attributes = connection.sftp().statExistence(fileName.toString());
+        final var attributes =
+            fileName.second()
+                ? connection.sftp().stat(fileName.first().toString())
+                : connection.sftp().lstat(fileName.first().toString());
+        final var type =
+            attributes.getType() == Type.SYMLINK
+                ? new AlgebraicValue(
+                    attributes.getType().name(),
+                    fileName
+                        .first()
+                        .resolveSibling(connection.sftp().readlink(fileName.first().toString())))
+                : new AlgebraicValue(attributes.getType().name());
 
-        return Optional.of(attributes == null ? NXFILE : attributes);
+        return Optional.of(
+            new AlgebraicValue(
+                "FILE",
+                Instant.ofEpochSecond(attributes.getAtime()),
+                Instant.ofEpochSecond(attributes.getMtime()),
+                (long) attributes.getMode().getMask(),
+                attributes.getSize(),
+                type));
       } catch (SFTPException e) {
+        if (e.getStatusCode() == StatusCode.NO_SUCH_FILE) {
+          return Optional.of(NO_EXIST);
+        }
+        if (e.getStatusCode() == Response.StatusCode.PERMISSION_DENIED) {
+          return Optional.of(NO_PERMISSION);
+        }
         throw e;
       }
     }
   }
 
   static final ObjectMapper MAPPER = new ObjectMapper();
-  private static final FileAttributes NXFILE = new FileAttributes.Builder().withSize(-1).build();
+  private static final AlgebraicValue NO_EXIST = new AlgebraicValue("NO_EXIST");
+  private static final AlgebraicValue NO_PERMISSION = new AlgebraicValue("NO_PERMISSION");
+  private static final AlgebraicValue UNKNOWN = new AlgebraicValue("UNKNOWN");
   private static final Gauge refillBytes =
       Gauge.build(
               "shesmu_sftp_refill_bytes_sent", "The number of bytes sent to the refill command.")
@@ -151,13 +180,6 @@ public class SftpServer extends JsonPluginFile<Configuration> {
         new Thread(() -> errorReader.lines().forEach(l -> definer.log(l, labels)));
     errorDrainThread.start();
     return errorDrainThread;
-  }
-
-  @ShesmuMethod(
-      description =
-          "Returns true if the file or directory exists on the SFTP server described in {file}.")
-  public Optional<Boolean> exists(@ShesmuParameter(description = "path to file") Path fileName) {
-    return fileAttributes.get(fileName).map(a -> a.getSize() != -1);
   }
 
   @ShesmuJsonInputSource(format = "unix_file")
@@ -266,17 +288,6 @@ public class SftpServer extends JsonPluginFile<Configuration> {
       symlinkErrors.labels(name()).inc();
       return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
     }
-  }
-
-  @ShesmuMethod(
-      description =
-          "Gets the last modification timestamp of a file or directory living on the SFTP server described in {file}.")
-  public Optional<Instant> modification_time(
-      @ShesmuParameter(description = "path to file") Path fileName) {
-    return fileAttributes
-        .get(fileName)
-        .filter(a -> a.getSize() != -1)
-        .map(a -> Instant.ofEpochSecond(a.getMtime()));
   }
 
   public boolean refill(String name, String command, ArrayNode data) {
@@ -389,10 +400,16 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   }
 
   @ShesmuMethod(
+      type =
+          "u4FILE$o5atime$dmtime$dperm$isize$itype$u8BLOCK_SPECIAL$t0CHAR_SPECIAL$t0DIRECTORY$t0FIFO_SPECIAL$t0REGULAR$t0SOCKET_SPECIAL$t0SYMLINK$t1pUNKNOWN$t0NO_EXIST$t0NO_PERMISSION$t0UNKNOWN$t0",
       description =
-          "Get the size of a file, in bytes, living on the SFTP server described in {file}.")
-  public Optional<Long> size(@ShesmuParameter(description = "path to file") Path fileName) {
-    return fileAttributes.get(fileName).filter(a -> a.getSize() != -1).map(FileAttributes::getSize);
+          "Gets the `stat` information (size, last modification timestamp, etc) of a file or"
+              + " directory living on the SFTP server described in {file}.")
+  public AlgebraicValue stat(
+      @ShesmuParameter(description = "path to file") Path fileName,
+      @ShesmuParameter(description = "resolve symlinks (aka stat); otherwise lstat")
+          boolean resolveLinks) {
+    return fileAttributes.get(new Pair<>(fileName, resolveLinks)).orElse(UNKNOWN);
   }
 
   @ShesmuAction(description = "Create a symlink on the SFTP server described in {file}.")
