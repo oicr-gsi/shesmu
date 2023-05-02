@@ -1,5 +1,7 @@
 # Unreleased
 
+* Fix GitHub release workflow
+
 # [1.25.0] - 2023-05-16T17:32+00:00
 
 * Replace SFTP file information functions with single `stat` function
