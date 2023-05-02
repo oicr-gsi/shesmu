@@ -11,49 +11,21 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up JDK 14
+    - name: Set up JDK 17
       uses: actions/setup-java@v1
       with:
-        java-version: 14
+        java-version: 17
         server-id: github
     - name: Install NodeJS
       uses: actions/setup-node@v1
       with:
-        node-version: 12
+        node-version: 16
     - name: Install TypeScript Compiler
       run: npm install -g typescript@3.9.9
     - name: Compile Shesmu Server UI with TypeScript Compiler
       run: tsc -p shesmu-server-ui
     - name: Setup Repo credentials
       uses: s4u/maven-settings-action@v2.4.0
-      with:
-        mirrors: |
-          [{
-            "id": "maven-restlet-insecure",
-            "mirrorOf": "maven-restlet",
-            "url": "http://maven.restlet.org",
-            "blocked": false
-          },{
-            "id": "seqware-insecure",
-            "mirrorOf": "seqware.sourceforge.net",
-            "url": "http://artifacts.oicr.on.ca/artifactory/seqware-release",
-            "blocked": false
-          },{
-            "id": "seqware-snapshots-insecure",
-            "mirrorOf": "snapshot.seqware.sourceforge.net",
-            "url": "http://artifacts.oicr.on.ca/artifactory/seqware-snapshot",
-            "blocked": false
-          },{
-            "id": "org.codehaus.plexus-insecure",
-            "mirrorOf": "org.codehaus.plexus",
-            "url": "http://repo1.maven.org/maven2/org/codehaus/plexus",
-            "blocked": false
-          },{
-            "id": "jcenter-insecure",
-            "mirrorOf": "jcenter",
-            "url": "http://jcenter.bintray.com",
-            "blocked": false
-          }]
     - name: Build Shesmu with Maven
       run: mvn -B package --file pom.xml
     - name: Build and push Docker images
