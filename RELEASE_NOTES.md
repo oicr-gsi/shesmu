@@ -1,6 +1,7 @@
 # Unreleased
 
 * Replace SFTP file information functions with single `stat` function
+* Add Cardea (QC Gate ETL) `case_summary` input format
 
 # [1.24.0] - 2023-04-18T18:08+00:00
 
