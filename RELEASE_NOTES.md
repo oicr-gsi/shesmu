@@ -1,6 +1,7 @@
 # Unreleased
 
 * Fix GitHub release workflow
+* Make simulation more clear when undeclared variables are allowed
 
 # [1.25.0] - 2023-05-16T17:32+00:00
 
