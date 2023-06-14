@@ -1001,7 +1001,10 @@ export function initialiseSimulationDashboard(
       }
       return {
         tabs: renderResponse(response),
-        activate: response?.errors.length === 0,
+        activate:
+          response != null &&
+          response.bytecode != null &&
+          !response.exceptionThrown,
       };
     }
   );

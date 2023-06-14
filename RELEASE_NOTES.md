@@ -1,9 +1,22 @@
 # Unreleased
 
+* Fix GitHub release workflow
+* Make simulation more clear when undeclared variables are allowed
+
+# [1.25.0] - 2023-05-16T17:32+00:00
+
+* Replace SFTP file information functions with single `stat` function
+* Add Cardea (QC Gate ETL) `case_summary` input format
+
+# [1.24.0] - 2023-04-18T18:08+00:00
+
 * Fix OpenAPI schema
 * Fix Basic filter view saying 'Matches' for negated regex matching
 * Fix GitHub Pages build by replacing grafana-datasource logo.svg with the original file
 * Redesign input format cache
+* Export simulation cache staleness count requests
+* Fix NPE when action is concurrently purged
+* Improve error reporting in Simulator when populating caches
 
 # [1.23.0] - 2023-02-15T19:54+00:00
 

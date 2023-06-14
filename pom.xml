@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>ca.on.oicr.gsi</groupId>
   <artifactId>shesmu</artifactId>
-  <version>1.23.1-SNAPSHOT</version>
+  <version>1.25.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Shesmu Decision-Action Server</name>
   <url>https://github.com/oicr-gsi/shesmu</url>
@@ -157,6 +157,7 @@
     <module>shesmu-server</module>
     <module>plugin-gsi-common</module>
     <module>plugin-runscanner</module>
+    <module>plugin-cardea</module>
     <module>plugin-cerberus</module>
     <module>plugin-github</module>
     <module>plugin-guanyin</module>

@@ -6,9 +6,9 @@
     <artifactId>shesmu</artifactId>
     <version>1.25.1-SNAPSHOT</version>
   </parent>
-  <artifactId>shesmu-plugin-gsi-common</artifactId>
+  <artifactId>shesmu-plugin-cardea</artifactId>
   <packaging>jar</packaging>
-  <name>Shesmu Decision-Action Server - Common data and tools for OICR GSI</name>
+  <name>Shesmu Decision-Action Server - Cardea integration</name>
   <url>https://github.com/oicr-gsi/shesmu</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -36,7 +36,7 @@
     </dependency>
   </dependencies>
   <build>
-    <finalName>shesmu-plugin-gsi-common</finalName>
+    <finalName>shesmu-plugin-cardea</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
