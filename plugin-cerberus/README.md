@@ -3,6 +3,8 @@
 [Pinery](http://github.com/oicr-gsi/pinery) and
 [Vidarr](https://github.com/oicr-gsi/vidarr).
 
+Deploying this plugin requires the [gsi-common](../plugin-gsi-common/README.md) plugin be deployed as well.
+
 To join data from one or more Vidarr servers with one or more Pinery servers,
 create a configuration file ending in `.cerberus` as follows:
 

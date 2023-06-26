@@ -2,6 +2,8 @@
 [Pinery](http://github.com/oicr-gsi/pinery) is a web service application that
 provides generalized LIMS (Laboratory Information Management System) access for information about samples.
 
+Deploying this plugin requires the [gsi-common](../plugin-gsi-common/README.md) plugin be deployed as well.
+
 The Pinery plugin provides three input formats:
 
 - `pinery_ius` contains lane and sequenced sample information, and excludes 
