@@ -43,8 +43,8 @@ commands.
 
 Build dependencies:
 
-- Java 14 or later
-- Maven 3.5 or later
+- Java 17 or later
+- Maven 3.8 or later
 - NPM
 - Docker (optional) for container builds
 
