@@ -131,7 +131,12 @@ public final class SubmitAction extends Action {
       String workflowVersion) {
     super("vidarr-run");
     this.owner = owner;
-    request.setConsumableResources(new TreeMap<>());
+    TreeMap<String, JsonNode> resources = new TreeMap<>();
+    ObjectMapper objectMapper = new ObjectMapper();
+    ObjectNode jsonNode = objectMapper.createObjectNode();
+    jsonNode.put("priority", this.priority);
+    resources.put("priority", jsonNode);
+    request.setConsumableResources(resources);
     request.setTarget(targetName);
     request.setWorkflow(workflowName);
     request.setWorkflowVersion(workflowVersion);
