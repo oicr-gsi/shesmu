@@ -296,6 +296,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                   }
                 });
           }
+
           if (target.getValue().getConsumableResources() != null
               && !target.getValue().getConsumableResources().isEmpty()) {
             for (final var resource : target.getValue().getConsumableResources().entrySet()) {
@@ -317,6 +318,21 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
             }
           }
           for (final var workflow : workflows) {
+            targetParameters.add(
+                new CustomActionParameter<>(
+                    sanitise("resource_" + "priority"),
+                    false,
+                    this.workflowRunInfo.get("priority").apply(VidarrPlugin.SIMPLE_TO_IMYHAT)) {
+                  private final String name = "priority";
+
+                  @Override
+                  public void store(SubmitAction action, Object value) {
+                    action
+                        .request
+                        .getConsumableResources()
+                        .put(name, AsJsonNode.convert(type(),, value));
+                  }
+                });
             if (target.getValue().getLanguage().contains(workflow.getLanguage())) {
               InputParameterConverter.create(workflow.getParameters(), target.getValue())
                   .ifPresent(
@@ -352,7 +368,8 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                   supplier,
                                                   targetName,
                                                   workflowName,
-                                                  workflowVersion);
+                                                  workflowVersion,
+                                                  new TreeMap());
                                             }
                                           },
                                           Stream.of(
