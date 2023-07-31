@@ -28,23 +28,21 @@ public class ExpressionNodeLocation extends ExpressionNode {
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
     try {
-      return RuntimeSupport.MAPPER.writeValueAsString(String.format(
-          "%s:%d:%d[%s]",
-          renderer.sourcePath(), line(), column(), renderer.hash()));
+      return RuntimeSupport.MAPPER.writeValueAsString(
+          String.format("%s:%d:%d[%s]", renderer.sourcePath(), line(), column(), renderer.hash()));
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
   }
 
-
   @Override
   public void render(Renderer renderer) {
     renderer
         .methodGen()
-        .push(String.format(
-            "%s:%d:%d[%s]",
-            renderer.root().sourcePath(), line(), column(), renderer.root().hash)
-            );
+        .push(
+            String.format(
+                "%s:%d:%d[%s]",
+                renderer.root().sourcePath(), line(), column(), renderer.root().hash));
   }
 
   @Override

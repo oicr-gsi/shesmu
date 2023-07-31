@@ -3,7 +3,9 @@ package ca.on.oicr.gsi.shesmu.pinery.barcodes;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/** @author mlaszloffy */
+/**
+ * @author mlaszloffy
+ */
 public class BarcodeAndBasesMask {
 
   public static Barcode applyBasesMask(Barcode barcode, BasesMask basesMask) {

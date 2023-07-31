@@ -6,7 +6,9 @@ import java.util.Objects;
 import org.apache.commons.text.similarity.HammingDistance;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 
-/** @author mlaszloffy */
+/**
+ * @author mlaszloffy
+ */
 public class BarcodeComparison {
 
   private static final LevenshteinDistance LEVENSHTEIN_DISTANCE =

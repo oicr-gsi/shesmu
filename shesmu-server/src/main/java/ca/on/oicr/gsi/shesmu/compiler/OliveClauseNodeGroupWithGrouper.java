@@ -419,7 +419,9 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
             && Stream.concat(
                             discriminators.stream().flatMap(DiscriminatorNode::targets),
                             children.stream())
-                        .collect(Collectors.groupingBy(DefinedTarget::name)).entrySet().stream()
+                        .collect(Collectors.groupingBy(DefinedTarget::name))
+                        .entrySet()
+                        .stream()
                         .filter(e -> e.getValue().size() > 1)
                         .peek(
                             e ->

@@ -3,7 +3,9 @@ package ca.on.oicr.gsi.shesmu.pinery.barcodes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-/** @author mlaszloffy */
+/**
+ * @author mlaszloffy
+ */
 public class BasesMaskTest {
 
   @Test

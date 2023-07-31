@@ -132,8 +132,10 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
             description,
             RunReport.class,
             () -> new RunReport(definer, reportId, reportName), //
-            report.getPermittedParameters() //
-                .entrySet().stream() //
+            report
+                .getPermittedParameters() //
+                .entrySet()
+                .stream() //
                 .map(
                     e ->
                         new JsonParameter<>(

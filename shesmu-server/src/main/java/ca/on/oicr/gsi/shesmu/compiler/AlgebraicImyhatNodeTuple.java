@@ -20,8 +20,7 @@ public class AlgebraicImyhatNodeTuple extends AlgebraicImyhatNode {
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return Imyhat.algebraicTuple(
         name,
-        types
-            .stream()
+        types.stream()
             .map(t -> t.render(expressionCompilerServices, errorHandler))
             .toArray(Imyhat[]::new));
   }

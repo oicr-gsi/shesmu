@@ -11,7 +11,6 @@ import ca.on.oicr.gsi.shesmu.plugin.filter.AlertFilter;
 import ca.on.oicr.gsi.shesmu.plugin.filter.AlertFilter.AlertFilterNode;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;

@@ -976,26 +976,24 @@ public class CompiledGenerator implements DefinitionRepository {
                       format ->
                           usedFormats.contains(format.name())
                               && !consumer.isOverloaded(format.name()))
-                  .flatMap(format -> {
-                    try (var timer = INPUT_FETCH_TIME.start(format.name());
-                        var inflight =
-                            Server.inflightCloseable("Fetching " + format.name())) {
-                      final var results =
-                          input.fetch(format.name(), false).toList();
-                      INPUT_RECORDS.labels(format.name()).set(results.size());
-                      return Stream.of(new Pair<>(format.name(), results));
-                    } catch (final Exception e) {
-                      e.printStackTrace();
-                      // If we failed to load this format, pretend like it was inhibited and
-                      // don't run dependent olives
-                      return Stream.empty();
-                    }
-                  })
-                  .collect(
-                      Collectors.toMap(Pair::first, Pair::second));
+                  .flatMap(
+                      format -> {
+                        try (var timer = INPUT_FETCH_TIME.start(format.name());
+                            var inflight = Server.inflightCloseable("Fetching " + format.name())) {
+                          final var results = input.fetch(format.name(), false).toList();
+                          INPUT_RECORDS.labels(format.name()).set(results.size());
+                          return Stream.of(new Pair<>(format.name(), results));
+                        } catch (final Exception e) {
+                          e.printStackTrace();
+                          // If we failed to load this format, pretend like it was inhibited and
+                          // don't run dependent olives
+                          return Stream.empty();
+                        }
+                      })
+                  .collect(Collectors.toMap(Pair::first, Pair::second));
 
           public boolean isReady(String format) {
-          return data.containsKey(format);
+            return data.containsKey(format);
           }
 
           @Override
@@ -1016,8 +1014,7 @@ public class CompiledGenerator implements DefinitionRepository {
                 script
                     .generator
                     .inputs()
-                    .allMatch(
-                        cache::isReady)) // Don't run any olives that require data we don't
+                    .allMatch(cache::isReady)) // Don't run any olives that require data we don't
         // have.
         .forEach(
             script -> {

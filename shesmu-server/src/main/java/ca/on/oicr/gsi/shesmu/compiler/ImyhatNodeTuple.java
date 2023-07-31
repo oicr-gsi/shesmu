@@ -16,8 +16,7 @@ public class ImyhatNodeTuple extends ImyhatNode {
   public Imyhat render(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return Imyhat.tuple(
-        types
-            .stream()
+        types.stream()
             .map(t -> t.render(expressionCompilerServices, errorHandler))
             .toArray(Imyhat[]::new));
   }

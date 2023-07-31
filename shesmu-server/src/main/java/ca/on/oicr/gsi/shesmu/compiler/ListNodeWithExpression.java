@@ -20,9 +20,7 @@ public abstract class ListNodeWithExpression extends ListNode {
     this.expression = expression;
   }
 
-  /**
-   * Add all free variable names to the set provided.
-   */
+  /** Add all free variable names to the set provided. */
   @Override
   public final void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     final var remove =

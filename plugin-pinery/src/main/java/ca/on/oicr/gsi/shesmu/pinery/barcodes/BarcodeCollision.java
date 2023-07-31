@@ -1,6 +1,8 @@
 package ca.on.oicr.gsi.shesmu.pinery.barcodes;
 
-/** @author mlaszloffy */
+/**
+ * @author mlaszloffy
+ */
 public class BarcodeCollision {
 
   private final Barcode barcode;
