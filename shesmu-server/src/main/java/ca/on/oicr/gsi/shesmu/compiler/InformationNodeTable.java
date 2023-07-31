@@ -26,8 +26,7 @@ public class InformationNodeTable extends InformationNodeBaseRepeat {
     }
 
     public String renderEcma(EcmaScriptRenderer renderer) {
-      return contents
-          .stream()
+      return contents.stream()
           .map(c -> c.renderEcma(renderer))
           .collect(Collectors.joining(", ", "[", "]"));
     }
@@ -41,8 +40,7 @@ public class InformationNodeTable extends InformationNodeBaseRepeat {
         ExpressionCompilerServices expressionCompilerServices,
         DefinitionRepository nativeDefinitions,
         Consumer<String> errorHandler) {
-      return contents
-              .stream()
+      return contents.stream()
               .filter(
                   c ->
                       c.resolveDefinitions(
@@ -76,16 +74,14 @@ public class InformationNodeTable extends InformationNodeBaseRepeat {
 
   @Override
   public String renderRow(EcmaScriptRenderer renderer) {
-    return columns
-        .stream()
+    return columns.stream()
         .map(collector -> collector.renderEcma(renderer))
         .collect(Collectors.joining(", ", "[", "]"));
   }
 
   @Override
   protected boolean resolveTerminal(NameDefinitions collectorName, Consumer<String> errorHandler) {
-    return columns
-            .stream()
+    return columns.stream()
             .filter(collector -> collector.resolve(collectorName, errorHandler))
             .count()
         == columns.size();
@@ -96,8 +92,7 @@ public class InformationNodeTable extends InformationNodeBaseRepeat {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    return columns
-            .stream()
+    return columns.stream()
             .filter(
                 collector ->
                     collector.resolveDefinitions(

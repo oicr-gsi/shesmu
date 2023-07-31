@@ -22,8 +22,7 @@ public class InformationNodeSimulationExisting extends InformationNode {
       return String.format(
           "{ type: \"simulation-existing\", fileName: %s, parameters: %s }",
           RuntimeSupport.MAPPER.writeValueAsString(script),
-          constants
-              .stream()
+          constants.stream()
               .flatMap(e -> e.renderConstant(renderer))
               .sorted()
               .collect(Collectors.joining(", ", "{", "}")));
@@ -43,8 +42,7 @@ public class InformationNodeSimulationExisting extends InformationNode {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    return constants
-            .stream()
+    return constants.stream()
             .filter(c -> c.resolveDefinitions(expressionCompilerServices, errorHandler))
             .count()
         == constants.size();

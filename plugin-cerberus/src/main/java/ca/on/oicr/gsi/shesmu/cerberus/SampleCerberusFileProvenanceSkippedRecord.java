@@ -103,8 +103,11 @@ public class SampleCerberusFileProvenanceSkippedRecord
   }
 
   private Optional<String> limsAttr(String key) {
-    return provenanceRecord.lims().getSampleAttributes()
-        .getOrDefault(key, Collections.emptySortedSet()).stream()
+    return provenanceRecord
+        .lims()
+        .getSampleAttributes()
+        .getOrDefault(key, Collections.emptySortedSet())
+        .stream()
         .findAny();
   }
 

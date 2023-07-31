@@ -15,8 +15,7 @@ public class DisplayNodeList extends DisplayNode {
 
   @Override
   public String renderEcma(EcmaScriptRenderer renderer) {
-    return items
-        .stream()
+    return items.stream()
         .map(item -> item.renderEcma(renderer))
         .collect(Collectors.joining(", ", "[", "]"));
   }
@@ -31,8 +30,7 @@ public class DisplayNodeList extends DisplayNode {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    return items
-            .stream()
+    return items.stream()
             .filter(
                 item ->
                     item.resolveDefinitions(

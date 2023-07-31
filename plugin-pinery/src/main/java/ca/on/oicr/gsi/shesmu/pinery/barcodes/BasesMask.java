@@ -4,7 +4,9 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** @author mlaszloffy */
+/**
+ * @author mlaszloffy
+ */
 public class BasesMask {
 
   private final Integer readOneIncludeLength;
