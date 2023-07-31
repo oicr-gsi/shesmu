@@ -238,6 +238,8 @@
           </execution>
         </executions>
         <dependencies>
+          <!-- Requires custom JVM config in .mvn/jvm.config -->
+          <!-- see https://github.com/Cosium/git-code-format-maven-plugin/blob/master/README.md -->
           <dependency>
             <groupId>com.cosium.code</groupId>
             <artifactId>google-java-format</artifactId>
