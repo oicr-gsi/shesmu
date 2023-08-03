@@ -279,6 +279,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
               HttpRequest.newBuilder(url.get().resolve("/api/targets")).GET().build(),
               new JsonBodyHandler<>(
                   MAPPER, new TypeReference<Map<String, TargetDeclaration>>() {}));
+      var consumableParameters = new TreeMap<>();
       if (workflowsResult.statusCode() == 200 && targetsResult.statusCode() == 200) {
         definer.clearActions();
         final var workflows = workflowsResult.body().get();
@@ -300,6 +301,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
           if (target.getValue().getConsumableResources() != null
               && !target.getValue().getConsumableResources().isEmpty()) {
             for (final var resource : target.getValue().getConsumableResources().entrySet()) {
+              consumableParameters.put(resource.getKey(), resource.getValue());
               targetParameters.add(
                   new CustomActionParameter<>(
                       sanitise("resource_" + resource.getKey()),
@@ -318,21 +320,6 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
             }
           }
           for (final var workflow : workflows) {
-            targetParameters.add(
-                new CustomActionParameter<>(
-                    sanitise("resource_" + "priority"),
-                    false,
-                    this.workflowRunInfo.get("priority").apply(VidarrPlugin.SIMPLE_TO_IMYHAT)) {
-                  private final String name = "priority";
-
-                  @Override
-                  public void store(SubmitAction action, Object value) {
-                    action
-                        .request
-                        .getConsumableResources()
-                        .put(name, AsJsonNode.convert(type(),, value));
-                  }
-                });
             if (target.getValue().getLanguage().contains(workflow.getLanguage())) {
               InputParameterConverter.create(workflow.getParameters(), target.getValue())
                   .ifPresent(
@@ -369,7 +356,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                   targetName,
                                                   workflowName,
                                                   workflowVersion,
-                                                  new TreeMap());
+                                                  consumableParameters);
                                             }
                                           },
                                           Stream.of(
