@@ -4,6 +4,7 @@
 * Make simulation more clear when undeclared variables are allowed
 * Update README files with new requirements, clarifications about plugin-gsi-common
 * Add Nabu `case_archive` input format
+* Allow run priority to be set for Olives which is passed to Vidarr
 
 # [1.25.0] - 2023-05-16T17:32+00:00
 
