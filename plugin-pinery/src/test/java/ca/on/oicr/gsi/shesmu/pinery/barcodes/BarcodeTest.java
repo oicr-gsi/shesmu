@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
-/** @author mlaszloffy */
+/**
+ * @author mlaszloffy
+ */
 public class BarcodeTest {
 
   public BarcodeTest() {}

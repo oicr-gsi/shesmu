@@ -33,7 +33,7 @@ public class ListNodeSort extends ListNodeWithExpression {
 
   @Override
   public EcmaLoadableConstructor render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
-    builder.sort(name, expression.type().isSame(Imyhat.STRING),  expression::renderEcma);
+    builder.sort(name, expression.type().isSame(Imyhat.STRING), expression::renderEcma);
     return name;
   }
 

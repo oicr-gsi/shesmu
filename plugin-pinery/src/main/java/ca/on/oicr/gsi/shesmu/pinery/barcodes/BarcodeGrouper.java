@@ -39,8 +39,7 @@ public class BarcodeGrouper<I, O> implements Grouper<I, O> {
   public Stream<Subgroup<I, O>> group(List<I> inputs) {
     final Gauge.Child gauge = badGroups.labels(runNameReader.apply(inputs.get(0)));
     final List<BasesMask> basesMasks =
-        inputs
-            .stream()
+        inputs.stream()
             .map(basesMaskReader)
             .distinct()
             .map(BasesMask::fromString)
@@ -88,9 +87,7 @@ public class BarcodeGrouper<I, O> implements Grouper<I, O> {
     }
 
     gauge.set(0);
-    return groups
-        .entrySet()
-        .stream()
+    return groups.entrySet().stream()
         .map(
             entry ->
                 new Subgroup<>(

@@ -61,7 +61,8 @@ public final class JavaStreamBuilder {
   private static final Method METHOD_COMPARATOR__COMPARING =
       new Method("comparing", A_COMPARATOR_TYPE, new Type[] {A_FUNCTION_TYPE});
   private static final Method METHOD_OPTIONAL__EMPTY =
-      new Method("empty", A_OPTIONAL_TYPE, new Type[] {});;
+      new Method("empty", A_OPTIONAL_TYPE, new Type[] {});
+  ;
   private static final Method METHOD_OPTIONAL__OF =
       new Method("of", A_OPTIONAL_TYPE, new Type[] {A_OBJECT_TYPE});
 

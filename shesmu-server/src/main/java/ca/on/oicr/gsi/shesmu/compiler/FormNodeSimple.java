@@ -47,8 +47,7 @@ public final class FormNodeSimple extends FormNode {
       ExpressionCompilerServices expressionCompilerServices,
       DefinitionRepository nativeDefinitions,
       Consumer<String> errorHandler) {
-    return label
-            .stream()
+    return label.stream()
             .filter(
                 l ->
                     l.resolveDefinitions(
