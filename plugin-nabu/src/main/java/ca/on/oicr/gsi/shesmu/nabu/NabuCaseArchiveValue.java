@@ -2,61 +2,63 @@ package ca.on.oicr.gsi.shesmu.nabu;
 
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
 public class NabuCaseArchiveValue {
-  private final Optional<Instant> caseFilesUnloaded;
-  private final String caseIdentifier;
-  private final Optional<String> commvaultBackupJobId;
+
+  private final Optional<Instant> case_files_unloaded;
+  private final String case_identifier;
+  private final Optional<String> commvault_backup_job_id;
   private final Instant created;
-  private final Optional<Instant> filesCopiedToOffsiteArchiveStagingDir;
-  private final Optional<Instant> filesLoadedIntoVidarrArchival;
-  private final Set<String> limsIds;
+  private final Optional<Instant> files_copied_to_offsite_archive_staging_dir;
+  private final Optional<Instant> files_loaded_into_vidarr_archival;
+  private final Set<String> lims_ids;
   private final Instant modified;
-  private final long requisitionId;
-  private final Set<String> workflowRunIdsForOffsiteArchive;
-  private final Optional<Set<String>> workflowRunIdsForVidarrArchival;
+  private final long requisition_id;
+  private final Set<String> workflow_run_ids_for_offsite_archive;
+  private final Optional<Set<String>> workflow_run_ids_for_vidarr_archival;
 
   public NabuCaseArchiveValue(
-      Optional<Instant> caseFilesUnloaded,
-      String caseIdentifier,
-      Optional<String> commvaultBackupJobId,
+      Optional<Instant> case_files_unloaded,
+      String case_identifier,
+      Optional<String> commvault_backup_job_id,
       Instant created,
-      Optional<Instant> filesCopiedToOffsiteArchiveStagingDir,
-      Optional<Instant> filesLoadedIntoVidarrArchival,
-      Set<String> limsIds,
+      Optional<Instant> files_copied_to_offsite_archive_staging_dir,
+      Optional<Instant> files_loaded_into_vidarr_archival,
+      Set<String> lims_ids,
       Instant modified,
-      long requisitionId,
-      Set<String> workflowRunIdsForOffsiteArchive,
-      Optional<Set<String>> workflowRunIdsForVidarrArchival) {
+      long requisition_id,
+      Set<String> workflow_run_ids_for_offsite_archive,
+      Optional<Set<String>> workflow_run_ids_for_vidarr_archival) {
     super();
-    this.caseFilesUnloaded = caseFilesUnloaded;
-    this.caseIdentifier = caseIdentifier;
-    this.commvaultBackupJobId = commvaultBackupJobId;
+    this.case_files_unloaded = case_files_unloaded;
+    this.case_identifier = case_identifier;
+    this.commvault_backup_job_id = commvault_backup_job_id;
     this.created = created;
-    this.filesCopiedToOffsiteArchiveStagingDir = filesCopiedToOffsiteArchiveStagingDir;
-    this.filesLoadedIntoVidarrArchival = filesLoadedIntoVidarrArchival;
-    this.limsIds = limsIds;
+    this.files_copied_to_offsite_archive_staging_dir = files_copied_to_offsite_archive_staging_dir;
+    this.files_loaded_into_vidarr_archival = files_loaded_into_vidarr_archival;
+    this.lims_ids = lims_ids;
     this.modified = modified;
-    this.requisitionId = requisitionId;
-    this.workflowRunIdsForOffsiteArchive = workflowRunIdsForOffsiteArchive;
-    this.workflowRunIdsForVidarrArchival = workflowRunIdsForVidarrArchival;
+    this.requisition_id = requisition_id;
+    this.workflow_run_ids_for_offsite_archive = workflow_run_ids_for_offsite_archive;
+    this.workflow_run_ids_for_vidarr_archival = workflow_run_ids_for_vidarr_archival;
   }
 
   @ShesmuVariable
-  public Optional<Instant> caseFilesUnloaded() {
-    return caseFilesUnloaded;
+  public Optional<Instant> case_files_unloaded() {
+    return case_files_unloaded;
   }
 
   @ShesmuVariable
-  public String caseIdentifier() {
-    return caseIdentifier;
+  public String case_identifier() {
+    return case_identifier;
   }
 
   @ShesmuVariable
-  public Optional<String> commvaultBackupJobId() {
-    return commvaultBackupJobId;
+  public Optional<String> commvault_backup_job_id() {
+    return commvault_backup_job_id;
   }
 
   @ShesmuVariable
@@ -64,19 +66,58 @@ public class NabuCaseArchiveValue {
     return created;
   }
 
-  @ShesmuVariable
-  public Optional<Instant> filesCopiedToOffsiteArchiveStagingDir() {
-    return filesCopiedToOffsiteArchiveStagingDir;
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    NabuCaseArchiveValue that = (NabuCaseArchiveValue) o;
+    return case_files_unloaded == that.case_files_unloaded()
+        && case_identifier.equals(that.case_identifier())
+        && commvault_backup_job_id.equals(that.commvault_backup_job_id())
+        && created.equals(that.created())
+        && files_copied_to_offsite_archive_staging_dir
+            == that.files_copied_to_offiste_archive_staging_dir()
+        && files_loaded_into_vidarr_archival == that.files_loaded_into_vidarr_archival()
+        && lims_ids.equals(that.lims_ids())
+        && modified.equals(that.modified())
+        && requisition_id == that.requisition_id()
+        && workflow_run_ids_for_offsite_archive.equals(that.workflow_run_ids_for_offsite_archive())
+        && workflow_run_ids_for_vidarr_archival.equals(that.workflow_run_ids_for_vidarr_archival());
   }
 
   @ShesmuVariable
-  public Optional<Instant> filesLoadedIntoVidarrArchival() {
-    return filesLoadedIntoVidarrArchival;
+  public Optional<Instant> files_copied_to_offiste_archive_staging_dir() {
+    return files_copied_to_offsite_archive_staging_dir;
   }
 
   @ShesmuVariable
-  public Set<String> limsIds() {
-    return limsIds;
+  public Optional<Instant> files_loaded_into_vidarr_archival() {
+    return files_loaded_into_vidarr_archival;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        case_files_unloaded,
+        case_identifier,
+        commvault_backup_job_id,
+        created,
+        files_copied_to_offsite_archive_staging_dir,
+        files_loaded_into_vidarr_archival,
+        lims_ids,
+        modified,
+        requisition_id,
+        workflow_run_ids_for_offsite_archive,
+        workflow_run_ids_for_vidarr_archival);
+  }
+
+  @ShesmuVariable
+  public Set<String> lims_ids() {
+    return lims_ids;
   }
 
   @ShesmuVariable
@@ -85,17 +126,17 @@ public class NabuCaseArchiveValue {
   }
 
   @ShesmuVariable
-  public long requisitionId() {
-    return requisitionId;
+  public long requisition_id() {
+    return requisition_id;
   }
 
   @ShesmuVariable
-  public Set<String> workflowRunIdsForOffsiteArchive() {
-    return workflowRunIdsForOffsiteArchive;
+  public Set<String> workflow_run_ids_for_offsite_archive() {
+    return workflow_run_ids_for_offsite_archive;
   }
 
   @ShesmuVariable
-  public Optional<Set<String>> workflowRunIdsForVidarrArchival() {
-    return workflowRunIdsForVidarrArchival;
+  public Optional<Set<String>> workflow_run_ids_for_vidarr_archival() {
+    return workflow_run_ids_for_vidarr_archival;
   }
 }
