@@ -16,6 +16,7 @@ import java.net.URI;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -50,9 +51,14 @@ final class RunStateAttemptSubmit extends RunState {
   }
 
   @Override
-  public PerformResult perform(URI vidarrUrl, SubmitWorkflowRequest request)
+  public PerformResult perform(
+      URI vidarrUrl,
+      SubmitWorkflowRequest request,
+      SubmissionPolicy submissionPolicy,
+      Duration lastGeneratedByOlive)
       throws IOException, InterruptedException {
     request.setAttempt(attempt);
+    request.setMode(submissionPolicy.mode(lastGeneratedByOlive));
     final var response =
         VidarrPlugin.CLIENT.send(
             HttpRequest.newBuilder(vidarrUrl.resolve("/api/submit"))

@@ -215,6 +215,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   private final Definer<VidarrPlugin> definer;
   private final MaxInFlightCache mifCache;
   private Optional<URI> url = Optional.empty();
+  private SubmissionPolicy submissionPolicy = SubmissionPolicy.ALWAYS;
   private final WorkflowRunInformationCache workflowRunInfo;
 
   public VidarrPlugin(Path fileName, String instanceName, Definer<VidarrPlugin> definer) {
@@ -228,6 +229,10 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   public void configuration(SectionRenderer renderer) {
     final var u = url;
     u.ifPresent(uri -> renderer.link("URL", uri.toString(), uri.toString()));
+  }
+
+  public SubmissionPolicy defaultSubmissionPolicy() {
+    return submissionPolicy;
   }
 
   @ShesmuMethod(
@@ -269,6 +274,11 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   @Override
   protected Optional<Integer> update(Configuration value) {
     try {
+      if (value.getDefaultMaxSubmissionDelay() == null) {
+        submissionPolicy = SubmissionPolicy.ALWAYS;
+      } else {
+        submissionPolicy = SubmissionPolicy.maxDelay(value.getDefaultMaxSubmissionDelay());
+      }
       url = Optional.of(URI.create(value.getUrl()));
       final var workflowsResult =
           CLIENT.send(

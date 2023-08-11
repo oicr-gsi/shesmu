@@ -34,6 +34,7 @@ import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -58,7 +59,7 @@ public class RunTest {
     @Override
     public boolean accept(
         Action action, String filename, int line, int column, String hash, String[] tags) {
-      if (action.perform(null) == ActionState.SUCCEEDED) {
+      if (action.perform(null, Duration.ZERO) == ActionState.SUCCEEDED) {
         good++;
       } else {
         bad++;
@@ -183,7 +184,7 @@ public class RunTest {
     }
 
     @Override
-    public ActionState perform(ActionServices services) {
+    public ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
       return ok ? ActionState.SUCCEEDED : ActionState.FAILED;
     }
 

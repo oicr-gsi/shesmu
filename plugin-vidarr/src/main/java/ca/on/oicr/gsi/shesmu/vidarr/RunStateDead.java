@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +29,11 @@ final class RunStateDead extends RunState {
   }
 
   @Override
-  public PerformResult perform(URI vidarrUrl, SubmitWorkflowRequest request) {
+  public PerformResult perform(
+      URI vidarrUrl,
+      SubmitWorkflowRequest request,
+      SubmissionPolicy submissionPolicy,
+      Duration lastGeneratedByOlive) {
     return new PerformResult(List.of(), ActionState.ZOMBIE, this);
   }
 

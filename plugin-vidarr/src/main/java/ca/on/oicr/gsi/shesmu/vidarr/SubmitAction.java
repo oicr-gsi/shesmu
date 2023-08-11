@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.vidarr;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
@@ -12,13 +13,13 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.vidarr.api.ExternalKey;
-import ca.on.oicr.gsi.vidarr.api.SubmitMode;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -122,6 +123,7 @@ public final class SubmitAction extends Action {
   private final Set<String> services = new TreeSet<>(List.of("vidarr"));
   private boolean stale;
   private RunState state = new RunStateAttemptSubmit();
+  private SubmissionPolicy submissionPolicy;
   private final List<String> tags;
 
   public SubmitAction(
@@ -131,6 +133,7 @@ public final class SubmitAction extends Action {
       String workflowVersion) {
     super("vidarr-run");
     this.owner = owner;
+    submissionPolicy = owner.get().defaultSubmissionPolicy();
     request.setConsumableResources(new TreeMap<>());
     request.setTarget(targetName);
     request.setWorkflow(workflowName);
@@ -147,11 +150,6 @@ public final class SubmitAction extends Action {
   @Override
   public Stream<ActionCommand<?>> commands() {
     return state.canReattempt() ? Stream.of(DELETE, REATTEMPT, RESET) : Stream.of(RESET);
-  }
-
-  @ActionParameter(name = "dry_run", required = false)
-  public void dryRun(boolean dryRun) {
-    request.setMode(dryRun ? SubmitMode.DRY_RUN : SubmitMode.RUN);
   }
 
   @Override
@@ -204,7 +202,7 @@ public final class SubmitAction extends Action {
   }
 
   @Override
-  public synchronized ActionState perform(ActionServices services) {
+  public synchronized ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
     if (stale) {
       return ActionState.ZOMBIE;
     }
@@ -220,7 +218,7 @@ public final class SubmitAction extends Action {
             .map(
                 url -> {
                   try {
-                    return state.perform(url, request);
+                    return state.perform(url, request, submissionPolicy, lastGeneratedByOlive);
                   } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                     return new RunState.PerformResult(
@@ -276,6 +274,20 @@ public final class SubmitAction extends Action {
   @ActionParameter(required = false)
   public void services(Set<String> services) {
     this.services.addAll(services);
+  }
+
+  @ActionParameter(
+      name = "submission_policy",
+      required = false,
+      type = "u3ALWAYS$t0DRY_RUN$t0MAX_DELAY$t1i")
+  public void submissionPolicy(AlgebraicValue policy) {
+    submissionPolicy =
+        switch (policy.name()) {
+          case "ALWAYS" -> SubmissionPolicy.ALWAYS;
+          case "DRY_RUN" -> SubmissionPolicy.DRY_RUN;
+          case "MAX_DELAY" -> SubmissionPolicy.maxDelay((Long) policy.get(0));
+          default -> throw new IllegalStateException("Unexpected value: " + policy.name());
+        };
   }
 
   @Override

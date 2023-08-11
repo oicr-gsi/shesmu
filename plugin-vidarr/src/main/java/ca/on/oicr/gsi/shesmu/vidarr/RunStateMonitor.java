@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -124,7 +125,11 @@ final class RunStateMonitor extends RunState {
   }
 
   @Override
-  public PerformResult perform(URI vidarrUrl, SubmitWorkflowRequest request)
+  public PerformResult perform(
+      URI vidarrUrl,
+      SubmitWorkflowRequest request,
+      SubmissionPolicy submissionPolicy,
+      Duration lastGeneratedByOlive)
       throws IOException, InterruptedException {
     return create(vidarrUrl, status.getId());
   }

@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -143,7 +144,7 @@ public class CompilerTest {
     }
 
     @Override
-    public ActionState perform(ActionServices services) {
+    public ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
       return ActionState.SUCCEEDED;
     }
 
