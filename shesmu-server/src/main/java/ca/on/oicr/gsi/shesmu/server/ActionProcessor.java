@@ -59,10 +59,7 @@ import java.util.stream.Stream;
  * until successful.
  */
 public final class ActionProcessor
-    implements OliveServices,
-        InputSource,
-        MetroDiagram.OliveFlowReader,
-        ActionFilterBuilder<ActionProcessor.Filter, ActionState, String, Instant, Long> {
+    implements OliveServices, InputSource, MetroDiagram.OliveFlowReader {
 
   private interface Bin<T> extends Comparator<T> {
     long bucket(T min, long width, T value);
@@ -243,49 +240,6 @@ public final class ActionProcessor
     }
 
     protected abstract Optional<Instant> get(Action action, Information info);
-  }
-
-  static Function<String, String> commonPathPrefix(Stream<String> input) {
-    final var items = input.collect(Collectors.toList());
-    if (items.isEmpty()) {
-      return Function.identity();
-    }
-
-    final var commonPrefix = SLASH.splitAsStream(items.get(0)).collect(Collectors.toList());
-    commonPrefix.remove(commonPrefix.size() - 1);
-    for (var i = 1; i < items.size(); i++) {
-      final var parts = List.of(SLASH.split(items.get(i)));
-      var x = 0;
-      while (x < parts.size() - 1
-          && x < commonPrefix.size()
-          && parts.get(x).equals(commonPrefix.get(x))) x++;
-      commonPrefix.subList(x, commonPrefix.size()).clear();
-    }
-    return x -> SLASH.splitAsStream(x).skip(commonPrefix.size()).collect(Collectors.joining("/"));
-  }
-
-  private static <T extends Comparable<T>> void propertySummary(
-      ArrayNode table, Property<T> property, List<Entry<Action, Information>> actions) {
-    final var states =
-        actions.stream()
-            .flatMap(
-                action -> property.extract(action).map(prop -> new Pair<>(prop, action.getKey())))
-            .collect(
-                Collectors.groupingBy(
-                    Pair::first,
-                    TreeMap::new,
-                    Collectors.mapping(Pair::second, Collectors.toSet())));
-
-    final var namer = property.name(states.keySet().stream());
-    for (final var state : states.entrySet()) {
-      final var row = table.addObject();
-      row.put("title", "Total");
-      row.put("value", state.getValue().size());
-      row.put("kind", "property");
-      row.put("type", property.name());
-      row.put("property", namer.apply(state.getKey()));
-      row.set("json", property.json(state.getKey()));
-    }
   }
 
   public static final int ACTION_PERFORM_THREADS =
@@ -586,6 +540,61 @@ public final class ActionProcessor
       Gauge.build("shesmu_action_state_count", "The number of actions in a particular state.")
           .labelNames("state", "type")
           .register();
+
+  static Function<String, String> commonPathPrefix(Stream<String> input) {
+    final var items = input.collect(Collectors.toList());
+    if (items.isEmpty()) {
+      return Function.identity();
+    }
+
+    final var commonPrefix = SLASH.splitAsStream(items.get(0)).collect(Collectors.toList());
+    commonPrefix.remove(commonPrefix.size() - 1);
+    for (var i = 1; i < items.size(); i++) {
+      final var parts = List.of(SLASH.split(items.get(i)));
+      var x = 0;
+      while (x < parts.size() - 1
+          && x < commonPrefix.size()
+          && parts.get(x).equals(commonPrefix.get(x))) x++;
+      commonPrefix.subList(x, commonPrefix.size()).clear();
+    }
+    return x -> SLASH.splitAsStream(x).skip(commonPrefix.size()).collect(Collectors.joining("/"));
+  }
+
+  public static Filter or(Stream<Filter> filters) {
+    return new Filter() {
+      private final List<Filter> filterList = filters.toList();
+
+      @Override
+      protected boolean check(Action action, Information info) {
+        return filterList.stream().anyMatch(f -> f.check(action, info));
+      }
+    };
+  }
+
+  private static <T extends Comparable<T>> void propertySummary(
+      ArrayNode table, Property<T> property, List<Entry<Action, Information>> actions) {
+    final var states =
+        actions.stream()
+            .flatMap(
+                action -> property.extract(action).map(prop -> new Pair<>(prop, action.getKey())))
+            .collect(
+                Collectors.groupingBy(
+                    Pair::first,
+                    TreeMap::new,
+                    Collectors.mapping(Pair::second, Collectors.toSet())));
+
+    final var namer = property.name(states.keySet().stream());
+    for (final var state : states.entrySet()) {
+      final var row = table.addObject();
+      row.put("title", "Total");
+      row.put("value", state.getValue().size());
+      row.put("kind", "property");
+      row.put("type", property.name());
+      row.put("property", namer.apply(state.getKey()));
+      row.set("json", property.json(state.getKey()));
+    }
+  }
+
   private final ActionServices actionServices;
   private final Map<Action, Information> actions = new ConcurrentHashMap<>();
   private final AutoLock alertLock = new AutoLock();
@@ -691,34 +700,6 @@ public final class ActionProcessor
     return startStream(filters).map(e -> e.getValue().id);
   }
 
-  /**
-   * Check that an action was last added in the time range provided
-   *
-   * @param start the exclusive cut-off timestamp
-   * @param end the exclusive cut-off timestamp
-   */
-  @Override
-  public Filter added(Optional<Instant> start, Optional<Instant> end) {
-    return new InstantFilter(start, end) {
-
-      @Override
-      protected Optional<Instant> get(Action action, Information info) {
-        return Optional.of(info.lastAdded);
-      }
-    };
-  }
-
-  @Override
-  public Filter addedAgo(Long offset) {
-    return new InstantFilter(offset) {
-
-      @Override
-      protected Optional<Instant> get(Action action, Information info) {
-        return Optional.of(info.lastAdded);
-      }
-    };
-  }
-
   public void alerts(JsonGenerator output, Predicate<Alert> predicate) throws IOException {
     output.writeStartArray();
     for (final var alert : alerts.values()) {
@@ -729,79 +710,21 @@ public final class ActionProcessor
     output.writeEndArray();
   }
 
-  /** Check that all of the filters match */
-  @Override
-  public Filter and(Stream<Filter> filters) {
-    return new Filter() {
-      private final List<Filter> filterList = filters.collect(Collectors.toList());
-
-      @Override
-      protected boolean check(Action action, Information info) {
-        return filterList.stream().allMatch(f -> f.check(action, info));
-      }
-    };
-  }
-
-  /**
-   * Check that an action was last checked in the time range provided
-   *
-   * @param start the exclusive cut-off timestamp
-   * @param end the exclusive cut-off timestamp
-   */
-  @Override
-  public Filter checked(Optional<Instant> start, Optional<Instant> end) {
-    return new InstantFilter(start, end) {
-
-      @Override
-      protected Optional<Instant> get(Action action, Information info) {
-        return Optional.of(info.lastChecked);
-      }
-    };
-  }
-
-  @Override
-  public Filter checkedAgo(Long offset) {
-    return new InstantFilter(offset) {
-
-      @Override
-      protected Optional<Instant> get(Action action, Information info) {
-        return Optional.of(info.lastChecked);
-      }
-    };
-  }
-
-  @Override
-  public Filter created(Optional<Instant> start, Optional<Instant> end) {
-    return new InstantFilter(start, end) {
-
-      @Override
-      protected Optional<Instant> get(Action action, Information info) {
-        return Optional.of(info.created);
-      }
-    };
-  }
-
-  @Override
-  public Filter createdAgo(Long offset) {
-    return new InstantFilter(offset) {
-
-      @Override
-      protected Optional<Instant> get(Action action, Information info) {
-        return Optional.of(info.created);
-      }
-    };
-  }
-
   /**
    * Execute a command on matching actions
    *
    * @param command the command to perform
+   * @param isOliveLive the predicate to determine if an olive is still live
    * @param user the user performing the command, if known
    * @param filters the filters to select actions
    * @return the number of actions that were able to execute the command
    */
   public CommandStatistics command(
-      PluginManager pluginManager, String command, Optional<String> user, Filter... filters) {
+      PluginManager pluginManager,
+      Predicate<SourceLocation> isOliveLive,
+      String command,
+      Optional<String> user,
+      Filter... filters) {
     final List<Filter> collateralDamage = new ArrayList<>();
     final List<Action> purge = new ArrayList<>();
     final var count =
@@ -831,6 +754,12 @@ public final class ActionProcessor
                                             @Override
                                             public Boolean ignored() {
                                               return accumulator;
+                                            }
+
+                                            @Override
+                                            public Boolean murder(Filter filter) {
+                                              collateralDamage.add(filter);
+                                              return purge();
                                             }
 
                                             @Override
@@ -866,14 +795,8 @@ public final class ActionProcessor
                                               e.getValue().lastState = ActionState.UNKNOWN;
                                               return true;
                                             }
-
-                                            @Override
-                                            public Boolean murder(Filter filter) {
-                                              collateralDamage.add(filter);
-                                              return purge();
-                                            }
                                           },
-                                          this),
+                                          this.filterBuilder(isOliveLive)),
                               (a, b) -> a || b);
                     },
                     Collectors.counting()));
@@ -995,34 +918,6 @@ public final class ActionProcessor
             });
   }
 
-  /**
-   * Check that an action's external timestamp is in the time range provided
-   *
-   * @param start the exclusive cut-off timestamp
-   * @param end the exclusive cut-off timestamp
-   */
-  @Override
-  public Filter external(Optional<Instant> start, Optional<Instant> end) {
-    return new InstantFilter(start, end) {
-
-      @Override
-      protected Optional<Instant> get(Action action, Information info) {
-        return action.externalTimestamp();
-      }
-    };
-  }
-
-  @Override
-  public Filter externalAgo(Long offset) {
-    return new InstantFilter(offset) {
-
-      @Override
-      protected Optional<Instant> get(Action action, Information info) {
-        return action.externalTimestamp();
-      }
-    };
-  }
-
   @Override
   public Stream<Object> fetch(String format, boolean readStale) {
     return format.equals("shesmu")
@@ -1043,48 +938,319 @@ public final class ActionProcessor
         : Stream.empty();
   }
 
+  public ActionFilterBuilder<ActionProcessor.Filter, ActionState, String, Instant, Long>
+      filterBuilder(Predicate<SourceLocation> isOliveLive) {
+    return new ActionFilterBuilder<ActionProcessor.Filter, ActionState, String, Instant, Long>() {
+
+      /**
+       * Check that an action was last added in the time range provided
+       *
+       * @param start the exclusive cut-off timestamp
+       * @param end the exclusive cut-off timestamp
+       */
+      @Override
+      public Filter added(Optional<Instant> start, Optional<Instant> end) {
+        return new InstantFilter(start, end) {
+
+          @Override
+          protected Optional<Instant> get(Action action, Information info) {
+            return Optional.of(info.lastAdded);
+          }
+        };
+      }
+
+      @Override
+      public Filter addedAgo(Long offset) {
+        return new InstantFilter(offset) {
+
+          @Override
+          protected Optional<Instant> get(Action action, Information info) {
+            return Optional.of(info.lastAdded);
+          }
+        };
+      }
+
+      /** Check that all of the filters match */
+      @Override
+      public Filter and(Stream<Filter> filters) {
+        return new Filter() {
+          private final List<Filter> filterList = filters.collect(Collectors.toList());
+
+          @Override
+          protected boolean check(Action action, Information info) {
+            return filterList.stream().allMatch(f -> f.check(action, info));
+          }
+        };
+      }
+
+      /**
+       * Check that an action was last checked in the time range provided
+       *
+       * @param start the exclusive cut-off timestamp
+       * @param end the exclusive cut-off timestamp
+       */
+      @Override
+      public Filter checked(Optional<Instant> start, Optional<Instant> end) {
+        return new InstantFilter(start, end) {
+
+          @Override
+          protected Optional<Instant> get(Action action, Information info) {
+            return Optional.of(info.lastChecked);
+          }
+        };
+      }
+
+      @Override
+      public Filter checkedAgo(Long offset) {
+        return new InstantFilter(offset) {
+
+          @Override
+          protected Optional<Instant> get(Action action, Information info) {
+            return Optional.of(info.lastChecked);
+          }
+        };
+      }
+
+      @Override
+      public Filter created(Optional<Instant> start, Optional<Instant> end) {
+        return new InstantFilter(start, end) {
+
+          @Override
+          protected Optional<Instant> get(Action action, Information info) {
+            return Optional.of(info.created);
+          }
+        };
+      }
+
+      @Override
+      public Filter createdAgo(Long offset) {
+        return new InstantFilter(offset) {
+
+          @Override
+          protected Optional<Instant> get(Action action, Information info) {
+            return Optional.of(info.created);
+          }
+        };
+      }
+
+      /**
+       * Check that an action's external timestamp is in the time range provided
+       *
+       * @param start the exclusive cut-off timestamp
+       * @param end the exclusive cut-off timestamp
+       */
+      @Override
+      public Filter external(Optional<Instant> start, Optional<Instant> end) {
+        return new InstantFilter(start, end) {
+
+          @Override
+          protected Optional<Instant> get(Action action, Information info) {
+            return action.externalTimestamp();
+          }
+        };
+      }
+
+      @Override
+      public Filter externalAgo(Long offset) {
+        return new InstantFilter(offset) {
+
+          @Override
+          protected Optional<Instant> get(Action action, Information info) {
+            return action.externalTimestamp();
+          }
+        };
+      }
+
+      /**
+       * Checks that an action was generated in a particular file
+       *
+       * @param files the names of the files
+       */
+      @Override
+      public Filter fromFile(Stream<String> files) {
+        final var set = files.collect(Collectors.toSet());
+        return new Filter() {
+
+          @Override
+          protected boolean check(Action action, Information info) {
+            return info.locations.stream().map(SourceLocation::fileName).anyMatch(set::contains);
+          }
+        };
+      }
+
+      @Override
+      public Filter fromJson(ActionFilter actionFilter) {
+        return actionFilter.convert(this);
+      }
+
+      /**
+       * Checks that an action was generated in a particular source location
+       *
+       * @param locations the source locations
+       */
+      @Override
+      public Filter fromSourceLocation(Stream<SourceOliveLocation> locations) {
+        final List<Predicate<SourceLocation>> list = locations.collect(Collectors.toList());
+        return new Filter() {
+
+          @Override
+          protected boolean check(Action action, Information info) {
+            return list.stream().anyMatch(l -> info.locations.stream().anyMatch(l));
+          }
+        };
+      }
+
+      /**
+       * Get actions by unique ID.
+       *
+       * @param ids the allowed identifiers
+       */
+      @Override
+      public Filter ids(List<String> ids) {
+        return new Filter() {
+
+          @Override
+          protected boolean check(Action action, Information info) {
+            return ids.contains(info.id);
+          }
+        };
+      }
+
+      /**
+       * Checks that an action is in one of the specified actions states
+       *
+       * @param states the permitted states
+       */
+      @Override
+      public Filter isState(Stream<ActionState> states) {
+        final var set =
+            states.collect(Collectors.toCollection(() -> EnumSet.noneOf(ActionState.class)));
+        return new Filter() {
+
+          @Override
+          protected boolean check(Action action, Information info) {
+            return set.contains(info.lastState);
+          }
+        };
+      }
+
+      @Override
+      public Filter negate(Filter filter) {
+        return filter.negate();
+      }
+
+      /** Check that any of the filters match */
+      @Override
+      public Filter or(Stream<Filter> filters) {
+        return ActionProcessor.or(filters);
+      }
+
+      @Override
+      public Filter orphaned() {
+        return new Filter() {
+          @Override
+          protected boolean check(Action action, Information info) {
+            return info.locations.stream().noneMatch(isOliveLive);
+          }
+        };
+      }
+
+      /**
+       * Check that an action's last status change was in the time range provided
+       *
+       * @param start the exclusive cut-off timestamp
+       * @param end the exclusive cut-off timestamp
+       */
+      @Override
+      public Filter statusChanged(Optional<Instant> start, Optional<Instant> end) {
+        return new InstantFilter(start, end) {
+
+          @Override
+          protected Optional<Instant> get(Action action, Information info) {
+            return Optional.of(info.lastStateTransition);
+          }
+        };
+      }
+
+      @Override
+      public Filter statusChangedAgo(Long offset) {
+        return new InstantFilter(offset) {
+
+          @Override
+          protected Optional<Instant> get(Action action, Information info) {
+            return Optional.of(info.lastStateTransition);
+          }
+        };
+      }
+
+      @Override
+      public Filter tag(Pattern pattern) {
+        return new Filter() {
+          private final Predicate<String> predicate = pattern.asPredicate();
+
+          @Override
+          protected boolean check(Action action, Information info) {
+            return Stream.concat(info.tags.stream(), action.tags()).anyMatch(predicate);
+          }
+        };
+      }
+
+      /**
+       * Check that an action has one of the listed tags attached
+       *
+       * @param tags the set of tags
+       */
+      @Override
+      public Filter tags(Stream<String> tags) {
+        final var tagSet = tags.collect(Collectors.toSet());
+        return new Filter() {
+          @Override
+          protected boolean check(Action action, Information info) {
+            return Stream.concat(info.tags.stream(), action.tags()).anyMatch(tagSet::contains);
+          }
+        };
+      }
+
+      /**
+       * Check that an action matches the regular expression provided
+       *
+       * @param pattern the pattern
+       */
+      @Override
+      public Filter textSearch(Pattern pattern) {
+        return new Filter() {
+          @Override
+          protected boolean check(Action action, Information info) {
+            return action.search(pattern);
+          }
+        };
+      }
+
+      @Override
+      public Filter textSearch(String text, boolean matchCase) {
+        return textSearch(
+            Pattern.compile(
+                ".*" + Pattern.quote(text) + ".*", matchCase ? 0 : Pattern.CASE_INSENSITIVE));
+      }
+
+      /** Check that an action has one of the types specified */
+      @Override
+      public Filter type(Stream<String> types) {
+        final var set = types.collect(Collectors.toSet());
+        return new Filter() {
+
+          @Override
+          protected boolean check(Action action, Information info) {
+            return set.contains(action.type());
+          }
+        };
+      }
+    };
+  }
+
   @Override
   public Dumper findDumper(String name, String[] columns, Imyhat... types) {
     return null;
-  }
-
-  /**
-   * Checks that an action was generated in a particular file
-   *
-   * @param files the names of the files
-   */
-  @Override
-  public Filter fromFile(Stream<String> files) {
-    final var set = files.collect(Collectors.toSet());
-    return new Filter() {
-
-      @Override
-      protected boolean check(Action action, Information info) {
-        return info.locations.stream().map(SourceLocation::fileName).anyMatch(set::contains);
-      }
-    };
-  }
-
-  @Override
-  public Filter fromJson(ActionFilter actionFilter) {
-    return actionFilter.convert(this);
-  }
-
-  /**
-   * Checks that an action was generated in a particular source location
-   *
-   * @param locations the source locations
-   */
-  @Override
-  public Filter fromSourceLocation(Stream<SourceOliveLocation> locations) {
-    final List<Predicate<SourceLocation>> list = locations.collect(Collectors.toList());
-    return new Filter() {
-
-      @Override
-      protected boolean check(Action action, Information info) {
-        return list.stream().anyMatch(l -> info.locations.stream().anyMatch(l));
-      }
-    };
   }
 
   public Filter fromSourceLocation(SourceLocation location) {
@@ -1229,22 +1395,6 @@ public final class ActionProcessor
     }
   }
 
-  /**
-   * Get actions by unique ID.
-   *
-   * @param ids the allowed identifiers
-   */
-  @Override
-  public Filter ids(List<String> ids) {
-    return new Filter() {
-
-      @Override
-      protected boolean check(Action action, Information info) {
-        return ids.contains(info.id);
-      }
-    };
-  }
-
   @Override
   public boolean isOverloaded(String... services) {
     return false;
@@ -1256,24 +1406,6 @@ public final class ActionProcessor
 
   public boolean isPaused(String file) {
     return pausedFiles.contains(file);
-  }
-
-  /**
-   * Checks that an action is in one of the specified actions states
-   *
-   * @param states the permitted states
-   */
-  @Override
-  public Filter isState(Stream<ActionState> states) {
-    final var set =
-        states.collect(Collectors.toCollection(() -> EnumSet.noneOf(ActionState.class)));
-    return new Filter() {
-
-      @Override
-      protected boolean check(Action action, Information info) {
-        return set.contains(info.lastState);
-      }
-    };
   }
 
   public Stream<SourceLocation> locations() {
@@ -1360,28 +1492,10 @@ public final class ActionProcessor
   }
 
   @Override
-  public Filter negate(Filter filter) {
-    return filter.negate();
-  }
-
-  @Override
   public void oliveRuntime(String filename, int line, int column, long timeInNs) {
     OLIVE_RUN_TIME
         .labels(filename, Integer.toString(line), Integer.toString(column))
         .set(timeInNs / Collector.NANOSECONDS_PER_SECOND);
-  }
-
-  /** Check that any of the filters match */
-  @Override
-  public Filter or(Stream<Filter> filters) {
-    return new Filter() {
-      private final List<Filter> filterList = filters.collect(Collectors.toList());
-
-      @Override
-      protected boolean check(Action action, Information info) {
-        return filterList.stream().anyMatch(f -> f.check(action, info));
-      }
-    };
   }
 
   public void pause(SourceLocation location) {
@@ -1542,34 +1656,6 @@ public final class ActionProcessor
   }
 
   /**
-   * Check that an action's last status change was in the time range provided
-   *
-   * @param start the exclusive cut-off timestamp
-   * @param end the exclusive cut-off timestamp
-   */
-  @Override
-  public Filter statusChanged(Optional<Instant> start, Optional<Instant> end) {
-    return new InstantFilter(start, end) {
-
-      @Override
-      protected Optional<Instant> get(Action action, Information info) {
-        return Optional.of(info.lastStateTransition);
-      }
-    };
-  }
-
-  @Override
-  public Filter statusChangedAgo(Long offset) {
-    return new InstantFilter(offset) {
-
-      @Override
-      protected Optional<Instant> get(Action action, Information info) {
-        return Optional.of(info.lastStateTransition);
-      }
-    };
-  }
-
-  /**
    * Stream all the actions in the processor matching a filter set
    *
    * @param filters the filters to match
@@ -1587,72 +1673,9 @@ public final class ActionProcessor
     return startStream(filters).map(entry -> makeActionJson(linker, entry, true));
   }
 
-  @Override
-  public Filter tag(Pattern pattern) {
-    return new Filter() {
-      private final Predicate<String> predicate = pattern.asPredicate();
-
-      @Override
-      protected boolean check(Action action, Information info) {
-        return Stream.concat(info.tags.stream(), action.tags()).anyMatch(predicate);
-      }
-    };
-  }
-
-  /**
-   * Check that an action has one of the listed tags attached
-   *
-   * @param tags the set of tags
-   */
-  @Override
-  public Filter tags(Stream<String> tags) {
-    final var tagSet = tags.collect(Collectors.toSet());
-    return new Filter() {
-      @Override
-      protected boolean check(Action action, Information info) {
-        return Stream.concat(info.tags.stream(), action.tags()).anyMatch(tagSet::contains);
-      }
-    };
-  }
-
   public Stream<String> tags(Filter... filters) {
     return startStream(filters)
         .flatMap(entry -> Stream.concat(entry.getValue().tags.stream(), entry.getKey().tags()));
-  }
-
-  /**
-   * Check that an action matches the regular expression provided
-   *
-   * @param pattern the pattern
-   */
-  @Override
-  public Filter textSearch(Pattern pattern) {
-    return new Filter() {
-      @Override
-      protected boolean check(Action action, Information info) {
-        return action.search(pattern);
-      }
-    };
-  }
-
-  @Override
-  public Filter textSearch(String text, boolean matchCase) {
-    return textSearch(
-        Pattern.compile(
-            ".*" + Pattern.quote(text) + ".*", matchCase ? 0 : Pattern.CASE_INSENSITIVE));
-  }
-
-  /** Check that an action has one of the types specified */
-  @Override
-  public Filter type(Stream<String> types) {
-    final var set = types.collect(Collectors.toSet());
-    return new Filter() {
-
-      @Override
-      protected boolean check(Action action, Information info) {
-        return set.contains(action.type());
-      }
-    };
   }
 
   private void update() {

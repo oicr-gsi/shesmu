@@ -171,6 +171,11 @@ public class InformationNodeActions extends InformationNode {
               }
 
               @Override
+              public String orphaned() {
+                return "{type: \"orphaned\"}";
+              }
+
+              @Override
               public String statusChanged(
                   Optional<InformationParameterNode<Instant>> start,
                   Optional<InformationParameterNode<Instant>> end) {
@@ -361,6 +366,11 @@ public class InformationNodeActions extends InformationNode {
               }
 
               @Override
+              public Boolean orphaned() {
+                return true;
+              }
+
+              @Override
               public Boolean statusChanged(
                   Optional<InformationParameterNode<Instant>> start,
                   Optional<InformationParameterNode<Instant>> end) {
@@ -514,6 +524,11 @@ public class InformationNodeActions extends InformationNode {
               }
 
               @Override
+              public Boolean orphaned() {
+                return true;
+              }
+
+              @Override
               public Boolean statusChanged(
                   Optional<InformationParameterNode<Instant>> start,
                   Optional<InformationParameterNode<Instant>> end) {
@@ -658,6 +673,11 @@ public class InformationNodeActions extends InformationNode {
               @Override
               public Boolean or(Stream<Boolean> filters) {
                 return filters.allMatch(x -> x);
+              }
+
+              @Override
+              public Boolean orphaned() {
+                return true;
               }
 
               @Override

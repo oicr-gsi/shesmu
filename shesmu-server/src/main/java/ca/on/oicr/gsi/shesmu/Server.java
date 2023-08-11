@@ -1401,7 +1401,7 @@ public final class Server implements ServerConfig, ActionServices {
               filters =
                   Stream.of(
                           RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class))
-                      .map(f -> f.convert(processor))
+                      .map(f -> f.convert(processor.filterBuilder(compiler)))
                       .toArray(Filter[]::new);
             } catch (final Exception e) {
               e.printStackTrace();
@@ -1535,7 +1535,7 @@ public final class Server implements ServerConfig, ActionServices {
           final ActionProcessor.Filter[] filters;
           try {
             query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), Query.class);
-            filters = query.perform(processor);
+            filters = query.perform(processor.filterBuilder(compiler));
           } catch (final Exception e) {
             e.printStackTrace();
             t.sendResponseHeaders(400, 0);
@@ -1661,7 +1661,7 @@ public final class Server implements ServerConfig, ActionServices {
                     request.isWait(),
                     Stream.of(request.getFilters())
                         .filter(Objects::nonNull)
-                        .map(filterJson -> filterJson.convert(processor))
+                        .map(filterJson -> filterJson.convert(processor.filterBuilder(compiler)))
                         .toArray(ActionProcessor.Filter[]::new)));
           }
         });
@@ -1684,7 +1684,7 @@ public final class Server implements ServerConfig, ActionServices {
                 processor.count(
                     Stream.of(filters)
                         .filter(Objects::nonNull)
-                        .map(filterJson -> filterJson.convert(processor))
+                        .map(filterJson -> filterJson.convert(processor.filterBuilder(compiler)))
                         .toArray(Filter[]::new)));
           }
         });
@@ -1706,7 +1706,7 @@ public final class Server implements ServerConfig, ActionServices {
                 processor.purge(
                     Stream.of(filters)
                         .filter(Objects::nonNull)
-                        .map(filterJson -> filterJson.convert(processor))
+                        .map(filterJson -> filterJson.convert(processor.filterBuilder(compiler)))
                         .toArray(Filter[]::new)));
           }
         });
@@ -1729,7 +1729,7 @@ public final class Server implements ServerConfig, ActionServices {
                 .actionIds(
                     Stream.of(filters)
                         .filter(Objects::nonNull)
-                        .map(filterJson -> filterJson.convert(processor))
+                        .map(filterJson -> filterJson.convert(processor.filterBuilder(compiler)))
                         .toArray(Filter[]::new))
                 .forEach(
                     id -> {
@@ -1759,7 +1759,7 @@ public final class Server implements ServerConfig, ActionServices {
                       pluginManager,
                       Stream.of(filters)
                           .filter(Objects::nonNull)
-                          .map(filterJson -> filterJson.convert(processor))
+                          .map(filterJson -> filterJson.convert(processor.filterBuilder(compiler)))
                           .toArray(Filter[]::new));
               final var os = t.getResponseBody();
               final var jsonOutput = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8)) {
@@ -1793,12 +1793,13 @@ public final class Server implements ServerConfig, ActionServices {
                 os,
                 processor.command(
                     pluginManager,
+                    compiler,
                     request.getCommand(),
                     t.getRequestHeaders().getOrDefault("X-Remote-User", List.of()).stream()
                         .findFirst(),
                     Stream.of(request.getFilters())
                         .filter(Objects::nonNull)
-                        .map(filterJson -> filterJson.convert(processor))
+                        .map(filterJson -> filterJson.convert(processor.filterBuilder(compiler)))
                         .toArray(Filter[]::new)));
           }
         });

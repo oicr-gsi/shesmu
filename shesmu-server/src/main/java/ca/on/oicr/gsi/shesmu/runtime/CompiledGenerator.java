@@ -18,6 +18,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
 import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
@@ -55,7 +56,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 /** Compiles a user-specified file into a usable program and updates it as necessary */
-public class CompiledGenerator implements DefinitionRepository {
+public class CompiledGenerator implements DefinitionRepository, Predicate<SourceLocation> {
   public static final class DefinitionKey {
     private final String definitionName;
     private final String inputFormat;
@@ -1092,6 +1093,30 @@ public class CompiledGenerator implements DefinitionRepository {
 
   public void start(FileWatcher fileWatcher) {
     scripts = Optional.of(new AutoUpdatingDirectory<>(fileWatcher, ".shesmu", Script::new));
+  }
+
+  @Override
+  public boolean test(SourceLocation sourceLocation) {
+    return scripts
+        .map(
+            s ->
+                s.stream()
+                    .anyMatch(
+                        script ->
+                            script
+                                .dashboard()
+                                .anyMatch(
+                                    dash ->
+                                        dash.second().filename().equals(sourceLocation.hash())
+                                            && dash.second().hash().equals(sourceLocation.hash())
+                                            && dash.second()
+                                                .olives()
+                                                .anyMatch(
+                                                    olive ->
+                                                        olive.line() == sourceLocation.line()
+                                                            && olive.column()
+                                                                == sourceLocation.column()))))
+        .orElse(false);
   }
 
   @Override
