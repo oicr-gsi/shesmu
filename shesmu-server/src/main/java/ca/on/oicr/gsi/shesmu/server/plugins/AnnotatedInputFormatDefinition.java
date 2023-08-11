@@ -7,6 +7,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.GangDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.GangElement;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
+import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.cache.InitialCachePopulationException;
@@ -188,7 +189,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
         return readStale ? cache.getStale(instance) : cache.get(instance);
       } catch (InitialCachePopulationException e) {
         e.printStackTrace();
-        return Stream.empty();
+        return new ErrorableStream<>(Stream.empty(), false);
       }
     }
   }
@@ -226,7 +227,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
         return readStale ? cache.getStale() : cache.get();
       } catch (InitialCachePopulationException e) {
         e.printStackTrace();
-        return Stream.empty();
+        return new ErrorableStream<>(Stream.empty(), false);
       }
     }
   }
@@ -308,13 +309,14 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
 
       @Override
       protected Stream<Object> fetch(Instant lastUpdated) throws Exception {
-        if (config.isEmpty()) return Stream.empty();
+        if (config.isEmpty()) return new ErrorableStream<>(Stream.empty(), false);
         final var url = config.get().getUrl();
         var response =
             Server.HTTP_CLIENT.send(
                 HttpRequest.newBuilder(URI.create(url)).GET().version(Version.HTTP_1_1).build(),
                 BodyHandlers.ofInputStream());
         try (var parser = RuntimeSupport.MAPPER.getFactory().createParser(response.body())) {
+          if (response.statusCode() != 200) return new ErrorableStream<>(Stream.empty(), false);
           final List<Object> results = new ArrayList<>();
           if (parser.nextToken() != JsonToken.START_ARRAY) {
             throw new IllegalStateException("Expected an array");
@@ -377,7 +379,11 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     }
 
     public Stream<Object> variables(boolean readStale) {
-      return readStale ? cache.getStale() : cache.get();
+      try {
+        return readStale ? cache.getStale() : cache.get();
+      } catch (Exception e) {
+        return new ErrorableStream<>(Stream.empty(), false);
+      }
     }
   }
 
@@ -625,29 +631,31 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   }
 
   private Stream<Object> variables(boolean readStale) {
-    return Stream.concat(
-        local.stream().flatMap(LocalJsonFile::variables),
-        remotes.stream().flatMap(source -> source.variables(readStale)));
+    return ErrorableStream.concatWithErrors(
+        new ErrorableStream<>(local.stream()).flatMap(LocalJsonFile::variables),
+        new ErrorableStream<>(remotes.stream()).flatMap(source -> source.variables(readStale)));
+  }
+
+  public void writeJson(JsonGenerator generator, Stream<Object> stream) throws IOException {
+    generator.writeStartArray();
+    stream.forEach(
+        value -> {
+          try {
+            generator.writeStartObject();
+            for (var fieldWriter : fieldWriters) {
+              generator.writeFieldName(fieldWriter.first());
+              fieldWriter.second().write(generator, value);
+            }
+            generator.writeEndObject();
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        });
+    generator.writeEndArray();
   }
 
   public void writeJson(JsonGenerator generator, InputSource inputProvider, boolean readStale)
       throws IOException {
-    generator.writeStartArray();
-    inputProvider
-        .fetch(format.name(), readStale)
-        .forEach(
-            value -> {
-              try {
-                generator.writeStartObject();
-                for (var fieldWriter : fieldWriters) {
-                  generator.writeFieldName(fieldWriter.first());
-                  fieldWriter.second().write(generator, value);
-                }
-                generator.writeEndObject();
-              } catch (IOException e) {
-                throw new RuntimeException(e);
-              }
-            });
-    generator.writeEndArray();
+    writeJson(generator, inputProvider.fetch(format.name(), readStale));
   }
 }

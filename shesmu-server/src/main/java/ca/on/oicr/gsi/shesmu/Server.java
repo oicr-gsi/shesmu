@@ -12,6 +12,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
 import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
+import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
 import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
@@ -261,7 +262,7 @@ public final class Server implements ServerConfig, ActionServices {
                     fileName, DefinitionRepository.concat(definitionRepository, compiler)));
     final InputSource inputSource =
         (format, readStale) ->
-            Stream.concat(
+            ErrorableStream.concatWithErrors(
                     AnnotatedInputFormatDefinition.formats(), Stream.of(pluginManager, processor))
                 .flatMap(source -> source.fetch(format, readStale));
     master =
@@ -2623,6 +2624,7 @@ public final class Server implements ServerConfig, ActionServices {
       AnnotatedInputFormatDefinition format,
       boolean readStale)
       throws IOException {
+
     if (!readStale
         && (processor.isOverloaded(format.name())
             || pluginManager.isOverloaded(Set.of(format.name())).findAny().isPresent()
@@ -2631,11 +2633,23 @@ public final class Server implements ServerConfig, ActionServices {
       try (var os = t.getResponseBody()) {}
       return;
     }
-    t.getResponseHeaders().set("Content-type", "application/json");
-    t.sendResponseHeaders(200, 0);
+
+    // If the format opts to use ErrorableStream itself, OK may be true or false. Otherwise,
+    // constructor will automatically set OK to true
+    ErrorableStream<Object> fetchedInput =
+        new ErrorableStream<>(inputSource.fetch(format.name(), readStale));
+    if (fetchedInput.isOk()) {
+      t.getResponseHeaders().set("Content-type", "application/json");
+      t.sendResponseHeaders(200, 0);
+    } else {
+      t.sendResponseHeaders(503, 0);
+      try (var os = t.getResponseBody()) {}
+      if (!readStale) inputDownloadSemaphore.release();
+      return;
+    }
     try (var os = t.getResponseBody();
         var jGenerator = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8)) {
-      format.writeJson(jGenerator, inputSource, readStale);
+      format.writeJson(jGenerator, fetchedInput);
     } catch (final IOException e) {
       e.printStackTrace();
     } finally {

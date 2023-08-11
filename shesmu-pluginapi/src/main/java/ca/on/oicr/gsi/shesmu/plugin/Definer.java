@@ -18,9 +18,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-/**
- * Interface to define a actions, constants, functions, and signatures that can be used by olives
- */
+/** Interface to define actions, constants, functions, and signatures that can be used by olives */
 public interface Definer<T> extends Supplier<T> {
   /**
    * Create a new refiller description

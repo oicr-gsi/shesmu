@@ -10,6 +10,7 @@ import ca.on.oicr.gsi.provenance.model.LimsProvenance;
 import ca.on.oicr.gsi.shesmu.gsicommon.CerberusFileProvenanceSkippedValue;
 import ca.on.oicr.gsi.shesmu.gsicommon.CerberusFileProvenanceValue;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
+import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
 import ca.on.oicr.gsi.shesmu.plugin.cache.SimpleRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
@@ -39,71 +40,59 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
     }
 
     @Override
-    protected Optional<FileProvenanceOutput> fetch(Instant lastUpdated) {
+    protected Optional<FileProvenanceOutput> fetch(Instant lastUpdated) throws Exception {
       final List<CerberusFileProvenanceValue> output = new ArrayList<>();
       final List<CerberusErrorValue> errors = new ArrayList<>();
       final List<CerberusFileProvenanceSkippedValue> output_skipped = new ArrayList<>();
       final var staleCount = new AtomicInteger();
-      try {
-        JoinSource.join(
-            vidarrData,
-            limsData,
-            VidarrWorkflowRunSource::key,
-            LimsProvenanceInfo::key,
-            FileProvenanceConsumer.of(
-                new FileProvenanceConsumer() {
-                  @Override
-                  public void error(
-                      ProvenanceWorkflowRun<ExternalKey> vidarrWorkflow,
-                      Stream<LimsProvenanceInfo> stream) {
-                    errors.add(new CerberusErrorValue(vidarrWorkflow, stream));
-                  }
+      JoinSource.join(
+          vidarrData,
+          limsData,
+          VidarrWorkflowRunSource::key,
+          LimsProvenanceInfo::key,
+          FileProvenanceConsumer.of(
+              new FileProvenanceConsumer() {
+                @Override
+                public void error(
+                    ProvenanceWorkflowRun<ExternalKey> vidarrWorkflow,
+                    Stream<LimsProvenanceInfo> stream) {
+                  errors.add(new CerberusErrorValue(vidarrWorkflow, stream));
+                }
 
-                  @Override
-                  public void file(
-                      boolean stale,
-                      boolean skip,
-                      ProvenanceRecord<LimsProvenance> provenanceRecord) {
-                    if (!provenanceRecord.asSubtype(
-                            SampleProvenanceDto.class,
-                            r -> {
-                              if (skip) {
-                                output_skipped.add(
-                                    new SampleCerberusFileProvenanceSkippedRecord(stale, r));
-                              } else {
-                                output.add(new SampleCerberusFileProvenanceRecord(stale, r));
-                              }
-                            })
-                        && !provenanceRecord.asSubtype(
-                            LaneProvenanceDto.class,
-                            r -> {
-                              if (skip) {
-                                output_skipped.add(
-                                    new LaneCerberusFileProvenanceSkippedRecord(stale, r));
-                              } else {
-                                output.add(new LaneCerberusFileProvenanceRecord(stale, r));
-                              }
-                            })) {
-                      throw new IllegalArgumentException(
-                          provenanceRecord.lims().getClass()
-                              + " is neither lane or sample provenance.");
-                    }
-                    if (stale) {
-                      staleCount.incrementAndGet();
-                    }
+                @Override
+                public void file(
+                    boolean stale,
+                    boolean skip,
+                    ProvenanceRecord<LimsProvenance> provenanceRecord) {
+                  if (!provenanceRecord.asSubtype(
+                          SampleProvenanceDto.class,
+                          r -> {
+                            if (skip) {
+                              output_skipped.add(
+                                  new SampleCerberusFileProvenanceSkippedRecord(stale, r));
+                            } else {
+                              output.add(new SampleCerberusFileProvenanceRecord(stale, r));
+                            }
+                          })
+                      && !provenanceRecord.asSubtype(
+                          LaneProvenanceDto.class,
+                          r -> {
+                            if (skip) {
+                              output_skipped.add(
+                                  new LaneCerberusFileProvenanceSkippedRecord(stale, r));
+                            } else {
+                              output.add(new LaneCerberusFileProvenanceRecord(stale, r));
+                            }
+                          })) {
+                    throw new IllegalArgumentException(
+                        provenanceRecord.lims().getClass()
+                            + " is neither lane or sample provenance.");
                   }
-                }));
-      } catch (
-          IllegalArgumentException
-              e) { // ensure lane or sample provenance issue propagates upstream
-        throw e;
-      } catch (Exception e) { // Exception is coming form Cerberus itself, not the plug-in
-        return Optional.of(
-            new FileProvenanceOutput(
-                fileProvenance().collect(Collectors.toList()),
-                errors().collect(Collectors.toList()),
-                fileProvenanceSkipped().collect(Collectors.toList())));
-      }
+                  if (stale) {
+                    staleCount.incrementAndGet();
+                  }
+                }
+              }));
       errorRecords.labels(fileName().toString()).set(errors.size());
       staleRecords.labels(fileName().toString()).set(staleCount.get());
       goodRecords
@@ -146,17 +135,32 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
 
   @ShesmuInputSource
   public Stream<CerberusErrorValue> errors() {
-    return cache.get().stream().flatMap(FileProvenanceOutput::errors);
+    try {
+      ErrorableStream<FileProvenanceOutput> fpoStream = new ErrorableStream<>(cache.get().stream());
+      return fpoStream.flatMap(FileProvenanceOutput::errors);
+    } catch (Exception e) {
+      return new ErrorableStream<>(Stream.empty(), false);
+    }
   }
 
   @ShesmuInputSource
   public Stream<CerberusFileProvenanceValue> fileProvenance() {
-    return cache.get().stream().flatMap(FileProvenanceOutput::fileProvenance);
+    try {
+      ErrorableStream<FileProvenanceOutput> fpoStream = new ErrorableStream<>(cache.get().stream());
+      return fpoStream.flatMap(FileProvenanceOutput::fileProvenance);
+    } catch (Exception e) {
+      return new ErrorableStream<>(Stream.empty(), false);
+    }
   }
 
   @ShesmuInputSource
   public Stream<CerberusFileProvenanceSkippedValue> fileProvenanceSkipped() {
-    return cache.get().stream().flatMap(FileProvenanceOutput::fileProvenanceSkipped);
+    try {
+      ErrorableStream<FileProvenanceOutput> fpoStream = new ErrorableStream<>(cache.get().stream());
+      return fpoStream.flatMap(FileProvenanceOutput::fileProvenanceSkipped);
+    } catch (Exception e) {
+      return new ErrorableStream<>(Stream.empty(), false);
+    }
   }
 
   @Override

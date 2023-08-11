@@ -94,14 +94,14 @@ public final class PluginManager
   }
 
   private class FormatTypeWrapper<F extends PluginFileType<T>, T extends PluginFile> {
-    private final class ArbitraryActionDefintition extends ActionDefinition {
+    private final class ArbitraryActionDefinition extends ActionDefinition {
       @SuppressWarnings({"unused", "FieldCanBeLocal"})
       private final CallSite callsite;
 
       private final String fixedName;
       private final SupplementaryInformation information;
 
-      private ArbitraryActionDefintition(
+      private ArbitraryActionDefinition(
           String name,
           MethodHandle handle,
           String description,
@@ -156,7 +156,7 @@ public final class PluginManager
       }
     }
 
-    private final class ArbitraryDynamicSignatureDefintion
+    private final class ArbitraryDynamicSignatureDefinition
         extends SignatureVariableForDynamicSigner {
       @SuppressWarnings({"unused", "FieldCanBeLocal"})
       private final CallSite callsite;
@@ -165,7 +165,7 @@ public final class PluginManager
 
       private final String fixedName;
 
-      public ArbitraryDynamicSignatureDefintion(
+      public ArbitraryDynamicSignatureDefinition(
           String name, MethodHandle handle, Imyhat type, Path fileName) {
         super(name, type);
         fixedName = name + " static signer";
@@ -477,7 +477,7 @@ public final class PluginManager
                 Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
         actions.put(
             name,
-            new ArbitraryActionDefintition(
+            new ArbitraryActionDefinition(
                 qualifiedName,
                 handle,
                 description,
@@ -572,7 +572,7 @@ public final class PluginManager
 
         signatures.put(
             name,
-            new ArbitraryDynamicSignatureDefintion(
+            new ArbitraryDynamicSignatureDefinition(
                 qualifiedName,
                 MH_SUPPLIER_GET.bindTo(signer),
                 returnType.type(),
@@ -773,13 +773,14 @@ public final class PluginManager
       public Stream<Object> fetch(String format, boolean readStale) {
         final var sources = dynamicSources.get(format);
         final var customSource = this.customSources.get(format);
-        return Stream.concat(
+        return ErrorableStream.concatWithErrors(
             sources == null
                 ? Stream.empty()
-                : sources.stream().flatMap(s -> s.fetch(instance, readStale)),
+                : new ErrorableStream<>(sources.stream())
+                    .flatMap(s -> s.fetch(instance, readStale)),
             customSource == null
                 ? Stream.empty()
-                : customSource.stream().flatMap(s -> s.fetch(readStale)));
+                : new ErrorableStream<>(customSource.stream()).flatMap(s -> s.fetch(readStale)));
       }
 
       public Stream<Dumper> findDumper(String name, String[] columns, Imyhat... types) {
@@ -1101,11 +1102,11 @@ public final class PluginManager
 
     public Stream<Object> fetch(String format, boolean readStale) {
       var sources = staticSources.get(format);
-      return Stream.concat(
+      return ErrorableStream.concatWithErrors(
           sources == null
               ? Stream.empty()
-              : sources.stream().flatMap(source -> source.fetch(readStale)),
-          configuration.stream().flatMap(f -> f.fetch(format, readStale)));
+              : new ErrorableStream<>(sources.stream()).flatMap(source -> source.fetch(readStale)),
+          new ErrorableStream<>(configuration.stream()).flatMap(f -> f.fetch(format, readStale)));
     }
 
     public Stream<Dumper> findDumper(String name, String[] columns, Imyhat... types) {
@@ -1189,7 +1190,7 @@ public final class PluginManager
                 });
       } else {
         staticActions.add(
-            new ArbitraryActionDefintition(
+            new ArbitraryActionDefinition(
                 String.join(Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), name),
                 fileFormat.lookup().unreflect(method),
                 annotation.description(),
@@ -1487,7 +1488,7 @@ public final class PluginManager
       } else {
         if (isDynamic) {
           staticSignatures.add(
-              new ArbitraryDynamicSignatureDefintion(
+              new ArbitraryDynamicSignatureDefinition(
                   String.join(Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), name),
                   fileFormat.lookup().unreflect(method),
                   returnType,
@@ -1895,7 +1896,7 @@ public final class PluginManager
 
   @Override
   public Stream<Object> fetch(String format, boolean readStale) {
-    return formatTypes.stream().flatMap(f -> f.fetch(format, readStale));
+    return new ErrorableStream<>(formatTypes.stream()).flatMap(f -> f.fetch(format, readStale));
   }
 
   /**
