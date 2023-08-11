@@ -35,6 +35,7 @@ import java.util.stream.Stream;
   @JsonSubTypes.Type(value = ActionFilterExternalAgo.class, name = "externalago"),
   @JsonSubTypes.Type(value = ActionFilterIds.class, name = "id"),
   @JsonSubTypes.Type(value = ActionFilterOr.class, name = "or"),
+  @JsonSubTypes.Type(value = ActionFilterOrphaned.class, name = "orphaned"),
   @JsonSubTypes.Type(value = ActionFilterRegex.class, name = "regex"),
   @JsonSubTypes.Type(value = ActionFilterSourceFile.class, name = "sourcefile"),
   @JsonSubTypes.Type(value = ActionFilterSourceLocation.class, name = "sourcelocation"),
@@ -395,6 +396,29 @@ public abstract class ActionFilter {
                       }
                     }),
             strings);
+      }
+    },
+    ORPHANED {
+      @Override
+      public <T, S, I, O> Parser parse(
+          Parser parser,
+          Rule<T> actionState,
+          Rule<S> string,
+          Rule<S> strings,
+          Rule<I> instant,
+          Rule<O> offset,
+          Consumer<ActionFilterNode<T, S, I, O>> output) {
+        output.accept(
+            new ActionFilterNode<>() {
+              @Override
+              public <F> Optional<F> generate(
+                  Function<String, Optional<F>> existing,
+                  ActionFilterBuilder<F, T, S, I, O> builder,
+                  ErrorConsumer errorHandler) {
+                return Optional.of(builder.orphaned());
+              }
+            });
+        return parser.whitespace();
       }
     },
     SOURCE {

@@ -103,6 +103,11 @@ public class TextFilterParseTest {
     }
 
     @Override
+    public Boolean orphaned() {
+      return false;
+    }
+
+    @Override
     public Boolean statusChanged(Optional<Instant> start, Optional<Instant> end) {
       return false;
     }

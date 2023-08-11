@@ -1,7 +1,9 @@
 package ca.on.oicr.gsi.shesmu.server;
 
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.filter.*;
 import ca.on.oicr.gsi.shesmu.server.ActionProcessor.Filter;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -26,10 +28,10 @@ public class Query {
     return skip;
   }
 
-  public Filter[] perform(ActionProcessor processor) {
+  public Filter[] perform(ActionFilterBuilder<Filter, ActionState, String, Instant, Long> builder) {
     return Arrays.stream(getFilters())
         .filter(Objects::nonNull)
-        .map(filterJson -> filterJson.convert(processor))
+        .map(filterJson -> filterJson.convert(builder))
         .toArray(Filter[]::new);
   }
 

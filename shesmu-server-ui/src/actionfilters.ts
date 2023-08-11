@@ -76,6 +76,7 @@ export type ActionFilter =
   | ActionFilterExternal
   | ActionFilterIds
   | ActionFilterOr
+  | ActionFilterOrphaned
   | ActionFilterRegex
   | ActionFilterSourceFile
   | ActionFilterSourceLocation
@@ -155,6 +156,11 @@ export interface ActionFilterOr {
   type: "or";
 }
 
+export interface ActionFilterOrphaned {
+  negate?: boolean;
+  type: "orphaned";
+}
+
 export interface ActionFilterRegex {
   matchCase: boolean;
   negate?: boolean;
@@ -232,6 +238,7 @@ export interface BasicQuery {
   external?: TimeSpan;
   externalago?: number;
   id?: string[];
+  orphaned?: boolean;
   regex?: BasicRegex[];
   sourcefile?: string[];
   sourcelocation?: SourceLocation[];
@@ -381,7 +388,8 @@ function addFilterDialog(
   addStatus: (status: Status[]) => void,
   addLocations: (locations: SourceLocation[]) => void,
   setText: TextHandler,
-  setRegex: TextHandler
+  setRegex: TextHandler,
+  setOrphaned: () => void
 ): void {
   dialog((close) => [
     { type: "icon", icon: "clock-fill" },
@@ -531,6 +539,12 @@ function addFilterDialog(
         );
       }
     ),
+
+    buttonAccessory(
+      [{ type: "icon", icon: "dash-circle-dotted" }, "Orphaned"],
+      "Filter for actions that are from deleted olives.",
+      setOrphaned
+    ),
     sources.length
       ? button(
           [{ type: "icon", icon: "geo-alt-fill" }, "Source Olive"],
@@ -650,6 +664,9 @@ function createFilters(query: BasicQuery): ActionFilter[] {
   }
   if (query.id && query.id.length > 0) {
     filters.push({ type: "id", ids: query.id });
+  }
+  if (query.orphaned) {
+    filters.push({ type: "orphaned" });
   }
   if (query.sourcefile && query.sourcefile.length > 0) {
     filters.push({ type: "sourcefile", files: query.sourcefile });
@@ -1167,6 +1184,17 @@ function renderQuery(
   update: (query: BasicQuery) => void
 ): UIElement {
   const ui: UIElement[] = [];
+  if (query.orphaned) {
+    ui.push(
+      tile(
+        [],
+        button("Orphaned", "Click to remove.", () =>
+          update({ ...query, orphaned: false })
+        )
+      )
+    );
+  }
+
   if (query.type && query.type.length > 0) {
     ui.push(
       renderSet(
@@ -1616,7 +1644,8 @@ function searchAdvanced(
                   type: "regex",
                   pattern: pattern,
                   matchCase: matchCase,
-                })
+                }),
+              () => callback({ type: "orphaned" })
             );
           if (search.value.trim()) {
             fetchJsonWithBusyDialog("parsequery", search.value, (result) => {
@@ -1985,7 +2014,8 @@ function searchBasic(
                 },
               ].concat(current.regex || []);
               searchModel.statusChanged({ ...current });
-            }
+            },
+            () => searchModel.statusChanged({ ...current, orphaned: true })
           )
       ),
       buttonAccessory(

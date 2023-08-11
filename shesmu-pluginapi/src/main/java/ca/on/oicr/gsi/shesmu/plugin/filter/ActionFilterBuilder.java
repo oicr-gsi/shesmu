@@ -146,6 +146,11 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
         }
 
         @Override
+        public ActionFilter orphaned() {
+          return new ActionFilterOrphaned();
+        }
+
+        @Override
         public ActionFilter statusChanged(Optional<Instant> start, Optional<Instant> end) {
           final var result = new ActionFilterStatusChanged();
           result.setStart(start.map(Instant::getEpochSecond).orElse(null));
@@ -343,6 +348,11 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
                   .map(p -> p.second() > 3 ? "(" + p.first() + ")" : p.first())
                   .collect(Collectors.joining(" or ")),
               3);
+        }
+
+        @Override
+        public Pair<String, Integer> orphaned() {
+          return new Pair<>("orphaned", 0);
         }
 
         private String quote(String item) {
@@ -556,6 +566,13 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    * @return the constructed filter
    */
   F or(Stream<F> filters);
+
+  /**
+   * Check that an action is orphaned (not produced by currently available olives)
+   *
+   * @return the constructed filter
+   */
+  F orphaned();
 
   /**
    * Check that an action's last status change was in the time range provided
