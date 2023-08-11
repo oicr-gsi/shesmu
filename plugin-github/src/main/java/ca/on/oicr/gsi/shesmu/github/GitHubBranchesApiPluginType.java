@@ -44,6 +44,7 @@ public class GitHubBranchesApiPluginType
                     .GET()
                     .build(),
                 new JsonBodyHandler<>(MAPPER, BranchResponse[].class));
+        // TODO: If this input format comes into use, convert to use ErrorableStream
         return Stream.of(response.body().get()) //
             .map(
                 r ->
