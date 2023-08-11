@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.SampleProvenance;
 import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
+import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.cache.MergingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
@@ -54,7 +55,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     @Override
     protected Stream<PineryIUSForAnalysisValue> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) {
-        return Stream.empty();
+        return new ErrorableStream<>(Stream.empty(), false);
       }
       final PineryConfiguration cfg = config.get();
       final Map<String, Integer> badSetCounts = new TreeMap<>();
@@ -334,7 +335,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     @Override
     protected Stream<PineryIUSIncludeSkippedValue> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) {
-        return Stream.empty();
+        return new ErrorableStream<>(Stream.empty(), false);
       }
       final PineryConfiguration cfg = config.get();
       final Map<String, Integer> badSetCounts = new TreeMap<>();
@@ -640,7 +641,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
     @Override
     protected Stream<SampleProjectDto> fetch(Instant lastUpdated) throws Exception {
-      if (config.isEmpty()) return Stream.empty();
+      if (config.isEmpty()) return new ErrorableStream<>(Stream.empty(), false);
       return HTTP_CLIENT
           .send(
               HttpRequest.newBuilder(URI.create(config.get().getUrl() + "/sample/projects"))
@@ -834,19 +835,31 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
   @ShesmuInputSource
   public Stream<PineryIUSForAnalysisValue> streamIUS(boolean readStale) {
-    return readStale ? cache.getStale() : cache.get();
+    try {
+      return readStale ? cache.getStale() : cache.get();
+    } catch (Exception e) {
+      return new ErrorableStream<>(Stream.empty(), false);
+    }
   }
 
   @ShesmuInputSource
   public Stream<PineryIUSIncludeSkippedValue> streamAllIUS(boolean readStale) {
-    return readStale ? includeSkippedCache.getStale() : includeSkippedCache.get();
+    try {
+      return readStale ? includeSkippedCache.getStale() : includeSkippedCache.get();
+    } catch (Exception e) {
+      return new ErrorableStream<>(Stream.empty(), false);
+    }
   }
 
   @ShesmuInputSource
   public Stream<PineryProjectValue> streamProjects(boolean readStale) {
-    final String provider = config.map(PineryConfiguration::getProvider).orElse("unknown");
-    return (readStale ? projects.getStale() : projects.get())
-        .map(backing -> new PineryProjectValue(backing, provider));
+    try {
+      final String provider = config.map(PineryConfiguration::getProvider).orElse("unknown");
+      return (readStale ? projects.getStale() : projects.get())
+          .map(backing -> new PineryProjectValue(backing, provider));
+    } catch (Exception e) {
+      return new ErrorableStream<>(Stream.empty(), false);
+    }
   }
 
   @Override

@@ -15,6 +15,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.core.actions.fake.FakeAction;
+import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLocationLinker;
@@ -542,9 +543,13 @@ public abstract class BaseSimulateRequest {
                                 Function.identity(),
                                 name -> {
                                   CACHE_REFRESH.labels(readStale ? "cached" : "fresh", name).inc();
-                                  return inputSource
-                                      .fetch(name, readStale)
-                                      .collect(Collectors.toList());
+                                  final var results = inputSource.fetch(name, readStale);
+                                  if (results instanceof ErrorableStream<Object> errorableResults) {
+                                    if (!errorableResults.isOk())
+                                      throw new RuntimeException(
+                                          "Server error fetching data for source " + name);
+                                  }
+                                  return results.collect(Collectors.toList());
                                 }));
                 for (final var input : inputs.entrySet()) {
                   counts.put(input.getKey(), (long) input.getValue().size());

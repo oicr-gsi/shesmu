@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.guanyin;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
+import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
@@ -32,7 +33,7 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
     @Override
     protected Stream<GuanyinReportValue> fetch(Instant lastUpdated) throws Exception {
       if (configuration.isEmpty()) {
-        return Stream.empty();
+        return new ErrorableStream<>(Stream.empty(), false);
       }
       final var reportsResponse =
           RunReport.HTTP_CLIENT.send(
@@ -100,7 +101,11 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
 
   @ShesmuInputSource
   public Stream<GuanyinReportValue> stream(boolean readStale) {
-    return readStale ? reports.getStale() : reports.get();
+    try {
+      return readStale ? reports.getStale() : reports.get();
+    } catch (Exception e) {
+      return new ErrorableStream<>(Stream.empty(), false);
+    }
   }
 
   @Override

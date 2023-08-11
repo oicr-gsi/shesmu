@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.cache;
 
+import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,8 +28,8 @@ public final class ReplacingRecord<V> extends BaseRecord<Stream<V>, List<V>> {
 
   @Override
   protected List<V> update(List<V> oldstate, Instant fetchTime) throws Exception {
-    final Stream<V> stream = fetcher.update(fetchTime);
-    if (stream != null) {
+    final ErrorableStream<V> stream = new ErrorableStream<>(fetcher.update(fetchTime));
+    if (stream.isOk()) {
       final List<V> result = stream.collect(Collectors.toList());
       stream.close();
       return result;

@@ -16,6 +16,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
+import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
@@ -980,9 +981,16 @@ public class CompiledGenerator implements DefinitionRepository {
                       format -> {
                         try (var timer = INPUT_FETCH_TIME.start(format.name());
                             var inflight = Server.inflightCloseable("Fetching " + format.name())) {
-                          final var results = input.fetch(format.name(), false).toList();
-                          INPUT_RECORDS.labels(format.name()).set(results.size());
-                          return Stream.of(new Pair<>(format.name(), results));
+                          final var results = input.fetch(format.name(), false);
+                          if (results instanceof ErrorableStream<Object> errorableResults) {
+                            if (!errorableResults.isOk()) {
+                              INPUT_RECORDS.labels(format.name()).set(0);
+                              return Stream.empty();
+                            }
+                          }
+                          final var listResults = results.toList();
+                          INPUT_RECORDS.labels(format.name()).set(listResults.size());
+                          return Stream.of(new Pair<>(format.name(), listResults));
                         } catch (final Exception e) {
                           e.printStackTrace();
                           // If we failed to load this format, pretend like it was inhibited and
