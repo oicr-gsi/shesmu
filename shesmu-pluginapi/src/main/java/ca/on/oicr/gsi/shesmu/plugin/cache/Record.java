@@ -6,7 +6,8 @@ import io.prometheus.client.Gauge;
 import java.time.Instant;
 
 /**
- * A record stored in a cache of some kind
+ * A record stored in a cache of some kind. Represents one "unit of refreshability". Some caches
+ * have more than one Record, eg KeyValueCache maps Keys to Records.
  *
  * @param <V> the type that can be retrieved from a cache
  */
