@@ -55,8 +55,8 @@ import java.util.stream.Stream;
 /**
  * Background process for launching actions and reporting the results
  *
- * <p>This class collects actions and tries to {@link Action#perform(ActionServices)} until
- * successful.
+ * <p>This class collects actions and tries to {@link Action#perform(ActionServices, Duration)}
+ * until successful.
  */
 public final class ActionProcessor
     implements OliveServices,
@@ -1727,7 +1727,11 @@ public final class ActionProcessor
                                       pausedOlives.contains(l)
                                           || pausedFiles.contains(l.fileName()))
                           ? ActionState.THROTTLED
-                          : entry.getKey().perform(actionServices);
+                          : entry
+                              .getKey()
+                              .perform(
+                                  actionServices,
+                                  Duration.between(now, entry.getValue().lastAdded));
                   entry.getValue().thrown = null;
                 } catch (final Throwable e) {
                   entry.getValue().lastState = ActionState.UNKNOWN;

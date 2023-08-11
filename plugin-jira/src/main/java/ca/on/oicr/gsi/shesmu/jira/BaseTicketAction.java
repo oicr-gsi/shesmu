@@ -13,6 +13,7 @@ import io.prometheus.client.Counter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
@@ -174,7 +175,7 @@ public abstract class BaseTicketAction extends Action {
       Stream<String> closedStates, Predicate<String> matchesIssue);
 
   @Override
-  public final ActionState perform(ActionServices services) {
+  public final ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
     if (connection == null) {
       return ActionState.FAILED;
     }

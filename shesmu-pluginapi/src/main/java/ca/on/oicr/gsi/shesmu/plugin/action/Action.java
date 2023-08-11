@@ -18,9 +18,9 @@ import java.util.stream.Stream;
  * times, it should be de-duplicated using {@link #equals(Object)} by the set. It will then attempt
  * to complete each action and track the success of performing an action.
  *
- * <p>Creating this action should not perform it until {{@link #perform(ActionServices)} is called.
- * If the action is needs to be in contact with a remote system, that information must be baked into
- * its constructor.
+ * <p>Creating this action should not perform it until {{@link #perform(ActionServices, Duration)}
+ * is called. If the action is needs to be in contact with a remote system, that information must be
+ * baked into its constructor.
  */
 public abstract class Action {
   private final String type;
@@ -36,7 +36,7 @@ public abstract class Action {
    * <p>Since the scheduler will deduplicate the same action many times, most actions are fated to
    * die quickly. This method will be called to indicate that this instance of the object will
    * actually be used. It is called after {@link #prepare()} and before {@link
-   * #perform(ActionServices)}.
+   * #perform(ActionServices, Duration)}.
    *
    * @param actionId the action ID recorded for this action
    */
@@ -87,11 +87,11 @@ public abstract class Action {
    * performed. This object may be recreated since the launch, so the action cannot expect to hold
    * permanent state (e.g., job id) as a field.
    */
-  public abstract ActionState perform(ActionServices services);
+  public abstract ActionState perform(ActionServices services, Duration lastGeneratedByOlive);
 
   /**
-   * The amount of time the {@link #perform(ActionServices)} method should be allowed to run for
-   * before being interrupted
+   * The amount of time the {@link #perform(ActionServices, Duration)} method should be allowed to
+   * run for before being interrupted
    */
   public Duration performTimeout() {
     return Duration.of(1, ChronoUnit.HOURS);
@@ -115,9 +115,9 @@ public abstract class Action {
    * The number of minutes to wait before attempting to retry this action.
    *
    * <p>If an action has to be re-attempted, the action processor can wait until a certain window
-   * expires before it will call {@link #perform(ActionServices)} again. This only sets a lower
-   * limit on how frequently an action can be retried; there is no upper limit. This method should
-   * return a constant.
+   * expires before it will call {@link #perform(ActionServices, Duration)} again. This only sets a
+   * lower limit on how frequently an action can be retried; there is no upper limit. This method
+   * should return a constant.
    */
   public abstract long retryMinutes();
 

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.function.Consumer;
 
 public class FakeAction extends JsonParameterisedAction {
@@ -75,7 +76,7 @@ public class FakeAction extends JsonParameterisedAction {
   }
 
   @Override
-  public ActionState perform(ActionServices services) {
+  public ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
     return ActionState.ZOMBIE;
   }
 

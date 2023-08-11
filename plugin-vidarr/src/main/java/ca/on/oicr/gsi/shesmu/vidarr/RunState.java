@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -48,7 +49,11 @@ abstract class RunState {
 
   public abstract Optional<Instant> externalTimestamp();
 
-  public abstract PerformResult perform(URI vidarrUrl, SubmitWorkflowRequest request)
+  public abstract PerformResult perform(
+      URI vidarrUrl,
+      SubmitWorkflowRequest request,
+      SubmissionPolicy submissionPolicy,
+      Duration lastGeneratedByOlive)
       throws IOException, InterruptedException;
 
   public abstract Optional<RunState> reattempt();

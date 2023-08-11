@@ -25,6 +25,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -204,7 +205,7 @@ public class RunReport extends JsonParameterisedAction {
   }
 
   @Override
-  public ActionState perform(ActionServices services) {
+  public ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
     final var overloaded = services.isOverloaded("all", "guanyin");
     if (!overloaded.isEmpty()) {
       errors = Collections.singletonList("Overloaded services: " + String.join(", ", overloaded));

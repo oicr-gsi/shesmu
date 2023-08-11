@@ -10,6 +10,7 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -90,7 +91,7 @@ public class NothingAction extends Action {
   }
 
   @Override
-  public ActionState perform(ActionServices services) {
+  public ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
     return ActionState.ZOMBIE;
   }
 

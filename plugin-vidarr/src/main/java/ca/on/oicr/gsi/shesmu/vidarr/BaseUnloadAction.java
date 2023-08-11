@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -58,7 +59,7 @@ public abstract class BaseUnloadAction extends Action {
   protected abstract UnloadFilter createFilter();
 
   @Override
-  public final ActionState perform(ActionServices services) {
+  public final ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
     if (!allowedToRun) {
       errors = List.of("Waiting for human approval before removing data from Víðarr.");
       return ActionState.HALP;
