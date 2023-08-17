@@ -2003,9 +2003,16 @@ public final class PluginManager
   /**
    * Check throttling should be applied
    *
+   * Queries all the FormatTypeWrappers the PluginManager has created, for one or more
+   * input formats by name. This allows any plugin to declare an input format overloaded.
+   *
+   * This allows plugins to declare their own input formats overloaded for whatever reason,
+   * but it also allows (if installed) plugins like the Prometheus plugin or the maintenance
+   * scheduler to declare input formats overloaded for external reasons.
+   *
    * @param services a list of service names to check; this set must not be modified; these names
    *     are arbitrary and must be coordinated by {@link Action} and the throttler
-   * @return true if the action should be blocked; false if it may proceed
+   * @return Stream of Strings of names of overloaded services
    */
   public Stream<String> isOverloaded(Set<String> services) {
     return formatTypes.stream().flatMap(f -> f.isOverloaded(services));
