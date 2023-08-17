@@ -369,7 +369,9 @@ public final class PluginManager
 
       private final Map<String, ConstantDefinition> constants = new ConcurrentHashMap<>();
       private final List<ConstantDefinition> constantsFromAnnotations;
+      /** Allows a plugin to define an input source directly */
       private final Map<String, Deque<InputDataSource>> customSources = new ConcurrentHashMap<>();
+
       private final Map<String, FunctionDefinition> functions = new ConcurrentHashMap<>();
       private final List<FunctionDefinition> functionsFromAnnotations;
       private final T instance;
@@ -884,8 +886,15 @@ public final class PluginManager
     private final AutoUpdatingDirectory<FileWrapper> configuration;
 
     private final List<Binder<ConstantDefinition>> constantTemplates = new ArrayList<>();
+
+    /**
+     * ShesmuInputSources and ShesmuJsonInputSources which are virtual methods in a class that
+     * extends PluginFile. Since these come from PluginFile, they are associated with a plugin file:
+     * a configuration file (e.g., a .pinery file) is required to access these sources.
+     */
     private final Map<String, Queue<DynamicInputDataSource>> dynamicSources =
         new ConcurrentHashMap<>();
+
     private final F fileFormat;
     private final List<Binder<FunctionDefinition>> functionTemplates = new ArrayList<>();
     private final List<Binder<RefillerDefinition>> refillTemplates = new ArrayList<>();
@@ -897,12 +906,23 @@ public final class PluginManager
     private final List<FunctionDefinition> staticFunctions = new ArrayList<>();
     private final List<RefillerDefinition> staticRefillers = new ArrayList<>();
     private final List<SignatureDefinition> staticSignatures = new ArrayList<>();
+
+    /**
+     * ShesmuInputSources and ShesmuJsonInputSources which are static methods in a class that
+     * extends PluginFileType. Since these are part of the type definition, no actual PluginFile
+     * needs to be present for these sources to be accessed, the plugin needs only to be present in
+     * the deployment.
+     */
     private final Map<String, Queue<InputDataSource>> staticSources = new ConcurrentHashMap<>();
+
     private final Map<Path, WeakReference<FileWrapper>> wrappers = new ConcurrentHashMap<>();
 
     public FormatTypeWrapper(F fileFormat) {
       this.fileFormat = fileFormat;
       try {
+        // Validate all the annotated methods.
+        // These methods do nothing if the associated annotation is not found, so we can throw
+        // everything through validation this way.
         for (final var method : fileFormat.getClass().getMethods()) {
           checkRepositoryMethod(method);
           checkRepositoryAction(method);
@@ -910,6 +930,7 @@ public final class PluginManager
           checkRepositorySignature(method);
           checkRepositorySource(method);
         }
+
         for (final var method : fileFormat.fileClass().getMethods()) {
           checkInstanceMethod(method);
           checkInstanceAction(method);
@@ -988,6 +1009,17 @@ public final class PluginManager
       }
     }
 
+    /**
+     * Validate a @ShesmuInputSource or @ShesmuJsonInputSource annotated method which is a virtual method in a class
+     * extending PluginFile.
+     * Checks that method is not static then hands off to annotation-specific validation methods.
+     * Does nothing if Method passed in lacks either annotation, so methods can be processed in bulk by the
+     * FormatTypeWrapper
+     * See implementation.md and the docs for processSourceMethod
+     *
+     * @param method Method object to validate
+     * @throws IllegalAccessException if validation fails
+     */
     private void checkInstanceSource(final Method method) throws IllegalAccessException {
       final var sourceAnnotation = method.getAnnotation(ShesmuInputSource.class);
       if (sourceAnnotation != null) {
@@ -1066,6 +1098,17 @@ public final class PluginManager
       }
     }
 
+    /**
+     * Validate a @ShesmuInputSource or @ShesmuJsonInputSource annotated method which is a static method in a class
+     * extending PluginFileType.
+     * Checks that method is static then hands off to annotation-specific validation methods.
+     * Does nothing if Method passed in lacks either annotation, so methods can be processed in bulk by the
+     * FormatTypeWrapper
+     * See implementation.md and the docs for processSourceMethod
+     *
+     * @param method Method object to validate
+     * @throws IllegalAccessException if validation fails
+     */
     private void checkRepositorySource(final Method method) throws IllegalAccessException {
       final var sourceAnnotation = method.getAnnotation(ShesmuInputSource.class);
       if (sourceAnnotation != null) {
@@ -1504,6 +1547,25 @@ public final class PluginManager
       }
     }
 
+    /**
+     * Perform validation on methods annotated with @ShesmuInputSource and track as either a "static" or "dynamic"
+     * type of source.
+     * Validation on a @ShesmuInputSource method is as follows:
+     *  1. Ensure method returns Stream
+     *  2. Ensure method returns Stream<T> or a subclass of T but not a wildcard
+     *  3. Ensure method has either 0 parameters, or 1 parameter of type boolean
+     *     (this is the optional readStale boolean)
+     * If the ShesmuInputSource is from an instance source (i.e., a virtual method in a class that extends PluginFile)
+     * then the method is tracked as a dynamic source. These input sources require a configuration file.
+     * If the ShesmuInputSource is from a repository source (i.e., a static method in a class that extends
+     * PluginFileType) then the method is tracked as a static source. These input sources require no configuration.
+     * See implementation.md
+     *
+     * @param method Method object of @ShesmuInputSource-annotated method to process
+     * @param isInstance true if instance, false if repository
+     * @throws IllegalAccessException if method fails validation due to bad return type or
+     *     parameters
+     */
     private void processSourceMethod(Method method, boolean isInstance)
         throws IllegalAccessException {
       if (!Stream.class.equals(method.getReturnType())) {
@@ -1573,6 +1635,23 @@ public final class PluginManager
           .forEach(writeSource);
     }
 
+    /**
+     * Perform validation on methods annotated with @ShesmuJsonInputSource and track as either a "static" or "dynamic"
+     * type of source.
+     * Validation on a @ShesmuJsonInputSource method is to ensure signature returns InputStream<Object>
+     * If the ShesmuJsonInputSource is from an instance source (i.e., a virtual method in a class that extends PluginFile)
+     * then the method is tracked as a dynamic source. These input sources require a configuration file.
+     * If the ShesmuJsonInputSource is from a repository source (i.e., a static method in a class that extends
+     * PluginFileType) then the method is tracked as a static source. These input sources require no configuration.
+     * See implementation.md
+     *
+     * @param method Method object of the ShesmuInputSource-annotated method we would like to
+     *     validate
+     * @param annotation ShesmuJsonInputSource object with format name and ttl value
+     * @param isInstance true if instance, false if repository
+     * @throws IllegalAccessException if trying to validate a ShesmuJsonInputSource which does not
+     *     return InputStream
+     */
     private void processSourceMethod(
         Method method, ShesmuJsonInputSource annotation, boolean isInstance)
         throws IllegalAccessException {
@@ -1818,6 +1897,12 @@ public final class PluginManager
   private final FileWatcher fileWatcher;
   private final List<FormatTypeWrapper<?, ?>> formatTypes;
 
+  /**
+   * Initialize PluginManager with all FormatTypeWrappers possible to create from the PluginFileType
+   * implementations discovered by the ServiceLoader.
+   *
+   * @param fileWatcher FileWatcher watching the SHESMU_DATA directory as specified in Server
+   */
   @SuppressWarnings("Convert2MethodRef")
   public PluginManager(FileWatcher fileWatcher) {
     this.fileWatcher = fileWatcher;
