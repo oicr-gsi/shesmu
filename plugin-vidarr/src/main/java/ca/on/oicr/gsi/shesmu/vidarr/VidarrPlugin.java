@@ -302,7 +302,9 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
               targetParameters.add(
                   new CustomActionParameter<>(
                       sanitise("resource_" + resource.getKey()),
-                      true,
+                      // temporary workaround for making 'priority' resource optional
+                      // TODO: update this when releasing a Vidarr version with GP-4042 enabled
+                      ("priority".equals(resource.getKey()) ? false : true),
                       resource.getValue().apply(SIMPLE_TO_IMYHAT)) {
                     private final String name = resource.getKey();
 
