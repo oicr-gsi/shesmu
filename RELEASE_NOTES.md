@@ -1,5 +1,7 @@
 # Unreleased
 
+# [1.26.0] - 2023-08-17T18:40+00:00
+
 * Fix GitHub release workflow
 * Make simulation more clear when undeclared variables are allowed
 * Update README files with new requirements, clarifications about plugin-gsi-common
