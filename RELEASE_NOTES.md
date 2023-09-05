@@ -1,4 +1,5 @@
 # Unreleased
+* Fix 'not a function' errors when Vidarr labels are types other than String
 
 # [1.26.0] - 2023-08-17T18:40+00:00
 

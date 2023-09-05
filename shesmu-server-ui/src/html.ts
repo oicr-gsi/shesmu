@@ -3827,7 +3827,7 @@ function recursiveDifferencesHelper(
  * Make text that makes whitespace visible
  */
 export function revealWhitespace(text: string): string {
-  return text.replace("\n", "⏎").replace("\t", "⇨").replace(/\s/, "␣");
+  return String(text).replace("\n", "⏎").replace("\t", "⇨").replace(/\s/, "␣");
 }
 
 /**
