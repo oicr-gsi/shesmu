@@ -5,13 +5,15 @@ import java.time.Duration;
 
 /** Determines when a workflow run should be actually submitted */
 public interface SubmissionPolicy {
-  static SubmissionPolicy ALWAYS = lastGeneratedByAnOlive -> SubmitMode.RUN;
-  static SubmissionPolicy DRY_RUN = lastGeneratedByAnOlive -> SubmitMode.DRY_RUN;
+  static SubmissionPolicy ALWAYS = (lastGeneratedByAnOlive, isOliveLive) -> SubmitMode.RUN;
+  static SubmissionPolicy DRY_RUN = (lastGeneratedByAnOlive, isOliveLive) -> SubmitMode.DRY_RUN;
+  static SubmissionPolicy IS_LIVE =
+      (lastGeneratedByAnOlive, isOliveLive) -> isOliveLive ? SubmitMode.RUN : SubmitMode.DRY_RUN;
 
   static SubmissionPolicy maxDelay(long maximum) {
-    return lastGeneratedByAnOlive ->
+    return (lastGeneratedByAnOlive, isOliveLive) ->
         lastGeneratedByAnOlive.getSeconds() > maximum ? SubmitMode.DRY_RUN : SubmitMode.RUN;
   }
 
-  SubmitMode mode(Duration lastGeneratedByAnOlive);
+  SubmitMode mode(Duration lastGeneratedByAnOlive, boolean isOliveLive);
 }

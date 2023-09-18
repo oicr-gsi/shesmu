@@ -55,10 +55,11 @@ final class RunStateAttemptSubmit extends RunState {
       URI vidarrUrl,
       SubmitWorkflowRequest request,
       SubmissionPolicy submissionPolicy,
-      Duration lastGeneratedByOlive)
+      Duration lastGeneratedByOlive,
+      boolean isOliveLive)
       throws IOException, InterruptedException {
     request.setAttempt(attempt);
-    request.setMode(submissionPolicy.mode(lastGeneratedByOlive));
+    request.setMode(submissionPolicy.mode(lastGeneratedByOlive, isOliveLive));
     final var response =
         VidarrPlugin.CLIENT.send(
             HttpRequest.newBuilder(vidarrUrl.resolve("/api/submit"))

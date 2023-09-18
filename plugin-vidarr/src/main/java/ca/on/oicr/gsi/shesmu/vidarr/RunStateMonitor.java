@@ -129,7 +129,8 @@ final class RunStateMonitor extends RunState {
       URI vidarrUrl,
       SubmitWorkflowRequest request,
       SubmissionPolicy submissionPolicy,
-      Duration lastGeneratedByOlive)
+      Duration lastGeneratedByOlive,
+      boolean isOliveLive)
       throws IOException, InterruptedException {
     return create(vidarrUrl, status.getId());
   }

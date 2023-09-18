@@ -91,7 +91,8 @@ public class NothingAction extends Action {
   }
 
   @Override
-  public ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
+  public ActionState perform(
+      ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
     return ActionState.ZOMBIE;
   }
 

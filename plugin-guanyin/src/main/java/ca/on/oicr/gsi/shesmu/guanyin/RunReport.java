@@ -205,7 +205,8 @@ public class RunReport extends JsonParameterisedAction {
   }
 
   @Override
-  public ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
+  public ActionState perform(
+      ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
     final var overloaded = services.isOverloaded("all", "guanyin");
     if (!overloaded.isEmpty()) {
       errors = Collections.singletonList("Overloaded services: " + String.join(", ", overloaded));

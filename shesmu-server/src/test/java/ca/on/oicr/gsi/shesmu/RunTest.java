@@ -59,7 +59,7 @@ public class RunTest {
     @Override
     public boolean accept(
         Action action, String filename, int line, int column, String hash, String[] tags) {
-      if (action.perform(null, Duration.ZERO) == ActionState.SUCCEEDED) {
+      if (action.perform(null, Duration.ZERO, true) == ActionState.SUCCEEDED) {
         good++;
       } else {
         bad++;
@@ -184,7 +184,8 @@ public class RunTest {
     }
 
     @Override
-    public ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
+    public ActionState perform(
+        ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
       return ok ? ActionState.SUCCEEDED : ActionState.FAILED;
     }
 

@@ -60,7 +60,8 @@ public abstract class BaseUnloadAction extends Action {
   protected abstract UnloadFilter createFilter();
 
   @Override
-  public final ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
+  public final ActionState perform(
+      ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
     if (!allowedToRun) {
       errors = List.of("Waiting for human approval before removing data from Víðarr.");
       return ActionState.HALP;

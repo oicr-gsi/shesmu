@@ -55,8 +55,8 @@ import java.util.stream.Stream;
 /**
  * Background process for launching actions and reporting the results
  *
- * <p>This class collects actions and tries to {@link Action#perform(ActionServices, Duration)}
- * until successful.
+ * <p>This class collects actions and tries to {@link Action#perform(ActionServices, Duration,
+ * boolean)} until successful.
  */
 public final class ActionProcessor
     implements OliveServices, InputSource, MetroDiagram.OliveFlowReader {
@@ -1579,8 +1579,8 @@ public final class ActionProcessor
   }
 
   /** Begin the action processor */
-  public void start(ScheduledExecutorService executor) {
-    executor.scheduleWithFixedDelay(this::update, 5, 1, TimeUnit.MINUTES);
+  public void start(ScheduledExecutorService executor, Predicate<SourceLocation> isOliveLive) {
+    executor.scheduleWithFixedDelay(() -> this.update(isOliveLive), 5, 1, TimeUnit.MINUTES);
     executor.scheduleWithFixedDelay(this::updateAlerts, 5, 5, TimeUnit.MINUTES);
   }
 
@@ -1678,7 +1678,8 @@ public final class ActionProcessor
         .flatMap(entry -> Stream.concat(entry.getValue().tags.stream(), entry.getKey().tags()));
   }
 
-  private void update() {
+  private void update(Predicate<SourceLocation> isOliveLive) {
+
     final var now = Instant.now();
     final var candidates =
         actions.entrySet().stream()
@@ -1689,7 +1690,7 @@ public final class ActionProcessor
                         && !entry.getValue().updateInProgress
                         && Duration.between(entry.getValue().lastChecked, now).toMinutes()
                             >= Math.max(10, entry.getKey().retryMinutes()))
-            /**
+            /*
              * Sort by time since last checked, and then priority, to avoid starving actions of
              * attention because of priority, then sort by their ActionState's processPriority so
              * that certain ActionStates get checked first.
@@ -1754,7 +1755,8 @@ public final class ActionProcessor
                               .getKey()
                               .perform(
                                   actionServices,
-                                  Duration.between(now, entry.getValue().lastAdded));
+                                  Duration.between(now, entry.getValue().lastAdded),
+                                  entry.getValue().locations.stream().anyMatch(isOliveLive));
                   entry.getValue().thrown = null;
                 } catch (final Throwable e) {
                   entry.getValue().lastState = ActionState.UNKNOWN;

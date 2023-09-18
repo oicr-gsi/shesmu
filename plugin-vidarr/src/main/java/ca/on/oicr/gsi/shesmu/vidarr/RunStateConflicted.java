@@ -49,7 +49,8 @@ final class RunStateConflicted extends RunState {
       URI vidarrUrl,
       SubmitWorkflowRequest request,
       SubmissionPolicy submissionPolicy,
-      Duration lastGeneratedByOlive) {
+      Duration lastGeneratedByOlive,
+      boolean isOliveLive) {
     return new PerformResult(errors, ActionState.HALP, this);
   }
 

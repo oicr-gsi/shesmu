@@ -3026,7 +3026,7 @@ public final class Server implements ServerConfig, ActionServices {
     compiler.start(fileWatcher);
     staticActions.start(fileWatcher);
     System.out.println("Starting action processor...");
-    processor.start(executor);
+    processor.start(executor, compiler);
     System.out.println("Starting scheduler...");
     master.start(executor);
     pluginManager.log("Shesmu started.", Map.of());

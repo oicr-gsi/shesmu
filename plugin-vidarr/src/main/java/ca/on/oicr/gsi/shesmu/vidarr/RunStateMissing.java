@@ -57,7 +57,8 @@ final class RunStateMissing extends RunState {
       URI vidarrUrl,
       SubmitWorkflowRequest request,
       SubmissionPolicy submissionPolicy,
-      Duration lastGeneratedByOlive) {
+      Duration lastGeneratedByOlive,
+      boolean isOliveLive) {
     return new PerformResult(errors, ActionState.FAILED, this);
   }
 

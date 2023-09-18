@@ -175,7 +175,8 @@ public abstract class BaseTicketAction extends Action {
       Stream<String> closedStates, Predicate<String> matchesIssue);
 
   @Override
-  public final ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
+  public final ActionState perform(
+      ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
     if (connection == null) {
       return ActionState.FAILED;
     }

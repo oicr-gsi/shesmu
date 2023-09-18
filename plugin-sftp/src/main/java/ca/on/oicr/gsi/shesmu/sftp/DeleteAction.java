@@ -80,7 +80,8 @@ public class DeleteAction extends Action {
   }
 
   @Override
-  public ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
+  public ActionState perform(
+      ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
     // The logic for removing happens in the other class so that it can make
     // serialised requests to the remote end
     return connection.get().rm(target.toString(), automatic);
