@@ -33,7 +33,8 @@ final class RunStateDead extends RunState {
       URI vidarrUrl,
       SubmitWorkflowRequest request,
       SubmissionPolicy submissionPolicy,
-      Duration lastGeneratedByOlive) {
+      Duration lastGeneratedByOlive,
+      boolean isOliveLive) {
     return new PerformResult(List.of(), ActionState.ZOMBIE, this);
   }
 

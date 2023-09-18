@@ -102,7 +102,8 @@ public class SymlinkAction extends Action {
   }
 
   @Override
-  public ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
+  public ActionState perform(
+      ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
     // The logic for creating the symlink happens in the other class so that it can make serialised
     // requests to the remote end
     final var result =

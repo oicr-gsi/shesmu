@@ -202,7 +202,8 @@ public final class SubmitAction extends Action {
   }
 
   @Override
-  public synchronized ActionState perform(ActionServices services, Duration lastGeneratedByOlive) {
+  public synchronized ActionState perform(
+      ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
     if (stale) {
       return ActionState.ZOMBIE;
     }
@@ -218,7 +219,8 @@ public final class SubmitAction extends Action {
             .map(
                 url -> {
                   try {
-                    return state.perform(url, request, submissionPolicy, lastGeneratedByOlive);
+                    return state.perform(
+                        url, request, submissionPolicy, lastGeneratedByOlive, isOliveLive);
                   } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                     return new RunState.PerformResult(
@@ -279,12 +281,13 @@ public final class SubmitAction extends Action {
   @ActionParameter(
       name = "submission_policy",
       required = false,
-      type = "u3ALWAYS$t0DRY_RUN$t0MAX_DELAY$t1i")
+      type = "u3ALWAYS$t0DRY_RUN$t0IS_LIVE$t0MAX_DELAY$t1i")
   public void submissionPolicy(AlgebraicValue policy) {
     submissionPolicy =
         switch (policy.name()) {
           case "ALWAYS" -> SubmissionPolicy.ALWAYS;
           case "DRY_RUN" -> SubmissionPolicy.DRY_RUN;
+          case "IS_LIVE" -> SubmissionPolicy.IS_LIVE;
           case "MAX_DELAY" -> SubmissionPolicy.maxDelay((Long) policy.get(0));
           default -> throw new IllegalStateException("Unexpected value: " + policy.name());
         };
