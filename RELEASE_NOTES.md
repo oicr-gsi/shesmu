@@ -1,11 +1,17 @@
-# Unreleased
+# Changelog
 
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0).
+For unreleased changes, see [changes](changes).
+
+-----------------------------------------------------------------------------
 * Fix compilation error with multiple `Join` clauses
 
-# [1.26.1] - 2023-09-07T16:53+00:00
+## [1.26.1] - 2023-09-07T16:53+00:00
 * Fix 'not a function' errors when Vidarr labels are types other than String
 
-# [1.26.0] - 2023-08-17T18:40+00:00
+## [1.26.0] - 2023-08-17T18:40+00:00
 
 * Fix GitHub release workflow
 * Make simulation more clear when undeclared variables are allowed
@@ -13,12 +19,12 @@
 * Add Nabu `case_archive` input format
 * Add manual workaround to make Vidarr 'priority' consumable resource optional
 
-# [1.25.0] - 2023-05-16T17:32+00:00
+## [1.25.0] - 2023-05-16T17:32+00:00
 
 * Replace SFTP file information functions with single `stat` function
 * Add Cardea (QC Gate ETL) `case_summary` input format
 
-# [1.24.0] - 2023-04-18T18:08+00:00
+## [1.24.0] - 2023-04-18T18:08+00:00
 
 * Fix OpenAPI schema
 * Fix Basic filter view saying 'Matches' for negated regex matching
@@ -28,7 +34,7 @@
 * Fix NPE when action is concurrently purged
 * Improve error reporting in Simulator when populating caches
 
-# [1.23.0] - 2023-02-15T19:54+00:00
+## [1.23.0] - 2023-02-15T19:54+00:00
 
 * Add a gauge to monitor the number of items sent to a refiller
 * Runscanner -> 1.15.1
@@ -36,7 +42,7 @@
 * Add functions for returning list of names of `Accredited` and `Accredited with Clinical Report` projects from Pinery plugin
 * Remove `vidarr-workflow-run:<id>` tag from action cards
 
-# [1.22.0] - 2023-01-04T19:19+00:00
+## [1.22.0] - 2023-01-04T19:19+00:00
 
 * Update Nabu plugin to use version 3 API
 * Add swizzle operation
@@ -45,12 +51,12 @@
 * Adds new remote jsonconfig plugin
 * Update Docker build to support BuiltKit, typescript 4.3.2 and Java 17.
 
-# [1.21.0] - 2022-11-08T13:26+00:00
+## [1.21.0] - 2022-11-08T13:26+00:00
 
 * Upgrade to Java 17
 * Add back NIASSA algebraic type so olives may filter
 
-# [1.20.0] - 2022-10-13T17:52+00:00
+## [1.20.0] - 2022-10-13T17:52+00:00
 
 * Adds metrics for cache refresh start and end times
 * Makes source vidarr server explicit for `cerberus_fp` `input_file` IDs
@@ -61,21 +67,21 @@ Niassa plugin:
 
 * Obliterate this plugin and any references to it.
 
-# [1.19.3] - 2022-06-22T19:04+00:00
+## [1.19.3] - 2022-06-22T19:04+00:00
 
 * Display `cerberus_fp` `workflow_version` even when workflow version contains four parts (3 for the version and one for the Niassa workflow accession)
 * Vidarr -> 0.8.0
 * Cerberus -> 0.2.11
 
-# [1.19.2] - 2022-05-25T15:33+00:00
+## [1.19.2] - 2022-05-25T15:33+00:00
 
 * Assign migration action error strings to correct errors list
 
-# [1.19.1] - 2022-05-24T20:17+00:00
+## [1.19.1] - 2022-05-24T20:17+00:00
 
 * Fix syntax for string formatting in migration action
 
-# [1.19.0] - 2022-05-24T14:08+00:00
+## [1.19.0] - 2022-05-24T14:08+00:00
 
 * Add more informative text to 'input files not yet converted' WAITING migration actions
 * Fix bug where dumpers are not cleaned up
@@ -89,15 +95,15 @@ Issues:
 
 * Syntax error in MigrationAction
 
-# [1.18.5] - 2022-03-21T19:41+00:00
+## [1.18.5] - 2022-03-21T19:41+00:00
 
 * Revert "Track dumper creation so that they can be stopped and finalized." (See: GP-3243)
 
-# [1.18.4] - 2022-03-18T18:47+00:00
+## [1.18.4] - 2022-03-18T18:47+00:00
 
 * Fix confusing errors when ? fails for other reasons1~
 
-# [1.18.3] - 2022-03-17T17:58+00:00
+## [1.18.3] - 2022-03-17T17:58+00:00
 
 Changes:
 
@@ -106,14 +112,14 @@ Changes:
 * Update demo data to current data formats
 * Vidarr -> 0.5.0
 
-# [1.18.0] - 2022-01-26T19:25+00:00
+## [1.18.0] - 2022-01-26T19:25+00:00
 
 * Don't show "Retry Failed Workflow" button on Succeeded workflow runs
 * Add resistance to "Delete & Purge"
 * Runscanner -> 1.13.1
 * Vidarr -> 0.4.12
 
-# [1.17.0] - 2021-12-09T13:39+00:00
+## [1.17.0] - 2021-12-09T13:39+00:00
 
 * Remove JSON Schema support
 * Allow action commands to remove other actions
@@ -125,7 +131,7 @@ Changes:
 * Vidarr -> 0.4.11
 * Cerberus -> 0.2.9
 
-# [1.16.0] - 2021-11-10T19:08+00:00
+## [1.16.0] - 2021-11-10T19:08+00:00
 
 Changes:
 
@@ -138,13 +144,13 @@ Changes:
 * Vidarr -> 0.4.10
 * Cerberus -> 0.2.8
 
-# [1.15.4] - 2021-10-15T17:31+00:00
+## [1.15.4] - 2021-10-15T17:31+00:00
 
 Changes:
 
 * Pass timeout variable directly to task runtine block
 
-# [1.15.3] - 2021-10-14T17:43+00:00
+## [1.15.3] - 2021-10-14T17:43+00:00
 
 Changes:
 
@@ -155,7 +161,7 @@ Changes:
 * vidarr -> 0.4.8
 * cerberus -> 0.2.7
 
-# [1.15.2] - 2021-09-15T20:03+00:00
+## [1.15.2] - 2021-09-15T20:03+00:00
 
 Changes:
 
@@ -164,13 +170,13 @@ Changes:
 * cerberus -> 0.2.6
 * vidarr -> 0.4.7
 
-# [1.15.1] - 2021-08-13T20:51+00:00
+## [1.15.1] - 2021-08-13T20:51+00:00
 
 Changes:
 
 * Removed debug lines
 
-# [1.15.0] - 2021-08-13T18:43+00:00
+## [1.15.0] - 2021-08-13T18:43+00:00
 
 Changes:
 
@@ -184,14 +190,14 @@ Pinery changes:
 
 * Add `pinery_ius_include_skipped` input format
 
-# [1.14.0] - 2021-07-12T15:30+00:00
+## [1.14.0] - 2021-07-12T15:30+00:00
 
 Changes:
 
 * Filter out individual run-libraries marked as skipped
 * Fixed NullPointerException when Niassa fetch fails
 
-# [1.13.0] - 2021-06-16T17:22+00:00
+## [1.13.0] - 2021-06-16T17:22+00:00
 
 Changes:
 
@@ -215,7 +221,7 @@ Changes:
 * Fix bug in converting action queries to ECMAScript
 * Fixes in FAQ
 
-# [1.12.2] - 2021-06-03T18:04+00:00
+## [1.12.2] - 2021-06-03T18:04+00:00
 
 Changes:
 
@@ -229,12 +235,12 @@ Vidarr changes:
 * Fix Vidarr error message for "missing" state.  The message displayed was incorrect for the error returned by Vidarr.
 * Handle null engine phase in Vidarr action
 
-# [1.12.1] - 2021-05-31T19:48+00:00
+## [1.12.1] - 2021-05-31T19:48+00:00
 
 Changes:
 * Upgrade Cerberus to include new Vidarr version
 
-# [1.12.0] - 2021-05-31T14:54+00:00
+## [1.12.0] - 2021-05-31T14:54+00:00
 
 Changes:
 * Attempt to mirror HTTP repositories in GitHub action, fixes security failure
@@ -248,7 +254,7 @@ Changes:
 * fix typo in Vidarr action names
 * Improve type error messages for algebraic data types
 
-# [1.11.0] - 2021-05-19T18:16+00:00
+## [1.11.0] - 2021-05-19T18:16+00:00
 
 Changes:
 
@@ -267,7 +273,7 @@ Equivalent Strings plugin:
 
 * Add a plugin to assess strings which should be treated as equivalent
 
-# [1.10.2] - 2021-05-10T20:26+00:00
+## [1.10.2] - 2021-05-10T20:26+00:00
 
 Changes:
 
@@ -290,7 +296,7 @@ Niassa plugin:
 
 * Fix migration action
 
-# [1.10.1] - 2021-04-28T18:51+00:00
+## [1.10.1] - 2021-04-28T18:51+00:00
 
 Changes:
 
@@ -300,7 +306,7 @@ Changes:
 * MigrationAction to migrate Niassa workflow runs to Vidarr
 * Show max-in-flight from Vidarr
 
-# [1.10.0] - 2021-04-21T17:35+00:00
+## [1.10.0] - 2021-04-21T17:35+00:00
 
 Changes:
 
@@ -315,7 +321,7 @@ Changes:
 * Use new chemistry from Pinery 'flowcell_geometry' variable
 * Vidarr workflow run actions state tag
 
-# [1.9.1] - 2021-04-13T18:37+00:00
+## [1.9.1] - 2021-04-13T18:37+00:00
 
 Changes:
 
@@ -340,14 +346,14 @@ Changes:
 * Force array length to be integral
 * Correctly update alert `endsAt` property
 
-# [1.8.8] - 2021-03-31T18:38+00:00
+## [1.8.8] - 2021-03-31T18:38+00:00
 
 Changes:
 
 * Make new Niassa parameter optional
 * Correct interval plugin JAR name
 
-# [1.8.7] - 2021-03-31T17:28+00:00
+## [1.8.7] - 2021-03-31T17:28+00:00
 
 Changes:
 
@@ -404,13 +410,13 @@ Vidarr plugin:
 * Allow deleting while `WAITING_FOR_RESOURCES`
 * Allow reattempting workflow runs in engine phase `WAITING_FOR_RESOURCES`
 
-# [1.8.6] - 2021-03-02T22:07+00:00
+## [1.8.6] - 2021-03-02T22:07+00:00
 
 Cerberus plugin:
 
 * Update version to match Vidarr plugin and deal with schema changes
 
-# [1.8.5] - 2021-03-02T14:00+00:00
+## [1.8.5] - 2021-03-02T14:00+00:00
 
 Changes:
 
@@ -439,7 +445,7 @@ Vidarr plugin changes:
 * Add `java.time` support to Vidarr JSON object mapper
 * Allow setting metadata parameters globally for Vidarr
 
-# [1.8.4] - 2021-02-23T16:06+00:00
+## [1.8.4] - 2021-02-23T16:06+00:00
 
 * Update to latest Cerberus
 * Fix incorrect JSON serialisation of algebraic data types
@@ -447,21 +453,21 @@ Vidarr plugin changes:
 * Fix Vidarr INTERNAL type
 * Fix defining actions for Vidarr workflows
 
-# [1.8.3] - 2021-02-22T20:46+00:00
+## [1.8.3] - 2021-02-22T20:46+00:00
 
 * Fix annotations for `external_key` on `pinery_ius` and `cerberus_fp`
 
-# [1.8.2] - 2021-02-22T20:21+00:00
+## [1.8.2] - 2021-02-22T20:21+00:00
 
 Vidarr plugin changes:
 
 * Fix `vidarr::sign` method
 
-# [1.8.1] - 2021-02-22T20:04+00:00
+## [1.8.1] - 2021-02-22T20:04+00:00
 
 * Fix release problems
 
-# [1.8.0] - 2021-02-22T16:57+00:00
+## [1.8.0] - 2021-02-22T16:57+00:00
 
 Changes:
 
@@ -491,7 +497,7 @@ JIRA plugin changes:
 
 * Only update JIRA ticket labels if available on the JIRA "screen"
 
-# [1.7.2] - 2021-02-11T18:35+00:00
+## [1.7.2] - 2021-02-11T18:35+00:00
 
 Changes:
 
@@ -504,7 +510,7 @@ UI changes:
 Niassa plugin changes:
 * Remove concurrency restratint on Niassa and just let Niassa be overloaded
 
-# [1.7.1] - 2021-02-08T18:48+00:00
+## [1.7.1] - 2021-02-08T18:48+00:00
 
 Changes:
 
@@ -519,7 +525,7 @@ Niassa plugin changes:
 
 * Add a concurrency limiter to analysis provenance
 
-# [1.7.0] - 2021-02-03T14:42+00:00
+## [1.7.0] - 2021-02-03T14:42+00:00
 
 Changes:
 
@@ -536,13 +542,13 @@ Pinery plugin changes:
 * Clear barcode errors during grouping
 * Substitute missing sequencer run directories for `/`
 
-# [1.6.5] - 2021-01-21T11:53+00:00
+## [1.6.5] - 2021-01-21T11:53+00:00
 
 Niassa plugin changes:
 
 * Fix exception while getting max-in-flight information
 
-# [1.6.4] - 2021-01-20T16:52+00:00
+## [1.6.4] - 2021-01-20T16:52+00:00
 
 UI changes:
 
@@ -553,7 +559,7 @@ Niassa plugin changes:
 * Fix extremely slow fetch of max-in-flight information
 * Include workflow names in max-in-flight Prometheus metrics
 
-# [1.6.3] - 2021-01-18T21:04+00:00
+## [1.6.3] - 2021-01-18T21:04+00:00
 
 Language changes:
 
@@ -567,7 +573,7 @@ Niassa plugin changes:
 
 * Fix another LIMS key locking prevents locks from being released
 
-# [1.6.2] - 2021-01-15T20:13+00:00
+## [1.6.2] - 2021-01-15T20:13+00:00
 
 Changes:
 
@@ -597,7 +603,7 @@ Pinery plugin changes:
 
 * Replace Pinery project clinical flag with pipeline
 
-# [1.6.1] - 2021-01-07T14:18+00:00
+## [1.6.1] - 2021-01-07T14:18+00:00
 
 Changes:
 
@@ -610,7 +616,7 @@ Date:   Tue Jan 5 17:54:24 2021 -0500
 
     [maven-release-plugin] prepare for next development iteration
 
-# [1.6.0] - 2021-01-05T22:45+00:00
+## [1.6.0] - 2021-01-05T22:45+00:00
 
 Changes:
 
@@ -649,7 +655,7 @@ SFTP/SSH plugin changes:
 
 * Add SSH connection pooling
 
-# [1.5.0] - 2020-11-18T16:09+00:00
+## [1.5.0] - 2020-11-18T16:09+00:00
 
 Changes:
 
@@ -672,7 +678,7 @@ TSV/Config Changes:
 * Export bad records from structured config files (`.jsonconfig`) via
   Prometheus (`shesmu_structured_config_bad_entry`)
 
-# [1.4.7] - 2020-11-04T19:16+00:00
+## [1.4.7] - 2020-11-04T19:16+00:00
 
 Language changes:
 
@@ -690,7 +696,7 @@ Pinery Plugin Changes:
 
 * Add `run_id` to `pinery_ius`
 
-# [1.4.6] - 2020-10-30T10:37+00:00
+## [1.4.6] - 2020-10-30T10:37+00:00
 
 Changes:
 
@@ -701,7 +707,7 @@ UI Changes:
 
 * Change popup menu calculation again
 
-# [1.4.5] - 2020-10-29T11:22+00:00
+## [1.4.5] - 2020-10-29T11:22+00:00
 
 Changes:
 
@@ -751,7 +757,7 @@ SFTP Plugin Changes:
     `UPDATING` and complain about it
   - kill processes that don't respond appropriately
 
-# [1.4.4] - 2020-10-19T10:44+00:00
+## [1.4.4] - 2020-10-19T10:44+00:00
 
 Changes:
 
@@ -791,7 +797,7 @@ Niassa+Pinery plugin:
 * Fix bug where actions with extra input files were marked as `SUCCEEDED`
   instead of `HALP`.
 
-# [1.4.3] - 2020-10-06T10:56+00:00
+## [1.4.3] - 2020-10-06T10:56+00:00
 
 Changes:
 
@@ -826,7 +832,7 @@ Niassa+Pinery plugin:
 * Truncate annotations in Niassa to 255 characters
 * Add new `barcode_kit` field from v8 Pinery
 
-# [1.4.2] - 2020-09-15T18:29+00:00
+## [1.4.2] - 2020-09-15T18:29+00:00
 
 Changes:
 
@@ -841,13 +847,13 @@ UI changes:
 * Update alert pager UI correctly
 * Correctly restore state on the _Olives_ page
 
-# [1.4.1] - 2020-09-08T19:51+00:00
+## [1.4.1] - 2020-09-08T19:51+00:00
 
 Changes:
 
 * Fix type assignability for tuples and objects
 
-# [1.4.0] - 2020-09-08T17:30+00:00
+## [1.4.0] - 2020-09-08T17:30+00:00
 
 Changes:
 
@@ -875,7 +881,7 @@ JIRA plugin changes:
 
 * Use complex input field values when transitioning required JIRA fields
 
-# [1.3.0] - 2020-09-02T17:52+00:00
+## [1.3.0] - 2020-09-02T17:52+00:00
 
 Changes:
 
@@ -917,12 +923,12 @@ Niassa plugin changes:
 JIRA plugin changes:
 * Allow default values for required JIRA fields
 
-# [1.2.1] - 2020-08-10T18:23+00:00
+## [1.2.1] - 2020-08-10T18:23+00:00
 
 Niassa/Pinery plugin:
  * Allow bases masks like `y51` to be produced
 
-# [1.2.0] - 2020-08-10T15:05+00:00
+## [1.2.0] - 2020-08-10T15:05+00:00
 
 Changes:
  * Create a Check pragma
@@ -946,7 +952,7 @@ SFTP plugin:
  * Add a fetched date to `unix_file`
  * Create a native program to scan directories over SFTP
 
-# [1.1.0] - 2020-07-23T17:32+00:00
+## [1.1.0] - 2020-07-23T17:32+00:00
 
 UI:
 * Fix bug with advanced search
@@ -974,23 +980,23 @@ RunScanner plugin:
   reject such records. This change rejects them.
 
 
-# [1.0.5] - 2020-07-16T17:03+00:00
+## [1.0.5] - 2020-07-16T17:03+00:00
 
 Changes:
   * Fix problem in _Actions_ dashboard causing 400s using server searches
   * Fix bug causing saved search to default to _All Actions_ on _Actions_ dashboard
 
-# [1.0.3] - 2020-07-15T21:19+00:00
+## [1.0.3] - 2020-07-15T21:19+00:00
 
 Changes:
   * Remove deployment to non-functional GitHub Packages Maven
 
-# [1.0.1] - 2020-07-15T21:06+00:00
+## [1.0.1] - 2020-07-15T21:06+00:00
 
 Changes:
   * Fix bug in Docker build process
 
-# [1.0.0] - 2020-07-15T20:42+00:00
+## [1.0.0] - 2020-07-15T20:42+00:00
 
 First official release
 
@@ -1001,13 +1007,13 @@ Changes:
   * Fix incorrect start up time on status page
   * Misc UI fixes and improvements
 
-# [0.0.4] - 2020-07-14T18:39+00:00
+## [0.0.4] - 2020-07-14T18:39+00:00
 
 Changes:
 
  * None (developing build process)
 
-# [0.0.2] - 2020-07-14T18:36+00:00
+## [0.0.2] - 2020-07-14T18:36+00:00
 
 Changes:
 
