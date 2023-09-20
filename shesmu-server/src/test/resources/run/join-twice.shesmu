@@ -1,0 +1,13 @@
+Version 1;
+Input test;
+
+Define foo()
+ Let a = accession, p = project, s = std::signature::sha1;
+
+Define bar()
+ Let ab = accession, pb = project, sb = std::signature::sha1;
+
+Olive
+ Join accession To Call foo() a
+ Join accession To Call bar() ab
+ Run ok With ok = p == project && pb == project && s != "" && sb != "";

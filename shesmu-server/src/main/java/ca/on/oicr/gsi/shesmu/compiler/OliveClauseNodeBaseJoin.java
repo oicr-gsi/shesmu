@@ -107,7 +107,13 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
       innerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
     }
     final var inputSource =
-        source.render(oliveBuilder, definitions, "", "", v -> false, v -> false);
+        source.render(
+            oliveBuilder,
+            definitions,
+            String.format("%s %d:%d", syntax(), line(), column()),
+            "",
+            v -> false,
+            v -> false);
 
     final var join =
         oliveBuilder.join(
