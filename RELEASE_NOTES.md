@@ -7,6 +7,21 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.27.0] - 2023-09-21
+
+### Changed
+
+* Vidarr syntax for dry-run argument has changed to the following:
+  ```
+  submission_policy = DRY_RUN,
+  ```
+* Allow actions to know when they were last generated
+
+### Fixed
+
+* Compilation error with multiple `Join` clauses
+
+
 ## [1.26.1] - 2023-09-07T16:53+00:00
 * Fix 'not a function' errors when Vidarr labels are types other than String
 
