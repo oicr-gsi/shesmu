@@ -6,12 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0).
 For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
-* Fix compilation error with multiple `Join` clauses
-* Allow actions to know when they were last generated
-* Vidarr syntax for dry-run argument has changed to the following:
-    ```
-    submission_policy = DRY_RUN,
-    ```
 
 ## [1.26.1] - 2023-09-07T16:53+00:00
 * Fix 'not a function' errors when Vidarr labels are types other than String
