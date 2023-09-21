@@ -3,6 +3,27 @@
 set -eux
 
 MAIN_BRANCH="master"
+CHANGE_DIR="changes"
+RELEASE_TYPE=""
+NEW_VERSION=""
+
+# validate arguments
+usage_error() {
+  echo "Error: bad arguments" >&2
+  echo "Usage: $0 [major|minor]" >&2
+  exit 1
+}
+
+if [[ "$#" -eq 1 ]]; then
+  if [[ "$1" = "major" ]] || [[ "$1" = "minor" ]]; then
+    RELEASE_TYPE="$1"
+  else
+    usage_error
+  fi
+elif [ "$#" -gt 1 ]; then
+  usage_error
+fi
+
 
 # Fail if git working directory is dirty
 if [[ ! $(git branch | grep \* | cut -d ' ' -f2) = "${MAIN_BRANCH}" ]]; then
@@ -22,11 +43,29 @@ fi
 
 OLD_VERSION="$(xmlstarlet sel -t -v /_:project/_:version pom.xml | sed -e s/-SNAPSHOT//g)"
 
-# Get new version from user
-echo "${OLD_VERSION}" >version.temp
-${EDITOR:-editor} version.temp
-NEW_VERSION="$(cat version.temp)"
-rm version.temp
+# Get new version from changes
+MAJOR=$(echo $OLD_VERSION | cut -d . -f 1 -)
+MINOR=$(echo $OLD_VERSION | cut -d . -f 2 -)
+PATCH=$(echo $OLD_VERSION | cut -d . -f 3 -)
+
+if [[ "${RELEASE_TYPE}" = "major" ]]; then
+  MAJOR=$((MAJOR+1))
+  MINOR=0
+  PATCH=0
+elif [[ "${RELEASE_TYPE}" = "minor" ]] || [[ -n $(find "${CHANGE_DIR}" -mindepth 1 -maxdepth 1 \
+    -name "add_*" -or -name "change_*" -or -name "remove_*") ]]; then
+  RELEASE_TYPE="minor"
+  MINOR=$((MINOR+1))
+  PATCH=0
+elif [[ -n $(find "${CHANGE_DIR}" -mindepth 1 -maxdepth 1 -name "fix_*") ]]; then
+  RELEASE_TYPE="patch"
+  # use patch version from snapshot version
+else
+  echo "No changes found in 'changes' directory. Aborting release." >&2
+  exit 5
+fi
+
+NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
 
 if git tag --list | grep -c -E "^v${NEW_VERSION}$" >/dev/null; then
 	echo "Version $NEW_VERSION already exists. Please restart and select a different version number."
@@ -34,14 +73,8 @@ if git tag --list | grep -c -E "^v${NEW_VERSION}$" >/dev/null; then
 fi
 
 # Update the release notes
-if ! grep -q "# Unreleased" RELEASE_NOTES.md; then
-	echo "Error: changelog does not contain an Unreleased section"
-	exit 4
-fi
-mv RELEASE_NOTES.md RELEASE_NOTES.md.old
-sed "s/# Unreleased/# Unreleased\n\n# \[${NEW_VERSION}\] - $(date -u +%Y-%m-%dT%H:%M+00:00)/g" RELEASE_NOTES.md.old > RELEASE_NOTES.md
-rm RELEASE_NOTES.md.old
-${EDITOR:-editor} RELEASE_NOTES.md
+echo "Preparing ${RELEASE_TYPE} release ${NEW_VERSION}..."
+./compact-changelog.sh ${NEW_VERSION} || exit 2
 git commit -a -m "Update release notes for release"
 
 # Do the Maven release step
