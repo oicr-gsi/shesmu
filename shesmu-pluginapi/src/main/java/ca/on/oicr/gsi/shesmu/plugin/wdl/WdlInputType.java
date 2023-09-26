@@ -29,8 +29,8 @@ import java.util.stream.StreamSupport;
  * <p>WDL arrays are mapped to Shesmu lists. WDL arrays can be marked as non-empty; this information
  * is parsed, but discarded.
  *
- * <p>Pairs are translated to tuples. Right-nested pairs (<i>e.g.</i>, <tt>Pair[X, Pair[Y, Z]]</tt>)
- * are flattened into longer tuples (<i>e.g.</i>, <tt>{X, Y, Z}</tt>).
+ * <p>Pairs are translated to tuples. Right-nested pairs (<i>e.g.</i>, <code>Pair[X, Pair[Y, Z]]
+ * </code>) are flattened into longer tuples (<i>e.g.</i>, <code>{X, Y, Z}</code>).
  *
  * <p>Optional types are parsed, but stripped off.
  *
@@ -38,8 +38,8 @@ import java.util.stream.StreamSupport;
  */
 public final class WdlInputType {
   /**
-   * Take a JSON object of the <tt>WORKFLOW.TASK.VARIABLE</tt> format and transform it to a nestable
-   * one. This processes the values as requested.
+   * Take a JSON object of the <code>WORKFLOW.TASK.VARIABLE</code> format and transform it to a
+   * nestable one. This processes the values as requested.
    *
    * @param inputs the input JSON object
    * @param process the method to transform the values
@@ -68,9 +68,9 @@ public final class WdlInputType {
   /**
    * Take a womtool inputs JSON object and convert it into a list of workflow configurations
    *
-   * <p>Each womtool record looks like <tt>"WORKFLOW.TASK.VARIABLE":"TYPE"</tt> and we want to
-   * transform it into something that would be <tt>workflow = { task = {variable = type}}</tt> in
-   * Shesmu, collecting all the input variables for a single task into an object.
+   * <p>Each womtool record looks like <code>"WORKFLOW.TASK.VARIABLE":"TYPE"</code> and we want to
+   * transform it into something that would be <code>workflow = { task = {variable = type}}</code>
+   * in Shesmu, collecting all the input variables for a single task into an object.
    */
   public static Stream<Pair<String[], Imyhat>> of(
       ObjectNode inputs, boolean pairsAsObjects, ErrorConsumer errorHandler) {

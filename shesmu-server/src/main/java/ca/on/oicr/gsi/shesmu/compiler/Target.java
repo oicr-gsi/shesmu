@@ -13,13 +13,13 @@ public interface Target {
      */
     CONSTANT(false),
     /**
-     * A variable in a <tt>For</tt> operation
+     * A variable in a <code>For</code> operation
      *
      * <p>May be be captured and should not be in scope to even worry about stream alteration
      */
     LAMBDA(false),
     /**
-     * A variable from a <tt>Define</tt> olive's parameters
+     * A variable from a <code>Define</code> olive's parameters
      *
      * <p>Equivalent to {@link #CONSTANT}
      */

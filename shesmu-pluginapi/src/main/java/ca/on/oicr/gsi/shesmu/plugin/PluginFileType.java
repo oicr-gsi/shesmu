@@ -48,9 +48,9 @@ public abstract class PluginFileType<T extends PluginFile> {
    *     extension
    * @param namespaces the namespace that will be used to identify this all plugins are group into
    *     namespaces; different plugins may share a namespace though this is discouraged. It also
-   *     cannot be any of the reserved namespace include <tt>core</tt>, <tt>java</tt>,
-   *     <tt>olive</tt>, <tt>plugin</tt>, <tt>script</tt>, <tt>shesmu</tt>, <tt>std</tt>, and
-   *     <tt>sys</tt>.
+   *     cannot be any of the reserved namespace include <code>core</code>, <code>java</code>,
+   *     <code>olive</code>, <code>plugin</code>, <code>script</code>, <code>shesmu</code>, <code>
+   *     std</code>, and <code>sys</code>.
    */
   public PluginFileType(
       Lookup lookup, Class<T> pluginFileClass, String extension, String... namespaces) {

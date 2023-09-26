@@ -9,7 +9,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-/** One of the <tt>By</tt> clauses in <tt>Group</tt> clause */
+/** One of the <code>By</code> clauses in <code>Group</code> clause */
 public abstract class DiscriminatorNode {
   private static final Parser.ParseDispatch<ComplexConstructor> COMPLEX =
       new Parser.ParseDispatch<>();

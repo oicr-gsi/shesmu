@@ -83,6 +83,7 @@ public abstract class ActionCommand<A extends Action> {
      * purged
      *
      * @param murderer the filter to select actions to be purged
+     * @return a response state indicating that this action and others must be purged
      */
     public static Response murder(Murderer murderer) {
       return new Response() {
@@ -96,6 +97,15 @@ public abstract class ActionCommand<A extends Action> {
       };
     }
 
+    /**
+     * Call a visitor based on this response state
+     *
+     * @param visitor the visitor to use
+     * @param builder the action filter builder to use
+     * @return the result from the visitor
+     * @param <F> the filter type
+     * @param <R> the result type
+     */
     public abstract <F, R> R apply(
         ResponseVisitor<R, F> visitor,
         ActionFilterBuilder<F, ActionState, String, Instant, Long> builder);
@@ -103,24 +113,61 @@ public abstract class ActionCommand<A extends Action> {
 
   /** Create an action filter for purging actions */
   public interface Murderer {
+
+    /**
+     * Create a new filter to determine which actions should be purged
+     *
+     * @param builder the filter builder to use
+     * @return the constructed filter
+     * @param <F> the filter type
+     */
     <F> F murder(ActionFilterBuilder<F, ActionState, String, Instant, Long> builder);
   }
 
   /**
-   * Visit an acction command response
+   * Visit an action command response
    *
    * @param <R> the return type from the visitor
    * @param <F> the action filter output type
    */
   public interface ResponseVisitor<R, F> {
+
+    /**
+     * Called when the action indicated it accepted the command
+     *
+     * @return implementation specific result information
+     */
     R accepted();
 
+    /**
+     * Called when the action indicated it ignored the command
+     *
+     * @return implementation specific result information
+     */
     R ignored();
 
+    /**
+     * Called when the action indicated it accepted the command and wants to be purged
+     *
+     * @return implementation specific result information
+     */
     R purge();
 
+    /**
+     * Called when the action indicated it accepted the command and wants to be put in an unknown
+     * action state
+     *
+     * @return implementation specific result information
+     */
     R reset();
 
+    /**
+     * Called when the action indicated it accepted the command and wants to be purged along with
+     * any actions matching the supplied filter
+     *
+     * @param filter the action filter to use
+     * @return implementation specific result information
+     */
     R murder(F filter);
   }
 
@@ -153,12 +200,20 @@ public abstract class ActionCommand<A extends Action> {
     this.preferences.addAll(List.of(preferences));
   }
 
-  /** The text that the user sees */
+  /**
+   * The text that the user sees
+   *
+   * @return the display text
+   */
   public final String buttonText() {
     return buttonText;
   }
 
-  /** The command identifier */
+  /**
+   * The command identifier
+   *
+   * @return a unique identifier for this action
+   */
   public final String command() {
     return command;
   }
@@ -168,16 +223,26 @@ public abstract class ActionCommand<A extends Action> {
    *
    * @param action the action to perform the command on
    * @param user the user performing this action, if known
-   * @return true if the command was followed; false if inappropriate or not understood
+   * @return an indication of whether the command was followed and if the processor needs to change
+   *     the action's state
    */
   protected abstract Response execute(A action, Optional<String> user);
 
-  /** The front end icon */
+  /**
+   * The front end icon
+   *
+   * @return the icon identifier
+   */
   public FrontEndIcon icon() {
     return icon;
   }
 
-  /** Check if a UI preference is set */
+  /**
+   * Check if a UI preference is set
+   *
+   * @param preference the UI preference to interrogate
+   * @return true if the preference should be set
+   */
   public final boolean prefers(Preference preference) {
     return preferences.contains(preference);
   }
@@ -188,7 +253,8 @@ public abstract class ActionCommand<A extends Action> {
    * @param action the action to perform the command on
    * @param command the action identifier
    * @param user the user performing this action, if known
-   * @return true if the command was followed; false if inappropriate or not understood
+   * @return an indication of whether the command was follow and if the processor needs to change
+   *     the action's state
    */
   public final Response process(Action action, String command, Optional<String> user) {
     if (command.equals(this.command) && clazz.isInstance(action)) {

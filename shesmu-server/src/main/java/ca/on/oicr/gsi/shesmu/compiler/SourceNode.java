@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-/** The provider of a stream of items for a <tt>For</tt> expression */
+/** The provider of a stream of items for a <code>For</code> expression */
 public abstract class SourceNode {
 
   private static final Parser.ParseDispatch<SourceNode> DISPATCH = new Parser.ParseDispatch<>();

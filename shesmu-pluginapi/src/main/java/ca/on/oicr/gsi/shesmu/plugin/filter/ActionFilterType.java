@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.time.Instant;
 import java.util.stream.Stream;
 
+/** Action filter to check an action's type */
 public class ActionFilterType extends ActionFilter {
   private String[] types;
 
@@ -12,10 +13,20 @@ public class ActionFilterType extends ActionFilter {
     return maybeNegate(filterBuilder.type(Stream.of(types)), filterBuilder);
   }
 
+  /**
+   * Gets the types to check
+   *
+   * @return the types
+   */
   public String[] getTypes() {
     return types;
   }
 
+  /**
+   * Sets the types to check
+   *
+   * @param types the types
+   */
   public void setTypes(String[] types) {
     this.types = types;
   }

@@ -57,8 +57,8 @@ public abstract class SignatureDefinition implements Target {
    *
    * <ul>
    *   <li>If the signature does not actually depend on the input ({@link SignatureStorage#STATIC}),
-   *       then the method passed will be a <tt>clinit</tt> method and the constant value should be
-   *       pushed on the stack.
+   *       then the method passed will be a <code>clinit</code> method and the constant value should
+   *       be pushed on the stack.
    *   <li>If the signature depends on the input ({@link SignatureStorage#DYNAMIC}), then the method
    *       passed will be a method that takes one input, the stream variable to be signed, and the
    *       resulting value should be pushed on the stack.

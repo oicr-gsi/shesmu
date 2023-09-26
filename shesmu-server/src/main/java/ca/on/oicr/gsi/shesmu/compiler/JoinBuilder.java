@@ -10,7 +10,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
-/** Build a new class for holding the new variables defined by a <tt>Join</tt> clause */
+/** Build a new class for holding the new variables defined by a <code>Join</code> clause */
 public class JoinBuilder {
   private class JoinHalfRenderer extends Renderer {
     private final GeneratorAdapter getter;

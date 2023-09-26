@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 
-/** Define a <tt>Input</tt> format for olives to consume */
+/** Define a <code>Input</code> format for olives to consume */
 public interface InputFormatDefinition {
   static Map<String, Imyhat> predefinedTypes(
       Stream<SignatureDefinition> signatures, InputFormatDefinition inputFormatDefinition) {

@@ -3,7 +3,8 @@ package ca.on.oicr.gsi.shesmu.runtime;
 /**
  * An interface for getting signature values
  *
- * <p>This is used by <tt>Define</tt> olives to access signatures which their callers must provide.
+ * <p>This is used by <code>Define</code> olives to access signatures which their callers must
+ * provide.
  */
 public interface SignatureAccessor {
 

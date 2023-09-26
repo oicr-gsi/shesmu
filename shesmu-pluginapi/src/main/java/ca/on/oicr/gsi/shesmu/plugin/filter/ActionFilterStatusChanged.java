@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.time.Instant;
 import java.util.Optional;
 
+/** Action filter that checks when an action's state last changed */
 public class ActionFilterStatusChanged extends BaseRangeActionFilter {
   @Override
   public <F> F convert(

@@ -12,7 +12,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+/** Convert a Shesmu value into a JSON value based on the Shesmu type */
 public class AsJsonNode implements ImyhatFunction<JsonNode> {
+
+  /**
+   * Convert a Shesmu value into a JSON value, based on the type
+   *
+   * @param type the Shesmu type
+   * @param value the Shesmu value
+   * @return the JSON equivalent
+   */
   public static JsonNode convert(Imyhat type, Object value) {
     return type.apply(new AsJsonNode(), value);
   }

@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.time.Instant;
 import java.util.regex.Pattern;
 
+/** An action filter that matches text in an action using a regular expression */
 public class ActionFilterRegex extends ActionFilter {
   private boolean matchCase;
   private String pattern;
@@ -16,18 +17,38 @@ public class ActionFilterRegex extends ActionFilter {
         filterBuilder);
   }
 
+  /**
+   * Get the regular expression
+   *
+   * @return the regular expression
+   */
   public String getPattern() {
     return pattern;
   }
 
+  /**
+   * Check if the regular expression is case-sensitive
+   *
+   * @return true if case-sensitive
+   */
   public boolean isMatchCase() {
     return matchCase;
   }
 
+  /**
+   * Sets if the regular expression is case-sensitive
+   *
+   * @param matchCase true if case-sensitive
+   */
   public void setMatchCase(boolean matchCase) {
     this.matchCase = matchCase;
   }
 
+  /**
+   * Set the regular expression
+   *
+   * @param pattern the regular expression
+   */
   public void setPattern(String pattern) {
     this.pattern = pattern;
   }

@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.time.Instant;
 import java.util.stream.Stream;
 
+/** Utility class for action filters that operate on a collection of other filters */
 public abstract class BaseCollectionActionFilter extends ActionFilter {
   private ActionFilter[] filters;
 
@@ -16,13 +17,31 @@ public abstract class BaseCollectionActionFilter extends ActionFilter {
         filterBuilder);
   }
 
+  /**
+   * Convert the filter collection into a single filter
+   *
+   * @param filterBuilder the filter builder
+   * @param filters the already converted constituent filters
+   * @return the created filter
+   * @param <F> the filter type
+   */
   protected abstract <F> F convert(
       ActionFilterBuilder<F, ActionState, String, Instant, Long> filterBuilder, Stream<F> filters);
 
+  /**
+   * Get the collection of constituent filters
+   *
+   * @return the constituent filters
+   */
   public final ActionFilter[] getFilters() {
     return filters;
   }
 
+  /**
+   * Set the collection of constituent filters
+   *
+   * @param filters the constituent filters
+   */
   public final void setFilters(ActionFilter[] filters) {
     this.filters = filters;
   }

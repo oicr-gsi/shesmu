@@ -246,11 +246,6 @@
             <version>4.2</version>
           </dependency>
         </dependencies>
-        <configuration>
-          <formatterOptions>
-            <googleJavaFormat.formatJavadoc>false</googleJavaFormat.formatJavadoc>
-          </formatterOptions>
-        </configuration>
       </plugin>
     </plugins>
   </build>

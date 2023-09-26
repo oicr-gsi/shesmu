@@ -21,12 +21,20 @@ public final class FunctionParameter {
     this.type = type;
   }
 
-  /** Help text for this parameter */
+  /**
+   * Help text for this parameter
+   *
+   * @return the text
+   */
   public String description() {
     return description;
   }
 
-  /** The type of this parameter */
+  /**
+   * The type of this parameter
+   *
+   * @return the type descriptor
+   */
   public Imyhat type() {
     return type;
   }

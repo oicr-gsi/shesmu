@@ -888,9 +888,10 @@ public final class PluginManager
     private final List<Binder<ConstantDefinition>> constantTemplates = new ArrayList<>();
 
     /**
-     * ShesmuInputSources and ShesmuJsonInputSources which are virtual methods in a class that
-     * extends PluginFile. Since these come from PluginFile, they are associated with a plugin file:
-     * a configuration file (e.g., a .pinery file) is required to access these sources.
+     * {@link ShesmuInputSource} and {@link ShesmuJsonInputSource} which are virtual methods in a
+     * class that extends {@link PluginFile}. Since these come from {@link PluginFile}, they are
+     * associated with a plugin file: a configuration file (<em>e.g.</em>, a <code>.pinery</code>
+     * file) is required to access these sources.
      */
     private final Map<String, Queue<DynamicInputDataSource>> dynamicSources =
         new ConcurrentHashMap<>();
@@ -908,10 +909,10 @@ public final class PluginManager
     private final List<SignatureDefinition> staticSignatures = new ArrayList<>();
 
     /**
-     * ShesmuInputSources and ShesmuJsonInputSources which are static methods in a class that
-     * extends PluginFileType. Since these are part of the type definition, no actual PluginFile
-     * needs to be present for these sources to be accessed, the plugin needs only to be present in
-     * the deployment.
+     * {@link ShesmuInputSource} and {@link ShesmuJsonInputSource} which are static methods in a
+     * class that extends {@link PluginFileType}. Since these are part of the type definition, no
+     * actual {@link PluginFile} needs to be present for these sources to be accessed, the plugin
+     * needs only to be present in the deployment.
      */
     private final Map<String, Queue<InputDataSource>> staticSources = new ConcurrentHashMap<>();
 
@@ -1010,12 +1011,12 @@ public final class PluginManager
     }
 
     /**
-     * Validate a @ShesmuInputSource or @ShesmuJsonInputSource annotated method which is a virtual method in a class
-     * extending PluginFile.
-     * Checks that method is not static then hands off to annotation-specific validation methods.
-     * Does nothing if Method passed in lacks either annotation, so methods can be processed in bulk by the
-     * FormatTypeWrapper
-     * See implementation.md and the docs for processSourceMethod
+     * Validate a {@link ShesmuInputSource} or {@link @ShesmuJsonInputSource} annotated method which
+     * is a virtual method in a class extending PluginFile. Checks that method is not static then
+     * hands off to annotation-specific validation methods. Does nothing if Method passed in lacks
+     * either annotation, so methods can be processed in bulk by the {@link FormatTypeWrapper}.
+     *
+     * <p>See <code>implementation.md</code> and the docs for {@link #processSourceMethod}
      *
      * @param method Method object to validate
      * @throws IllegalAccessException if validation fails
@@ -1099,12 +1100,13 @@ public final class PluginManager
     }
 
     /**
-     * Validate a @ShesmuInputSource or @ShesmuJsonInputSource annotated method which is a static method in a class
-     * extending PluginFileType.
-     * Checks that method is static then hands off to annotation-specific validation methods.
-     * Does nothing if Method passed in lacks either annotation, so methods can be processed in bulk by the
-     * FormatTypeWrapper
-     * See implementation.md and the docs for processSourceMethod
+     * Validate a {@link ShesmuInputSource} or {@link ShesmuJsonInputSource} annotated method which
+     * is a static method in a class extending {@link PluginFileType}. Checks that method is static
+     * then hands off to annotation-specific validation methods. Does nothing if the method passed
+     * in lacks either annotation, so methods can be processed in bulk by the {@link
+     * FormatTypeWrapper}.
+     *
+     * <p>See <code>implementation.md</code> and the docs for {@link #processSourceMethod}
      *
      * @param method Method object to validate
      * @throws IllegalAccessException if validation fails
@@ -1548,20 +1550,26 @@ public final class PluginManager
     }
 
     /**
-     * Perform validation on methods annotated with @ShesmuInputSource and track as either a "static" or "dynamic"
-     * type of source.
-     * Validation on a @ShesmuInputSource method is as follows:
-     *  1. Ensure method returns Stream
-     *  2. Ensure method returns Stream<T> or a subclass of T but not a wildcard
-     *  3. Ensure method has either 0 parameters, or 1 parameter of type boolean
-     *     (this is the optional readStale boolean)
-     * If the ShesmuInputSource is from an instance source (i.e., a virtual method in a class that extends PluginFile)
-     * then the method is tracked as a dynamic source. These input sources require a configuration file.
-     * If the ShesmuInputSource is from a repository source (i.e., a static method in a class that extends
-     * PluginFileType) then the method is tracked as a static source. These input sources require no configuration.
-     * See implementation.md
+     * Perform validation on methods annotated with {@link ShesmuInputSource} and track as either a
+     * "static" or "dynamic" type of source. Validation on a {@link ShesmuInputSource} method is as
+     * follows:
      *
-     * @param method Method object of @ShesmuInputSource-annotated method to process
+     * <ol>
+     *   <li>Ensure method returns Stream
+     *   <li>Ensure type parameter of the returned {@link Stream} is a real class (not a type
+     *       parameter or wildcard)
+     *   <li>Ensure method has either 0 parameters, or 1 parameter of type boolean (this is the
+     *       optional <code>readStale</code> Boolean). If the {@link ShesmuInputSource} is from an
+     *       instance source (<em>i.e.</em>, a virtual method in a class that extends {@link
+     *       PluginFile}) then the method is tracked as a dynamic source. These input sources
+     *       require a configuration file. If the {@link ShesmuInputSource} is from a repository
+     *       source (<em>i.e.</em>, a static method in a class that extends {@link PluginFileType})
+     *       then the method is tracked as a static source. These input sources require no
+     *       configuration.
+     *       <p>See <code>implementation.md</code>
+     *
+     * @param method reflected {@link Method} of {@link ShesmuInputSource}-annotated method to
+     *     process
      * @param isInstance true if instance, false if repository
      * @throws IllegalAccessException if method fails validation due to bad return type or
      *     parameters
@@ -1578,14 +1586,14 @@ public final class PluginManager
       if (!(returnType instanceof ParameterizedType)) {
         throw new IllegalArgumentException(
             String.format(
-                "Method %s of %s does not return Stream<T> or generic type information missing from bytecode.",
+                "Method %s of %s does not return Stream<> or generic type information missing from bytecode.",
                 method.getName(), method.getDeclaringClass().getName()));
       }
       var typeParameter = ((ParameterizedType) returnType).getActualTypeArguments()[0];
       if (!(typeParameter instanceof Class)) {
         throw new IllegalArgumentException(
             String.format(
-                "Method %s of %s does not return Stream<T> where T is a class. Cannot deal with %s.",
+                "Method %s of %s does not return Stream<> where the item being streamed is a class. Cannot deal with %s.",
                 method.getName(), method.getDeclaringClass().getName(), typeParameter));
       }
       boolean dropBoolean;
@@ -1636,21 +1644,24 @@ public final class PluginManager
     }
 
     /**
-     * Perform validation on methods annotated with @ShesmuJsonInputSource and track as either a "static" or "dynamic"
-     * type of source.
-     * Validation on a @ShesmuJsonInputSource method is to ensure signature returns InputStream<Object>
-     * If the ShesmuJsonInputSource is from an instance source (i.e., a virtual method in a class that extends PluginFile)
-     * then the method is tracked as a dynamic source. These input sources require a configuration file.
-     * If the ShesmuJsonInputSource is from a repository source (i.e., a static method in a class that extends
-     * PluginFileType) then the method is tracked as a static source. These input sources require no configuration.
-     * See implementation.md
+     * Perform validation on methods annotated with {@link ShesmuJsonInputSource} and track as
+     * either a "static" or "dynamic" type of source. Validation on a {@link ShesmuJsonInputSource}
+     * method is to ensure signature returns {@link InputStream} If the {@link
+     * ShesmuJsonInputSource} is from an instance source (<em>i.e.</em>, a virtual method in a class
+     * that extends {@link PluginFile}) then the method is tracked as a dynamic source. These input
+     * sources require a configuration file. If the {@link ShesmuJsonInputSource} is from a
+     * repository source (<em>i.e.</em>, a static method in a class that extends {@link
+     * PluginFileType}) then the method is tracked as a static source. These input sources require
+     * no configuration.
      *
-     * @param method Method object of the ShesmuInputSource-annotated method we would like to
-     *     validate
-     * @param annotation ShesmuJsonInputSource object with format name and ttl value
+     * <p>See <code>implementation.md</code>
+     *
+     * @param method reflected {@link Method} of the {@link ShesmuInputSource}-annotated method we
+     *     would like to validate
+     * @param annotation {@link ShesmuJsonInputSource} annotation with format name and TTL value
      * @param isInstance true if instance, false if repository
-     * @throws IllegalAccessException if trying to validate a ShesmuJsonInputSource which does not
-     *     return InputStream
+     * @throws IllegalAccessException if trying to validate a {@link ShesmuJsonInputSource} which
+     *     does not return {@link InputStream}
      */
     private void processSourceMethod(
         Method method, ShesmuJsonInputSource annotation, boolean isInstance)
@@ -1898,10 +1909,11 @@ public final class PluginManager
   private final List<FormatTypeWrapper<?, ?>> formatTypes;
 
   /**
-   * Initialize PluginManager with all FormatTypeWrappers possible to create from the PluginFileType
-   * implementations discovered by the ServiceLoader.
+   * Initialize plugin manager with all {@link FormatTypeWrapper} possible to create from the {@link
+   * PluginFileType} implementations discovered by the {@link ServiceLoader}.
    *
-   * @param fileWatcher FileWatcher watching the SHESMU_DATA directory as specified in Server
+   * @param fileWatcher FileWatcher watching the <code>SHESMU_DATA</code> directory as specified in
+   *     Server
    */
   @SuppressWarnings("Convert2MethodRef")
   public PluginManager(FileWatcher fileWatcher) {
@@ -2003,12 +2015,12 @@ public final class PluginManager
   /**
    * Check throttling should be applied
    *
-   * Queries all the FormatTypeWrappers the PluginManager has created, for one or more
+   * <p>Queries all the {@link FormatTypeWrapper} the plugin manager has created, for one or more
    * input formats by name. This allows any plugin to declare an input format overloaded.
    *
-   * This allows plugins to declare their own input formats overloaded for whatever reason,
-   * but it also allows (if installed) plugins like the Prometheus plugin or the maintenance
-   * scheduler to declare input formats overloaded for external reasons.
+   * <p>This allows plugins to declare their own input formats overloaded for whatever reason, but
+   * it also allows (if installed) plugins like the Prometheus plugin or the maintenance scheduler
+   * to declare input formats overloaded for external reasons.
    *
    * @param services a list of service names to check; this set must not be modified; these names
    *     are arbitrary and must be coordinated by {@link Action} and the throttler

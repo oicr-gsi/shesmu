@@ -8,6 +8,7 @@ public interface ActionServices {
    * Check if any of the provide services are in an overload state
    *
    * @param services the names of the services
+   * @return the names of the services that are overloaded
    */
   default Set<String> isOverloaded(String... services) {
     return isOverloaded(Set.of(services));
@@ -17,6 +18,7 @@ public interface ActionServices {
    * Check if any of the provide services are in an overload state
    *
    * @param services the names of the services
+   * @return the names of the services that are overloaded
    */
   Set<String> isOverloaded(Set<String> services);
 }

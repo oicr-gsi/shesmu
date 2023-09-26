@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 /**
  * Something that can "create" undefined variables out of thin air.
  *
- * <p>This is used by <tt>*</tt> to force an undefined variable to be created
+ * <p>This is used by <code>*</code> to force an undefined variable to be created
  */
 public interface UndefinedVariableProvider {
   UndefinedVariableProvider NONE = n -> Optional.empty();

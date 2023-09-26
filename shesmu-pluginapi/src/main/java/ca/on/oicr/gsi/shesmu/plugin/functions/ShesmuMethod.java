@@ -21,15 +21,15 @@ public @interface ShesmuMethod {
   /**
    * A description of this method as presented in the Shesmu UI.
    *
-   * <p>Use <tt>{instance}</tt> and <tt>{file}</tt> to include the name of the instance and file
-   * path.
+   * <p>Use <code>{instance}</code> and <code>{file}</code> to include the name of the instance and
+   * file path.
    */
   String description() default "Too lazy to document.";
 
   /**
    * The name of the method in Shesmu, if the Java name is not usable.
    *
-   * <p>Use <tt>$</tt> to insert an instance name.
+   * <p>Use <code>$</code> to insert an instance name.
    */
   String name() default "";
 

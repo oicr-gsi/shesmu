@@ -17,6 +17,14 @@ public abstract class ActionDefinition {
 
   private final List<ActionParameterDefinition> parameters;
 
+  /**
+   * Constructs a new action definition
+   *
+   * @param name the name of the action which must be a valid Shesmu identifier
+   * @param description a human-readable description of the action
+   * @param filename the file where the action is defined, or null if not appropriate
+   * @param parameters the parameters that can be set on this action
+   */
   public ActionDefinition(
       String name,
       String description,
@@ -28,12 +36,20 @@ public abstract class ActionDefinition {
     this.parameters = parameters.collect(Collectors.toList());
   }
 
-  /** A human-readable explanation of what this action does and where it came from. */
+  /**
+   * A human-readable explanation of what this action does and where it came from.
+   *
+   * @return the description
+   */
   public final String description() {
     return description;
   }
 
-  /** The configuration file associated with this parameter, if one exists. */
+  /**
+   * The configuration file associated with this parameter, if one exists.
+   *
+   * @return the filepath
+   */
   public Path filename() {
     return filename;
   }
@@ -53,16 +69,27 @@ public abstract class ActionDefinition {
    * The name of the action as it will appear in the Shesmu language
    *
    * <p>It must be a valid Shesmu identifier.
+   *
+   * @return the name
    */
   public final String name() {
     return name;
   }
 
-  /** List all the parameters that must be set for this action to be performed. */
+  /**
+   * List all the parameters that can be set for this action to be performed.
+   *
+   * @return the parameters for the action
+   */
   public final Stream<ActionParameterDefinition> parameters() {
     return parameters.stream();
   }
 
+  /**
+   * Additional information that can be displayed in the user interface with formatting
+   *
+   * @return a generator for the additional information
+   */
   public SupplementaryInformation supplementaryInformation() {
     return Stream::empty;
   }

@@ -10,15 +10,28 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+/** The location of an olive that is stable across recompilations */
 public final class SourceLocation implements Comparable<SourceLocation> {
 
+  /** Finder of associated URLs (<em>e.g.</em>, GitHub URLs) for a particular input file */
   public interface SourceLocationLinker {
 
+    /** A finder that never produces a URL */
     SourceLocationLinker EMPTY = (path, line, column, hash) -> Stream.empty();
 
+    /**
+     * Find an associated URL
+     *
+     * @param localFilePath the full path to the olive file on local disk
+     * @param line the line number
+     * @param column the column number
+     * @param hash the compilation hash
+     * @return a stream of possible URLs for this location
+     */
     Stream<String> sourceUrl(String localFilePath, int line, int column, String hash);
   }
 
+  /** Custom JSON serializer */
   public static final class SourceLocationSerializer extends JsonSerializer<SourceLocation> {
     private final SourceLocationLinker linker;
 
@@ -50,6 +63,14 @@ public final class SourceLocation implements Comparable<SourceLocation> {
   private final String hash;
   private final int line;
 
+  /**
+   * Construct a new source location
+   *
+   * @param fileName the filename with a possibly prefix-trimmed path
+   * @param line the line number
+   * @param column the column number
+   * @param hash the input file hash
+   */
   public SourceLocation(String fileName, int line, int column, String hash) {
     super();
     this.fileName = fileName;
@@ -58,6 +79,11 @@ public final class SourceLocation implements Comparable<SourceLocation> {
     this.hash = hash;
   }
 
+  /**
+   * The olive's column
+   *
+   * @return the 1-based column number; maybe 0 in <code>actnow</code> files
+   */
   public int column() {
     return column;
   }
@@ -107,10 +133,20 @@ public final class SourceLocation implements Comparable<SourceLocation> {
     } else return hash.equals(other.hash);
   }
 
+  /**
+   * The olive's script file
+   *
+   * @return a partial path to the olive's <code>.shesmu</code> or <code>.actnow</code> file
+   */
   public String fileName() {
     return fileName;
   }
 
+  /**
+   * A hash of the input script
+   *
+   * @return a hash that identifies the source script across recompilations
+   */
   public String hash() {
     return hash;
   }
@@ -126,6 +162,11 @@ public final class SourceLocation implements Comparable<SourceLocation> {
     return result;
   }
 
+  /**
+   * The olive's line
+   *
+   * @return the 1-based line number; maybe 0 in <code>actnow</code> files
+   */
   public int line() {
     return line;
   }
@@ -135,6 +176,13 @@ public final class SourceLocation implements Comparable<SourceLocation> {
     toJson(node, linker);
   }
 
+  /**
+   * Write the source location fields in the format expected by the front end, with a URL if
+   * available.
+   *
+   * @param node the JSON object to populate
+   * @param linker a URL resolver for olives
+   */
   public void toJson(ObjectNode node, SourceLocationLinker linker) {
     node.put("file", fileName);
     node.put("line", line);
@@ -148,6 +196,12 @@ public final class SourceLocation implements Comparable<SourceLocation> {
     return String.format("%s:%d:%d[%s]", fileName, line, column, hash);
   }
 
+  /**
+   * Determine the source URL for this location
+   *
+   * @param linker the source URL resolver
+   * @return the URL if available
+   */
   public Optional<String> url(SourceLocationLinker linker) {
     return linker.sourceUrl(fileName, line, column, hash).filter(Objects::nonNull).findAny();
   }

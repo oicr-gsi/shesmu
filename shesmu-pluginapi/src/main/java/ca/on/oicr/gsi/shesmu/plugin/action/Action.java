@@ -25,6 +25,11 @@ import java.util.stream.Stream;
 public abstract class Action {
   private final String type;
 
+  /**
+   * Construct a new action instance
+   *
+   * @param type the type of the action for use by the front-end
+   */
   public Action(String type) {
     super();
     this.type = type;
@@ -105,6 +110,8 @@ public abstract class Action {
    *
    * <p>The actions will be sorted by priority and work in order. Smaller numbers have higher
    * priority. This method should return a constant.
+   *
+   * @return the priority value
    */
   public abstract int priority();
 
@@ -121,15 +128,20 @@ public abstract class Action {
    */
   public abstract long retryMinutes();
 
-  /** Check if the action matches the regex query supplied by the user */
+  /**
+   * Check if the action matches the regex query supplied by the user
+   *
+   * @param query the regex to match
+   * @return true if the action should be included in the search results
+   */
   public abstract boolean search(Pattern query);
 
   /**
    * Self-determined tags that should be attached to this action
    *
-   * <p>An olive may attach tags to an action and an action may also self-determine tags it wants
-   * associated with itself. The tags from olives accumulate, but the self-determined tags are
-   * refresed every time, so an action can choose to drop self-determined tags. This method will be
+   * <p>An olive may attach tags to an action and an action may also self-determine tags it wants to
+   * associate with itself. The tags from olives accumulate, but the self-determined tags are
+   * refreshed every time, so an action can choose to drop self-determined tags. This method will be
    * used frequently, so it must be fast.
    *
    * @return A stream of tags
@@ -141,11 +153,18 @@ public abstract class Action {
   /**
    * Render the action to JSON for display by the front end.
    *
-   * <p>It should set the <tt>type</tt> property.
+   * <p>It should set the <code>type</code> property.
+   *
+   * @param mapper the JSON mapper instance to use
+   * @return a JSON representation of the action
    */
   public abstract ObjectNode toJson(ObjectMapper mapper);
 
-  /** The action's name as it will appear in the JSON. */
+  /**
+   * The action's name as it will appear in the JSON.
+   *
+   * @return the action's name
+   */
   public final String type() {
     return type;
   }
