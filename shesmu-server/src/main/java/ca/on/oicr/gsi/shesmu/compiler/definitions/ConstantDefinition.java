@@ -34,13 +34,13 @@ import org.objectweb.asm.commons.Method;
  * <p>Constant values get written into the program, so they are not updated until the program is
  * recompiled even if the definition is changed.
  *
- * <p>They aren't constant in the sense that they can be arbitrary bytecode, so <tt>now</tt> is
+ * <p>They aren't constant in the sense that they can be arbitrary bytecode, so <code>now</code> is
  * considered a constant even though it varies. All that matters is that it has no direct
  * interaction with any other part of the Shesmu script.
  */
 public abstract class ConstantDefinition implements Target {
 
-  /** Write the value of a constant into the <tt>value</tt> property of a JSON object. */
+  /** Write the value of a constant into the <code>value</code> property of a JSON object. */
   public interface ConstantLoader {
     @RuntimeInterop
     void load(ObjectNode target);

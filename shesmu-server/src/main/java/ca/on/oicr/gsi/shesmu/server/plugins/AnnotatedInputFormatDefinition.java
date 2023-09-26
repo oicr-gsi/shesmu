@@ -67,7 +67,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
-/** Define a <tt>Input</tt> format for olives to consume */
+/** Define a <code>Input</code> format for olives to consume */
 public final class AnnotatedInputFormatDefinition implements InputFormatDefinition, InputSource {
 
   public interface JsonFieldWriter {

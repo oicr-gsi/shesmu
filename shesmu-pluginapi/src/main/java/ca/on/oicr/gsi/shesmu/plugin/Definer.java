@@ -29,6 +29,7 @@ public interface Definer<T> extends Supplier<T> {
     /**
      * Get information about a new refiller
      *
+     * @param rowType the type for the input row
      * @param <I> the type of the input rows
      */
     <I> RefillInfo<I, ? extends Refiller<I>> info(Class<I> rowType);
@@ -36,6 +37,8 @@ public interface Definer<T> extends Supplier<T> {
     /**
      * Any supplementary information to be displayed; this will be invoked when a user request comes
      * it, so it must be fast, but can provide updated information.
+     *
+     * @return the additional information to be displayed
      */
     default SupplementaryInformation supplementary() {
       return Stream::empty;
@@ -74,7 +77,11 @@ public interface Definer<T> extends Supplier<T> {
   /** Remove all defined sources */
   void clearSource();
 
-  /** Remove providers of a particular format */
+  /**
+   * Remove providers of a particular format
+   *
+   * @param formatName the input format name
+   */
   void clearSource(String formatName);
 
   /**
@@ -86,6 +93,7 @@ public interface Definer<T> extends Supplier<T> {
    * @param supplier a generator of new instances of this action
    * @param parameters the parameters that cannot be inferred by annotations
    * @return the full-qualified name to the action
+   * @param <A> the action type
    */
   default <A extends Action> String defineAction(
       String name,
@@ -106,6 +114,7 @@ public interface Definer<T> extends Supplier<T> {
    * @param information any supplementary information to be displayed; this will be invoked when a
    *     user request comes it, so it must be fast, but can provide updated information.
    * @return the full-qualified name to the action
+   * @param <A> the action type
    */
   <A extends Action> String defineAction(
       String name,
@@ -134,6 +143,7 @@ public interface Definer<T> extends Supplier<T> {
    * @param returnType the Shesmu type for the constant
    * @param value the current value of the object
    * @return the full-qualified name to the constant
+   * @param <R> the Java type for the constant
    */
   <R> String defineConstant(
       String name, String description, ReturnTypeGuarantee<R> returnType, R value);
@@ -146,6 +156,7 @@ public interface Definer<T> extends Supplier<T> {
    * @param returnType the Shesmu type for the constant
    * @param constant a callback to compute the current value of the constant
    * @return the full-qualified name to the constant
+   * @param <R> the Java type for the constant
    */
   <R> String defineConstant(
       String name, String description, ReturnTypeGuarantee<R> returnType, Supplier<R> constant);
@@ -169,6 +180,7 @@ public interface Definer<T> extends Supplier<T> {
    * @param returnType the return type of the signature
    * @param signer a function to construct new signers
    * @return the full-qualified name to the signer
+   * @param <R> the Java type for the signature
    */
   <R> String defineDynamicSigner(
       String name, ReturnTypeGuarantee<R> returnType, Supplier<? extends DynamicSigner<R>> signer);
@@ -200,6 +212,8 @@ public interface Definer<T> extends Supplier<T> {
    * @param parameterType the type of the parameter
    * @param function the implementation of the function
    * @return the full-qualified name to the function
+   * @param <A> the function parameter type
+   * @param <R> the function return type
    */
   <A, R> String defineFunction(
       String name,
@@ -221,6 +235,9 @@ public interface Definer<T> extends Supplier<T> {
    * @param parameter2Type the type of the second parameter
    * @param function the implementation of the function
    * @return the full-qualified name to the function
+   * @param <A> the function first parameter type
+   * @param <B> the function second parameter type
+   * @param <R> the function return type
    */
   <A, B, R> String defineFunction(
       String name,
@@ -237,6 +254,7 @@ public interface Definer<T> extends Supplier<T> {
    *
    * @param name the name of the refiller
    * @param description the help text for the refiller
+   * @param definer the definition for the refiller
    * @return the full-qualified name to the refiller
    */
   String defineRefiller(String name, String description, RefillDefiner definer);
@@ -250,7 +268,7 @@ public interface Definer<T> extends Supplier<T> {
    *     registration will be ignored
    * @param ttl the number of minutes to cache the data before re-requesting it
    * @param source a provider of the source data as a byte stream of JSON-encoded data in the same
-   *     format as the <tt>/input</tt> URLs
+   *     format as the <code>/input</code> URLs
    */
   void defineSource(String formatName, int ttl, JsonInputSource source);
   /**
@@ -261,6 +279,7 @@ public interface Definer<T> extends Supplier<T> {
    * @param returnType the return type of the signature
    * @param signer a function to construct new signers
    * @return the full-qualified name to the signer
+   * @param <R> the Java type of the signature
    */
   <R> String defineStaticSigner(
       String name, ReturnTypeGuarantee<R> returnType, Supplier<? extends StaticSigner<R>> signer);

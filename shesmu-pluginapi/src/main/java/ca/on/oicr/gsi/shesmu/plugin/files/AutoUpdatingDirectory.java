@@ -68,14 +68,30 @@ public final class AutoUpdatingDirectory<T extends WatchedFileListener> {
     this(FileWatcher.DATA_DIRECTORY, extension, ctor);
   }
 
+  /**
+   * Check if there are no files currently detected
+   *
+   * @return true if there are no files currently detected; false otherwise
+   */
   public boolean isEmpty() {
     return active.isEmpty();
   }
 
+  /**
+   * Access all entries detected for each file
+   *
+   * @return a stream of all values
+   */
   public Stream<T> stream() {
     return active.values().stream();
   }
 
+  /**
+   * Register a callback to invoke whenever a new file is detected.
+   *
+   * @param callback the callback to invoke
+   * @return a mechanism to unsubscribe this callback
+   */
   public Runnable subscribe(Runnable callback) {
     final var id = idGen.getAndIncrement();
     subscribers.put(id, callback);

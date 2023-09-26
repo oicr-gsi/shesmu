@@ -4,11 +4,21 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.time.Instant;
 import java.util.Optional;
 
+/** Utility filter for temporal range filters */
 public abstract class BaseRangeActionFilter extends ActionFilter {
   private Long end;
 
   private Long start;
 
+  /**
+   * Convert a range to a filter
+   *
+   * @param start the start time of the range
+   * @param end the end time of the range
+   * @param filterBuilder the filter builder
+   * @return the constructed filter
+   * @param <F> the filter type
+   */
   protected abstract <F> F convert(
       Optional<Instant> start,
       Optional<Instant> end,
@@ -25,18 +35,37 @@ public abstract class BaseRangeActionFilter extends ActionFilter {
         filterBuilder);
   }
 
+  /**
+   * Get the end time point of the range
+   *
+   * @return the time point in epoch milliseconds
+   */
   public final Long getEnd() {
     return end;
   }
 
+  /**
+   * Get the start time point of the range
+   *
+   * @return the time point in epoch milliseconds
+   */
   public final Long getStart() {
     return start;
   }
 
+  /**
+   * Set the end time point of the range
+   *
+   * @param end the time point in epoch milliseconds
+   */
   public final void setEnd(Long end) {
     this.end = end;
   }
-
+  /**
+   * Set the start time point of the range
+   *
+   * @param start the time point in epoch milliseconds
+   */
   public final void setStart(Long start) {
     this.start = start;
   }

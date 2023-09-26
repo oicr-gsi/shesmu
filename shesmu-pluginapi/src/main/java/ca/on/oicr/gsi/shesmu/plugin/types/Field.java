@@ -10,6 +10,13 @@ public class Field<I> {
   private final Imyhat type;
   private final Object value;
 
+  /**
+   * Construct a new field instance
+   *
+   * @param index the field identifier/index
+   * @param value the field value
+   * @param type the field type
+   */
   public Field(I index, Object value, Imyhat type) {
     super();
     this.index = index;
@@ -17,17 +24,29 @@ public class Field<I> {
     this.type = type;
   }
 
-  /** Get the identifier of this field in the containing object/tuple */
+  /**
+   * Get the identifier of this field in the containing object/tuple
+   *
+   * @return the index
+   */
   public I index() {
     return index;
   }
 
-  /** Get the type of this field */
+  /**
+   * Get the type of this field
+   *
+   * @return the type descriptor
+   */
   public Imyhat type() {
     return type;
   }
 
-  /** Get the value of this field */
+  /**
+   * Get the value of this field
+   *
+   * @return the field value
+   */
   public Object value() {
     return value;
   }

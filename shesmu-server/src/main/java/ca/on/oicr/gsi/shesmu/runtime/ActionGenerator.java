@@ -54,6 +54,7 @@ public abstract class ActionGenerator implements RequiredServices {
    * @param metricName The metric name, as specified in the “Monitor” clause
    * @param help The help text that is associated with the metric
    * @param labelNames The label names for the metric. Maybe empty, but should not be null.
+   * @return the newly generated Prometheus gauge
    */
   @RuntimeInterop
   protected final Gauge buildGauge(String metricName, String help, String[] labelNames) {
@@ -62,7 +63,11 @@ public abstract class ActionGenerator implements RequiredServices {
     return g;
   }
 
-  /** All of the input formats that are used by this generator. */
+  /**
+   * All of the input formats that are used by this generator.
+   *
+   * @return the names of the input formats
+   */
   public abstract Stream<String> inputs();
 
   /**
@@ -87,6 +92,12 @@ public abstract class ActionGenerator implements RequiredServices {
     register(CollectorRegistry.defaultRegistry);
   }
 
+  /**
+   * Add all Prometheus monitoring for this program.
+   *
+   * @param registry the Prometheus registry to attach the metrics to
+   * @see #register()
+   */
   public final void register(CollectorRegistry registry) {
     collectors.forEach(registry::register);
   }
@@ -105,7 +116,11 @@ public abstract class ActionGenerator implements RequiredServices {
   @RuntimeInterop
   public abstract void run(OliveServices consumer, InputProvider input);
 
-  /** The maximum runtime of this script, in seconds. */
+  /**
+   * The maximum runtime of this script, in seconds.
+   *
+   * @return the timeout
+   */
   public abstract int timeout();
 
   /**
@@ -117,6 +132,12 @@ public abstract class ActionGenerator implements RequiredServices {
     unregister(CollectorRegistry.defaultRegistry);
   }
 
+  /**
+   * Remove all Prometheus monitoring for this program.
+   *
+   * @param registry the Prometheus registry to remove the metrics from
+   * @see #register()
+   */
   public final void unregister(CollectorRegistry registry) {
     collectors.forEach(registry::unregister);
   }

@@ -1,2 +1,2 @@
-/** Debugging output handlers for <tt>Dump</tt> olive clauses */
+/** Debugging output handlers for <code>Dump</code> olive clauses */
 package ca.on.oicr.gsi.shesmu.plugin.dumper;

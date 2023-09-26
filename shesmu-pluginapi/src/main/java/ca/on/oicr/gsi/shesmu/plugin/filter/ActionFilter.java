@@ -21,6 +21,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+/** The JSON representation of filters for actions used by the front end */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
   @JsonSubTypes.Type(value = ActionFilterAdded.class, name = "added"),
@@ -538,7 +539,25 @@ public abstract class ActionFilter {
         Consumer<ActionFilterNode<T, S, I, O>> output);
   }
 
+  /**
+   * A syntax node that can generate an action filter using a builder
+   *
+   * @param <T> action state type
+   * @param <S> string type
+   * @param <I> time instant type
+   * @param <O> time offset type
+   */
   public interface ActionFilterNode<T, S, I, O> {
+
+    /**
+     * Generate the action filter
+     *
+     * @param existing build an existing action filter by name
+     * @param builder the action filter builder
+     * @param errorHandler a collect for errors or warnings
+     * @return the constructed filter, if possible
+     * @param <F> the filter type
+     */
     <F> Optional<F> generate(
         Function<String, Optional<F>> existing,
         ActionFilterBuilder<F, T, S, I, O> builder,
@@ -549,11 +568,12 @@ public abstract class ActionFilter {
     <F> F create(ActionFilterBuilder<F, ?, ?, ?, ?> builder, Stream<F> filters);
   }
 
-  interface DateTimeNode {
+  private interface DateTimeNode {
+
     LocalDateTime generate(LocalDate date);
   }
 
-  interface InstantNode {
+  private interface InstantNode {
     Instant generate(LocalDateTime datetime);
   }
 
@@ -664,6 +684,7 @@ public abstract class ActionFilter {
   private static final Pattern DATE_PATTERN =
       Pattern.compile("(\\d{4})-(\\d{2}|[A-Za-z]+)-(\\d{2})");
   private static final ObjectMapper MAPPER = new ObjectMapper();
+  /** A rule to parse an action state */
   public static final RuleWithLiteral<ActionState, ActionState> PARSE_ACTION_STATE =
       new RuleWithLiteral<>() {
         @Override
@@ -676,7 +697,10 @@ public abstract class ActionFilter {
           return parser.dispatch(ACTION_STATE, output).whitespace();
         }
       };
+
+  /** A regular expression to match a regular expression during parsing */
   public static final Pattern REGEX = Pattern.compile("^/((?:[^\\\\/\n]|\\\\.)*)/(i)?");
+
   private static final Pattern SEARCH =
       Pattern.compile(
           "shesmusearch:((?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|))");
@@ -686,6 +710,7 @@ public abstract class ActionFilter {
   private static final Parser.ParseDispatch<Pair<Boolean, List<SourceOliveLocation>>> SOURCE_MATCH =
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<String> STRING = new Parser.ParseDispatch<>();
+  /** A rule to parse a string */
   public static final RuleWithLiteral<String, String> PARSE_STRING =
       new RuleWithLiteral<>() {
         @Override
@@ -698,10 +723,13 @@ public abstract class ActionFilter {
           return parser.whitespace().dispatch(STRING, output).whitespace();
         }
       };
+  /** A regular expression to match the contents of a string */
   public static final Pattern STRING_CONTENTS = Pattern.compile("^[^\"\n\\\\]*");
+
   private static final Parser.ParseDispatch<TagParser> TAG_MATCHER = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<TemporalType> TEMPORAL = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<Integer> TEMPORAL_UNITS = new Parser.ParseDispatch<>();
+  /** A rule to parse a temporal offset */
   public static final RuleWithLiteral<Long, Long> PARSE_OFFSET =
       new RuleWithLiteral<>() {
         @Override
@@ -726,11 +754,13 @@ public abstract class ActionFilter {
           return result;
         }
       };
+
   private static final Parser.ParseDispatch<TextParser> TEXT_MATCH = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<DateTimeNode> TIME = new Parser.ParseDispatch<>();
   private static final Pattern TIME_PATTERN =
       Pattern.compile("(?:(?:T| *)(\\d{2}):(\\d{2})(?::(\\d{2})))?");
   private static final Parser.ParseDispatch<InstantNode> TIME_ZONE = new Parser.ParseDispatch<>();
+  /** A rule to parse an exact time */
   public static final RuleWithLiteral<Instant, Instant> PARSE_TIME =
       new RuleWithLiteral<>() {
         @Override
@@ -755,6 +785,7 @@ public abstract class ActionFilter {
           return result;
         }
       };
+
   private static final Parser.ParseDispatch<Variable> VARIABLE = new Parser.ParseDispatch<>();
 
   static {
@@ -929,6 +960,15 @@ public abstract class ActionFilter {
     };
   }
 
+  /**
+   * Find action filters and action identifiers encoded as exported URL-like objects in arbitrary
+   * text
+   *
+   * @param text the text to search
+   * @param mapper an object mapper for decoding JSON data
+   * @return a filter that contains the union of any filters or action identifiers discovered, if
+   *     any were
+   */
   public static Optional<ActionFilter> extractFromText(String text, ObjectMapper mapper) {
     final Set<String> actionIds = new TreeSet<>();
     final List<ActionFilter> filters = new ArrayList<>();
@@ -974,7 +1014,20 @@ public abstract class ActionFilter {
     }
   }
 
-  /** Take the base filter and intersect it with the union of all accessory filters */
+  /**
+   * Take the base filter and intersect it with the union of all accessory filters
+   *
+   * @param baseName the name for the joined result
+   * @param baseFilters the filters to always include in every result
+   * @param accessoryFilters the set of filters to join against
+   * @param builder the filter builder
+   * @return a stream of labelled constructed filters
+   * @param <F> the resulting filter type
+   * @param <T> action state type
+   * @param <S> string type
+   * @param <I> time instant type
+   * @param <O> time offset type
+   */
   public static <F, T, S, I, O> Stream<Pair<String, F>> joinAllAnd(
       String baseName,
       F baseFilters,
@@ -986,7 +1039,20 @@ public abstract class ActionFilter {
             builder.and(Stream.of(baseFilters, builder.or(accessoryFilters.map(Pair::second))))));
   }
 
-  /** Take the base filter and remove all the accessory filters */
+  /**
+   * Take the base filter and remove all the accessory filters
+   *
+   * @param baseName the name for the joined result
+   * @param baseFilters the filters to always include in every result
+   * @param accessoryFilters the set of filters to remove
+   * @param builder the filter builder
+   * @return a stream of labelled constructed filters
+   * @param <F> the resulting filter type
+   * @param <T> action state type
+   * @param <S> string type
+   * @param <I> time instant type
+   * @param <O> time offset type
+   */
   public static <F, T, S, I, O> Stream<Pair<String, F>> joinAllExcept(
       String baseName,
       F baseFilters,
@@ -1004,6 +1070,17 @@ public abstract class ActionFilter {
   /**
    * Take each accessory filter and produce the intersection of the base filter and the accessory
    * filter
+   *
+   * @param baseName the name for the joined result
+   * @param baseFilters the filters to always include in every result
+   * @param accessoryFilters the set of filters to join against
+   * @param builder the filter builder
+   * @return a stream of labelled constructed filters
+   * @param <F> the resulting filter type
+   * @param <T> action state type
+   * @param <S> string type
+   * @param <I> time instant type
+   * @param <O> time offset type
    */
   public static <F, T, S, I, O> Stream<Pair<String, F>> joinEachAnd(
       String baseName,
@@ -1014,6 +1091,22 @@ public abstract class ActionFilter {
         p -> new Pair<>(p.first(), builder.and(Stream.of(p.second(), baseFilters))));
   }
 
+  /**
+   * Parse an action filter using the parse rules provided
+   *
+   * @param parser the parser state
+   * @param actionState the rule to parse action states
+   * @param string the rule to parse strings
+   * @param strings the rule to parse sets of strings
+   * @param instant the rule to parse time instants
+   * @param offset the rule to parse time offsets
+   * @param output the callback to hold the output
+   * @return the output parser state
+   * @param <T> action state type
+   * @param <S> string type
+   * @param <I> time instant type
+   * @param <O> time offset type
+   */
   public static <T, S, I, O> Parser parse(
       Parser parser,
       Rule<T> actionState,
@@ -1260,6 +1353,14 @@ public abstract class ActionFilter {
     return OptionalInt.empty();
   }
 
+  /**
+   * Parse an action filter query
+   *
+   * @param input the query to parse
+   * @param existing any pre-defined action filters for named variable substitution
+   * @param errorHandler a collector for errors
+   * @return the resulting action filter, if successful
+   */
   public static Optional<ActionFilter> parseQuery(
       String input, Function<String, Optional<ActionFilter>> existing, ErrorConsumer errorHandler) {
     final var query = new AtomicReference<ActionFilterNode<ActionState, String, Instant, Long>>();
@@ -1398,17 +1499,46 @@ public abstract class ActionFilter {
 
   private boolean negate;
 
-  public abstract <F> F convert(ActionFilterBuilder<F, ActionState, String, Instant, Long> f);
+  /**
+   * Convert a filter to a real implementation using the standard type parameters
+   *
+   * @param builder the filter builder
+   * @return the constructed filter
+   * @param <F> the filter type
+   */
+  public abstract <F> F convert(ActionFilterBuilder<F, ActionState, String, Instant, Long> builder);
 
+  /**
+   * Checks whether the filter's output is inverted
+   *
+   * @return if true, invert the filter's output
+   */
   public boolean isNegate() {
     return negate;
   }
 
+  /**
+   * A utility function to negate a filter if set
+   *
+   * @param filter the filter to be negated
+   * @param filterBuilder the filter builder
+   * @return the possibly negated filter
+   * @param <F> the resulting filter type
+   * @param <T> action state type
+   * @param <S> string type
+   * @param <I> time instant type
+   * @param <O> time offset type
+   */
   protected <F, T, S, I, O> F maybeNegate(
       F filter, ActionFilterBuilder<F, T, S, I, O> filterBuilder) {
     return negate ? filterBuilder.negate(filter) : filter;
   }
 
+  /**
+   * Sets whether the sense of the filter should be inverted
+   *
+   * @param negate if true, invert the filter's output
+   */
   public void setNegate(boolean negate) {
     this.negate = negate;
   }

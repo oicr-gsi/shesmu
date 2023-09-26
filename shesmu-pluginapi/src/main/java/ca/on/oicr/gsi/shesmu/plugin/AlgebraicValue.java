@@ -37,6 +37,7 @@ public final class AlgebraicValue {
    * Get an element from the tuple
    *
    * @param index the zero-based position in the tuple
+   * @return the element's value
    */
   public Object get(int index) {
     return elements[index];
@@ -49,7 +50,11 @@ public final class AlgebraicValue {
     return result;
   }
 
-  /** The type tag */
+  /**
+   * The type tag
+   *
+   * @return the identifier
+   */
   public String name() {
     return name;
   }

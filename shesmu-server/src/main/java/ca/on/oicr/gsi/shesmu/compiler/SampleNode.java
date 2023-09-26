@@ -9,7 +9,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-/** Perform a subsampling operation in a <tt>Subsample</tt> clause in a <tt>For</tt> expression */
+/**
+ * Perform a subsampling operation in a <code>Subsample</code> clause in a <code>For</code>
+ * expression
+ */
 public abstract class SampleNode
     implements JavaStreamBuilder.RenderSubsampler, EcmaStreamBuilder.RenderSubsampler {
 

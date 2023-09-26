@@ -12,7 +12,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
-/** Build a new class for holding the new variables defined by a <tt>Flatten</tt> clause */
+/** Build a new class for holding the new variables defined by a <code>Flatten</code> clause */
 public class FlattenBuilder {
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 

@@ -13,6 +13,12 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+/**
+ * A type restriction to allow converting between Shesmu algebraic types and Java types with a type
+ * parameter
+ *
+ * @param <T> the Java type parameter
+ */
 public abstract class GenericAlgebraicGuarantee<T> {
 
   public static <R, T> GenericAlgebraicGuarantee<R> object(
@@ -811,13 +817,43 @@ public abstract class GenericAlgebraicGuarantee<T> {
 
   public abstract <R> R apply(GenericAlgebraicVisitor<R> visitor);
 
+  /**
+   * Check that an algebraic guarantee is compatible with the entries provided
+   *
+   * @param variables the type variables bound in the current context
+   * @param reference the algebraic type present
+   * @return true if the binding is valid
+   */
   public abstract boolean check(Map<String, Imyhat> variables, AlgebraicTransformer reference);
 
+  /**
+   * The algebraic type name
+   *
+   * @return the name, a valid Shesmu identifier
+   */
   public abstract String name();
 
+  /**
+   * Create a reified type after type variable binding
+   *
+   * @param variables the type variables bound in the current context
+   * @return the reified type
+   */
   public abstract Imyhat render(Map<String, Imyhat> variables);
 
+  /**
+   * Create a human-readable type identifier after type variable binding
+   *
+   * @param typeVariables the type variables bound in the current context
+   * @return the identifier for this type
+   */
   public abstract String toString(Map<String, Imyhat> typeVariables);
 
+  /**
+   * Convert an algebraic value to a Java value
+   *
+   * @param value the algebraic value from the olive
+   * @return the converted Java value
+   */
   public abstract T unpack(AlgebraicValue value);
 }

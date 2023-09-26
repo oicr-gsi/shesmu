@@ -560,8 +560,8 @@ public final class RuntimeSupport {
   }
 
   /**
-   * This is a boot-strap method for <tt>INVOKE DYNAMIC</tt> to match a regular expression (which is
-   * the method name). s
+   * This is a boot-strap method for <code>INVOKE DYNAMIC</code> to match a regular expression
+   * (which is the method name).
    */
   @RuntimeInterop
   public static CallSite regexBootstrap(

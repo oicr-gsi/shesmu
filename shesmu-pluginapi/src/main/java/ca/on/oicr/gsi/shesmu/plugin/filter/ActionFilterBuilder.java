@@ -13,6 +13,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Build an implementation-specific action filter
+ *
+ * @param <F> the resulting filter type
+ * @param <T> action state type
+ * @param <S> string type
+ * @param <I> time instant type
+ * @param <O> time offset type
+ */
 public interface ActionFilterBuilder<F, T, S, I, O> {
   /** Do a "transformation" of the JSON representation to an exact copy. */
   ActionFilterBuilder<ActionFilter, ActionState, String, Instant, Long> JSON =
@@ -420,6 +429,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    *
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
+   * @return the constructed filter
    */
   F added(Optional<I> start, Optional<I> end);
 
@@ -427,10 +437,16 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    * Check that an action was added in a recent range
    *
    * @param offset the number of milliseconds ago
+   * @return the constructed filter
    */
   F addedAgo(O offset);
 
-  /** Check that all of the filters match */
+  /**
+   * Check that all of the filters match
+   *
+   * @param filters the filters to match
+   * @return the constructed filter
+   */
   F and(Stream<F> filters);
 
   /**
@@ -438,6 +454,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    *
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
+   * @return the constructed filter
    */
   F checked(Optional<I> start, Optional<I> end);
 
@@ -445,6 +462,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    * Check that an action was checked by the scheduler in a recent range
    *
    * @param offset the number of milliseconds ago
+   * @return the constructed filter
    */
   F checkedAgo(O offset);
 
@@ -453,6 +471,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    *
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
+   * @return the constructed filter
    */
   F created(Optional<I> start, Optional<I> end);
 
@@ -460,6 +479,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    * Check that an action was first created by an olive in a recent range
    *
    * @param offset the number of milliseconds ago
+   * @return the constructed filter
    */
   F createdAgo(O offset);
 
@@ -468,6 +488,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    *
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
+   * @return the constructed filter
    */
   F external(Optional<I> start, Optional<I> end);
 
@@ -475,6 +496,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    * Check that an action has an external timestamp in a recent range
    *
    * @param offset the number of milliseconds ago
+   * @return the constructed filter
    */
   F externalAgo(O offset);
 
@@ -482,15 +504,24 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    * Checks that an action was generated in a particular file
    *
    * @param files the names of the files
+   * @return the constructed filter
    */
   F fromFile(Stream<S> files);
 
+  /**
+   * Converts a filter in the JSON format used by the front-end to an implementation-specific
+   * equivalent
+   *
+   * @param actionFilter the filter to convert
+   * @return the converted filter
+   */
   F fromJson(ActionFilter actionFilter);
 
   /**
    * Checks that an action was generated in a particular source location
    *
    * @param locations the source locations
+   * @return the constructed filter
    */
   F fromSourceLocation(Stream<SourceOliveLocation> locations);
 
@@ -498,6 +529,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    * Get actions by unique ID.
    *
    * @param ids the allowed identifiers
+   * @return the constructed filter
    */
   F ids(List<S> ids);
 
@@ -505,12 +537,24 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    * Checks that an action is in one of the specified actions states
    *
    * @param states the permitted states
+   * @return the constructed filter
    */
   F isState(Stream<T> states);
 
+  /**
+   * Inverts the sense of a filter
+   *
+   * @param filter the filter to invert
+   * @return the inverted filter
+   */
   F negate(F filter);
 
-  /** Check that any of the filters match */
+  /**
+   * Check that any of the filters match
+   *
+   * @param filters the filters to match
+   * @return the constructed filter
+   */
   F or(Stream<F> filters);
 
   /**
@@ -518,6 +562,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    *
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
+   * @return the constructed filter
    */
   F statusChanged(Optional<I> start, Optional<I> end);
 
@@ -525,6 +570,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    * Check that an action was added in a recent range
    *
    * @param offset the number of milliseconds ago
+   * @return the constructed filter
    */
   F statusChangedAgo(O offset);
 
@@ -532,12 +578,14 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    * Check that an action has a tag matching the provided regular expression
    *
    * @param pattern the pattern
+   * @return the constructed filter
    */
   F tag(Pattern pattern);
   /**
    * Check that an action has one of the listed tags attached
    *
    * @param tags the set of tags
+   * @return the constructed filter
    */
   F tags(Stream<S> tags);
 
@@ -545,6 +593,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    * Check that an action matches the regular expression provided
    *
    * @param pattern the pattern
+   * @return the constructed filter
    */
   F textSearch(Pattern pattern);
 
@@ -552,10 +601,16 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    * Check that an action matches the text provided
    *
    * @param text the text
-   * @param matchCase whether the match should be case sensitive
+   * @param matchCase whether the match should be case-sensitive
+   * @return the constructed filter
    */
   F textSearch(S text, boolean matchCase);
 
-  /** Check that an action has one of the types specified */
+  /**
+   * Check that an action has one of the types specified
+   *
+   * @param types the action types to match
+   * @return the constructed filter
+   */
   F type(Stream<S> types);
 }

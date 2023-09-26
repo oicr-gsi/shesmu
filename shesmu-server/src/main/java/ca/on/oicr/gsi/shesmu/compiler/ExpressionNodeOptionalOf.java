@@ -23,13 +23,13 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
    * number that starts at zero and decreases for every inner layer. Processing is done in layer
    * order.
    *
-   * <p>Given <tt>foo(x?)? + y?</tt>, this will be divided into two layers (plus the base
+   * <p>Given <code>foo(x?)? + y?</code>, this will be divided into two layers (plus the base
    * expression):
    *
    * <ul>
-   *   <li>Base expression: <tt>$0 + $1</tt>
-   *   <li>Layer 0: <tt>$0 = foo($2)</tt> and <tt>$1 = y</tt>
-   *   <li>Layer -1: <tt>$2 = x</tt>
+   *   <li>Base expression: <code>$0 + $1</code>
+   *   <li>Layer 0: <code>$0 = foo($2)</code> and <code>$1 = y</code>
+   *   <li>Layer -1: <code>$2 = x</code>
    * </ul>
    *
    * The order of the expressions in each layer is arbitrary, but there is no way for them to

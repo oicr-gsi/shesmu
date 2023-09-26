@@ -22,8 +22,8 @@ import java.util.stream.Stream;
 import org.kohsuke.MetaInfServices;
 
 /**
- * Reads <tt>maintenance.schedule</tt> which is a schedule or maintenance windows during which all
- * activity should be throttled.
+ * Reads <code>maintenance.schedule</code> which is a schedule or maintenance windows during which
+ * all activity should be throttled.
  */
 @MetaInfServices(PluginFileType.class)
 public class MaintenanceSchedule extends PluginFileType<MaintenanceSchedule.ScheduleReader> {

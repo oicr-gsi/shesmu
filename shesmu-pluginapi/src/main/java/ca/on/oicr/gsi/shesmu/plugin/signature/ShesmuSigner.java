@@ -22,7 +22,7 @@ public @interface ShesmuSigner {
    * The name of the signer variable
    *
    * <p>If empty, the method name will be used. If applied to a {@link PluginFile} method, it must
-   * have a <tt>$</tt> which will contain the instance name
+   * have a <code>$</code> which will contain the instance name
    */
   String name() default "";
 

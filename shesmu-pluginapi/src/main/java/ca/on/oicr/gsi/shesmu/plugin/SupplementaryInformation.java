@@ -7,12 +7,25 @@ import java.util.stream.Stream;
 
 /** A list of table rows that can be inserted into definitions pages and the olive dashboard */
 public interface SupplementaryInformation {
+
+  /** A rich formatting element that can be displayed by the front-end. */
   abstract class DisplayElement {
     private DisplayElement() {}
 
+    /**
+     * Convert this element to a JSON object the front-end can display.
+     *
+     * @return the JSON representation
+     */
     public abstract JsonNode toJson();
   }
 
+  /**
+   * Creates bolded text
+   *
+   * @param text the text to bold
+   * @return the formatted text
+   */
   static DisplayElement bold(String text) {
     return new DisplayElement() {
       @Override
@@ -25,6 +38,12 @@ public interface SupplementaryInformation {
     };
   }
 
+  /**
+   * Displays an icon
+   *
+   * @param icon the icon to display
+   * @return the icon
+   */
   static DisplayElement icon(FrontEndIcon icon) {
     return new DisplayElement() {
       @Override
@@ -37,6 +56,12 @@ public interface SupplementaryInformation {
     };
   }
 
+  /**
+   * Creates italic text
+   *
+   * @param text the text to italicise
+   * @return the formatted text
+   */
   static DisplayElement italic(String text) {
     return new DisplayElement() {
       @Override
@@ -63,6 +88,12 @@ public interface SupplementaryInformation {
     };
   }
 
+  /**
+   * Creates monospace text
+   *
+   * @param text the text to monospace
+   * @return the formatted text
+   */
   static DisplayElement mono(String text) {
     return new DisplayElement() {
       @Override
@@ -75,6 +106,12 @@ public interface SupplementaryInformation {
     };
   }
 
+  /**
+   * Concatenates multiple formatting elements
+   *
+   * @param elements the elements
+   * @return the combined elements
+   */
   static DisplayElement of(DisplayElement... elements) {
     return new DisplayElement() {
       @Override
@@ -88,6 +125,12 @@ public interface SupplementaryInformation {
     };
   }
 
+  /**
+   * Creates plain text
+   *
+   * @param text the text
+   * @return the formatted text
+   */
   static DisplayElement text(String text) {
     return new DisplayElement() {
       @Override

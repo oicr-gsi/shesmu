@@ -20,10 +20,31 @@ public abstract class Parser {
    * @param <T> the type generated
    */
   public interface Rule<T> {
+
+    /**
+     * Parse syntax and, if successful, generate output
+     *
+     * @param parser the input parsing state
+     * @param output a callback to handle the output
+     * @return the output parsing state, indicating whether the value was parsed successfully
+     */
     Parser parse(Parser parser, Consumer<T> output);
   }
 
+  /**
+   * A parse rule that can also generate a syntax node for a pre-determined literal value
+   *
+   * @param <T> the type generated
+   * @param <V> the literal type
+   */
   public interface RuleWithLiteral<T, V> extends Rule<T> {
+
+    /**
+     * Convert a literal value to a syntax node as if it was parsed
+     *
+     * @param value the literal value
+     * @return the syntax node
+     */
     T literal(V value);
   }
 

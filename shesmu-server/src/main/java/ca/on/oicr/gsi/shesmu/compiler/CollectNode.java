@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-/** The terminal operations in <tt>For</tt> expressions */
+/** The terminal operations in <code>For</code> expressions */
 public abstract class CollectNode {
   private interface DefaultConstructor {
     CollectNode create(int line, int column, ExpressionNode selector, ExpressionNode alternative);

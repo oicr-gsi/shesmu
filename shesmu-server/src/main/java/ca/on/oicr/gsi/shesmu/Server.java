@@ -262,17 +262,24 @@ public final class Server implements ServerConfig, ActionServices {
                     fileName, DefinitionRepository.concat(definitionRepository, compiler)));
 
     /**
-     * When fetch()ing a format, try the name of the format on:
-     * - AnnotatedInputFormatDefinition's Stream of known formats, which includes -input and -remote files
-     * - PluginManager, which will stream its known formats (installed plugins) and try fetching from each of those
-     * - ActionProcessor, which offers the 'shesmu' input format
-     * We try every format and flatMap the results together in order to offer the ability to specify the same input
-     * format multiple ways at the same time. E.g., a cerberus plugin may be configured AND a cerberus_fp-remote file
-     * (a RemoteJsonSource in AnnotatedInputFormatDefinition) may be present at the same time. We
-     * present the data from both sources as one unified cerberus_fp format wherever that input
-     * format is requested.
-     * If a format is not available from a particular source, e.g.
-     * 'cerberus_fp' is requested from unix_file, then nothing is returned, making this a safe flatMap
+     * When <code>fetch()</code>ing a format, try the name of the format on:
+     *
+     * <ul>
+     *   <li>{@link AnnotatedInputFormatDefinition}'s stream of known formats, which includes <code>
+     *       -input</code> and <code>-remote</code> files
+     *   <li>{@link PluginManager}, which will stream its known formats (installed plugins) and try
+     *       fetching from each of those
+     *   <li>{@link ActionProcessor}, which offers the <code>shesmu</code> input format
+     * </ul>
+     *
+     * We try every format and combine the results together in order to offer the ability to specify
+     * the same input format multiple ways at the same time. <em>e.g.</em>, a Cerberus plugin may be
+     * configured <em>and</em> a <code>cerberus_fp-remote</code> file (a {@link
+     * AnnotatedInputFormatDefinition.RemoteJsonSource} in {@link AnnotatedInputFormatDefinition})
+     * may be present at the same time. We present the data from both sources as one unified <code>
+     * cerberus_fp</code> format wherever that input format is requested. If a format is not
+     * available from a particular source, <em>e.g.</em> <code>cerberus_fp</code> is requested from
+     * <code>unix_file</code>, then nothing is returned, making this safe to flatten.
      */
     final InputSource inputSource =
         (format, readStale) ->

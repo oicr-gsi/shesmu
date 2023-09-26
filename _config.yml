@@ -7,3 +7,5 @@ kramdown:
 relative_links:
   enabled:     true
   collections: false
+keep_files:
+  - javadoc

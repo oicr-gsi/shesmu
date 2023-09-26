@@ -62,10 +62,20 @@ public enum ActionState {
     this.processPriority = processPriority;
   }
 
+  /**
+   * The priority of an action state where the largest number indicates the most miserable action
+   *
+   * @return an integer indicating relative misery
+   */
   public int sortPriority() {
     return sortPriority;
   }
 
+  /**
+   * The priority of an action state for polling
+   *
+   * @return an integer indicating relative processing urgency
+   */
   public int processPriority() {
     return processPriority;
   }

@@ -7,13 +7,19 @@ import java.util.function.Consumer;
 /** A definition for a parameter that should be user-definable for an action */
 public interface ActionParameterDefinition {
 
-  /** The name of the parameter as the user will set it. */
+  /**
+   * The name of the parameter as the user will set it.
+   *
+   * @return the Shesmu identifier for the parameter
+   */
   String name();
 
   /**
    * Whether this parameter is required or not.
    *
-   * <p>If not required, the user may omit setting the value.s
+   * <p>If not required, the user may omit setting the values.
+   *
+   * @return true if the parameter is required; false if it can be omitted
    */
   boolean required();
 
@@ -27,6 +33,10 @@ public interface ActionParameterDefinition {
    */
   void store(Renderer renderer, int actionLocal, Consumer<Renderer> loadParameter);
 
-  /** The type of the parameter */
+  /**
+   * The type of the parameter
+   *
+   * @return the Shesmu type for the parameter
+   */
   Imyhat type();
 }

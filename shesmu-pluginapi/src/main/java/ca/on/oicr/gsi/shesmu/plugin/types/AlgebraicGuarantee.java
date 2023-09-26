@@ -14,7 +14,21 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+/**
+ * A type binding between Shesmu algebraic data types and Java types
+ *
+ * @param <T> the Java type
+ */
 public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T> {
+
+  /**
+   * A restriction for an empty algebraic type entry
+   *
+   * @param name the Shesmu identifier for the algebraic type
+   * @param result the value that should be returned
+   * @return the newly created binding
+   * @param <R> the Java type
+   */
   public static <R> AlgebraicGuarantee<R> empty(String name, R result) {
     final var tupleType = Imyhat.algebraicTuple(name);
     return new AlgebraicGuarantee<>() {
@@ -55,6 +69,14 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
     };
   }
 
+  /**
+   * A restriction for an empty algebraic type entry
+   *
+   * @param name the Shesmu identifier for the algebraic type
+   * @param result a callback to generate value that should be returned
+   * @return the newly created binding
+   * @param <R> the Java type
+   */
   public static <R> AlgebraicGuarantee<R> emptyFactory(String name, Supplier<R> result) {
     final var tupleType = Imyhat.algebraicTuple(name);
     return new AlgebraicGuarantee<>() {
@@ -95,6 +117,17 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
     };
   }
 
+  /**
+   * Add a restriction for an algebraic datatype with a single named parameter
+   *
+   * @param name the Shesmu identifier for the algebraic type
+   * @param convert a function to generate a value for the parameter value provided
+   * @param paramName the parameter name, which must be a valid Shesmu identifier
+   * @param param the type guarantee for the parameter
+   * @return the newly constructed guarantee
+   * @param <R> the Java type of the result
+   * @param <T> the Java type of the parameter
+   */
   public static <R, T> AlgebraicGuarantee<R> object(
       String name,
       Function<? super T, ? extends R> convert,
@@ -154,6 +187,20 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
     };
   }
 
+  /**
+   * Add a restriction for an algebraic datatype with two named parameters
+   *
+   * @param name the Shesmu identifier for the algebraic type
+   * @param convert a function to generate a value for the two parameter values provided
+   * @param firstName the first parameter name, which must be a valid Shesmu identifier
+   * @param first the type guarantee for the first parameter
+   * @param secondName the second parameter name, which must be a valid Shesmu identifier
+   * @param second the type guarantee for the second parameter
+   * @return the newly constructed guarantee
+   * @param <R> the Java type of the result
+   * @param <T> the Java type of the first parameter
+   * @param <U> the Java type of the second parameter
+   */
   public static <R, T, U> AlgebraicGuarantee<R> object(
       String name,
       Pack2<? super T, ? super U, ? extends R> convert,
@@ -225,6 +272,23 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
     };
   }
 
+  /**
+   * Add a restriction for an algebraic datatype with three named parameters
+   *
+   * @param name the Shesmu identifier for the algebraic type
+   * @param convert a function to generate a value for the three parameter values provided
+   * @param firstName the first parameter name, which must be a valid Shesmu identifier
+   * @param first the type guarantee for the first parameter
+   * @param secondName the second parameter name, which must be a valid Shesmu identifier
+   * @param second the type guarantee for the second parameter
+   * @param thirdName the third parameter name, which must be a valid Shesmu identifier
+   * @param third the type guarantee for the third parameter
+   * @return the newly constructed guarantee
+   * @param <R> the Java type of the result
+   * @param <T> the Java type of the first parameter
+   * @param <U> the Java type of the second parameter
+   * @param <V> the Java type of the third parameter
+   */
   public static <R, T, U, V> AlgebraicGuarantee<R> object(
       String name,
       Pack3<? super T, ? super U, ? super V, ? extends R> convert,
@@ -308,6 +372,26 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
     };
   }
 
+  /**
+   * Add a restriction for an algebraic datatype with four named parameters
+   *
+   * @param name the Shesmu identifier for the algebraic type
+   * @param convert a function to generate a value for the four parameter values provided
+   * @param firstName the first parameter name, which must be a valid Shesmu identifier
+   * @param first the type guarantee for the first parameter
+   * @param secondName the second parameter name, which must be a valid Shesmu identifier
+   * @param second the type guarantee for the second parameter
+   * @param thirdName the third parameter name, which must be a valid Shesmu identifier
+   * @param third the type guarantee for the third parameter
+   * @param fourthName the fourth parameter name, which must be a valid Shesmu identifier
+   * @param fourth the type guarantee for the fourth parameter
+   * @return the newly constructed guarantee
+   * @param <R> the Java type of the result
+   * @param <T> the Java type of the first parameter
+   * @param <U> the Java type of the second parameter
+   * @param <V> the Java type of the third parameter
+   * @param <W> the Java type of the fourth parameter
+   */
   public static <R, T, U, V, W> AlgebraicGuarantee<R> object(
       String name,
       Pack4<? super T, ? super U, ? super V, ? super W, ? extends R> convert,
@@ -403,6 +487,29 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
     };
   }
 
+  /**
+   * Add a restriction for an algebraic datatype with five named parameters
+   *
+   * @param name the Shesmu identifier for the algebraic type
+   * @param convert a function to generate a value for the five parameter values provided
+   * @param firstName the first parameter name, which must be a valid Shesmu identifier
+   * @param first the type guarantee for the first parameter
+   * @param secondName the second parameter name, which must be a valid Shesmu identifier
+   * @param second the type guarantee for the second parameter
+   * @param thirdName the third parameter name, which must be a valid Shesmu identifier
+   * @param third the type guarantee for the third parameter
+   * @param fourthName the fourth parameter name, which must be a valid Shesmu identifier
+   * @param fourth the type guarantee for the fourth parameter
+   * @param fifthName the fifth parameter name, which must be a valid Shesmu identifier
+   * @param fifth the type guarantee for the fifth parameter
+   * @return the newly constructed guarantee
+   * @param <R> the Java type of the result
+   * @param <T> the Java type of the first parameter
+   * @param <U> the Java type of the second parameter
+   * @param <V> the Java type of the third parameter
+   * @param <W> the Java type of the fourth parameter
+   * @param <X> the Java type of the fifth parameter
+   */
   public static <R, T, U, V, W, X> AlgebraicGuarantee<R> object(
       String name,
       Pack5<? super T, ? super U, ? super V, ? super W, ? super X, ? extends R> convert,
@@ -506,7 +613,16 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       }
     };
   }
-
+  /**
+   * Add a restriction for an algebraic datatype with a single parameter
+   *
+   * @param name the Shesmu identifier for the algebraic type
+   * @param convert a function to generate a value for the parameter value provided
+   * @param param the type guarantee for the parameter
+   * @return the newly constructed guarantee
+   * @param <R> the Java type of the result
+   * @param <T> the Java type of the parameter
+   */
   public static <R, T> AlgebraicGuarantee<R> tuple(
       String name, Function<? super T, ? extends R> convert, TypeGuarantee<T> param) {
     final var tupleType = Imyhat.algebraicTuple(name, param.type());
@@ -561,6 +677,18 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
     };
   }
 
+  /**
+   * Add a restriction for an algebraic datatype with two positional parameters
+   *
+   * @param name the Shesmu identifier for the algebraic type
+   * @param convert a function to generate a value for the two parameter values provided
+   * @param first the type guarantee for the first parameter
+   * @param second the type guarantee for the second parameter
+   * @return the newly constructed guarantee
+   * @param <R> the Java type of the result
+   * @param <T> the Java type of the first parameter
+   * @param <U> the Java type of the second parameter
+   */
   public static <R, T, U> AlgebraicGuarantee<R> tuple(
       String name,
       Pack2<? super T, ? super U, ? extends R> convert,
@@ -620,6 +748,20 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
     };
   }
 
+  /**
+   * Add a restriction for an algebraic datatype with three positional parameters
+   *
+   * @param name the Shesmu identifier for the algebraic type
+   * @param convert a function to generate a value for the three parameter values provided
+   * @param first the type guarantee for the first parameter
+   * @param second the type guarantee for the second parameter
+   * @param third the type guarantee for the third parameter
+   * @return the newly constructed guarantee
+   * @param <R> the Java type of the result
+   * @param <T> the Java type of the first parameter
+   * @param <U> the Java type of the second parameter
+   * @param <V> the Java type of the third parameter
+   */
   public static <R, T, U, V> AlgebraicGuarantee<R> tuple(
       String name,
       Pack3<? super T, ? super U, ? super V, ? extends R> convert,
@@ -683,6 +825,22 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
     };
   }
 
+  /**
+   * Add a restriction for an algebraic datatype with four positional parameters
+   *
+   * @param name the Shesmu identifier for the algebraic type
+   * @param convert a function to generate a value for the four parameter values provided
+   * @param first the type guarantee for the first parameter
+   * @param second the type guarantee for the second parameter
+   * @param third the type guarantee for the third parameter
+   * @param fourth the type guarantee for the fourth parameter
+   * @return the newly constructed guarantee
+   * @param <R> the Java type of the result
+   * @param <T> the Java type of the first parameter
+   * @param <U> the Java type of the second parameter
+   * @param <V> the Java type of the third parameter
+   * @param <W> the Java type of the fourth parameter
+   */
   public static <R, T, U, V, W> AlgebraicGuarantee<R> tuple(
       String name,
       Pack4<? super T, ? super U, ? super V, ? super W, ? extends R> convert,
@@ -775,10 +933,27 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
         });
   }
 
+  /**
+   * Check if the guarantee can convert an empty algebraic value
+   *
+   * @return true if guarantee can perform this conversion
+   */
   protected abstract boolean checkEmpty();
 
+  /**
+   * Check if the guarantee can convert an object algebraic value
+   *
+   * @param contents the types of the fields in the object
+   * @return true if guarantee can perform this conversion
+   */
   protected abstract boolean checkObject(Stream<Pair<String, Imyhat>> contents);
 
+  /**
+   * Check if the guarantee can convert a tuple algebraic value
+   *
+   * @param contents the types of the elements in the tuple
+   * @return true if guarantee can perform this conversion
+   */
   protected abstract boolean checkTuple(Stream<Imyhat> contents);
 
   @Override
@@ -791,7 +966,18 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
     return type().name();
   }
 
+  /**
+   * The Shesmu type for this algebraic value
+   *
+   * @return the type descriptor
+   */
   public abstract Imyhat type();
 
+  /**
+   * Convert an algebraic value to the corresponding Java value
+   *
+   * @param algebraicValue the algebraic value to convert
+   * @return the converted Java value
+   */
   public abstract T unpack(AlgebraicValue algebraicValue);
 }
