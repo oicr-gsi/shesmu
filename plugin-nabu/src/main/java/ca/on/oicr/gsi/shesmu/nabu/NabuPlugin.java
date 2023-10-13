@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.nabu;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
+import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
