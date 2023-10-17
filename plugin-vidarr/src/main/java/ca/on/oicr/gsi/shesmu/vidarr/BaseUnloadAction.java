@@ -10,6 +10,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.vidarr.JsonBodyHandler;
 import ca.on.oicr.gsi.vidarr.UnloadFilter;
 import ca.on.oicr.gsi.vidarr.api.UnloadRequest;
+import ca.on.oicr.gsi.vidarr.api.UnloadResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.http.HttpRequest;
@@ -88,9 +89,9 @@ public abstract class BaseUnloadAction extends Action {
                                     BodyPublishers.ofByteArray(
                                         VidarrPlugin.MAPPER.writeValueAsBytes(request)))
                                 .build(),
-                            new JsonBodyHandler<>(VidarrPlugin.MAPPER, String.class));
+                            new JsonBodyHandler<>(VidarrPlugin.MAPPER, UnloadResponse.class));
                     if (response.statusCode() < 400) {
-                      vidarrOutputName = response.body().get();
+                      vidarrOutputName = response.body().get().getFilename();
                       return new Pair<>(ActionState.SUCCEEDED, List.of());
                     }
                     return new Pair<>(
