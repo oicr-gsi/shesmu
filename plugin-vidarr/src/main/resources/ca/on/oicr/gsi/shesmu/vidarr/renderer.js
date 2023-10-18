@@ -240,7 +240,7 @@ actionRender.set("vidarr-run", (a) => [
 ].forEach(({ type, entries, titleStr, columns }) =>
   actionRender.set(`vidarr-unload-${type}`, (a) => [
     title(a, "Unload Workflow Runs"),
-    a.vidarrOutputName ? "Not attempted" : `Output in ${a.vidarrOutputName}`,
+    a.vidarrOutputName ? `Output in ${a.vidarrOutputName}` : "Not attempted.",
     collapsible(titleStr, table(entries(a), ...columns)),
   ])
 );
