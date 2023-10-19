@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.plugin.types;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -63,6 +64,33 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
     return algebraic(
         Stream.of(clazz.getEnumConstants())
             .map(e -> AlgebraicGuarantee.empty(e.name().toUpperCase(), e)));
+  }
+  /**
+   * Provides an argument mapping from a Shesmu dictionary/map into a Java map
+   *
+   * @param key the type guarantee for the keys; note that the conversion should preserve equality
+   *     of the original values (<em>i.e.</em>, if two keys are not equal in Shesmu, then <code>K
+   *     </code> should also be not equal) or collisions could occur
+   * @param value the type guarantee for the values
+   * @return a guarantee for a map
+   */
+  public static <K, V> TypeGuarantee<Map<K, V>> dictionary(
+      TypeGuarantee<K> key, TypeGuarantee<V> value) {
+    final var dictionaryType = Imyhat.dictionary(key.type(), value.type());
+    return new TypeGuarantee<>() {
+      @Override
+      public Imyhat type() {
+        return dictionaryType;
+      }
+
+      @Override
+      public Map<K, V> unpack(Object object) {
+        return ((Map<?, ?>) object)
+            .entrySet().stream()
+                .collect(
+                    Collectors.toMap(e -> key.unpack(e.getKey()), e -> value.unpack(e.getValue())));
+      }
+    };
   }
 
   public static <T> TypeGuarantee<List<T>> list(TypeGuarantee<T> inner) {
@@ -354,6 +382,25 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
           return (Double) object;
         }
       };
+  /**
+   * Convert a Shesmu JSON value into a Jackson structure
+   *
+   * <p>Note that the converted JSON object must <em>not</em> be mutated by the recipient or the
+   * olive might break as olives assume all values are immutable.
+   */
+  public static final TypeGuarantee<JsonNode> JSON =
+      new TypeGuarantee<>() {
+        @Override
+        public Imyhat type() {
+          return Imyhat.JSON;
+        }
+
+        @Override
+        public JsonNode unpack(Object object) {
+          return (JsonNode) object;
+        }
+      };
+
   public static final TypeGuarantee<Long> LONG =
       new TypeGuarantee<>() {
         @Override
