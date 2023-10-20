@@ -1,126 +1,66 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
+import static ca.on.oicr.gsi.shesmu.jira.IssueAction.STANDARD_LABELS;
+
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.jira.Issue.Field;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
-import ca.on.oicr.gsi.shesmu.plugin.cache.MergingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
-import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ExportSearch;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
+import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import com.atlassian.jira.rest.client.api.JiraRestClient;
-import com.atlassian.jira.rest.client.api.domain.*;
-import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.Spliterators;
+import java.util.TreeSet;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class JiraConnection extends JsonPluginFile<Configuration> {
-  private class FilterCache extends KeyValueCache<String, Stream<JiraActionFilter>> {
-    public FilterCache(Path fileName) {
-      super("jira-filters " + fileName.toString(), 15, ReplacingRecord::new);
-    }
-
-    @Override
-    protected Stream<JiraActionFilter> fetch(String jql, Instant lastUpdated) {
-      if (client == null) {
-        return Stream.empty();
-      }
-      final List<JiraActionFilter> buffer = new ArrayList<>();
-      for (var page = 0; true; page++) {
-        final var results =
-            client.getSearchClient().searchJql(jql, 500, 500 * page, FIELDS_FILTERS).claim();
-        var empty = true;
-        for (final var issue : results.getIssues()) {
-          empty = false;
-          if (issue.getDescription() == null) {
-            continue;
-          }
-          final String assignee;
-          if (issue.getAssignee() == null) {
-            assignee = "Unassigned";
-          } else if (issue.getAssignee().getDisplayName() == null) {
-            assignee = "Unknown";
-          } else {
-            assignee = issue.getAssignee().getDisplayName();
-          }
-          ActionFilter.extractFromText(issue.getDescription(), MAPPER)
-              .ifPresent(
-                  filter ->
-                      buffer.add(
-                          new JiraActionFilter(
-                              filter, issue.getKey(), issue.getSummary(), assignee)));
-        }
-        if (empty) {
-          break;
-        }
-      }
-      return buffer.stream();
-    }
-  }
-
-  private class IssueCache extends ValueCache<Stream<Issue>> {
+  private class IssueCache extends KeyValueCache<String, Stream<Issue>> {
     public IssueCache(Path fileName) {
-      super("jira-issues " + fileName.toString(), 15, MergingRecord.by(Issue::getId));
+      super("jira-issue " + fileName.toString(), 15, ReplacingRecord::new);
     }
 
     @Override
-    protected Stream<Issue> fetch(Instant lastUpdated) {
-      if (client == null) {
-        return Stream.empty();
-      }
-      final var jql =
-          String.format(
-              "updated >= '%s' AND project = %s",
-              FORMAT.format(lastUpdated.atZone(ZoneId.systemDefault())), projectKey);
-      final List<Issue> buffer = new ArrayList<>();
-      for (var page = 0; true; page++) {
-        final var results =
-            client.getSearchClient().searchJql(jql, 500, 500 * page, FIELDS_STANDARD).claim();
-        for (final var issue : results.getIssues()) {
-          buffer.add(issue);
-        }
-        if (buffer.size() >= results.getTotal()) {
-          break;
-        }
-      }
-      return buffer.stream();
-    }
-  }
-
-  private class IssueFilter implements Predicate<Issue> {
-    private final String keyword;
-    private final boolean open;
-
-    public IssueFilter(String keyword, boolean open) {
-      super();
-      this.keyword = keyword;
-      this.open = open;
-    }
-
-    @Override
-    public boolean test(Issue issue) {
-      return closedStatuses().anyMatch(issue.getStatus().getName()::equals) != open
-          && (issue.getSummary() != null && issue.getSummary().contains(keyword)
-              || issue.getDescription() != null && issue.getDescription().contains(keyword));
+    protected Stream<Issue> fetch(String jql, Instant lastUpdated)
+        throws URISyntaxException, IOException, InterruptedException {
+      return search(jql, FIELDS).stream();
     }
   }
 
@@ -149,65 +89,95 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
     }
   }
 
-  protected static final String EXTENSION = ".jira";
-  private static final Set<String> FIELDS_FILTERS =
+  static final HttpClient CLIENT = HttpClient.newHttpClient();
+  private static final Set<String> FIELDS =
       Stream.of(
-              IssueFieldId.SUMMARY_FIELD,
-              IssueFieldId.ISSUE_TYPE_FIELD,
-              IssueFieldId.CREATED_FIELD,
-              IssueFieldId.UPDATED_FIELD,
-              IssueFieldId.PROJECT_FIELD,
-              IssueFieldId.STATUS_FIELD,
-              IssueFieldId.DESCRIPTION_FIELD,
-              IssueFieldId.ASSIGNEE_FIELD)
-          .map(x -> x.id)
+              Issue.ASSIGNEE,
+              Issue.DESCRIPTION,
+              Issue.LABELS,
+              Issue.STATUS,
+              Issue.SUMMARY,
+              Issue.UPDATED)
+          .map(Field::name)
           .collect(Collectors.toSet());
-  private static final Set<String> FIELDS_STANDARD =
-      Stream.of(
-              IssueFieldId.SUMMARY_FIELD,
-              IssueFieldId.ISSUE_TYPE_FIELD,
-              IssueFieldId.CREATED_FIELD,
-              IssueFieldId.UPDATED_FIELD,
-              IssueFieldId.PROJECT_FIELD,
-              IssueFieldId.STATUS_FIELD,
-              IssueFieldId.DESCRIPTION_FIELD,
-              IssueFieldId.LABELS_FIELD)
-          .map(x -> x.id)
-          .collect(Collectors.toSet());
-  private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-  private static final ObjectMapper MAPPER = new ObjectMapper();
-  private JiraRestClient client;
+  private static final Imyhat ISSUE_IMYHAT =
+      new ObjectImyhat(
+          Stream.of(
+              new Pair<>("assignee", Imyhat.STRING.asOptional()),
+              new Pair<>("key", Imyhat.STRING),
+              new Pair<>("labels", Imyhat.STRING.asList()),
+              new Pair<>("status", Imyhat.STRING),
+              new Pair<>("summary", Imyhat.STRING),
+              new Pair<>("updated", Imyhat.DATE.asOptional())));
+  static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private List<String> closeActions = List.of();
+  /**
+   * JIRA uses an Atlassian Document specification that is needlessly complicated for Shemu's needs,
+   * so we don't bother to understand the schema.
+   *
+   * @param jsonNode the node to dissect
+   * @return any text found
+   */
+  private static Optional<String> unmangleDocument(JsonNode jsonNode) {
+    if (jsonNode.isTextual()) {
+      return Optional.of(jsonNode.asText());
+    } else if (jsonNode.isObject()) {
+      if (jsonNode.has("content")) {
+        return unmangleDocument(jsonNode.get("content"));
+      } else if (jsonNode.has("text") && jsonNode.get("text").isTextual()) {
+        return Optional.of(jsonNode.get("text").asText());
+      } else {
+        return Optional.empty();
+      }
 
+    } else if (jsonNode.isArray()) {
+      return Optional.of(
+              StreamSupport.stream(
+                      Spliterators.spliteratorUnknownSize(jsonNode.iterator(), 0), false)
+                  .flatMap(node -> unmangleDocument(node).stream())
+                  .collect(Collectors.joining("\n")))
+          .filter(s -> !s.isBlank());
+
+    } else {
+      return Optional.empty();
+    }
+  }
+
+  private Optional<String> authenticationHeader = Optional.empty();
   private List<String> closedStatuses = List.of();
-  private Map<String, String> defaultFieldValues = Map.of();
+  private Map<String, JsonNode> defaultFieldValues = Map.of();
   private final Supplier<JiraConnection> definer;
-  private final FilterCache filters;
-  private long issueTypeId;
+  private String issueTypeId;
   private String issueTypeName;
   private final IssueCache issues;
-  private String passwordFile;
-  private long projectId = 0;
+  private String projectId;
   private String projectKey = "FAKE";
-  private List<String> reopenActions = List.of();
   private List<Search> searches = List.of();
   private String url;
-  private String user;
+  private JiraVersion version = JiraVersion.V2;
 
   public JiraConnection(Path fileName, String instanceName, Definer<JiraConnection> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);
     issues = new IssueCache(fileName);
-    filters = new FilterCache(fileName);
     this.definer = definer;
   }
 
-  public JiraRestClient client() {
-    return client;
-  }
+  public void addLabels(String issueUrl, TreeSet<String> missingLabels)
+      throws IOException, URISyntaxException, InterruptedException {
+    final var request = MAPPER.createObjectNode();
+    missingLabels.forEach(
+        request.putObject("update").putArray("labels").addObject().putArray("add")::add);
 
-  public Stream<String> closeActions() {
-    return closeActions.stream();
+    final var builder = HttpRequest.newBuilder(new URI(issueUrl));
+    authenticationHeader.ifPresent(header -> builder.header("Authorization", header));
+    CLIENT
+        .send(
+            builder
+                .header("Content-Type", "application/json")
+                .PUT(BodyPublishers.ofString(MAPPER.writeValueAsString(request)))
+                .build(),
+            BodyHandlers.discarding())
+        .body();
   }
 
   public Stream<String> closedStatuses() {
@@ -220,34 +190,61 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       renderer.link("URL", url, url);
     }
     renderer.line("Project", projectKey);
-    renderer.lineSpan("Last Cache Update", issues.lastUpdated());
-    if (user != null) {
-      renderer.line("User", user);
-    }
-    if (passwordFile != null) {
-      renderer.line("Password File", passwordFile);
-    }
-    renderer.line("Reopen Actions", String.join(" | ", reopenActions));
-    renderer.line("Close Actions", String.join(" | ", closeActions));
     renderer.line("Closed Statuses", String.join(" | ", closedStatuses));
   }
 
-  @ShesmuMethod(
-      description =
-          "Count the number of open or closed tickets from the JIRA project defined in {file}.")
-  public long count_tickets(
-      @ShesmuParameter(description = "keyword") String keyword,
-      @ShesmuParameter(description = "is ticket open") boolean open) {
-    return issues().filter(new IssueFilter(keyword, open)).count();
-  }
+  Issue createIssue(
+      String summary,
+      String description,
+      Optional<String> assignee,
+      Set<String> labels,
+      String type)
+      throws URISyntaxException, IOException, InterruptedException {
+    final var request = new Issue();
+    final var project = new Project();
+    project.setId(projectId);
+    request.put(Issue.PROJECT, project);
+    request.put(Issue.SUMMARY, summary);
+    request.put(Issue.DESCRIPTION, version.createDocument(description));
+    assignee.ifPresent(
+        a -> {
+          final var user = new User();
+          user.setName(a);
+          request.put(Issue.ASSIGNEE, user);
+        });
+    request.put(
+        Issue.LABELS,
+        Stream.of(STANDARD_LABELS, labels)
+            .flatMap(Collection::stream)
+            .distinct()
+            .toArray(String[]::new));
+    final var issueType = new IssueType();
+    issueType.setName(type);
+    request.put(Issue.TYPE, issueType);
 
-  final String defaultFieldValues(String key) {
-    return defaultFieldValues.get(key);
+    IssueAction.issueCreates.labels(url, projectKey).inc();
+    final var builder =
+        HttpRequest.newBuilder(new URI(String.format("%s/rest/api/%s/issue", url, version.slug())));
+    authenticationHeader.ifPresent(header -> builder.header("Authorization", header));
+    final var result =
+        CLIENT.send(
+            builder
+                .header("Content-Type", "application/json")
+                .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(request)))
+                .build(),
+            BodyHandlers.ofString());
+    if (result.statusCode() / 100 != 2) {
+      throw new RuntimeException(
+          String.format(
+              "JIRA issue creation failed with %d: %s", result.statusCode(), result.body()));
+    }
+    invalidate();
+    return MAPPER.readValue(result.body(), Issue.class);
   }
 
   @Override
   public <T> Stream<T> exportSearches(ExportSearch<T> builder) {
-    return projectId == 0 || issueTypeName == null
+    return projectId == null || issueTypeName == null
         ? Stream.empty()
         : Stream.of(
             builder.linkWithUrlSearch(
@@ -256,7 +253,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                 FrontEndIcon.FILE,
                 "JIRA",
                 String.format(
-                    "%s/login.jsp?permissionViolation=true&page_caps=&user_role=&os_destination=%%2Fsecure%%2FCreateIssueDetails!init.jspa%%3Fpid%%3D%d%%26issuetype%%3D%d%%26summary%%3D%%26description%%3D%%250A%%250A",
+                    "%s/login.jsp?permissionViolation=true&page_caps=&user_role=&os_destination=%%2Fsecure%%2FCreateIssueDetails!init.jspa%%3Fpid%%3D%s%%26issuetype%%3D%s%%26summary%%3D%%26description%%3D%%250A%%250A",
                     url, projectId, issueTypeId),
                 "",
                 String.format(
@@ -264,16 +261,12 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   }
 
   public void invalidate() {
-    issues.invalidate();
+    issues.invalidateAll();
   }
 
-  public Stream<Issue> issues() {
-    return issues.get();
-  }
-
-  @ShesmuAction(description = "Opens (or re-opens) a JIRA ticket. Defined in {file}.")
-  public FileTicket open_ticket() {
-    return new FileTicket(definer);
+  @ShesmuAction(description = "Opens (or re-opens) or closes a JIRA issue. Defined in {file}.")
+  public IssueAction issue() {
+    return new IssueAction(definer);
   }
 
   public String projectKey() {
@@ -281,25 +274,63 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   }
 
   @ShesmuMethod(
-      type = "at2ss",
-      description =
-          "Get the ticket summary and descriptions from the JIRA project defined in {file}.")
-  public Set<Tuple> query_tickets(
-      @ShesmuParameter(description = "keyword") String keyword,
-      @ShesmuParameter(description = "is ticket open") boolean open) {
-    return issues()
-        .filter(new IssueFilter(keyword, open))
-        .map(issue -> new Tuple(issue.getKey(), issue.getSummary()))
-        .collect(Collectors.toSet());
+      type = "ao6assignee$qskey$slabels$asstatus$ssummary$supdated$qd",
+      description = "Search issues on the JIRA project defined in {file}.")
+  public Set<Tuple> query(@ShesmuParameter(description = "the JQL to execute") String jql) {
+    return issues
+        .get(
+            jql.isBlank()
+                ? String.format("project = %s", projectKey)
+                : String.format("(%s) AND project = %s", jql, projectKey))
+        .map(
+            issue ->
+                new Tuple(
+                    issue.extract(Issue.ASSIGNEE).map(User::getName),
+                    issue.getKey(),
+                    issue
+                        .extract(Issue.LABELS)
+                        .<Set<String>>map(
+                            l -> Stream.of(l).collect(Collectors.toCollection(TreeSet::new)))
+                        .orElse(Set.of()),
+                    issue.extract(Issue.STATUS).map(Status::getName).orElse("<missing>"),
+                    issue.extract(Issue.SUMMARY).orElse("<missing>"),
+                    issue.extract(Issue.UPDATED).map(Date::toInstant)))
+        .collect(Collectors.toCollection(ISSUE_IMYHAT::newSet));
   }
 
-  public Stream<String> reopenActions() {
-    return reopenActions.stream();
-  }
+  List<Issue> search(String jql, Set<String> fields)
+      throws URISyntaxException, IOException, InterruptedException {
+    if (url == null) {
+      return List.of();
+    }
+    final var buffer = new ArrayList<Issue>();
+    final var request = new SearchRequest();
+    request.setMaxResults(500);
+    request.setFields(fields);
+    request.setJql(jql);
 
-  @ShesmuAction(description = "Closes any JIRA tickets with a matching summary. Defined in {file}.")
-  public ResolveTicket resolve_ticket() {
-    return new ResolveTicket(definer);
+    for (var page = 0; true; page++) {
+      request.setStartAt(500 * page);
+      final var builder =
+          HttpRequest.newBuilder(
+              new URI(String.format("%s/rest/api/%s/search", url, version.slug())));
+      authenticationHeader.ifPresent(header -> builder.header("Authorization", header));
+      final var results =
+          CLIENT
+              .send(
+                  builder
+                      .header("Content-Type", "application/json")
+                      .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(request)))
+                      .build(),
+                  new JsonBodyHandler<>(MAPPER, SearchResponse.class))
+              .body()
+              .get();
+      buffer.addAll(results.getIssues());
+      if (results.getIssues().isEmpty()) {
+        break;
+      }
+    }
+    return buffer;
   }
 
   @Override
@@ -314,7 +345,34 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                       .join(
                           search.getName(),
                           search.getFilter().convert(builder),
-                          filters.get(search.getJql()),
+                          issues
+                              .get(search.getJql())
+                              .flatMap(
+                                  issue -> {
+                                    final var assignee =
+                                        issue
+                                            .extract(Issue.ASSIGNEE)
+                                            .map(
+                                                a ->
+                                                    Objects.requireNonNullElse(
+                                                        a.getDisplayName(), "Unknown"))
+                                            .orElse("Unassigned");
+
+                                    return issue
+                                        .extract(Issue.DESCRIPTION)
+                                        .flatMap(JiraConnection::unmangleDocument)
+                                        .flatMap(
+                                            description ->
+                                                ActionFilter.extractFromText(description, MAPPER))
+                                        .map(
+                                            filter ->
+                                                new JiraActionFilter(
+                                                    filter,
+                                                    issue.getKey(),
+                                                    issue.extract(Issue.SUMMARY).orElse("N/A"),
+                                                    assignee))
+                                        .stream();
+                                  }),
                           builder));
     } catch (Exception e) {
       e.printStackTrace();
@@ -327,28 +385,109 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
     return Stream.of("jira", projectKey);
   }
 
+  boolean transition(
+      Issue issue, BiFunction<Stream<String>, Predicate<String>, Boolean> matcher, String comment)
+      throws URISyntaxException, IOException, InterruptedException {
+    IssueAction.issueUpdates.labels(url, projectKey).inc();
+    final var builder =
+        HttpRequest.newBuilder(
+            new URI(
+                String.format(
+                    "%s/rest/api/%s/issue/%s/transitions?expand=transitions.fields",
+                    url, version.slug(), issue.getId())));
+    authenticationHeader.ifPresent(header -> builder.header("Authorization", header));
+
+    final var transitions =
+        CLIENT
+            .send(builder.GET().build(), new JsonBodyHandler<>(MAPPER, TransitionsResponse.class))
+            .body()
+            .get()
+            .getTransitions();
+
+    for (final var transition : transitions) {
+      if (matcher.apply(closedStatuses(), transition.getTo().getName()::equalsIgnoreCase)) {
+        final var request = new TransitionRequest();
+        for (final var field : transition.getFields().entrySet()) {
+          if (field.getValue().isRequired() && !field.getValue().isHasDefaultValue()) {
+            request.getFields().put(field.getKey(), defaultFieldValues.get(field.getKey()));
+          }
+        }
+        request.setTransition(transition);
+        final var requestBuilder =
+            HttpRequest.newBuilder(
+                new URI(
+                    String.format(
+                        "%s/rest/api/%s/issue/%s/transitions",
+                        url, version.slug(), issue.getId())));
+        authenticationHeader.ifPresent(header -> requestBuilder.header("Authorization", header));
+
+        if (CLIENT
+                    .send(
+                        requestBuilder
+                            .header("Content-Type", "application/json")
+                            .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(request)))
+                            .build(),
+                        BodyHandlers.discarding())
+                    .statusCode()
+                / 100
+            != 2) {
+          return false;
+        }
+
+        final var updateComment = MAPPER.createObjectNode();
+        updateComment.set("body", version.createDocument(comment));
+        final var commentRequestBuilder =
+            HttpRequest.newBuilder(
+                new URI(
+                    String.format(
+                        "%s/rest/api/%s/issue/%s/comment", url, version.slug(), issue.getId())));
+        authenticationHeader.ifPresent(
+            header -> commentRequestBuilder.header("Authorization", header));
+
+        return CLIENT
+                    .send(
+                        commentRequestBuilder
+                            .header("Content-Type", "application/json")
+                            .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(updateComment)))
+                            .build(),
+                        BodyHandlers.discarding())
+                    .statusCode()
+                / 100
+            == 2;
+      }
+    }
+    return false;
+  }
+
   @Override
   public Optional<Integer> update(Configuration config) {
     url = config.getUrl();
-    try (var passwordScanner =
-        new Scanner(fileName().getParent().resolve(Paths.get(config.getPasswordFile())))) {
-      client =
-          new AsynchronousJiraRestClientFactory()
-              .createWithBasicHttpAuthentication(
-                  new URI(config.getUrl()), config.getUser(), passwordScanner.nextLine());
+    version = config.getVersion();
+    try {
+      final var authentication = config.getAuthentication();
+      authenticationHeader =
+          authentication == null
+              ? Optional.empty()
+              : Optional.of(authentication.prepareAuthentication());
       projectKey = config.getProjectKey();
-      user = config.getUser();
-      passwordFile = config.getPasswordFile();
       closedStatuses = config.getClosedStatuses();
-      closeActions = config.getCloseActions();
-      reopenActions = config.getReopenActions();
       searches = config.getSearches();
       defaultFieldValues = config.getDefaultFieldValues();
-      issues.invalidate();
-      filters.invalidateAll();
-      final var project = client.getProjectClient().getProject(projectKey).claim();
+      issues.invalidateAll();
+      final var builder =
+          HttpRequest.newBuilder(
+              new URI(
+                  String.format(
+                      "%s/rest/api/%s/project/%s",
+                      url, version.slug(), URLEncoder.encode(projectKey, StandardCharsets.UTF_8))));
+      authenticationHeader.ifPresent(header -> builder.header("Authorization", header));
+      final var project =
+          CLIENT
+              .send(builder.GET().build(), new JsonBodyHandler<>(MAPPER, Project.class))
+              .body()
+              .get();
       projectId = Objects.requireNonNull(project.getId());
-      issueTypeId = 0;
+      issueTypeId = null;
       issueTypeName = null;
       if (config.getIssueType() != null) {
         for (final var issueType : project.getIssueTypes()) {
