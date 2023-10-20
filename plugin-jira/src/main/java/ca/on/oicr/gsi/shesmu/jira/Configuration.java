@@ -1,29 +1,30 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
+import ca.on.oicr.gsi.shesmu.plugin.authentication.AuthenticationConfiguration;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
 
 public final class Configuration {
-  private List<String> closeActions;
+  private AuthenticationConfiguration authentication;
   private List<String> closedStatuses;
-  private Map<String, String> defaultFieldValues = Map.of();
+  private Map<String, JsonNode> defaultFieldValues = Map.of();
   private String issueType;
-  private String passwordFile;
   private String projectKey;
-  private List<String> reopenActions;
   private List<Search> searches = List.of();
   private String url;
   private String user;
+  private JiraVersion version = JiraVersion.V2;
 
-  public List<String> getCloseActions() {
-    return closeActions;
+  public AuthenticationConfiguration getAuthentication() {
+    return authentication;
   }
 
   public List<String> getClosedStatuses() {
     return closedStatuses;
   }
 
-  public Map<String, String> getDefaultFieldValues() {
+  public Map<String, JsonNode> getDefaultFieldValues() {
     return defaultFieldValues;
   }
 
@@ -31,16 +32,8 @@ public final class Configuration {
     return issueType;
   }
 
-  public String getPasswordFile() {
-    return passwordFile;
-  }
-
   public String getProjectKey() {
     return projectKey;
-  }
-
-  public List<String> getReopenActions() {
-    return reopenActions;
   }
 
   public List<Search> getSearches() {
@@ -55,15 +48,19 @@ public final class Configuration {
     return user;
   }
 
-  public void setCloseActions(List<String> closeActions) {
-    this.closeActions = closeActions;
+  public JiraVersion getVersion() {
+    return version;
+  }
+
+  public void setAuthentication(AuthenticationConfiguration authentication) {
+    this.authentication = authentication;
   }
 
   public void setClosedStatuses(List<String> closedStatuses) {
     this.closedStatuses = closedStatuses;
   }
 
-  public void setDefaultFieldValues(Map<String, String> defaultFieldValues) {
+  public void setDefaultFieldValues(Map<String, JsonNode> defaultFieldValues) {
     this.defaultFieldValues = defaultFieldValues;
   }
 
@@ -71,16 +68,8 @@ public final class Configuration {
     this.issueType = issueType;
   }
 
-  public void setPasswordFile(String passwordFile) {
-    this.passwordFile = passwordFile;
-  }
-
   public void setProjectKey(String projectKey) {
     this.projectKey = projectKey;
-  }
-
-  public void setReopenActions(List<String> reopenActions) {
-    this.reopenActions = reopenActions;
   }
 
   public void setSearches(List<Search> searches) {
@@ -93,5 +82,9 @@ public final class Configuration {
 
   public void setUser(String user) {
     this.user = user;
+  }
+
+  public void setVersion(JiraVersion version) {
+    this.version = version;
   }
 }
