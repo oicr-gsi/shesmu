@@ -898,7 +898,7 @@ public final class StandardDefinitions implements DefinitionRepository {
 
   @Override
   public void writeJavaScriptRenderer(PrintStream writer) {
-    writer.print(
+    writer.println(
         "actionRender.set('nothing', a => [title(a, 'Nothing'), text(`Value: ${a.value}`)]);");
   }
 }
