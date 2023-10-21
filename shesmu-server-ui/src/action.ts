@@ -24,6 +24,7 @@ import {
   link,
   makeUrl,
   multipaneState,
+  paragraph,
   popupMenu,
   preformatted,
   refreshButton,
@@ -1089,7 +1090,7 @@ export function title(action: Action, label: string): UIElement {
   const title =
     action.state + (action.updateInProgress ? " Update in progress" : "");
   const element = action.url
-    ? link(action.url, label, title)
+    ? paragraph(link(action.url, label, title))
     : text(label, title);
   const fileNameFormatter = commonPathPrefix(
     action.locations.map((l: { file: any }) => l.file)
