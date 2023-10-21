@@ -420,6 +420,22 @@ public final class StandardDefinitions implements DefinitionRepository {
             "$runtime.dictIterator(%s)",
             Imyhat.JSON,
             new FunctionParameter("Map to encode", Imyhat.dictionary(Imyhat.STRING, Imyhat.JSON))),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "json", "encode"),
+            RuntimeSupport.class,
+            "encodeJson",
+            "Encodes JSON data as a string",
+            "JSON.stringify(%s)",
+            Imyhat.STRING,
+            new FunctionParameter("Data to encode", Imyhat.JSON)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "json", "decode"),
+            RuntimeSupport.class,
+            "decodeJson",
+            "Decodes JSON data from a string",
+            "$runtime.jsonDecode(%s)",
+            Imyhat.JSON.asOptional(),
+            new FunctionParameter("Data to decode", Imyhat.STRING)),
         FunctionDefinition.virtualMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "file"),
             "getFileName",

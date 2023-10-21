@@ -145,6 +145,15 @@ public final class RuntimeSupport {
     return new Tuple(Stream.of(processors).map(p -> p.apply(data.stream())).toArray());
   }
 
+  @RuntimeInterop
+  public static Optional<JsonNode> decodeJson(String input) {
+    try {
+      return Optional.of(MAPPER.readTree(input));
+    } catch (JsonProcessingException e) {
+      return Optional.empty();
+    }
+  }
+
   /** Determine the difference between two instants, in seconds. */
   @RuntimeInterop
   public static long difference(Instant left, Instant right) {
@@ -158,6 +167,15 @@ public final class RuntimeSupport {
     result.addAll(left);
     result.removeAll(right);
     return result;
+  }
+
+  @RuntimeInterop
+  public static String encodeJson(JsonNode input) {
+    try {
+      return MAPPER.writeValueAsString(input);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
