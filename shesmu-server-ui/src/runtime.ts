@@ -79,6 +79,13 @@ export function dateStartOfDay(date: Date): Date {
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
   );
 }
+export function decodeJson(input: string): any | null {
+  try {
+    return JSON.parse(input);
+  } catch (e) {
+    return null;
+  }
+}
 export function distinct<T>(
   input: T[],
   compare: (left: T, right: T) => boolean
