@@ -7,6 +7,19 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.28.0] - 2023-10-26
+
+### Changed
+
+* Nabu plugin now pulls its configuration from a `.nabu` file
+* Update `nabu` input format name to `nabu_file_qc` and rename fields to use snake case
+* Rename fields for `case_archive` input format to use snake case
+
+### Fixed
+
+* * Fix placement of action title in UI
+
+
 ## [1.27.0] - 2023-09-21
 
 ### Changed
