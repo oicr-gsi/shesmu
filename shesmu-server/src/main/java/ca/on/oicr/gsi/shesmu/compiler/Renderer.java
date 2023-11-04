@@ -59,12 +59,12 @@ public abstract class Renderer {
 
   private final GeneratorAdapter methodGen;
 
-  private final RootBuilder rootBuilder;
+  private final OwningBuilder rootBuilder;
 
   private final BiConsumer<SignatureDefinition, Renderer> signerEmitter;
 
   public Renderer(
-      RootBuilder rootBuilder,
+      OwningBuilder rootBuilder,
       GeneratorAdapter methodGen,
       Stream<LoadableValue> loadables,
       BiConsumer<SignatureDefinition, Renderer> signerEmitter) {
@@ -160,8 +160,8 @@ public abstract class Renderer {
     methodGen.invokeDynamic("regex", METHOD_REGEX, REGEX_BSM, regex, flags);
   }
 
-  /** The the owner of this method */
-  public final RootBuilder root() {
+  /** The owner of this method */
+  public final OwningBuilder root() {
     return rootBuilder;
   }
 

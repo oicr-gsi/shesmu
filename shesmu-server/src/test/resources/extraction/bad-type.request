@@ -1,0 +1,7 @@
+{
+  "inputFormat": "test",
+  "outputFormat": "TSV",
+  "preparedColumns": {},
+  "query": "{workflow_version}",
+  "readStale": true
+}

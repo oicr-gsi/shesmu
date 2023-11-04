@@ -1213,6 +1213,69 @@
         ]
       }
     },
+    "/extract": {
+      "post": {
+        "description": "Extract Olive Data (ShAWK)",
+        "operationId": "extract",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "inputFormat": {
+                    "type": "string"
+                  },
+                  "outputFormat": {
+                    "type": "string"
+                  },
+                  "preparedColumns": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  "query": {
+                    "type": "string"
+                  },
+                  "readStale": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {},
+                  "type": "array"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/tab-separated-values": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Extracted data."
+          }
+        },
+        "summary": "Performs a light-weight query on the olive data and generates CSV, TSV, or JSON data.",
+        "tags": [
+          "misc"
+        ]
+      }
+    },
     "/function": {
       "post": {
         "description": "",

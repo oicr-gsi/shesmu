@@ -35,7 +35,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 /** Helper to build an {@link ActionGenerator} */
-public abstract class RootBuilder {
+public abstract class RootBuilder implements OwningBuilder {
 
   private static final Type A_ACTION_GENERATOR_TYPE = Type.getType(ActionGenerator.class);
   private static final Type A_DUMPER_TYPE = Type.getType(Dumper.class);
@@ -161,9 +161,7 @@ public abstract class RootBuilder {
   final GeneratorAdapter classInitMethod;
   final ClassVisitor classVisitor;
   private final Supplier<Stream<ConstantDefinition>> constants;
-
   private final GeneratorAdapter ctor;
-
   private final Set<String> gauges = new HashSet<>();
   final String hash;
   private final InputFormatDefinition inputFormatDefinition;
@@ -295,6 +293,11 @@ public abstract class RootBuilder {
                         ? SignableRenderer.always(t)
                         : SignableRenderer.conditional(
                             t, checks.getOrDefault(t.name(), List.of()))));
+  }
+
+  @Override
+  public ClassVisitor classVisitor() {
+    return classVisitor;
   }
 
   public Stream<LoadableValue> constants(boolean allowUserDefined) {
@@ -466,6 +469,11 @@ public abstract class RootBuilder {
 
   public Stream<SignatureDefinition> signatureVariables() {
     return signatures.get();
+  }
+
+  @Override
+  public final String sourceLocation(int line, int column) {
+    return String.format("%s:%d:%d[%s]", sourcePath(), line, column, hash);
   }
 
   public String sourcePath() {

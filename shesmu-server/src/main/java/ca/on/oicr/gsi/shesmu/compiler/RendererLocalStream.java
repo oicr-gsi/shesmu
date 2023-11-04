@@ -13,7 +13,7 @@ public class RendererLocalStream extends Renderer {
   private final Type streamType;
 
   public RendererLocalStream(
-      RootBuilder rootBuilder,
+      OwningBuilder rootBuilder,
       GeneratorAdapter methodGen,
       int streamLocal,
       Type streamType,

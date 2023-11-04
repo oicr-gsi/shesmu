@@ -830,7 +830,7 @@ public abstract class BaseOliveBuilder {
           collectLambda.push(renderer);
           renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_REGROUP);
 
-          filterBuilder.pushFilterMethod(line, column, renderer, newType);
+          filterBuilder.pushFilterMethod(line, column, owner, renderer, newType);
         });
 
     final var newRenderer = newLambda.renderer(oldType, this::emitSigner);
@@ -957,7 +957,7 @@ public abstract class BaseOliveBuilder {
           newLambda.push(renderer);
           renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_REGROUP_WITH_GROUPER);
 
-          filterBuilder.pushFilterMethod(line, column, renderer, newType);
+          filterBuilder.pushFilterMethod(line, column, owner, renderer, newType);
         });
 
     final var newRenderer = newLambda.renderer(oldType, this::emitSigner);

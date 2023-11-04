@@ -1,0 +1,7 @@
+{
+  "inputFormat": "test",
+  "outputFormat": "JSON",
+  "preparedColumns": {},
+  "query": "library_size == 307 {project, library_size} library_size == 300 {project, library_size}",
+  "readStale": true
+}

@@ -1,0 +1,2 @@
+text/xml
+<?xml version="1.0" ?><records><record><project>the_foo_study</project><workflow>SlowA</workflow><fpp>hi</fpp><bar>3</bar><quux>4</quux></record><record><project>the_foo_study</project><workflow>SlowA</workflow><fpp>hi</fpp><bar>3</bar><quux>4</quux></record></records>

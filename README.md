@@ -29,6 +29,7 @@ the provenance data.
 - [Algebraic Values without Algebra](algebraicguide.md)
 - [Training Guide for Operators](ops-guide.md)
 - [Writing Guided Meditations](guided-meditations.md)
+- [ShAWK - Command-line Data Extraction](shawk.md)
 - [Static Actions](actnow.md)
 - [Shesmu Glossary](glossary.md)
 - [Shesmu FAQ](faq.md)

@@ -367,7 +367,7 @@ public class RunTest {
         }
       };
   public static final ThreadLocal<Boolean> REFILL_OKAY = new ThreadLocal<>();
-  private static final TestValue[] TEST_DATA =
+  static final TestValue[] TEST_DATA =
       new TestValue[] {
         new TestValue(
             "1",

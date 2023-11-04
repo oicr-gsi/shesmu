@@ -49,6 +49,7 @@ import ca.on.oicr.gsi.shesmu.server.ActionProcessor;
 import ca.on.oicr.gsi.shesmu.server.ActionProcessor.Filter;
 import ca.on.oicr.gsi.shesmu.server.BaseHotloadingCompiler;
 import ca.on.oicr.gsi.shesmu.server.CommandRequest;
+import ca.on.oicr.gsi.shesmu.server.ExtractRequest;
 import ca.on.oicr.gsi.shesmu.server.FunctionRequest;
 import ca.on.oicr.gsi.shesmu.server.FunctionRunner;
 import ca.on.oicr.gsi.shesmu.server.FunctionRunnerCompiler;
@@ -2241,6 +2242,32 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeEndElement();
               }
             }.renderPage(os);
+          }
+        });
+    add(
+        "/extract",
+        t -> {
+          try {
+            final var request =
+                RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ExtractRequest.class);
+            if (isOverloaded(request.getInputFormat()).isEmpty()) {
+              request.run(
+                  DefinitionRepository.concat(definitionRepository, compiler), inputSource, t);
+
+            } else {
+              t.sendResponseHeaders(503, 0);
+              try (var os = t.getResponseBody()) {
+                os.write(
+                    String.format(
+                            "Input format “%s” is overloaded right now", request.getInputFormat())
+                        .getBytes(StandardCharsets.UTF_8));
+              }
+            }
+          } catch (JsonProcessingException e) {
+            t.sendResponseHeaders(400, 0);
+            try (var os = t.getResponseBody()) {
+              os.write(e.getOriginalMessage().getBytes(StandardCharsets.UTF_8));
+            }
           }
         });
     add(

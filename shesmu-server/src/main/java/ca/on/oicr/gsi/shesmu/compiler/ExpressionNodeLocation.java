@@ -37,12 +37,7 @@ public class ExpressionNodeLocation extends ExpressionNode {
 
   @Override
   public void render(Renderer renderer) {
-    renderer
-        .methodGen()
-        .push(
-            String.format(
-                "%s:%d:%d[%s]",
-                renderer.root().sourcePath(), line(), column(), renderer.root().hash));
+    renderer.methodGen().push(renderer.root().sourceLocation(line(), column()));
   }
 
   @Override

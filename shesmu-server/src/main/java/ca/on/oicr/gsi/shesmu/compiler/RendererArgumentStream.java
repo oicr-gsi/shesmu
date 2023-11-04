@@ -13,7 +13,7 @@ public class RendererArgumentStream extends Renderer {
   private final Type streamType;
 
   public RendererArgumentStream(
-      RootBuilder rootBuilder,
+      OwningBuilder rootBuilder,
       GeneratorAdapter methodGen,
       int streamArg,
       Type streamType,

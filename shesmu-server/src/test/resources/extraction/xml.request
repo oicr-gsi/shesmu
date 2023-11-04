@@ -1,0 +1,9 @@
+{
+  "inputFormat": "test",
+  "outputFormat": "XML",
+  "preparedColumns": {
+    "foo": "fpp=\"hi\", bar=`3`, quux=4"
+  },
+  "query": "{project, workflow, $foo}",
+  "readStale": true
+}
