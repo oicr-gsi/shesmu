@@ -1061,7 +1061,7 @@ public final class LambdaBuilder {
   private final LoadableValue[] capturedVariables;
   private final LambdaType lambda;
   private final Method method;
-  private final RootBuilder owner;
+  private final OwningBuilder owner;
   private final Type streamType;
 
   /**
@@ -1074,12 +1074,15 @@ public final class LambdaBuilder {
    *     inside the lambda
    */
   public LambdaBuilder(
-      RootBuilder owner, String methodName, LambdaType lambda, LoadableValue... capturedVariables) {
+      OwningBuilder owner,
+      String methodName,
+      LambdaType lambda,
+      LoadableValue... capturedVariables) {
     this(owner, methodName, lambda, null, capturedVariables);
   }
 
   public LambdaBuilder(
-      RootBuilder owner,
+      OwningBuilder owner,
       String methodName,
       LambdaType lambda,
       Type streamType,
@@ -1118,7 +1121,7 @@ public final class LambdaBuilder {
 
   /** Create a new method generator to write the bytecode for the body of the lambda. */
   public GeneratorAdapter methodGen() {
-    return new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor);
+    return new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor());
   }
 
   /**

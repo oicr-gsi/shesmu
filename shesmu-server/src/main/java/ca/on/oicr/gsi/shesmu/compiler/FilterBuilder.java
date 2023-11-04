@@ -13,7 +13,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 
 public interface FilterBuilder {
   FilterBuilder SIMPLE =
-      (line, column, renderer, streamType) -> {
+      (line, column, rootBuilder, renderer, streamType) -> {
         LambdaBuilder.pushVirtual(
             renderer,
             RegroupVariablesBuilder.METHOD_IS_OK.getName(),
@@ -29,10 +29,10 @@ public interface FilterBuilder {
     for (final var handler : rejectHandlers) {
       handler.collectFreeVariables(freeVariables);
     }
-    return (line, column, renderer, streamType) -> {
+    return (line, column, rootBuilder, renderer, streamType) -> {
       final var captures =
           rejectHandlers.stream()
-              .flatMap(handler -> handler.requiredCaptures(renderer.root()))
+              .flatMap(handler -> handler.requiredCaptures(rootBuilder))
               .toArray(LoadableValue[]::new);
       final var filterBuilder =
           new LambdaBuilder(
@@ -53,7 +53,7 @@ public interface FilterBuilder {
       filterRenderer.methodGen().push(true);
       filterRenderer.methodGen().returnValue();
       filterRenderer.methodGen().mark(failPath);
-      rejectHandlers.forEach(handler -> handler.render(renderer.root(), filterRenderer));
+      rejectHandlers.forEach(handler -> handler.render(rootBuilder, filterRenderer));
       filterRenderer.methodGen().push(false);
       filterRenderer.methodGen().returnValue();
       filterRenderer.methodGen().endMethod();
@@ -80,5 +80,6 @@ public interface FilterBuilder {
     };
   }
 
-  void pushFilterMethod(int line, int column, Renderer renderer, Type streamType);
+  void pushFilterMethod(
+      int line, int column, RootBuilder rootBuilder, Renderer renderer, Type streamType);
 }

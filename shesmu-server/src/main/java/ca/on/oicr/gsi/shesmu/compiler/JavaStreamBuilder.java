@@ -112,11 +112,11 @@ public final class JavaStreamBuilder {
       new Method("<init>", Type.VOID_TYPE, new Type[] {A_OBJECT_ARRAY_TYPE});
   private Imyhat currentType;
 
-  private final RootBuilder owner;
+  private final OwningBuilder owner;
 
   private final Renderer renderer;
 
-  public JavaStreamBuilder(RootBuilder owner, Renderer renderer, Imyhat initialType) {
+  public JavaStreamBuilder(OwningBuilder owner, Renderer renderer, Imyhat initialType) {
     this.owner = owner;
     this.renderer = renderer;
     currentType = initialType;

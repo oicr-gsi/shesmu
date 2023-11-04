@@ -1,0 +1,9 @@
+{
+  "inputFormat": "test",
+  "outputFormat": "HOT_GARBAGE",
+  "preparedColumns": {
+    "foo": "fpp=\"hi\", bar=`3`, quux=4"
+  },
+  "query": "{project, workflow, $foo}",
+  "readStale": true
+}

@@ -1,0 +1,9 @@
+{
+  "inputFormat": "test",
+  "outputFormat": "JSON",
+  "preparedColumns": {
+    "foo": "fpp=\"hi\", bar=`3`, quux=4"
+  },
+  "query": "library_size == 307 {project, workflow, $foo}",
+  "readStale": true
+}

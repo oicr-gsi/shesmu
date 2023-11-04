@@ -10,7 +10,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 public class RendererNoStream extends Renderer {
 
   public RendererNoStream(
-      RootBuilder rootBuilder,
+      OwningBuilder rootBuilder,
       GeneratorAdapter methodGen,
       Stream<LoadableValue> loadables,
       BiConsumer<SignatureDefinition, Renderer> signerEmitter) {

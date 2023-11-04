@@ -115,6 +115,10 @@
       <artifactId>webdrivermanager</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-csv</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <finalName>shesmu</finalName>

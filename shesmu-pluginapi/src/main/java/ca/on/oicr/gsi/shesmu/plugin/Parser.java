@@ -81,7 +81,7 @@ public abstract class Parser {
     }
 
     @Override
-    protected Parser lookAhead(Predicate<Character> test, String error) {
+    protected Parser lookAhead(Predicate<Character> test, String error, boolean allowEndOfInput) {
       return this;
     }
 
@@ -159,13 +159,14 @@ public abstract class Parser {
       return symbol(keyword)
           .lookAhead(
               c -> !Character.isAlphabetic(c),
-              String.format("Expected “%s”, but got junk after.", keyword));
+              String.format("Expected “%s”, but got junk after.", keyword),
+              true);
     }
 
     @Override
-    protected Parser lookAhead(Predicate<Character> test, String error) {
-      if (input.length() == 0) {
-        return this;
+    protected Parser lookAhead(Predicate<Character> test, String error, boolean allowEndOfInput) {
+      if (input.isEmpty()) {
+        return allowEndOfInput ? this : new Broken(errorConsumer(), line(), column(), error);
       }
       return test.test(input.charAt(0))
           ? this
@@ -603,11 +604,12 @@ public abstract class Parser {
 
   /** Check if the next character in the input, if any, is the one provided. */
   public final boolean lookAhead(char c) {
-    return lookAhead(x -> x.charValue() == c, "Lookahead").isGood();
+    return lookAhead(x -> x.charValue() == c, "Lookahead", false).isGood();
   }
 
   /** Check if the next character in the input, if any, satisfies a condition. */
-  protected abstract Parser lookAhead(Predicate<Character> test, String error);
+  protected abstract Parser lookAhead(
+      Predicate<Character> test, String error, boolean allowEndOfInput);
 
   /**
    * Parse a colon separated name
