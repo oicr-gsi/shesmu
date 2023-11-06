@@ -4,6 +4,8 @@ import ca.on.oicr.gsi.shesmu.plugin.RequiredServices;
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -24,6 +26,11 @@ public abstract class ActionGenerator implements RequiredServices {
         @Override
         public Stream<String> inputs() {
           return Stream.empty();
+        }
+
+        @Override
+        public Lookup privateLookup() {
+          return MethodHandles.publicLookup();
         }
 
         @Override
@@ -55,6 +62,14 @@ public abstract class ActionGenerator implements RequiredServices {
 
   /** All of the input formats that are used by this generator. */
   public abstract Stream<String> inputs();
+
+  /**
+   * Gets a private lookup for this class
+   *
+   * <p></p>This is kind of dangerous and weird, but since this is generated code, we need a way into the unnamed module it was compiled in, so we rummage.
+   * @return the private lookup instance
+   */
+  public abstract Lookup privateLookup();
 
   /**
    * Add all Prometheus monitoring for this program.

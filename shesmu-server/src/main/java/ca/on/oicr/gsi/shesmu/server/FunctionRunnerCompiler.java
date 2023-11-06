@@ -85,7 +85,7 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
     classVisitor.visit(
         Opcodes.V1_8,
         Opcodes.ACC_PUBLIC,
-        "dyn/shesmu/Function",
+        BaseHotloadingCompiler.TARGET_INTERNAL,
         null,
         A_OBJECT_TYPE.getInternalName(),
         new String[] {A_FUNCTION_RUNNER_TYPE.getInternalName()});
@@ -135,7 +135,7 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
     classVisitor.visitEnd();
 
     try {
-      return load(FunctionRunner.class, "dyn.shesmu.Function");
+      return load(FunctionRunner.class, BaseHotloadingCompiler.TARGET);
     } catch (InstantiationException
         | IllegalAccessException
         | ClassNotFoundException

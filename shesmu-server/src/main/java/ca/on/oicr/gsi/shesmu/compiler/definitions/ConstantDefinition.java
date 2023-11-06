@@ -77,7 +77,7 @@ public abstract class ConstantDefinition implements Target {
       classVisitor.visit(
           Opcodes.V1_8,
           Opcodes.ACC_PUBLIC,
-          "dyn/shesmu/Constant",
+          BaseHotloadingCompiler.TARGET_INTERNAL,
           null,
           A_OBJECT_TYPE.getInternalName(),
           new String[] {A_CONSTANT_LOADER_TYPE.getInternalName()});
@@ -110,7 +110,7 @@ public abstract class ConstantDefinition implements Target {
       classVisitor.visitEnd();
 
       try {
-        return load(ConstantLoader.class, "dyn.shesmu.Constant");
+        return load(ConstantLoader.class, BaseHotloadingCompiler.TARGET);
       } catch (InstantiationException
           | IllegalAccessException
           | ClassNotFoundException

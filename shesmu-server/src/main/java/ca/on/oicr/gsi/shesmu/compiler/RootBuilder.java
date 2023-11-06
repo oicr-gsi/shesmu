@@ -18,6 +18,7 @@ import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import io.prometheus.client.Gauge;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -41,6 +42,8 @@ public abstract class RootBuilder {
   private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
   private static final Type A_INPUT_PROVIDER_TYPE = Type.getType(InputProvider.class);
+  private static final Type A_LOOKUP_TYPE = Type.getType(Lookup.class);
+  private static final Type A_METHOD_HANDLES_TYPE = Type.getType(MethodHandles.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_OLIVE_SERVICES_TYPE = Type.getType(OliveServices.class);
   private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
@@ -55,12 +58,14 @@ public abstract class RootBuilder {
           "bootstrap",
           Type.getMethodDescriptor(
               Type.getType(CallSite.class),
-              Type.getType(MethodHandles.Lookup.class),
+              A_LOOKUP_TYPE,
               A_STRING_TYPE,
               Type.getType(MethodType.class)),
           false);
   private static final Method METHOD_ACTION_GENERATOR__INPUTS =
       new Method("inputs", A_STREAM_TYPE, new Type[] {});
+  private static final Method METHOD_ACTION_GENERATOR__PRIVATE_LOOKUP =
+      new Method("privateLookup", A_LOOKUP_TYPE, new Type[] {});
   private static final Method METHOD_ACTION_GENERATOR__RUN =
       new Method("run", VOID_TYPE, new Type[] {A_OLIVE_SERVICES_TYPE, A_INPUT_PROVIDER_TYPE});
   private static final Method METHOD_ACTION_GENERATOR__RUN_PREPARE =
@@ -73,6 +78,8 @@ public abstract class RootBuilder {
           A_GAUGE_TYPE,
           new Type[] {A_STRING_TYPE, A_STRING_TYPE, A_STRING_ARRAY_TYPE});
   private static final Method METHOD_GAUGE__CLEAR = new Method("clear", VOID_TYPE, new Type[] {});
+  private static final Method METHOD_HANDLES__LOOKUP =
+      new Method("lookup", A_LOOKUP_TYPE, new Type[] {});
   private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
   private static final Method METHOD_OLIVE_SERVICES__FIND_DUMPER =
       new Method(
@@ -228,6 +235,14 @@ public abstract class RootBuilder {
     timeoutMethod.returnValue();
     timeoutMethod.visitMaxs(0, 0);
     timeoutMethod.visitEnd();
+    final var lookupMethod =
+        new GeneratorAdapter(
+            Opcodes.ACC_PUBLIC, METHOD_ACTION_GENERATOR__PRIVATE_LOOKUP, null, null, classVisitor);
+    lookupMethod.visitCode();
+    lookupMethod.invokeStatic(A_METHOD_HANDLES_TYPE, METHOD_HANDLES__LOOKUP);
+    lookupMethod.returnValue();
+    lookupMethod.visitMaxs(0, 0);
+    lookupMethod.visitEnd();
   }
 
   /**

@@ -5,6 +5,7 @@ import static org.objectweb.asm.Type.VOID_TYPE;
 
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
+import ca.on.oicr.gsi.shesmu.server.BaseHotloadingCompiler;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
@@ -53,7 +54,10 @@ public class JoinSourceNodeCall extends JoinSourceNode {
       Predicate<String> signatureUsed,
       Predicate<String> signableUsed) {
     final var accessorType =
-        Type.getObjectType(String.format("shesmu/dyn/Join Signer Accessor %d:%d", line, column));
+        Type.getObjectType(
+            String.format(
+                "%s/Join Signer Accessor %d:%d",
+                BaseHotloadingCompiler.PACKAGE_INTERNAL, line, column));
     final var signablesAlwaysUsed =
         format
             .baseStreamVariables()

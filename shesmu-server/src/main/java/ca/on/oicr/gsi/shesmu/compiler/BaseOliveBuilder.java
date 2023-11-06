@@ -15,6 +15,7 @@ import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.runtime.SignatureAccessor;
+import ca.on.oicr.gsi.shesmu.server.BaseHotloadingCompiler;
 import io.prometheus.client.Gauge;
 import java.util.*;
 import java.util.function.*;
@@ -335,7 +336,8 @@ public abstract class BaseOliveBuilder {
       Imyhat unrollType,
       boolean copySignatures,
       LoadableValue... capturedVariables) {
-    final var className = String.format("shesmu/dyn/Flatten %d:%d", line, column);
+    final var className =
+        String.format("%s/Flatten %d:%d", BaseHotloadingCompiler.PACKAGE_INTERNAL, line, column);
 
     final var oldType = currentType;
     final var newType = Type.getObjectType(className);
@@ -420,7 +422,8 @@ public abstract class BaseOliveBuilder {
       JoinInputSource innerType,
       Imyhat keyType,
       LoadableValue... capturedVariables) {
-    final var className = String.format("shesmu/dyn/Join %d:%d", line, column);
+    final var className =
+        String.format("%s/Join %d:%d", BaseHotloadingCompiler.PACKAGE_INTERNAL, line, column);
 
     final var oldType = currentType;
     final var newType = Type.getObjectType(className);
@@ -476,8 +479,11 @@ public abstract class BaseOliveBuilder {
       Imyhat keyType,
       BiConsumer<SignatureDefinition, Renderer> innerSigner,
       LoadableValue... capturedVariables) {
-    final var joinedClassName = String.format("shesmu/dyn/LeftJoinTemporary %d:%d", line, column);
-    final var outputClassName = String.format("shesmu/dyn/LeftJoin %d:%d", line, column);
+    final var joinedClassName =
+        String.format(
+            "%s/LeftJoinTemporary %d:%d", BaseHotloadingCompiler.PACKAGE_INTERNAL, line, column);
+    final var outputClassName =
+        String.format("%s/LeftJoin %d:%d", BaseHotloadingCompiler.PACKAGE_INTERNAL, line, column);
 
     final var oldType = currentType;
     final var joinedType = Type.getObjectType(joinedClassName);
@@ -551,7 +557,8 @@ public abstract class BaseOliveBuilder {
   }
 
   public final LetBuilder let(int line, int column, LoadableValue... capturedVariables) {
-    final var className = String.format("shesmu/dyn/Let %d:%d", line, column);
+    final var className =
+        String.format("%s/Let %d:%d", BaseHotloadingCompiler.PACKAGE_INTERNAL, line, column);
 
     final var oldType = currentType;
     final var newType = Type.getObjectType(className);
@@ -797,7 +804,8 @@ public abstract class BaseOliveBuilder {
 
   public final RegroupVariablesBuilder regroup(
       int line, int column, LoadableValue... capturedVariables) {
-    final var className = String.format("shesmu/dyn/Group_%d_%d", line, column);
+    final var className =
+        String.format("%s/Group_%d_%d", BaseHotloadingCompiler.PACKAGE_INTERNAL, line, column);
 
     final var oldType = currentType;
     final var newType = Type.getObjectType(className);
@@ -861,7 +869,9 @@ public abstract class BaseOliveBuilder {
       LoadableValue[] grouperCaptures,
       List<Pair<String, Type>> grouperVariables,
       LoadableValue... capturedVariables) {
-    final var className = String.format("shesmu/dyn/GroupWithGrouper_%d_%d", line, column);
+    final var className =
+        String.format(
+            "%s/GroupWithGrouper_%d_%d", BaseHotloadingCompiler.PACKAGE_INTERNAL, line, column);
     final var oldType = currentType;
     final var newType = Type.getObjectType(className);
     currentType = newType;

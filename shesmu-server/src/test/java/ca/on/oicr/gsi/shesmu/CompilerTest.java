@@ -17,6 +17,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.server.BaseHotloadingCompiler;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -269,7 +270,7 @@ public class CompilerTest {
       // know everything based on the errors generated.
       compiler.compile(
           Files.readAllBytes(file),
-          "dyn/shesmu/Program",
+          BaseHotloadingCompiler.TARGET_INTERNAL,
           file.toString(),
           CONSTANTS::stream,
           Stream::empty,

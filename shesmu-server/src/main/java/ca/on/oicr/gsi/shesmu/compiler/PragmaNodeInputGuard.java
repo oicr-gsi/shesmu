@@ -7,6 +7,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.server.BaseHotloadingCompiler;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -92,7 +93,8 @@ public class PragmaNodeInputGuard extends PragmaNode {
     final Set<String> freeVariables = new HashSet<>();
     collector.collectFreeVariables(freeVariables, Flavour::needsCapture);
 
-    final var className = String.format("shesmu/dyn/Guard_%d_%d", line, column);
+    final var className =
+        String.format("%s/Guard_%d_%d", BaseHotloadingCompiler.PACKAGE_INTERNAL, line, column);
 
     final var newType = Type.getObjectType(className);
     final var capturedVariables =

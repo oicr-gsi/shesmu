@@ -10,6 +10,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
+import ca.on.oicr.gsi.shesmu.server.BaseHotloadingCompiler;
 import java.lang.invoke.LambdaMetafactory;
 import java.util.List;
 import java.util.function.Consumer;
@@ -232,7 +233,9 @@ public final class OliveBuilder extends BaseOliveBuilder {
     this.column = column;
     this.actionName = actionName;
     accessorType =
-        Type.getObjectType(String.format("shesmu/dyn/Signer Accessor %d:%d", line, column));
+        Type.getObjectType(
+            String.format(
+                "%s/Signer Accessor %d:%d", BaseHotloadingCompiler.PACKAGE_INTERNAL, line, column));
     signerPrefix = String.format("Olive %d:%d ", line, column);
     final var signables = signableNames.collect(Collectors.toList());
     owner
