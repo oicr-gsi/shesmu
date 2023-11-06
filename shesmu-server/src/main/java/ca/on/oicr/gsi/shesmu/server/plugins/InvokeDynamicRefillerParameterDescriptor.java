@@ -7,6 +7,7 @@ import ca.on.oicr.gsi.shesmu.plugin.refill.CustomRefillerParameter;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.plugin.refill.RefillerParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.*;
@@ -22,9 +23,9 @@ import org.objectweb.asm.Type;
 
 public final class InvokeDynamicRefillerParameterDescriptor implements RefillerParameterDefinition {
   public static CallSite bootstrap(
-      Lookup lookup, String methodName, MethodType type, String actionName) {
+      Lookup lookup, String methodName, MethodType type, String refillerName) {
     return new ConstantCallSite(
-        REGISTRY.get(new Pair<>(actionName, methodName)).dynamicInvoker().asType(type));
+        REGISTRY.get(new Pair<>(refillerName, methodName)).dynamicInvoker().asType(type));
   }
 
   public static Stream<RefillerParameterDefinition> findRefillerDefinitionsByAnnotation(
@@ -206,8 +207,8 @@ public final class InvokeDynamicRefillerParameterDescriptor implements RefillerP
   private static final Handle BSM_HANDLE =
       new Handle(
           Opcodes.H_INVOKESTATIC,
-          Type.getType(InvokeDynamicRefillerParameterDescriptor.class).getInternalName(),
-          "bootstrap",
+          Type.getType(RuntimeSupport.class).getInternalName(),
+          "refillerParameterBootstrap",
           Type.getMethodDescriptor(
               Type.getType(CallSite.class),
               Type.getType(Lookup.class),

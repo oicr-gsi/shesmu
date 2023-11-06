@@ -28,7 +28,6 @@ import ca.on.oicr.gsi.shesmu.server.ImportVerifier.OliveDefinitionVerifier;
 import ca.on.oicr.gsi.shesmu.server.ImportVerifier.RefillerVerifier;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -154,10 +153,9 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
           };
 
       final List<Consumer<ActionGenerator>> exports = new ArrayList<>();
-      final var lookup = MethodHandles.lookup();
       if (compiler.compile(
           contents,
-          "dyn/shesmu/Program",
+          BaseHotloadingCompiler.TARGET_INTERNAL,
           fileName,
           definitionRepository
                   .constants()
@@ -176,9 +174,9 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                               return c.load();
                             }
                           })
-                  .collect(Collectors.toList())
+                  .toList()
               ::stream,
-          definitionRepository.signatures().collect(Collectors.toList())::stream,
+          definitionRepository.signatures().toList()::stream,
           new ExportConsumer() {
             @Override
             public void constant(String name, Imyhat type) {
@@ -186,7 +184,8 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                   instance -> {
                     try {
                       exportConsumer.constant(
-                          lookup
+                          instance
+                              .privateLookup()
                               .unreflectGetter(instance.getClass().getField(name + "$constant"))
                               .bindTo(instance),
                           name,
@@ -208,7 +207,8 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                   instance -> {
                     try {
                       exportConsumer.defineOlive(
-                          lookup
+                          instance
+                              .privateLookup()
                               .unreflect(
                                   instance
                                       .getClass()
@@ -240,12 +240,15 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                                           v.name(),
                                           v.flavour(),
                                           v.type(),
-                                          lookup.unreflect(
-                                              instance
-                                                  .getClass()
-                                                  .getMethod(
-                                                      String.format("Define %s %s", name, v.name()),
-                                                      Object.class)));
+                                          instance
+                                              .privateLookup()
+                                              .unreflect(
+                                                  instance
+                                                      .getClass()
+                                                      .getMethod(
+                                                          String.format(
+                                                              "Define %s %s", name, v.name()),
+                                                          Object.class)));
                                     } catch (IllegalAccessException | NoSuchMethodException e) {
                                       throw new RuntimeException(e);
                                     }
@@ -262,13 +265,15 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                                               v.name(),
                                               v.flavour(),
                                               v.type(),
-                                              lookup.unreflect(
-                                                  instance
-                                                      .getClass()
-                                                      .getMethod(
-                                                          String.format(
-                                                              "Define %s %s Signer Check",
-                                                              name, v.name()))));
+                                              instance
+                                                  .privateLookup()
+                                                  .unreflect(
+                                                      instance
+                                                          .getClass()
+                                                          .getMethod(
+                                                              String.format(
+                                                                  "Define %s %s Signer Check",
+                                                                  name, v.name()))));
                                         } catch (IllegalAccessException | NoSuchMethodException e) {
                                           throw new RuntimeException(e);
                                         }
@@ -289,7 +294,8 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                   instance -> {
                     try {
                       exportConsumer.function(
-                          lookup
+                          instance
+                              .privateLookup()
                               .unreflect(
                                   instance
                                       .getClass()
@@ -312,7 +318,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
           dashboardConsumer,
           false,
           allowUnused)) {
-        final var generator = load(ActionGenerator.class, "dyn.shesmu.Program");
+        final var generator = load(ActionGenerator.class, BaseHotloadingCompiler.TARGET);
         for (final var export : exports) {
           export.accept(generator);
         }

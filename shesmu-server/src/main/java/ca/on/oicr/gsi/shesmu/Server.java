@@ -2037,7 +2037,7 @@ public final class Server implements ServerConfig, ActionServices {
                   })
                   .compile(
                       script,
-                      "shesmu/dyn/Checker",
+                      BaseHotloadingCompiler.TARGET_INTERNAL,
                       "Uploaded Check Script.shesmu",
                       () -> Stream.concat(definitionRepository.constants(), compiler.constants()),
                       definitionRepository::signatures,
@@ -2433,14 +2433,8 @@ public final class Server implements ServerConfig, ActionServices {
               for (final var stack : thread.getStackTrace()) {
                 var current = "";
                 if (stack.getModuleName() == null) {
-                  if (stack.getClassName().startsWith("shesmu.dyn.")) {
-                    if (stack.getFileName() == null) {
-                      continue;
-                    } else {
-                      current = stack.getFileName();
-                    }
-                  } else {
-                    current = stack.getClassName();
+                  if (stack.getFileName() != null) {
+                    current = stack.getFileName();
                   }
                 } else if (stack.getModuleName().startsWith("java.")
                     || stack.getModuleName().startsWith("jdk.")) {

@@ -11,6 +11,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.JsonActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.JsonParameterisedAction;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
@@ -38,8 +39,8 @@ public final class InvokeDynamicActionParameterDescriptor implements ActionParam
   private static final Handle BSM_HANDLE =
       new Handle(
           Opcodes.H_INVOKESTATIC,
-          Type.getType(InvokeDynamicActionParameterDescriptor.class).getInternalName(),
-          "bootstrap",
+          Type.getType(RuntimeSupport.class).getInternalName(),
+          "actionParameterBootstrap",
           Type.getMethodDescriptor(
               Type.getType(CallSite.class),
               Type.getType(Lookup.class),

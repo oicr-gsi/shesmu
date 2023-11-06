@@ -20,8 +20,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -153,7 +151,6 @@ public abstract class Compiler {
                 signatures,
                 allowDuplicates,
                 allowUnused)) {
-      final var compileTime = Instant.now().truncatedTo(ChronoUnit.MILLIS);
       if (dashboardOutput != null && skipRender) {
         dashboardOutput.accept(program.get().dashboard(path, hash, "Bytecode not available."));
       }

@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.server;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -39,7 +39,10 @@ public abstract class BaseHotloadingCompiler {
     }
   }
 
-  private final Map<String, byte[]> bytecode = new HashMap<>();
+  public static final String PACKAGE_INTERNAL = "dyn/shesmu";
+  public static final String TARGET = "dyn.shesmu.Generated";
+  public static final String TARGET_INTERNAL = "dyn/shesmu/Generated";
+  private final Map<String, byte[]> bytecode = new TreeMap<>();
 
   private final ClassLoader classloader =
       new ClassLoader() {

@@ -11,6 +11,8 @@ import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicActionParameterDescriptor;
+import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicRefillerParameterDescriptor;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -89,6 +91,11 @@ public final class RuntimeSupport {
   static {
     MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
     MAPPER.registerModule(new JavaTimeModule());
+  }
+
+  public static CallSite actionParameterBootstrap(
+      Lookup lookup, String methodName, MethodType type, String actionName) {
+    return InvokeDynamicActionParameterDescriptor.bootstrap(lookup, methodName, type, actionName);
   }
 
   /** Create a copy of a set with an additional item. */
@@ -248,12 +255,6 @@ public final class RuntimeSupport {
     }
 
     return joins.stream().map(p -> joiner.apply(inputs.get(p.first()), inners.get(p.second())));
-  }
-
-  public static CallSite pluginServicesBootstrap(
-      Lookup lookup, String methodName, MethodType methodType, String... fileNames) {
-    // This is redirects to the plugin manager; it's here to limit our export interface
-    return PluginManager.bootstrapServices(lookup, methodName, methodType, fileNames);
   }
 
   @RuntimeInterop
@@ -538,12 +539,24 @@ public final class RuntimeSupport {
     return PluginManager.bootstrap(lookup, methodName, methodType, filename);
   }
 
+  public static CallSite pluginServicesBootstrap(
+      Lookup lookup, String methodName, MethodType methodType, String... fileNames) {
+    // This is redirects to the plugin manager; it's here to limit our export interface
+    return PluginManager.bootstrapServices(lookup, methodName, methodType, fileNames);
+  }
+
   @RuntimeInterop
   public static int populateArray(String[] array, Set<String> items, int index) {
     for (final var item : items) {
       array[index++] = item;
     }
     return index;
+  }
+
+  public static CallSite refillerParameterBootstrap(
+      Lookup lookup, String methodName, MethodType type, String refillerName) {
+    return InvokeDynamicRefillerParameterDescriptor.bootstrap(
+        lookup, methodName, type, refillerName);
   }
 
   /**

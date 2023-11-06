@@ -62,7 +62,7 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
     classVisitor.visit(
         Opcodes.V1_8,
         Opcodes.ACC_PUBLIC,
-        "dyn/shesmu/ActionRunner",
+        BaseHotloadingCompiler.TARGET_INTERNAL,
         null,
         A_OBJECT_TYPE.getInternalName(),
         new String[] {A_ACTION_RUNNER_TYPE.getInternalName()});
@@ -127,7 +127,7 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
     classVisitor.visitEnd();
 
     try {
-      return load(ActionRunner.class, "dyn.shesmu.ActionRunner");
+      return load(ActionRunner.class, BaseHotloadingCompiler.TARGET);
     } catch (InstantiationException
         | IllegalAccessException
         | ClassNotFoundException
