@@ -19,6 +19,11 @@ public class VariableTagNodeSingle extends VariableTagNode {
   }
 
   @Override
+  protected String decorateEcma(String data) {
+    return data;
+  }
+
+  @Override
   public int renderStaticTag(Renderer renderer, int tagIndex) {
     renderer.methodGen().dup();
     renderer.methodGen().push(tagIndex);

@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -49,6 +50,11 @@ class OptionalCaptureCompilerServices implements ExpressionCompilerServices {
     this.errorHandler = errorHandler;
     this.layer = layer;
     this.captures = captures;
+  }
+
+  @Override
+  public ActionDefinition action(String name) {
+    return expressionCompilerServices.action(name);
   }
 
   @Override

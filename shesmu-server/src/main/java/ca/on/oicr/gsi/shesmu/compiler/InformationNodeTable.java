@@ -80,7 +80,8 @@ public class InformationNodeTable extends InformationNodeBaseRepeat {
   }
 
   @Override
-  protected boolean resolveTerminal(NameDefinitions collectorName, Consumer<String> errorHandler) {
+  protected boolean resolveTerminal(
+      NameDefinitions parentName, NameDefinitions collectorName, Consumer<String> errorHandler) {
     return columns.stream()
             .filter(collector -> collector.resolve(collectorName, errorHandler))
             .count()

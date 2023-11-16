@@ -135,6 +135,11 @@ as if they had been written out repeatedly.
 The items will be placed in rows in a table. Each column starts with a string
 _header_ and then the text display information to fill that cell in _value_.
 
+- ... `Run` _action_ [ `Tag` _tag_ ] `With` _parameter_`,` ... `As` _filename_
+
+The items will be converted to an `.actnow` file that can be downloaded. This
+works with the same syntax as the normal `Run` in an olive. The file will be
+downloaded as _filename_`.actnow`.
 
 <a name="simulation">
 ### Simulations

@@ -6,12 +6,15 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -22,6 +25,8 @@ public abstract class OliveArgumentNode implements UndefinedVariableProvider {
   private interface ArgumentStorer {
 
     void store(Renderer renderer, int action, LoadableValue value);
+
+    String store(EcmaScriptRenderer renderer, EcmaLoadableValue value);
   }
 
   private static class OptionalProvided implements ArgumentStorer {
@@ -60,6 +65,20 @@ public abstract class OliveArgumentNode implements UndefinedVariableProvider {
           });
       renderer.methodGen().mark(end);
     }
+
+    @Override
+    public String store(EcmaScriptRenderer renderer, EcmaLoadableValue value) {
+      try {
+        final var loadedValue = value.get();
+        return String.format(
+            "...(%s === null ? {} : {%s: %s})",
+            loadedValue,
+            RuntimeSupport.MAPPER.writeValueAsString(parameterDefinition.name()),
+            loadedValue);
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 
   private static class Unmodified implements ArgumentStorer {
@@ -72,6 +91,17 @@ public abstract class OliveArgumentNode implements UndefinedVariableProvider {
     @Override
     public void store(Renderer renderer, int action, LoadableValue value) {
       parameterDefinition.store(renderer, action, value);
+    }
+
+    @Override
+    public String store(EcmaScriptRenderer renderer, EcmaLoadableValue value) {
+      try {
+        return String.format(
+            "%s: %s",
+            RuntimeSupport.MAPPER.writeValueAsString(parameterDefinition.name()), value.get());
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 
@@ -181,17 +211,19 @@ public abstract class OliveArgumentNode implements UndefinedVariableProvider {
   /** Generate bytecode for this argument's value */
   public abstract void render(Renderer renderer, int action);
 
+  public abstract String renderEcma(EcmaScriptRenderer renderer);
+
   /** Resolve variables in the expression of this argument */
   public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
   public abstract boolean resolveExtraFunctions(
-      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler);
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler);
 
   /** Resolve functions in this argument */
   public final boolean resolveFunctions(
-      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    return name.resolve(oliveCompilerServices, errorHandler)
-        & resolveExtraFunctions(oliveCompilerServices, errorHandler);
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return name.resolve(expressionCompilerServices, errorHandler)
+        & resolveExtraFunctions(expressionCompilerServices, errorHandler);
   }
 
   protected void storeAll(Renderer renderer, int action, Consumer<Renderer> loadValue) {
@@ -202,6 +234,11 @@ public abstract class OliveArgumentNode implements UndefinedVariableProvider {
         .forEach(value -> definitions.get(value.name()).store(renderer, action, value));
   }
 
+  protected final String storeAll(EcmaScriptRenderer renderer, String input) {
+    return name.renderEcma(renderer.newConst(input))
+        .map(value -> definitions.get(value.name()).store(renderer, value))
+        .collect(Collectors.joining(", "));
+  }
   /** The argument name */
   public final Stream<DefinedTarget> targets() {
     return name.targets();
