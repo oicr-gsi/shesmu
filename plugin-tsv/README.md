@@ -10,7 +10,7 @@ The tab-delimited file plugin provides several different features:
 ## Table-based Lookup Functions
 These are Shesmu functions create from TSV dictionaries. A file ending
 `.lookup` must contain tab-separated values. A `.commalookup` is the same but
-uses comma-separated values instead of tab-separated.
+uses comma-separated values instead of tab-separated. Lines starting with `#` are ignored.
 
  The first row defines the types of the columns using a Shesmu type name
 (`string`, `boolean`, `integer`, `path`, `date`). Each subsequent row contains
