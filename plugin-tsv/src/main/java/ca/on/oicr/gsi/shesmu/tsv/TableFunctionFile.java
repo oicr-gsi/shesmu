@@ -84,15 +84,14 @@ class TableFunctionFile extends PluginFile {
         return Optional.empty();
       }
 
-      final var types =
-          separator.splitAsStream(lines.get(0)).map(Imyhat::forName).collect(Collectors.toList());
+      final var types = separator.splitAsStream(lines.get(0)).map(Imyhat::forName).toList();
       if (types.size() < 2) {
         tableBad.labels(fileName().toString()).set(1);
         System.err.printf("%s header has too few columns: %d\n", fileName(), types.size());
         return Optional.empty();
       }
 
-      final var grid = lines.stream().skip(1).map(separator::split).collect(Collectors.toList());
+      final var grid = lines.stream().skip(1).map(separator::split).toList();
 
       if (grid.stream().anyMatch(columns -> columns.length != types.size())) {
         tableBad.labels(fileName().toString()).set(1);
