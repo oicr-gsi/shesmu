@@ -50,6 +50,8 @@ class TableFunctionFile extends PluginFile {
           .labelNames("fileName")
           .register();
 
+  private static final Pattern NOT_COMMENT = Pattern.compile("^[^#].*$");
+
   private final Definer definer;
 
   private final Pattern separator;
@@ -72,7 +74,10 @@ class TableFunctionFile extends PluginFile {
   public Optional<Integer> update() {
     good = false;
     try {
-      final var lines = Files.readAllLines(fileName());
+      List<String> lines;
+      try (var lineStream = Files.lines(fileName())) {
+        lines = lineStream.filter(NOT_COMMENT.asPredicate()).toList();
+      }
 
       if (lines.size() < 2) {
         tableBad.labels(fileName().toString()).set(1);
