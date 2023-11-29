@@ -45,6 +45,10 @@ array with the parameters to standard input. It will then wait to read standard
 output which should contain only a JSON value (a Boolean in this case); that
 is, it should write `true` or `false` to standard output.
 
+As Shesmu will wait to read the standard output, the function should run in a
+reasonable amount of time. Long-running functions can have serious performance 
+implications for Shesmu.
+
 As a fun example, if `cat` is the command used, all the arguments are returned
 as a tuple:
 
@@ -89,6 +93,9 @@ successful; non-zero otherwise.
 
 If the program exits non-zero, Shesmu will retry with the same data until
 success or the data is updated.
+
+The program should run in a reasonable amount of time. Long-running programs
+will have serious performance implications for Shesmu.
 
 As an example, this shell script read the data and places it in a file (in the
 same directory):
