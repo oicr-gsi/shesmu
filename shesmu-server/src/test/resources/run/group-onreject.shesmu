@@ -1,0 +1,11 @@
+Version 1;
+Input test;
+
+Olive
+ Group
+    By workflow
+    Into a = Univalued accession
+    OnReject
+      Alert alertname = "NotUnivalued", workflow = workflow, value = "true" For 15mins
+    Resume
+ Run ok With ok = a != "";

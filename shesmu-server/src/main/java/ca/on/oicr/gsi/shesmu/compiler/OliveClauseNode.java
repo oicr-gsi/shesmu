@@ -89,6 +89,7 @@ public abstract class OliveClauseNode {
           final var inputs = new AtomicReference<List<Pair<String, ExpressionNode>>>();
           final var outputs = new AtomicReference<List<String>>();
           final var where = new AtomicReference<Optional<ExpressionNode>>();
+          final var handlers = new AtomicReference<List<RejectNode>>(List.of());
 
           var result =
               parser
@@ -139,6 +140,17 @@ public abstract class OliveClauseNode {
                           ip.whitespace()
                               .listEmpty(collectors::set, GroupNode::parse, ',')
                               .whitespace());
+          final var rejectResult = result.keyword("OnReject");
+          if (rejectResult.isGood()) {
+            result =
+                rejectResult
+                    .whitespace()
+                    .list(handlers::set, (rp, ro) -> rp.whitespace().dispatch(REJECT_CLAUSES, ro))
+                    .whitespace()
+                    .keyword("Resume")
+                    .whitespace();
+          }
+
           if (result.isGood()) {
             if (name.get() == null) {
               output.accept(
@@ -149,7 +161,8 @@ public abstract class OliveClauseNode {
                           parser.column(),
                           collectors.get(),
                           discriminators.get(),
-                          where.get()));
+                          where.get(),
+                          handlers.get()));
             } else {
               output.accept(
                   label ->
@@ -162,7 +175,8 @@ public abstract class OliveClauseNode {
                           outputs.get(),
                           collectors.get(),
                           discriminators.get(),
-                          where.get()));
+                          where.get(),
+                          handlers.get()));
             }
           }
           return result;

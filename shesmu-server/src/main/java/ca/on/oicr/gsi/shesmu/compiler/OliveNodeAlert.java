@@ -78,6 +78,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
 
   protected static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
   protected static final Type A_STRING_TYPE = Type.getType(String.class);
+
   private final List<OliveArgumentNode> annotations;
   private final int column;
   private final String description;
@@ -141,6 +142,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
     freeVariables.add(SOURCE_LOCATION_LINE);
     freeVariables.add(SOURCE_LOCATION_COLUMN);
     freeVariables.add(SOURCE_LOCATION_HASH);
+    freeVariables.add("Olive Services");
   }
 
   @Override

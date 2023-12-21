@@ -215,8 +215,8 @@ dropped.
 
 This reshapes the data.
 
- - `Group` `By` _discriminator1_[`,` ...]  [`Where` _condition_] _collectionname1_ `=` _collector1_[`,` ...]
- - `Group` `By` _discriminator1_[`,` ...] `Using` _grouper_ _param_ `=` _expr1_[`,` ...]  [`With` _output_[`,` ...]]  [`Where` _condition_] _collectionname1_ `=` _collector1_[`,` ...]
+ - `Group` `By` _discriminator1_[`,` ...]  [`Where` _condition_] `Into` _collectionname1_ `=` _collector1_[`,` ...] [`OnReject` _reject1_[ _reject2_[ ...]] `Resume`]
+ - `Group` `By` _discriminator1_[`,` ...] `Using` _grouper_ _param_ `=` _expr1_[`,` ...]  [`With` _output_[`,` ...]]  [`Where` _condition_] `Into` _collectionname1_ `=` _collector1_[`,` ...] [`OnReject` _reject1_[ _reject2_[ ...]] `Resume`]
 
 Performs a grouping of the data. First, rows are collected in subgroups by
 their _discriminators_. If `Using` is provided, those subgroups are modified by
@@ -245,6 +245,9 @@ another section. Each collector can have `Where` filters that limit the
 collected data. Optionally, a `Where` filter can be applied to all the
 collectors by providing _condition_.
 
+Rows which are rejected are passed to the rejection handlers. These are
+`Monitor` or `Dump` clauses or an `Alert` terminal. Rejection handlers can only
+access the discriminators.
 
 This reshapes the data.
 
