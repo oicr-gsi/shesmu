@@ -52,6 +52,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
   protected final int line;
   private List<String> outputNames;
   private final List<Pair<String, ExpressionNode>> rawInputExpressions;
+  private final List<RejectNode> rejectHandlers;
   private final Map<String, Imyhat> typeVariables = new HashMap<>();
   private final Optional<ExpressionNode> where;
 
@@ -64,7 +65,8 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
       List<String> outputNames,
       List<GroupNode> children,
       List<DiscriminatorNode> discriminators,
-      Optional<ExpressionNode> where) {
+      Optional<ExpressionNode> where,
+      List<RejectNode> rejectHandlers) {
     this.label = label;
     this.line = line;
     this.column = column;
@@ -75,6 +77,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     this.children = children;
     this.discriminators = discriminators;
     this.where = where;
+    this.rejectHandlers = rejectHandlers;
   }
 
   @Override
@@ -98,6 +101,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     discriminators.forEach(discrminator -> discrminator.collectPlugins(pluginFileNames));
     inputExpressions.forEach(expression -> expression.collectPlugins(pluginFileNames));
     where.ifPresent(w -> w.collectPlugins(pluginFileNames));
+    rejectHandlers.forEach(r -> r.collectPlugins(pluginFileNames));
   }
 
   @Override
@@ -290,6 +294,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
             lambdaType,
             grouperCaptures,
             outputBindings,
+            FilterBuilder.of(rejectHandlers),
             oliveBuilder
                 .loadableValues()
                 .filter(value -> freeVariables.contains(value.name()))
@@ -335,7 +340,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
   }
 
   @Override
-  public final NameDefinitions resolve(
+  public NameDefinitions resolve(
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
       Consumer<String> errorHandler) {
@@ -384,6 +389,8 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
         ok = false;
       }
     }
+    final var rejectDefs =
+        defs.replaceStream(discriminators.stream().flatMap(DiscriminatorNode::targets), true);
     ok =
         ok
             && children.stream()
@@ -394,7 +401,15 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                 & discriminators.stream()
                         .filter(discriminator -> discriminator.resolve(defs, errorHandler))
                         .count()
-                    == discriminators.size();
+                    == discriminators.size()
+                & rejectHandlers.stream()
+                        .filter(
+                            handler ->
+                                handler
+                                    .resolve(oliveCompilerServices, rejectDefs, errorHandler)
+                                    .isGood())
+                        .count()
+                    == rejectHandlers.size();
 
     ok =
         ok
@@ -519,7 +534,14 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                     == discriminators.size()
                 & where
                     .map(w -> w.resolveDefinitions(oliveCompilerServices, errorHandler))
-                    .orElse(true);
+                    .orElse(true)
+                & rejectHandlers.stream()
+                        .filter(
+                            rejectHandler ->
+                                rejectHandler.resolveDefinitions(
+                                    oliveCompilerServices, errorHandler))
+                        .count()
+                    == rejectHandlers.size();
 
     return ok;
   }
@@ -557,18 +579,22 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     ok =
         ok
             && where
-                .map(
-                    w -> {
-                      var whereOk = w.typeCheck(errorHandler);
-                      if (whereOk) {
-                        if (!w.type().isSame(Imyhat.BOOLEAN)) {
-                          w.typeError(Imyhat.BOOLEAN, w.type(), errorHandler);
-                          whereOk = false;
-                        }
-                      }
-                      return whereOk;
-                    })
-                .orElse(true);
+                    .map(
+                        w -> {
+                          var whereOk = w.typeCheck(errorHandler);
+                          if (whereOk) {
+                            if (!w.type().isSame(Imyhat.BOOLEAN)) {
+                              w.typeError(Imyhat.BOOLEAN, w.type(), errorHandler);
+                              whereOk = false;
+                            }
+                          }
+                          return whereOk;
+                        })
+                    .orElse(true)
+                & rejectHandlers.stream()
+                        .filter(rejectHandler -> rejectHandler.typeCheck(errorHandler))
+                        .count()
+                    == rejectHandlers.size();
     return ok;
   }
 

@@ -216,11 +216,11 @@ public abstract class BaseOliveBuilder {
       new Method("dynamicSignature", A_OBJECT_TYPE, new Type[] {A_STRING_TYPE, A_OBJECT_TYPE});
   protected static final Method METHOD_SIGNATURE_ACCESSOR__STATIC_SIGNATURE =
       new Method("staticSignature", A_OBJECT_TYPE, new Type[] {A_STRING_TYPE});
-  private static final Method METHOD_STREAM__FILTER =
+  static final Method METHOD_STREAM__FILTER =
       new Method("filter", A_STREAM_TYPE, new Type[] {A_PREDICATE_TYPE});
   private static final Method METHOD_STREAM__MAP =
       new Method("map", A_STREAM_TYPE, new Type[] {A_FUNCTION_TYPE});
-  private static final Method METHOD_STREAM__ON_CLOSE =
+  static final Method METHOD_STREAM__ON_CLOSE =
       new Method("onClose", A_BASE_STREAM_TYPE, new Type[] {A_RUNNABLE_TYPE});
   private static final Method METHOD_STREAM__PEEK =
       new Method("peek", A_STREAM_TYPE, new Type[] {A_CONSUMER_TYPE});
@@ -248,7 +248,7 @@ public abstract class BaseOliveBuilder {
    */
   public final void call(
       CallableDefinitionRenderer defineOlive, Stream<Consumer<Renderer>> arguments) {
-    final var arglist = arguments.collect(Collectors.toList());
+    final var arglist = arguments.toList();
     if (arglist.size() != defineOlive.parameters()) {
       throw new IllegalArgumentException(
           String.format(
@@ -803,7 +803,7 @@ public abstract class BaseOliveBuilder {
   }
 
   public final RegroupVariablesBuilder regroup(
-      int line, int column, LoadableValue... capturedVariables) {
+      int line, int column, FilterBuilder filterBuilder, LoadableValue... capturedVariables) {
     final var className =
         String.format("%s/Group_%d_%d", BaseHotloadingCompiler.PACKAGE_INTERNAL, line, column);
 
@@ -830,11 +830,7 @@ public abstract class BaseOliveBuilder {
           collectLambda.push(renderer);
           renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_REGROUP);
 
-          LambdaBuilder.pushVirtual(
-              renderer,
-              RegroupVariablesBuilder.METHOD_IS_OK.getName(),
-              LambdaBuilder.predicate(newType));
-          renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
+          filterBuilder.pushFilterMethod(line, column, renderer, newType);
         });
 
     final var newRenderer = newLambda.renderer(oldType, this::emitSigner);
@@ -868,6 +864,7 @@ public abstract class BaseOliveBuilder {
       LambdaBuilder.LambdaType collectorBuilderType,
       LoadableValue[] grouperCaptures,
       List<Pair<String, Type>> grouperVariables,
+      FilterBuilder filterBuilder,
       LoadableValue... capturedVariables) {
     final var className =
         String.format(
@@ -960,11 +957,7 @@ public abstract class BaseOliveBuilder {
           newLambda.push(renderer);
           renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_REGROUP_WITH_GROUPER);
 
-          LambdaBuilder.pushVirtual(
-              renderer,
-              RegroupVariablesBuilder.METHOD_IS_OK.getName(),
-              LambdaBuilder.predicate(newType));
-          renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
+          filterBuilder.pushFilterMethod(line, column, renderer, newType);
         });
 
     final var newRenderer = newLambda.renderer(oldType, this::emitSigner);

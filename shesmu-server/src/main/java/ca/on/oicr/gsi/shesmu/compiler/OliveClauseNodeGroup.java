@@ -62,10 +62,11 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
   }
 
   private final List<GroupNode> children;
-  protected final int column;
+  private final int column;
   private final List<DiscriminatorNode> discriminators;
   private final Optional<String> label;
-  protected final int line;
+  private final int line;
+  private final List<RejectNode> rejectHandlers;
   private final Optional<ExpressionNode> where;
 
   public OliveClauseNodeGroup(
@@ -74,13 +75,15 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
       int column,
       List<GroupNode> children,
       List<DiscriminatorNode> discriminators,
-      Optional<ExpressionNode> where) {
+      Optional<ExpressionNode> where,
+      List<RejectNode> rejectHandlers) {
     this.label = label;
     this.line = line;
     this.column = column;
     this.children = children;
     this.discriminators = discriminators;
     this.where = where;
+    this.rejectHandlers = rejectHandlers;
   }
 
   @Override
@@ -103,6 +106,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
     discriminators.forEach(discriminator -> discriminator.collectPlugins(pluginFileNames));
     children.forEach(child -> child.collectPlugins(pluginFileNames));
     where.ifPresent(w -> w.collectPlugins(pluginFileNames));
+    rejectHandlers.forEach(r -> r.collectPlugins(pluginFileNames));
   }
 
   @Override
@@ -134,7 +138,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
   }
 
   @Override
-  public final ClauseStreamOrder ensureRoot(
+  public ClauseStreamOrder ensureRoot(
       ClauseStreamOrder state,
       Set<String> signableNames,
       Consumer<SignableVariableCheck> addSignableCheck,
@@ -169,6 +173,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
         oliveBuilder.regroup(
             line,
             column,
+            FilterBuilder.of(rejectHandlers),
             oliveBuilder
                 .loadableValues()
                 .filter(value -> freeVariables.contains(value.name()))
@@ -183,17 +188,27 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
   }
 
   @Override
-  public final NameDefinitions resolve(
+  public NameDefinitions resolve(
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
       Consumer<String> errorHandler) {
+    final var rejectDefs =
+        defs.replaceStream(discriminators.stream().flatMap(DiscriminatorNode::targets), true);
     var ok =
         children.stream().filter(child -> child.resolve(defs, defs, errorHandler)).count()
                 == children.size()
             & discriminators.stream()
                     .filter(discriminator -> discriminator.resolve(defs, errorHandler))
                     .count()
-                == discriminators.size();
+                == discriminators.size()
+            & rejectHandlers.stream()
+                    .filter(
+                        handler ->
+                            handler
+                                .resolve(oliveCompilerServices, rejectDefs, errorHandler)
+                                .isGood())
+                    .count()
+                == rejectHandlers.size();
 
     ok =
         ok
@@ -246,7 +261,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
   }
 
   @Override
-  public final boolean resolveDefinitions(
+  public boolean resolveDefinitions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
 
     return children.stream()
@@ -257,11 +272,17 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
                 .filter(group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == discriminators.size()
-        & where.map(w -> w.resolveDefinitions(oliveCompilerServices, errorHandler)).orElse(true);
+        & where.map(w -> w.resolveDefinitions(oliveCompilerServices, errorHandler)).orElse(true)
+        & rejectHandlers.stream()
+                .filter(
+                    rejectHandler ->
+                        rejectHandler.resolveDefinitions(oliveCompilerServices, errorHandler))
+                .count()
+            == rejectHandlers.size();
   }
 
   @Override
-  public final boolean typeCheck(Consumer<String> errorHandler) {
+  public boolean typeCheck(Consumer<String> errorHandler) {
     return children.stream().filter(group -> group.typeCheck(errorHandler)).count()
             == children.size()
         && discriminators.stream()
@@ -280,6 +301,10 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
                       }
                       return whereOk;
                     })
-                .orElse(true);
+                .orElse(true)
+            & rejectHandlers.stream()
+                    .filter(rejectHandler -> rejectHandler.typeCheck(errorHandler))
+                    .count()
+                == rejectHandlers.size();
   }
 }
