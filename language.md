@@ -173,7 +173,7 @@ Replace the contents of a database with the output from the olive. Each record
 the olive emits is another "row" sent to the database. How the refiller
 interprets the data and its behaviour is defined by the refiller.
 
-<a name="dynamictags">
+<a id="dynamictags"></a>
 ## Dynamic Tags
 Tags can be attached to an action based on the data in the olive. They can be
 any string. Duplicate tags are removed.
@@ -430,12 +430,6 @@ Collect the smallest; if none are collected, the group is rejected.
 
 Check if _expr_ is false for all rows. If none are collected, the result is true.
 
-- `OnlyIf` _expr_
-
-Take an optional value and extract it. Ignore any empty optionals. If multiple
-different values are found, reject the group. If only one unique value is
-found, use it as the result and use this value.
-
 - `PartitionCount` _expr_
 
 Collect a counter of the number of times _expr_ was true and the number of
@@ -474,6 +468,38 @@ Performs filtering before _collector_.
 Performs multiple collections at once and converts the results into an object.
 This can be very useful to share a `Where` condition while collecting multiple
 pieces of information.
+
+- [_behaviour_] `` ` `` _collector_ `` ` ``
+
+This allows using optional values in other collectors. For instance, suppose
+there is an optional number and the minimum is desired, one could write: `` `
+Min x? ` ``.
+
+There are special _behaviours_ for how to handle records with missing data:
+
+- the unspecified behaviour is to simply drop empty optionals and proceed with
+  the collector as normal. This is equivalent to ``Where x != ` ` Min x Default
+  1234 ``; since `x` will never have the empty optional, the default will never
+  be used.
+- `OnlyIf All` requires that no empty input makes it to the collector; if any
+  optional input is found, the output from the collector is replaced by the
+  empty optional. So, if ``v = OnlyIf All `Min x?` `` was given `` `3` `` and
+  `` ` ` ``, it would produce `` v == ` ` ``.
+- `OnlyIf Any` requires that one non-empty input makes it to the collector; if
+  no optional input is found, the output from the collector is replaced by the
+  empty optional. So, if ``v = OnlyIf Any `Min x?` `` was given `` `3` `` and
+  `` ` ` ``, it would produce `` v == `3` ``, but `` ` ` `` and `` ` ` `` would
+  produce ``v == ` ` ``.
+- `Require All` requires that no empty input makes it to the collector; if any
+  optional input is found, the group will be rejected. So, if
+  ``v = Require All `Min x?` `` was given `` `3` `` and `` ` ` ``, the group
+  would not be present in the output.
+- `Require Any` requires that one non-empty input makes it to the collector; if
+  no optional input is found, the group will be rejected. So, if
+  ``v = Require Any `Min x?` `` was given `` `3` `` and `` ` ` ``, it would
+  produce `v == 3`, but if the input were `` ` ` `` and `` ` ` ``, the group
+  would not be present in the output.
+
 
 ## Expressions
 Shesmu has the following expressions, for lowest precedence to highest precedence.
@@ -1349,7 +1375,7 @@ For details on optional values, see [the Mandatory Guide to Optional
 Values](optionalguide.md).
 
 
-<a name="types">
+<a id="types"></a>
 ## Types
 There are a small number of types in the language, listed below. Each has
 syntax as it appears in the language and a descriptor that is used for
@@ -1421,7 +1447,7 @@ to a more readable form:
 Mixing the two representations is fine (_e.g._, `["qb", "s"]` is equivalent to
 `[{"optional", "inner": "b"}, "s"]` or `t2qbs`).
 
-<a name="regexflags">
+<a id="regexflags"></a>
 ## Regular Expression Flags
 Regular expressions can have modified behaviour. Any combination of the following flags can be used after a regular expression:
 

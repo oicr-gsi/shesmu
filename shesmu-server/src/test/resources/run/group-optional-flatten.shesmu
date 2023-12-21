@@ -1,0 +1,7 @@
+Version 1;
+Input test;
+
+Olive
+ Let workflow, project = `project`
+ Group By workflow Into a = `Univalued project?`
+ Run ok With ok = a == "the_foo_study";
