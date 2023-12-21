@@ -1,6 +1,10 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import static ca.on.oicr.gsi.shesmu.compiler.GroupNodeOptionalUnpack.INNER_SUFFIX;
+
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import ca.on.oicr.gsi.shesmu.plugin.Parser.ParseDispatch;
 import ca.on.oicr.gsi.shesmu.plugin.Parser.Rule;
 import java.nio.file.Path;
 import java.util.List;
@@ -38,7 +42,6 @@ public abstract class GroupNode implements DefinedTarget {
         });
     GROUPERS.addKeyword("First", ofWithDefault(GroupNodeFirst::new));
     GROUPERS.addKeyword("Flatten", of(GroupNodeFlatten::new));
-    GROUPERS.addKeyword("OnlyIf", of(GroupNodeOnlyIf::new));
     GROUPERS.addKeyword("List", of(GroupNodeList::new));
     GROUPERS.addKeyword(
         "LexicalConcat",
@@ -154,6 +157,26 @@ public abstract class GroupNode implements DefinedTarget {
           }
           return result;
         });
+    for (final var entry :
+        List.of(
+            new Pair<>(
+                "OnlyIf",
+                List.of(
+                    new Pair<>("All", OptionalGroupUnpack.EMPTY_IF_ALL_EMPTY),
+                    new Pair<>("Any", OptionalGroupUnpack.EMPTY_IF_ANY_EMPTY))),
+            new Pair<>(
+                "Require",
+                List.of(
+                    new Pair<>("All", OptionalGroupUnpack.REJECT_IF_ALL_EMPTY),
+                    new Pair<>("Any", OptionalGroupUnpack.REJECT_IF_ANY_EMPTY))))) {
+      final var dispatch = new ParseDispatch<ParseGroup>();
+      GROUPERS.addKeyword(entry.first(), (p, o) -> p.whitespace().dispatch(dispatch, o));
+      for (final var inner : entry.second()) {
+        final var parser = parseOptional(inner.second());
+        dispatch.addKeyword(inner.first(), (p, o) -> p.whitespace().symbol("`").then(parser, o));
+      }
+      GROUPERS.addSymbol("`", parseOptional(OptionalGroupUnpack.FLATTEN));
+    }
   }
 
   private static Rule<ParseGroup> of(ParseGroupWithExpression maker) {
@@ -205,6 +228,25 @@ public abstract class GroupNode implements DefinedTarget {
         .whitespace()
         .dispatch(
             GROUPERS, maker -> output.accept(maker.make(input.line(), input.column(), name.get())));
+  }
+
+  private static Rule<ParseGroup> parseOptional(OptionalGroupUnpack unpack) {
+    return ((parser, output) ->
+        parser
+            .whitespace()
+            .dispatch(
+                GROUPERS,
+                (pg) ->
+                    output.accept(
+                        (line, column, name) ->
+                            new GroupNodeOptionalUnpack(
+                                parser.line(),
+                                parser.column(),
+                                name,
+                                pg.make(line, column, INNER_SUFFIX),
+                                unpack)))
+            .symbol("`")
+            .whitespace());
   }
 
   private final int column;

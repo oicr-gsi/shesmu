@@ -1,16 +1,25 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
-import static org.objectweb.asm.Type.*;
+import static org.objectweb.asm.Type.BOOLEAN_TYPE;
+import static org.objectweb.asm.Type.INT_TYPE;
+import static org.objectweb.asm.Type.LONG_TYPE;
+import static org.objectweb.asm.Type.VOID_TYPE;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.PartitionCount;
 import ca.on.oicr.gsi.shesmu.runtime.UnivaluedGroupAccumulator;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
@@ -67,7 +76,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void addLexicalConcat(
+    public final void addLexicalConcat(
         String fieldName, Consumer<Renderer> loader, Consumer<Renderer> delimiterLoader) {
       elements.add(new LexicalConcat(prefix + fieldName, loader, delimiterLoader));
     }
@@ -85,8 +94,10 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public final void addOnlyIf(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
-      elements.add(new OnlyIf(valueType, prefix + fieldName, loader));
+    public final Regrouper addOnlyIf(String fieldName, OnlyIfConsumer consumer) {
+      final var element = new OnlyIf(prefix + fieldName, consumer);
+      elements.add(element);
+      return element;
     }
 
     @Override
@@ -111,7 +122,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void addSum(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+    public final void addSum(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
       elements.add(new Sum(valueType, prefix + fieldName, loader));
     }
 
@@ -167,13 +178,21 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public final void failIfBad(GeneratorAdapter okMethod) {
-      elements.forEach(element -> element.failIfBad(okMethod));
+    public void failIfBad(GeneratorAdapter okMethod, Label failure) {
+      failInnerIfBad(okMethod, failure);
+    }
+
+    protected final void failInnerIfBad(GeneratorAdapter okMethod, Label failure) {
+      elements.forEach(element -> element.failIfBad(okMethod, failure));
     }
 
     @Override
     public final void loadConstructorArgument() {
       elements.forEach(Element::loadConstructorArgument);
+    }
+
+    protected final String prefix() {
+      return prefix;
     }
   }
 
@@ -228,7 +247,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public final void failIfBad(GeneratorAdapter okMethod) {
+    public final void failIfBad(GeneratorAdapter okMethod, Label failure) {
       // Do nothing
     }
 
@@ -310,7 +329,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void failIfBad(GeneratorAdapter okMethod) {
+    public void failIfBad(GeneratorAdapter okMethod, Label failure) {
       // Counts are always okay.
     }
 
@@ -381,7 +400,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public final void failIfBad(GeneratorAdapter okMethod) {
+    public final void failIfBad(GeneratorAdapter okMethod, Label failure) {
       // Do nothing
     }
 
@@ -458,7 +477,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void failIfBad(GeneratorAdapter okMethod) {
+    public void failIfBad(GeneratorAdapter okMethod, Label failure) {
       // Do nothing
     }
 
@@ -480,7 +499,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
     public abstract Stream<Type> constructorType();
 
-    public abstract void failIfBad(GeneratorAdapter okMethod);
+    public abstract void failIfBad(GeneratorAdapter okMethod, Label failure);
 
     public abstract void loadConstructorArgument();
   }
@@ -539,14 +558,10 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void failIfBad(GeneratorAdapter okMethod) {
+    public void failIfBad(GeneratorAdapter okMethod, Label failure) {
       okMethod.loadThis();
       okMethod.getField(self, fieldName + "$ok", BOOLEAN_TYPE);
-      final var next = okMethod.newLabel();
-      okMethod.ifZCmp(GeneratorAdapter.NE, next);
-      okMethod.push(false);
-      okMethod.returnValue();
-      okMethod.mark(next);
+      okMethod.ifZCmp(GeneratorAdapter.EQ, failure);
     }
 
     @Override
@@ -615,7 +630,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void failIfBad(GeneratorAdapter okMethod) {
+    public void failIfBad(GeneratorAdapter okMethod, Label failure) {
       // First with default is always ok
     }
 
@@ -710,7 +725,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void failIfBad(GeneratorAdapter okMethod) {
+    public void failIfBad(GeneratorAdapter okMethod, Label failure) {
       // LexicalConcat with default is always ok
     }
 
@@ -782,7 +797,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void failIfBad(GeneratorAdapter okMethod) {
+    public void failIfBad(GeneratorAdapter okMethod, Label failure) {
       // Do nothing
     }
 
@@ -874,7 +889,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void failIfBad(GeneratorAdapter okMethod) {
+    public void failIfBad(GeneratorAdapter okMethod, Label failure) {
       // Do nothing
     }
 
@@ -888,8 +903,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
     public NamedTuple(String prefix, Stream<Pair<String, Imyhat>> fields) {
       super(prefix + " ");
-      final var fieldInfo =
-          fields.sorted(Comparator.comparing(Pair::first)).collect(Collectors.toList());
+      final var fieldInfo = fields.sorted(Comparator.comparing(Pair::first)).toList();
       final var getMethod =
           new GeneratorAdapter(
               Opcodes.ACC_PUBLIC,
@@ -925,32 +939,39 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
   }
 
-  private class OnlyIf extends Element {
-    private final String fieldName;
-    private final Consumer<Renderer> loader;
-    private final Imyhat valueType;
+  private class OnlyIf extends BaseComposite {
+    private final OnlyIfConsumer consumer;
 
-    private OnlyIf(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
-      super();
-      this.valueType = valueType;
-      this.fieldName = fieldName;
-      this.loader = loader;
-      classVisitor
-          .visitField(Opcodes.ACC_PUBLIC, fieldName, A_SET_TYPE.getDescriptor(), null, null)
-          .visitEnd();
+    private OnlyIf(String fieldName, OnlyIfConsumer consumer) {
+      super(fieldName);
+      this.consumer = consumer;
+      if (consumer.countsRequired()) {
+        classVisitor
+            .visitField(
+                Opcodes.ACC_PUBLIC,
+                Regrouper.badCount(fieldName),
+                INT_TYPE.getDescriptor(),
+                null,
+                null)
+            .visitEnd();
+        classVisitor
+            .visitField(
+                Opcodes.ACC_PUBLIC,
+                Regrouper.goodCount(fieldName),
+                INT_TYPE.getDescriptor(),
+                null,
+                null)
+            .visitEnd();
+      }
       final var getMethod =
           new GeneratorAdapter(
               Opcodes.ACC_PUBLIC,
-              new Method(fieldName, valueType.apply(TO_ASM), new Type[] {}),
+              new Method(fieldName, consumer.type(), new Type[] {}),
               null,
               null,
               classVisitor);
       getMethod.visitCode();
-      getMethod.loadThis();
-      getMethod.getField(self, fieldName, A_SET_TYPE);
-      getMethod.invokeInterface(A_SET_TYPE, SET__ITERATOR);
-      getMethod.invokeInterface(A_ITERATOR_TYPE, ITERATOR__NEXT);
-      getMethod.unbox(valueType.apply(TO_ASM));
+      consumer.renderGetter(getMethod, fieldName, self);
       getMethod.returnValue();
       getMethod.visitMaxs(0, 0);
       getMethod.visitEnd();
@@ -958,57 +979,37 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
     @Override
     public void buildCollect() {
-      loader.accept(collectRenderer);
-      collectRenderer.methodGen().loadArg(collectedSelfArgument);
-      collectRenderer.methodGen().getField(self, fieldName, A_SET_TYPE);
-      LambdaBuilder.pushInterface(
-          collectRenderer,
-          "add",
-          LambdaBuilder.consumerErasingReturn(Type.BOOLEAN_TYPE, A_OBJECT_TYPE),
-          A_SET_TYPE);
-      collectRenderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__IF_PRESENT);
+      final var end = collectRenderer.methodGen().newLabel();
+      final var failPath = collectRenderer.methodGen().newLabel();
+      final var originalRenderer = collectRenderer;
+      collectRenderer = collectRenderer.duplicate();
+      consumer.build(collectRenderer, prefix(), self, failPath);
+      if (consumer.countsRequired()) {
+        collectRenderer.methodGen().loadArg(collectedSelfArgument);
+        collectRenderer.methodGen().dup();
+        collectRenderer.methodGen().getField(self, Regrouper.goodCount(prefix()), INT_TYPE);
+        collectRenderer.methodGen().push(1);
+        collectRenderer.methodGen().math(GeneratorAdapter.ADD, INT_TYPE);
+        collectRenderer.methodGen().putField(self, Regrouper.goodCount(prefix()), INT_TYPE);
+      }
+      buildInnerCollect();
+      collectRenderer.methodGen().goTo(end);
+      collectRenderer = originalRenderer;
+      collectRenderer.methodGen().mark(failPath);
+      if (consumer.countsRequired()) {
+        collectRenderer.methodGen().loadArg(collectedSelfArgument);
+        collectRenderer.methodGen().dup();
+        collectRenderer.methodGen().getField(self, Regrouper.badCount(prefix()), INT_TYPE);
+        collectRenderer.methodGen().push(1);
+        collectRenderer.methodGen().math(GeneratorAdapter.ADD, INT_TYPE);
+        collectRenderer.methodGen().putField(self, Regrouper.badCount(prefix()), INT_TYPE);
+      }
+      collectRenderer.methodGen().mark(end);
     }
 
     @Override
-    public int buildConstructor(GeneratorAdapter ctor, int index) {
-      ctor.loadThis();
-      Renderer.loadImyhatInMethod(ctor, valueType.descriptor());
-      ctor.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_SET);
-      ctor.putField(self, fieldName, A_SET_TYPE);
-      return index;
-    }
-
-    @Override
-    public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
-      // OnlyIf are not included in equality.
-    }
-
-    @Override
-    public void buildHashCode(GeneratorAdapter hashMethod) {
-      // OnlyIf are not included in the hash.
-    }
-
-    @Override
-    public Stream<Type> constructorType() {
-      return Stream.empty();
-    }
-
-    @Override
-    public void failIfBad(GeneratorAdapter okMethod) {
-      okMethod.loadThis();
-      okMethod.getField(self, fieldName, A_SET_TYPE);
-      okMethod.invokeInterface(A_SET_TYPE, SET__SIZE);
-      okMethod.push(1);
-      final var next = okMethod.newLabel();
-      okMethod.ifICmp(GeneratorAdapter.EQ, next);
-      okMethod.push(0);
-      okMethod.returnValue();
-      okMethod.mark(next);
-    }
-
-    @Override
-    public void loadConstructorArgument() {
-      // No argument to constructor.
+    public void failIfBad(GeneratorAdapter okMethod, Label failure) {
+      consumer.failIfBad(okMethod, prefix(), self, this::failInnerIfBad, failure);
     }
   }
 
@@ -1090,14 +1091,10 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void failIfBad(GeneratorAdapter okMethod) {
+    public void failIfBad(GeneratorAdapter okMethod, Label failure) {
       okMethod.loadThis();
       okMethod.getField(self, fieldName + "$ok", BOOLEAN_TYPE);
-      final var next = okMethod.newLabel();
-      okMethod.ifZCmp(GeneratorAdapter.NE, next);
-      okMethod.push(false);
-      okMethod.returnValue();
-      okMethod.mark(next);
+      okMethod.ifZCmp(GeneratorAdapter.EQ, failure);
     }
 
     @Override
@@ -1176,8 +1173,8 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void failIfBad(GeneratorAdapter okMethod) {
-      // Optima with deafults are always ok.
+    public void failIfBad(GeneratorAdapter okMethod, Label failure) {
+      // Optima with defaults are always ok.
     }
 
     @Override
@@ -1249,7 +1246,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void failIfBad(GeneratorAdapter okMethod) {
+    public void failIfBad(GeneratorAdapter okMethod, Label failure) {
       // Do nothing
     }
 
@@ -1303,7 +1300,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void failIfBad(GeneratorAdapter okMethod) {
+    public void failIfBad(GeneratorAdapter okMethod, Label failure) {
       // Sum cannot fail
     }
 
@@ -1379,16 +1376,12 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void failIfBad(GeneratorAdapter okMethod) {
+    public void failIfBad(GeneratorAdapter okMethod, Label failure) {
       okMethod.loadThis();
       okMethod.getField(self, fieldName, A_SET_TYPE);
       okMethod.invokeInterface(A_SET_TYPE, SET__SIZE);
       okMethod.push(1);
-      final var next = okMethod.newLabel();
-      okMethod.ifICmp(GeneratorAdapter.EQ, next);
-      okMethod.push(0);
-      okMethod.returnValue();
-      okMethod.mark(next);
+      okMethod.ifICmp(GeneratorAdapter.NE, failure);
     }
 
     @Override
@@ -1480,7 +1473,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void failIfBad(GeneratorAdapter okMethod) {
+    public void failIfBad(GeneratorAdapter okMethod, Label failure) {
       // Univalued with default is always ok
     }
 
@@ -1494,7 +1487,6 @@ public final class RegroupVariablesBuilder implements Regrouper {
   private static final Type A_ITERATOR_TYPE = Type.getType(Iterator.class);
   private static final Type A_MAP_TYPE = Type.getType(Map.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
-  private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Type A_PARTITION_COUNT_TYPE = Type.getType(PartitionCount.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
   private static final Type A_STRING_TYPE = Type.getType(String.class);
@@ -1541,7 +1533,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
       new Method("iterator", A_ITERATOR_TYPE, new Type[] {});
   private static final Method SET__SIZE = new Method("size", INT_TYPE, new Type[] {});
   private final ClassVisitor classVisitor;
-  private final Renderer collectRenderer;
+  private Renderer collectRenderer;
   public final int collectedSelfArgument;
   private final List<Element> elements = new ArrayList<>();
 
@@ -1628,8 +1620,10 @@ public final class RegroupVariablesBuilder implements Regrouper {
   }
 
   @Override
-  public void addOnlyIf(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
-    elements.add(new OnlyIf(valueType, fieldName, loader));
+  public Regrouper addOnlyIf(String fieldName, OnlyIfConsumer consumer) {
+    final var element = new OnlyIf(fieldName, consumer);
+    elements.add(element);
+    return element;
   }
 
   @Override
@@ -1764,8 +1758,12 @@ public final class RegroupVariablesBuilder implements Regrouper {
     final var okMethod =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, METHOD_IS_OK, null, null, classVisitor);
     okMethod.visitCode();
-    elements.forEach(element -> element.failIfBad(okMethod));
+    final var failure = okMethod.newLabel();
+    elements.forEach(element -> element.failIfBad(okMethod, failure));
     okMethod.push(true);
+    okMethod.returnValue();
+    okMethod.mark(failure);
+    okMethod.push(false);
     okMethod.returnValue();
     okMethod.visitMaxs(0, 0);
     okMethod.visitEnd();
