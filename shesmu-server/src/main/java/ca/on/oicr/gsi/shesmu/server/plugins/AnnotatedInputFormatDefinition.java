@@ -10,6 +10,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.authentication.AuthenticationConfiguration;
 import ca.on.oicr.gsi.shesmu.plugin.cache.InitialCachePopulationException;
 import ca.on.oicr.gsi.shesmu.plugin.cache.InvalidatableRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.LabelledKeyValueCache;
@@ -130,8 +131,13 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   }
 
   public static final class Configuration {
+    private AuthenticationConfiguration authentication;
     private int ttl;
     private String url;
+
+    public AuthenticationConfiguration getAuthentication() {
+      return authentication;
+    }
 
     public int getTtl() {
       return ttl;
@@ -139,6 +145,10 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
 
     public String getUrl() {
       return url;
+    }
+
+    public void setAuthentication(AuthenticationConfiguration authentication) {
+      this.authentication = authentication;
     }
 
     public void setTtl(int ttl) {
@@ -311,10 +321,10 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
       protected Stream<Object> fetch(Instant lastUpdated) throws Exception {
         if (config.isEmpty()) return new ErrorableStream<>(Stream.empty(), false);
         final var url = config.get().getUrl();
-        var response =
-            Server.HTTP_CLIENT.send(
-                HttpRequest.newBuilder(URI.create(url)).GET().version(Version.HTTP_1_1).build(),
-                BodyHandlers.ofInputStream());
+        final var request = HttpRequest.newBuilder(URI.create(url)).GET().version(Version.HTTP_1_1);
+        AuthenticationConfiguration.addAuthenticationHeader(
+            config.get().getAuthentication(), request);
+        var response = Server.HTTP_CLIENT.send(request.build(), BodyHandlers.ofInputStream());
         try (var parser = RuntimeSupport.MAPPER.getFactory().createParser(response.body())) {
           if (response.statusCode() != 200) return new ErrorableStream<>(Stream.empty(), false);
           final List<Object> results = new ArrayList<>();

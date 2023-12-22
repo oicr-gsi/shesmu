@@ -298,12 +298,66 @@ To provide a set of fixed data, create a JSON file ending in `.`_format_`-input`
 To access data remotely, create a file ending in `.`_format_`-remote` as follows:
 
     {
+       "authentication": null,
        "url": "http://some.url/format/endpoint",
        "ttl": 10
     }
 
 where `url` is the URL to download the data and `ttl` is the number of minutes
-to cache the data for.
+to cache the data for. If no authentication is required, `null` can be used for
+`"authentication"`. Alternatively, it can be one of the following
+authentication methods.
+
+### Basic Authentication
+Basic authentication sends a user name and password to the remote server. The
+password can be stored in the configuration file like this:
+
+    {
+       "authentication": {
+         "type": "basic",
+         "username": "jrhacker",
+         "password": "s3cr3t"
+       },
+       "url": "http://some.url/format/endpoint",
+       "ttl": 10
+    }
+
+or it can be stored separately using `basic-file`:
+
+    {
+       "authentication": {
+         "type": "basic-file",
+         "username": "jrhacker",
+         "passwordFile": "/home/shesmu/secret-password"
+       },
+       "url": "http://some.url/format/endpoint",
+       "ttl": 10
+    }
+
+
+### Bearer Authentication
+Bearer authentication sends a single token to the remote server. The
+token can be stored in the configuration file like this:
+
+    {
+       "authentication": {
+         "type": "bearer",
+         "token": "01234567890ABCDEF"
+       },
+       "url": "http://some.url/format/endpoint",
+       "ttl": 10
+    }
+
+or it can be stored separately using `bearer-file`:
+
+    {
+       "authentication": {
+         "type": "bearer-file",
+         "tokenFile": "/home/shesmu/secret-token"
+       },
+       "url": "http://some.url/format/endpoint",
+       "ttl": 10
+    }
 
 ## Saved Searches
 Shesmu's _Actions_ dashboard provides a way to sift through the actions that
