@@ -110,6 +110,7 @@ const vidarrStateRenderer = {
     objectTable(a.info.metadata, "Metadata from Vidarr", (v) =>
       preformatted(JSON.stringify(v, null, 2))
     ),
+    objectTable(a.info.tracing || {}, "Resource Tracing", (v) => `${v}`),
     collapsible(
       "Operations",
       table(
