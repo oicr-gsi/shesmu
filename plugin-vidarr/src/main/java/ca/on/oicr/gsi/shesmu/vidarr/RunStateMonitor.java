@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.Stream;
 
 final class RunStateMonitor extends RunState {
@@ -171,6 +172,11 @@ final class RunStateMonitor extends RunState {
   }
 
   @Override
+  public OptionalInt getAttempt() {
+    return OptionalInt.of(status.getAttempt());
+  }
+
+  @Override
   public PerformResult perform(
       URI vidarrUrl,
       SubmitWorkflowRequest request,
@@ -191,6 +197,19 @@ final class RunStateMonitor extends RunState {
   @Override
   public long retryMinutes() {
     return 5;
+  }
+
+  @Override
+  public OptionalInt sortKey(String key) {
+    return Optional.ofNullable(status.getTracing())
+        .map(m -> m.get(key))
+        .map(v -> OptionalInt.of(v.intValue()))
+        .orElseGet(OptionalInt::empty);
+  }
+
+  @Override
+  public Stream<String> sortKeys() {
+    return Optional.ofNullable(status.getTracing()).stream().flatMap(m -> m.keySet().stream());
   }
 
   @Override

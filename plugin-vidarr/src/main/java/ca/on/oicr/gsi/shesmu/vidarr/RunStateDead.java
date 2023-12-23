@@ -9,6 +9,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.Stream;
 
 final class RunStateDead extends RunState {
@@ -26,6 +27,11 @@ final class RunStateDead extends RunState {
   @Override
   public Optional<Instant> externalTimestamp() {
     return Optional.empty();
+  }
+
+  @Override
+  public OptionalInt getAttempt() {
+    return OptionalInt.empty();
   }
 
   @Override
@@ -51,6 +57,16 @@ final class RunStateDead extends RunState {
   @Override
   public long retryMinutes() {
     return 86400;
+  }
+
+  @Override
+  public OptionalInt sortKey(String key) {
+    return OptionalInt.empty();
+  }
+
+  @Override
+  public Stream<String> sortKeys() {
+    return Stream.empty();
   }
 
   @Override

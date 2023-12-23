@@ -1608,9 +1608,11 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           final Query query;
           final ActionProcessor.Filter[] filters;
+          final Optional<String> sortBy;
           try {
             query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), Query.class);
             filters = query.perform(processor.filterBuilder(compiler));
+            sortBy = Optional.ofNullable(query.getSortBy());
           } catch (final Exception e) {
             e.printStackTrace();
             t.sendResponseHeaders(400, 0);
@@ -1624,7 +1626,8 @@ public final class Server implements ServerConfig, ActionServices {
             jsonOutput.writeNumberField("offset", query.getSkip());
             jsonOutput.writeNumberField("total", processor.size(filters));
             jsonOutput.writeArrayFieldStart("results");
-            processor.stream(pluginManager, filters)
+            final var availableSortKeys = new TreeSet<String>();
+            processor.stream(pluginManager, sortBy, availableSortKeys::add, filters)
                 .skip(Math.max(0, query.getSkip()))
                 .limit(query.getLimit())
                 .forEach(
@@ -1635,6 +1638,11 @@ public final class Server implements ServerConfig, ActionServices {
                         throw new RuntimeException(e);
                       }
                     });
+            jsonOutput.writeEndArray();
+            jsonOutput.writeArrayFieldStart("availableSortKeys");
+            for (final var key : availableSortKeys) {
+              jsonOutput.writeString(key);
+            }
             jsonOutput.writeEndArray();
             jsonOutput.writeArrayFieldStart("bulkCommands");
             for (final var command : processor.commonCommands(filters).entrySet()) {

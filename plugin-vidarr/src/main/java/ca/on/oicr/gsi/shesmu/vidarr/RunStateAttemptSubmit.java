@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.Stream;
 
 /** State when we have no knowledge of what's going on in Vidarr */
@@ -48,6 +49,11 @@ final class RunStateAttemptSubmit extends RunState {
   @Override
   public Optional<Instant> externalTimestamp() {
     return Optional.empty();
+  }
+
+  @Override
+  public OptionalInt getAttempt() {
+    return OptionalInt.of(attempt);
   }
 
   @Override
@@ -129,6 +135,16 @@ final class RunStateAttemptSubmit extends RunState {
   @Override
   public long retryMinutes() {
     return retryMinutes;
+  }
+
+  @Override
+  public OptionalInt sortKey(String key) {
+    return OptionalInt.empty();
+  }
+
+  @Override
+  public Stream<String> sortKeys() {
+    return Stream.empty();
   }
 
   @Override

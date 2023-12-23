@@ -6,6 +6,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -147,6 +148,25 @@ public abstract class Action {
    * @return true if the action should be included in the search results
    */
   public abstract boolean search(Pattern query);
+
+  /**
+   * Allow sorting by action-defined keys
+   *
+   * @param key the key provided by the user
+   * @return the sorting order, or the empty optional if the key is not recognized or unavailable
+   */
+  public OptionalInt sortKey(String key) {
+    return OptionalInt.empty();
+  }
+
+  /**
+   * List the action-defined sort keys known to this action
+   *
+   * @return a stream of key identifiers
+   */
+  public Stream<String> sortKeys() {
+    return Stream.empty();
+  }
 
   /**
    * Self-determined tags that should be attached to this action

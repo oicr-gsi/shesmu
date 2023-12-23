@@ -876,6 +876,7 @@ export function renderInformation(
         actions,
         bulkCommands,
         model: actionsModel,
+        sortKeys,
       } = actionDisplay(exportSearches);
       const search = createSearch(
         temporaryState({}),
@@ -888,6 +889,8 @@ export function renderInformation(
       return [
         br(),
         search.buttons,
+        sortKeys,
+        br(),
         bulkCommands,
         br(),
         search.entryBar,
