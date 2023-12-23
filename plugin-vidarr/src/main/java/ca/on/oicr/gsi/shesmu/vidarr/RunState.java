@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.Stream;
 
 /**
@@ -49,6 +50,8 @@ abstract class RunState {
 
   public abstract Optional<Instant> externalTimestamp();
 
+  public abstract OptionalInt getAttempt();
+
   public abstract PerformResult perform(
       URI vidarrUrl,
       SubmitWorkflowRequest request,
@@ -62,6 +65,10 @@ abstract class RunState {
   public abstract boolean retry(URI vidarrUrl);
 
   public abstract long retryMinutes();
+
+  public abstract OptionalInt sortKey(String key);
+
+  public abstract Stream<String> sortKeys();
 
   public abstract Stream<String> tags();
 

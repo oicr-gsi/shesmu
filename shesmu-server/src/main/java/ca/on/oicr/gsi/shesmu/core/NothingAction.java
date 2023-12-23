@@ -11,7 +11,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -46,6 +48,10 @@ public class NothingAction extends Action {
           return Response.PURGE;
         }
       };
+
+  @SuppressWarnings("CanBeFinal")
+  @RuntimeInterop
+  public Map<String, Long> sorting = Map.of();
 
   @SuppressWarnings("CanBeFinal")
   @RuntimeInterop
@@ -109,6 +115,18 @@ public class NothingAction extends Action {
   @Override
   public boolean search(Pattern query) {
     return query.matcher(value).matches();
+  }
+
+  @Override
+  public OptionalInt sortKey(String key) {
+    return Optional.ofNullable(sorting.get(key))
+        .map((Long v) -> OptionalInt.of(v.intValue()))
+        .orElse(OptionalInt.empty());
+  }
+
+  @Override
+  public Stream<String> sortKeys() {
+    return sorting.keySet().stream();
   }
 
   @Override

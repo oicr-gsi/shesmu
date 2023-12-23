@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -32,11 +33,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class SubmitAction extends Action {
-
   static final Imyhat EXTERNAL_IDS =
       new ObjectImyhat(
               Stream.of(new Pair<>("id", Imyhat.STRING), new Pair<>("provider", Imyhat.STRING)))
           .asList();
+  private static final String SORT_KEY_ATTEMPT = "vidarr-attempt";
 
   private static boolean checkJson(JsonNode json, Pattern query) {
     switch (json.getNodeType()) {
@@ -231,6 +232,19 @@ public final class SubmitAction extends Action {
   @ActionParameter(required = false)
   public void services(Set<String> services) {
     this.services.addAll(services);
+  }
+
+  @Override
+  public OptionalInt sortKey(String key) {
+    if (key.equals(SORT_KEY_ATTEMPT)) {
+      return OptionalInt.of(state.getAttempt().orElse(request.getAttempt()));
+    }
+    return state.sortKey(key);
+  }
+
+  @Override
+  public Stream<String> sortKeys() {
+    return Stream.concat(Stream.of(SORT_KEY_ATTEMPT), state.sortKeys());
   }
 
   @ActionParameter(

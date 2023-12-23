@@ -33,7 +33,12 @@ import {
   SimulationResponse,
 } from "./simulation.js";
 import { Stat } from "./stats.js";
-import { Action, ActionQueryResponse, ServerSearches } from "./action.js";
+import {
+  Action,
+  ActionQueryRequest,
+  ActionQueryResponse,
+  ServerSearches,
+} from "./action.js";
 import { MeditationCompilationResponse } from "./yogastudio.js";
 import { ThreadResponse } from "./threads.js";
 
@@ -76,11 +81,7 @@ export interface ShesmuRequestType {
   pauses: null;
   printquery: ActionFilter;
   purge: ActionFilter[];
-  query: {
-    filters: ActionFilter[];
-    limit: number;
-    skip: number;
-  };
+  query: ActionQueryRequest;
   queryalerts: ServerAlertFilter;
   savedsearches: null;
   simulate: SimulationRequest;

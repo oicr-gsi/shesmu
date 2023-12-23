@@ -1,20 +1,23 @@
 package ca.on.oicr.gsi.shesmu.server;
 
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
-import ca.on.oicr.gsi.shesmu.plugin.filter.*;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
 import ca.on.oicr.gsi.shesmu.server.ActionProcessor.Filter;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
 
 /** Translate JSON-formatted queries into Java objects and perform the query */
-public class Query {
+public final class Query {
 
-  ActionFilter[] filters;
+  private ActionFilter[] filters;
 
-  long limit = 100;
+  private long limit = 100;
 
-  long skip = 0;
+  private String sortBy;
+
+  private long skip = 0;
 
   public ActionFilter[] getFilters() {
     return filters;
@@ -26,6 +29,10 @@ public class Query {
 
   public long getSkip() {
     return skip;
+  }
+
+  public String getSortBy() {
+    return sortBy;
   }
 
   public Filter[] perform(ActionFilterBuilder<Filter, ActionState, String, Instant, Long> builder) {
@@ -45,5 +52,9 @@ public class Query {
 
   public void setSkip(long skip) {
     this.skip = skip;
+  }
+
+  public void setSortBy(String sortBy) {
+    this.sortBy = sortBy;
   }
 }

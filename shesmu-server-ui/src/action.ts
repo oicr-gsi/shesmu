@@ -14,6 +14,7 @@ import {
   collapsible,
   dialog,
   dropdown,
+  dropdownUpdatable,
   group,
   historyState,
   img,
@@ -46,6 +47,7 @@ import {
   combineModels,
   commonPathPrefix,
   computeDuration,
+  individualPropertyModel,
   mapModel,
   mergingModel,
   mutableStoreWatcher,
@@ -96,6 +98,12 @@ export interface Action {
 export interface ActionCommand extends BaseCommand {
   allowBulk: boolean;
 }
+export interface ActionQueryRequest {
+  filters: ActionFilter[];
+  limit: number;
+  skip: number;
+  sortBy?: string | null;
+}
 /**
  * Response from paginated action query endpoint
  */
@@ -104,6 +112,7 @@ export interface ActionQueryResponse {
   total: number;
   results: Action[];
   bulkCommands: BulkCommand[];
+  availableSortKeys: string[];
 }
 interface BaseCommand {
   command: string;
@@ -333,10 +342,15 @@ export function statusDescription(status: Status): string {
 export function actionDisplay(exportSearches: ExportSearchCommand[]): {
   actions: UIElement;
   bulkCommands: UIElement;
+  sortKeys: UIElement;
   model: StatefulModel<ActionFilter[]>;
 } {
   let reload: () => void = () => {};
-  type QueryState = [ActionFilter[], ActionQueryResponse | null];
+  type ActionQueryRequestBase = {
+    filters: ActionFilter[];
+    sortBy: string | null;
+  };
+  type QueryState = [ActionQueryRequestBase, ActionQueryResponse | null];
   type ActionQueryRenderer = (info: QueryState) => UIElement;
   const { model, components } = multipaneState<
     QueryState,
@@ -344,9 +358,10 @@ export function actionDisplay(exportSearches: ExportSearchCommand[]): {
   >(
     "actions",
     {
-      actions: ([_filters, response]: QueryState) =>
-        response
-          ? response.results.length == 0
+      actions: ([_request, response]: QueryState) => {
+        if (response) {
+          sortKeys.model.statusChanged(response.availableSortKeys);
+          return response.results.length == 0
             ? "No actions match."
             : response.results.map((action) => {
                 const css = ["action", `state_${action.state.toLowerCase()}`];
@@ -414,14 +429,20 @@ export function actionDisplay(exportSearches: ExportSearchCommand[]): {
                     preformatted(JSON.stringify(action, null, 2))
                   )
                 );
-              })
-          : "Actions not loaded yet.",
-      bulkCommands: ([filters, response]: QueryState) => [
+              });
+        } else {
+          return "Actions not loaded yet.";
+        }
+      },
+      bulkCommands: ([request, response]: QueryState) => [
         buttonAccessory(
           [{ type: "icon", icon: "cloud-arrow-down" }, "Export Search"],
           "Export this search to a file or the clipboard or for use in other software.",
           () =>
-            exportSearchDialog(standardExports.concat(exportSearches), filters)
+            exportSearchDialog(
+              standardExports.concat(exportSearches),
+              request.filters
+            )
         ),
         response && response.bulkCommands.length
           ? buttonAccessory(
@@ -430,41 +451,45 @@ export function actionDisplay(exportSearches: ExportSearchCommand[]): {
               () =>
                 dialog((_close) =>
                   tableFromRows(
-                    response.bulkCommands
-                      .sort((a, b) => a.buttonText.localeCompare(b.buttonText))
-                      .map(({ buttonText, icon, command }) =>
-                        tableRow(
-                          null,
-                          {
-                            contents: [
-                              { type: "icon", icon: icon },
-                              buttonText,
-                            ],
-                          },
-                          {
-                            contents: button(
-                              "cUrl",
-                              `Copy a cURL command to invoke the ${command} command on the actions selected.`,
-                              () =>
-                                copyCUrlCommand("command", {
-                                  command: command,
-                                  filters: filters,
-                                })
-                            ),
-                          },
-                          {
-                            contents: button(
-                              "Wget",
-                              `Copy a Wget command to invoke the ${command} command on the actions selected.`,
-                              () =>
-                                copyWgetCommand("command", {
-                                  command: command,
-                                  filters: filters,
-                                })
-                            ),
-                          }
-                        )
-                      )
+                    response === null
+                      ? []
+                      : response.bulkCommands
+                          .sort((a, b) =>
+                            a.buttonText.localeCompare(b.buttonText)
+                          )
+                          .map(({ buttonText, icon, command }) =>
+                            tableRow(
+                              null,
+                              {
+                                contents: [
+                                  { type: "icon", icon: icon },
+                                  buttonText,
+                                ],
+                              },
+                              {
+                                contents: button(
+                                  "cUrl",
+                                  `Copy a cURL command to invoke the ${command} command on the actions selected.`,
+                                  () =>
+                                    copyCUrlCommand("command", {
+                                      command: command,
+                                      filters: request.filters,
+                                    })
+                                ),
+                              },
+                              {
+                                contents: button(
+                                  "Wget",
+                                  `Copy a Wget command to invoke the ${command} command on the actions selected.`,
+                                  () =>
+                                    copyWgetCommand("command", {
+                                      command: command,
+                                      filters: request.filters,
+                                    })
+                                ),
+                              }
+                            )
+                          )
                   )
                 )
             )
@@ -475,7 +500,7 @@ export function actionDisplay(exportSearches: ExportSearchCommand[]): {
                 [{ type: "icon", icon: "x-octagon-fill" }, "Purge Actions"],
                 "Remove actions from Shesmu. This does not stop an olive from generating them again.",
                 () =>
-                  fetchJsonWithBusyDialog("purge", filters, (count) => {
+                  fetchJsonWithBusyDialog("purge", request.filters, (count) => {
                     butterForPurgeCount(count);
                     reload();
                   })
@@ -484,14 +509,18 @@ export function actionDisplay(exportSearches: ExportSearchCommand[]): {
                 [{ type: "icon", icon: "cart-x-fill" }, "Drain Actions"],
                 "Remove actions from Shesmu and save them to a file. This does not stop an olive from generating them again.",
                 () =>
-                  fetchJsonWithBusyDialog("drain", filters, (results) => {
-                    saveFile(
-                      JSON.stringify(results, null, 2),
-                      "application/json",
-                      "drained-actions.json"
-                    );
-                    reload();
-                  })
+                  fetchJsonWithBusyDialog(
+                    "drain",
+                    request.filters,
+                    (results) => {
+                      saveFile(
+                        JSON.stringify(results, null, 2),
+                        "application/json",
+                        "drained-actions.json"
+                      );
+                      reload();
+                    }
+                  )
               ),
             ]
           : blank(),
@@ -502,30 +531,48 @@ export function actionDisplay(exportSearches: ExportSearchCommand[]): {
               (command) =>
                 `Perform special command ${command.command} on ${command.count} actions.`,
               (command) =>
-                createCallbackForBulkCommand(command, filters, reload)
+                createCallbackForBulkCommand(command, request.filters, reload)
             )
           : blank(),
       ],
     },
     "bulkCommands"
   );
+
   const io = paginatedRefreshable(
     25,
     "query",
-    (filters, offset, pageLength) => ({
-      filters: filters,
+    (request, offset, pageLength) => ({
+      filters: request ? request.filters : [],
       limit: pageLength,
       skip: offset,
+      sortBy: request ? request.sortBy : null,
     }),
-    (_filters: ActionFilter[] | null, response: ActionQueryResponse | null) =>
-      response ? { offset: response.offset, total: response.total } : null,
+    (
+      query: { filters: ActionFilter[]; sortBy: string | null } | null,
+      response: ActionQueryResponse | null
+    ) => (response ? { offset: response.offset, total: response.total } : null),
     model
   );
   reload = io.model.reload;
+  const { filters, sortBy } = individualPropertyModel<ActionQueryRequestBase>(
+    io.model,
+    { filters: [], sortBy: null }
+  );
+  const sortKeys = dropdownUpdatable<string>(
+    (value, selected) => [
+      selected ? "" : { type: "icon", icon: "sort-down" },
+      value === "" ? "Action Identifier" : `Plugin: ${value}`,
+    ],
+    mapModel(sortBy, (s) => (s == "" ? null : s)),
+    (x, y) => x === y,
+    ""
+  );
   return {
     actions: [io.ui, components.actions],
     bulkCommands: components.bulkCommands,
-    model: io.model,
+    sortKeys: sortKeys.ui,
+    model: filters,
   };
 }
 
@@ -797,6 +844,7 @@ export function initialiseActionDash(
     actions: actionUi,
     bulkCommands,
     model: actionModel,
+    sortKeys: sortKeysUi,
   } = actionDisplay(exportSearches);
   const {
     ui: statsUi,
@@ -1038,9 +1086,10 @@ export function initialiseActionDash(
       [],
       refreshButton(combinedActionsModel.reload),
       buttons,
-      bulkCommands,
-      statsToolbar
+      statsToolbar,
+      sortKeysUi
     ),
+    tile([], bulkCommands),
     tile([], collapsible("Base Search Filter", baseSearchUi, br())),
     tile([], entryBar),
     tabsUi

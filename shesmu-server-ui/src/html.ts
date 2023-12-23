@@ -2497,6 +2497,89 @@ export function dropdownTable<T, S>(
   }
   return container;
 }
+/**
+ * Create a drop down list that can be updated
+ *
+ * @param labelMaker a function to produce a label the user will see for the label
+ * @param model a model to manage this dropdown's state
+ * @returns the UI element to change
+ */
+export function dropdownUpdatable<T>(
+  labelMaker: (input: T, selected: boolean) => DisplayElement,
+  model: StatefulModel<T>,
+  isEqual: (left: T, right: T) => boolean,
+  base: T
+): { ui: UIElement; model: StatefulModel<T[]> } {
+  const activeElement = pane("blank");
+  const container = createUiFromTag("span", activeElement.ui, " ▼");
+  let items: T[] = [];
+  let selectedIndex = -1;
+  activeElement.model.statusChanged(labelMaker(base, true));
+  let allow = false;
+  container.element.className = "dropdown";
+  container.element.addEventListener("click", (e) =>
+    popup(
+      "menu",
+      true,
+      (close) => [
+        buttonIcon(labelMaker(base, false), "", () => {
+          close();
+          if (allow && selectedIndex != -1) {
+            selectedIndex = -1;
+            model.statusChanged(base);
+            activeElement.model.statusChanged(labelMaker(base, true));
+          }
+        }),
+        ...items.map((item, index) =>
+          buttonIcon(labelMaker(item, false), "", () => {
+            close();
+            if (allow && selectedIndex != index) {
+              selectedIndex = index;
+              model.statusChanged(item);
+              activeElement.model.statusChanged(labelMaker(item, true));
+            }
+          })
+        ),
+      ],
+      () => {}
+    )(e)
+  );
+  return {
+    ui: container,
+    model: {
+      reload: function (): void {},
+      statusChanged: function (input: T[]): void {
+        if (selectedIndex != -1) {
+          const index = input.findIndex((value) =>
+            isEqual(value, items[selectedIndex])
+          );
+          if (index == -1) {
+            selectedIndex = -1;
+            model.statusChanged(base);
+            activeElement.model.statusChanged(labelMaker(base, true));
+          } else {
+            selectedIndex = index;
+          }
+        }
+        allow = true;
+        items = input;
+      },
+      statusWaiting: function (): void {
+        allow = false;
+      },
+      statusFailed: function (
+        message: string,
+        retry: (() => void) | null
+      ): void {
+        allow = false;
+        activeElement.model.statusChanged([
+          message,
+          button("Retry", "Reload data", retry ? () => retry() : () => {}),
+        ]);
+      },
+    },
+  };
+}
 
 /**
  * Create a group of elements with flexbox layout

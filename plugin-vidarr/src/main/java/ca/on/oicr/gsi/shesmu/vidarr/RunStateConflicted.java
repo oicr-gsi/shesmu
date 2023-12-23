@@ -9,6 +9,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.Stream;
 
 final class RunStateConflicted extends RunState {
@@ -45,6 +46,11 @@ final class RunStateConflicted extends RunState {
   }
 
   @Override
+  public OptionalInt getAttempt() {
+    return OptionalInt.empty();
+  }
+
+  @Override
   public PerformResult perform(
       URI vidarrUrl,
       SubmitWorkflowRequest request,
@@ -67,6 +73,16 @@ final class RunStateConflicted extends RunState {
   @Override
   public long retryMinutes() {
     return 60;
+  }
+
+  @Override
+  public OptionalInt sortKey(String key) {
+    return OptionalInt.empty();
+  }
+
+  @Override
+  public Stream<String> sortKeys() {
+    return Stream.empty();
   }
 
   @Override

@@ -40,11 +40,28 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.*;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -1674,8 +1691,33 @@ public final class ActionProcessor
    *
    * @param filters the filters to match
    */
-  public Stream<ObjectNode> stream(SourceLocationLinker linker, Filter... filters) {
-    return startStream(filters).map(entry -> makeActionJson(linker, entry, true));
+  public Stream<ObjectNode> stream(
+      SourceLocationLinker linker,
+      Optional<String> customSortKey,
+      Consumer<String> availableSortKeys,
+      Filter... filters) {
+    final Comparator<Map.Entry<Action, Information>> comparator =
+        customSortKey
+            .map(
+                custom ->
+                    (Comparator<Entry<Action, Information>>)
+                        (left, right) -> {
+                          final var leftValue = left.getKey().sortKey(custom);
+                          final var rightValue = right.getKey().sortKey(custom);
+                          var result = Boolean.compare(leftValue.isEmpty(), rightValue.isEmpty());
+                          if (result == 0 && leftValue.isPresent()) {
+                            result = Integer.compare(rightValue.getAsInt(), leftValue.getAsInt());
+                          }
+                          if (result == 0) {
+                            result = left.getValue().id.compareTo(right.getValue().id);
+                          }
+                          return result;
+                        })
+            .orElse(Comparator.comparing(e -> e.getValue().id));
+    return startStream(filters)
+        .sorted(comparator)
+        .peek(e -> e.getKey().sortKeys().forEach(availableSortKeys))
+        .map(entry -> makeActionJson(linker, entry, true));
   }
 
   public Stream<String> tags(Filter... filters) {

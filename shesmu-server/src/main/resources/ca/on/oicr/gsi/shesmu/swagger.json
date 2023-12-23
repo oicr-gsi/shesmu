@@ -1822,6 +1822,9 @@
                   },
                   "skip": {
                     "type": "integer"
+                  },
+                  "sortBy": {
+                    "type": "string"
                   }
                 },
                 "type": "object"
@@ -1837,6 +1840,12 @@
               "application/json": {
                 "schema": {
                   "properties": {
+                    "availableSortKeys": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
                     "bulkCommands": {
                       "items": {
                         "$ref": "#/components/schemas/Command"

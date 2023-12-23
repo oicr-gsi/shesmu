@@ -32,6 +32,7 @@ import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.Month;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -102,6 +103,7 @@ public final class StandardDefinitions implements DefinitionRepository {
   private static final Type A_CHAR_SEQUENCE_TYPE = Type.getType(CharSequence.class);
   private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
   private static final Type A_JSON_SIGNATURE_TYPE = Type.getType(JsonSigner.class);
+  private static final Type A_MAP_TYPE = Type.getType(Map.class);
   private static final Type A_NOTHING_ACTION_TYPE = Type.getType(NothingAction.class);
   private static final Type A_PATHS_TYPE = Type.getType(Paths.class);
   private static final Type A_PATH_TYPE = Type.getType(Path.class);
@@ -784,6 +786,33 @@ public final class StandardDefinitions implements DefinitionRepository {
                 @Override
                 public Imyhat type() {
                   return Imyhat.STRING;
+                }
+              },
+              new ActionParameterDefinition() {
+
+                @Override
+                public String name() {
+
+                  return "sorting";
+                }
+
+                @Override
+                public boolean required() {
+                  return false;
+                }
+
+                @Override
+                public void store(
+                    Renderer renderer, int actionLocal, Consumer<Renderer> loadParameter) {
+                  renderer.methodGen().loadLocal(actionLocal);
+                  renderer.methodGen().checkCast(A_NOTHING_ACTION_TYPE);
+                  loadParameter.accept(renderer);
+                  renderer.methodGen().putField(A_NOTHING_ACTION_TYPE, "sorting", A_MAP_TYPE);
+                }
+
+                @Override
+                public Imyhat type() {
+                  return Imyhat.dictionary(Imyhat.STRING, Imyhat.INTEGER);
                 }
               })) {
         @Override

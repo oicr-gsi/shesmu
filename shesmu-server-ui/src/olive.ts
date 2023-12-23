@@ -322,6 +322,7 @@ export function initialiseOliveDash(
   const {
     actions,
     bulkCommands,
+    sortKeys,
     model: actionsModel,
   } = actionDisplay(exportSearches);
   const search = createSearch(
@@ -590,8 +591,10 @@ export function initialiseOliveDash(
       pauseOliveButton,
       pauseFileButton,
       statsToolbar,
-      bulkCommands,
-      helpArea("olive")
+      sortKeys,
+      helpArea("olive"),
+      br(),
+      bulkCommands
     ),
     br(),
     ui,
