@@ -43,7 +43,7 @@ abstract class RunState {
     }
   }
 
-  public abstract boolean canReattempt();
+  public abstract AvailableCommands commands();
 
   public abstract boolean delete(URI vidarrUrl);
 
@@ -58,6 +58,8 @@ abstract class RunState {
       throws IOException, InterruptedException;
 
   public abstract Optional<RunState> reattempt();
+
+  public abstract boolean retry(URI vidarrUrl);
 
   public abstract long retryMinutes();
 
