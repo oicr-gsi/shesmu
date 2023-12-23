@@ -14,8 +14,8 @@ import java.util.stream.Stream;
 final class RunStateDead extends RunState {
 
   @Override
-  public boolean canReattempt() {
-    return false;
+  public AvailableCommands commands() {
+    return AvailableCommands.RESET_ONLY;
   }
 
   @Override
@@ -41,6 +41,11 @@ final class RunStateDead extends RunState {
   @Override
   public Optional<RunState> reattempt() {
     return Optional.empty();
+  }
+
+  @Override
+  public boolean retry(URI vidarrUrl) {
+    return false;
   }
 
   @Override

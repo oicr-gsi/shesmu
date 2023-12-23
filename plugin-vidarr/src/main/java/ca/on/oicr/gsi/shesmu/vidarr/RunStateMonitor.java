@@ -1,7 +1,10 @@
 package ca.on.oicr.gsi.shesmu.vidarr;
 
+import static ca.on.oicr.gsi.shesmu.vidarr.VidarrPlugin.MAPPER;
+
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.vidarr.JsonBodyHandler;
+import ca.on.oicr.gsi.vidarr.api.RetryProvisionOutRequest;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
 import ca.on.oicr.gsi.vidarr.api.WorkflowRunStatusResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,9 +12,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -56,7 +61,7 @@ final class RunStateMonitor extends RunState {
     final var response =
         VidarrPlugin.CLIENT.send(
             HttpRequest.newBuilder(workflowRunUrl).GET().build(),
-            new JsonBodyHandler<>(VidarrPlugin.MAPPER, WorkflowRunStatusResponse.class));
+            new JsonBodyHandler<>(MAPPER, WorkflowRunStatusResponse.class));
     if (response.statusCode() == 200) {
       final var result = response.body().get();
       final var status = actionStatusForWorkflowRun(result);
@@ -88,20 +93,35 @@ final class RunStateMonitor extends RunState {
   }
 
   @Override
-  public boolean canReattempt() {
+  public AvailableCommands commands() {
+    // Failed during provision out may be retried
+    if (status.getEnginePhase() != null
+        && (status.getEnginePhase().equals("FAILED")
+            && status.getOperations() != null
+            && status.getOperations().stream()
+                .anyMatch(
+                    operation ->
+                        operation.getEnginePhase().equals("PROVISION_OUT")
+                            && operation.getStatus().equals("FAILED")))) {
+      return AvailableCommands.CAN_RETRY;
+    } else if (
     // Failed operations may reattempt
-    return status.getOperationStatus().equals("FAILED")
+    status.getOperationStatus().equals("FAILED")
         // as may engine failures
         || (status.getEnginePhase() != null
             && (status.getEnginePhase().equals("WAITING_FOR_RESOURCES")
                 || status.getEnginePhase().equals("FAILED")))
         // Succeeded actions may not but otherwise-empty engine status probably
-        || (status.getEnginePhase() == null && !status.getOperationStatus().equals("N/A"));
+        || (status.getEnginePhase() == null && !status.getOperationStatus().equals("N/A"))) {
+      return AvailableCommands.CAN_REATTEMPT;
+    } else {
+      return AvailableCommands.RESET_ONLY;
+    }
   }
 
   @Override
   public boolean delete(URI vidarrUrl) {
-    if (canReattempt()) {
+    if (commands().canRetry()) {
       try {
         final var response =
             VidarrPlugin.CLIENT.send(
@@ -110,6 +130,32 @@ final class RunStateMonitor extends RunState {
                     .build(),
                 BodyHandlers.discarding());
         return response.statusCode() == 200;
+      } catch (InterruptedException | IOException e) {
+        e.printStackTrace();
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+
+  @Override
+  public boolean retry(URI vidarrUrl) {
+    if (commands().canRetry()) {
+      try {
+        final var request = new RetryProvisionOutRequest();
+        request.setWorkflowRunIds(List.of(status.getId()));
+        final var response =
+            VidarrPlugin.CLIENT.send(
+                HttpRequest.newBuilder(vidarrUrl.resolve("/api/retry-provision-out"))
+                    .POST(BodyPublishers.ofByteArray(MAPPER.writeValueAsBytes(request)))
+                    .build(),
+                new JsonBodyHandler<>(MAPPER, String[].class));
+        if (response.statusCode() != 200) {
+          return false;
+        }
+        final var ids = response.body().get();
+        return Arrays.asList(ids).contains(status.getId());
       } catch (InterruptedException | IOException e) {
         e.printStackTrace();
         return false;
@@ -137,7 +183,7 @@ final class RunStateMonitor extends RunState {
 
   @Override
   public Optional<RunState> reattempt() {
-    return canReattempt()
+    return commands().canRetry()
         ? Optional.of(new RunStateAttemptSubmit(status.getAttempt() + 1))
         : Optional.empty();
   }

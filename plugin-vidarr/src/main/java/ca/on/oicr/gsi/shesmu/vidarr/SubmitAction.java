@@ -2,11 +2,9 @@ package ca.on.oicr.gsi.shesmu.vidarr;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
-import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
-import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
@@ -34,54 +32,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class SubmitAction extends Action {
-  private static final ActionCommand<SubmitAction> DELETE =
-      new ActionCommand<>(
-          SubmitAction.class,
-          "VIDARR-DELETE",
-          FrontEndIcon.PLUG,
-          "Delete and Purge",
-          Preference.ALLOW_BULK,
-          Preference.PROMPT,
-          Preference.ANNOY_USER) {
-        @Override
-        protected Response execute(SubmitAction action, Optional<String> user) {
-          return action.owner.get().url().map(action.state::delete).orElse(false)
-              ? Response.PURGE
-              : Response.IGNORED;
-        }
-      };
+
   static final Imyhat EXTERNAL_IDS =
       new ObjectImyhat(
               Stream.of(new Pair<>("id", Imyhat.STRING), new Pair<>("provider", Imyhat.STRING)))
           .asList();
-  private static final ActionCommand<SubmitAction> REATTEMPT =
-      new ActionCommand<>(
-          SubmitAction.class,
-          "VIDARR-REATTEMPT",
-          FrontEndIcon.ARROW_REPEAT,
-          "Reattempt Failed Workflow",
-          Preference.PROMPT,
-          Preference.ALLOW_BULK) {
-        @Override
-        protected Response execute(SubmitAction action, Optional<String> user) {
-          final var result = action.state.reattempt();
-          result.ifPresent(s -> action.state = s);
-          return result.isPresent() ? Response.RESET : Response.IGNORED;
-        }
-      };
-  private static final ActionCommand<SubmitAction> RESET =
-      new ActionCommand<>(
-          SubmitAction.class,
-          "VIDARR-RESET",
-          FrontEndIcon.PLUG,
-          "Search Vidarr Again",
-          Preference.ALLOW_BULK) {
-        @Override
-        protected Response execute(SubmitAction action, Optional<String> user) {
-          action.state = new RunStateAttemptSubmit();
-          return Response.RESET;
-        }
-      };
 
   private static boolean checkJson(JsonNode json, Pattern query) {
     switch (json.getNodeType()) {
@@ -117,12 +72,12 @@ public final class SubmitAction extends Action {
   }
 
   private List<String> errors = List.of();
-  private final Supplier<VidarrPlugin> owner;
+  final Supplier<VidarrPlugin> owner;
   private int priority;
   final SubmitWorkflowRequest request = new SubmitWorkflowRequest();
   private final Set<String> services = new TreeSet<>(List.of("vidarr"));
   private boolean stale;
-  private RunState state = new RunStateAttemptSubmit();
+  RunState state = new RunStateAttemptSubmit();
   private SubmissionPolicy submissionPolicy;
   private final List<String> tags;
 
@@ -149,7 +104,7 @@ public final class SubmitAction extends Action {
 
   @Override
   public Stream<ActionCommand<?>> commands() {
-    return state.canReattempt() ? Stream.of(DELETE, REATTEMPT, RESET) : Stream.of(RESET);
+    return state.commands().commands();
   }
 
   @Override
