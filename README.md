@@ -33,6 +33,7 @@ the provenance data.
 - [Shesmu Glossary](glossary.md)
 - [Shesmu FAQ](faq.md)
 - [Ask your doctor if Shesmu is right for you](ask-your-doctor.md)
+- [JSON-Defined Input Formats](json-defined-input-formats.md)
 - [Plugin Implementation Guide](implementation.md)
 - [Compiler Hacking](compiler-hacking.md)
 

@@ -10,7 +10,7 @@ import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.server.plugins.BaseInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicActionParameterDescriptor;
 import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicRefillerParameterDescriptor;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
@@ -33,11 +33,32 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.time.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.*;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -216,8 +237,7 @@ public final class RuntimeSupport {
   public static CallSite inputBootstrap(
       Lookup lookup, String variableName, MethodType methodType, String inputFormatName) {
     // This is redirects to the input format manager; it's here to limit our export interface
-    return AnnotatedInputFormatDefinition.bootstrap(
-        lookup, variableName, methodType, inputFormatName);
+    return BaseInputFormatDefinition.bootstrap(lookup, variableName, methodType, inputFormatName);
   }
 
   @RuntimeInterop
@@ -578,8 +598,8 @@ public final class RuntimeSupport {
   }
 
   /**
-   * This is a boot-strap method for <code>INVOKE DYNAMIC</code> to match a regular expression
-   * (which is the method name).
+   * This is a boot-strap method for <tt>INVOKE DYNAMIC</tt> to match a regular expression (which is
+   * the method name).
    */
   @RuntimeInterop
   public static CallSite regexBootstrap(

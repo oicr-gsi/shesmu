@@ -2,12 +2,20 @@ package ca.on.oicr.gsi.shesmu;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
-import ca.on.oicr.gsi.shesmu.compiler.*;
+import ca.on.oicr.gsi.shesmu.compiler.CallableDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.CallableDefinitionRenderer;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
+import ca.on.oicr.gsi.shesmu.compiler.OliveClauseNodeGroupWithGrouper;
+import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition.ConstantLoader;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository.CallableOliveDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
@@ -24,7 +32,11 @@ import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
-import ca.on.oicr.gsi.shesmu.plugin.filter.*;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
+import ca.on.oicr.gsi.shesmu.plugin.filter.AlertFilter;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ExportSearch;
+import ca.on.oicr.gsi.shesmu.plugin.filter.SourceOliveLocation;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -33,14 +45,42 @@ import ca.on.oicr.gsi.shesmu.plugin.wdl.WdlInputType;
 import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import ca.on.oicr.gsi.shesmu.server.*;
+import ca.on.oicr.gsi.shesmu.server.ActionProcessor;
 import ca.on.oicr.gsi.shesmu.server.ActionProcessor.Filter;
+import ca.on.oicr.gsi.shesmu.server.BaseHotloadingCompiler;
+import ca.on.oicr.gsi.shesmu.server.CommandRequest;
+import ca.on.oicr.gsi.shesmu.server.FunctionRequest;
+import ca.on.oicr.gsi.shesmu.server.FunctionRunner;
+import ca.on.oicr.gsi.shesmu.server.FunctionRunnerCompiler;
+import ca.on.oicr.gsi.shesmu.server.GuidedMeditation;
+import ca.on.oicr.gsi.shesmu.server.InputSource;
+import ca.on.oicr.gsi.shesmu.server.MasterRunner;
+import ca.on.oicr.gsi.shesmu.server.MeditationCompilationRequest;
+import ca.on.oicr.gsi.shesmu.server.MetroDiagram;
+import ca.on.oicr.gsi.shesmu.server.Query;
+import ca.on.oicr.gsi.shesmu.server.SavedSearch;
+import ca.on.oicr.gsi.shesmu.server.ShesmuThreadFactory;
+import ca.on.oicr.gsi.shesmu.server.SimulateExistingRequest;
+import ca.on.oicr.gsi.shesmu.server.SimulateRequest;
+import ca.on.oicr.gsi.shesmu.server.StaticActions;
+import ca.on.oicr.gsi.shesmu.server.TypeParseRequest;
+import ca.on.oicr.gsi.shesmu.server.TypeParseResponse;
 import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.BaseHumanTypeParser;
+import ca.on.oicr.gsi.shesmu.server.plugins.BaseInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.JarHashRepository;
+import ca.on.oicr.gsi.shesmu.server.plugins.JsonInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
-import ca.on.oicr.gsi.status.*;
+import ca.on.oicr.gsi.status.BasePage;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.Header;
+import ca.on.oicr.gsi.status.NavigationMenu;
+import ca.on.oicr.gsi.status.SectionRenderer;
+import ca.on.oicr.gsi.status.ServerConfig;
+import ca.on.oicr.gsi.status.StatusPage;
+import ca.on.oicr.gsi.status.TablePage;
+import ca.on.oicr.gsi.status.TableRowWriter;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -56,9 +96,17 @@ import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.common.TextFormat;
 import io.prometheus.client.hotspot.DefaultExports;
-import java.io.*;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.lang.management.ManagementFactory;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -68,10 +116,30 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
 import java.util.Base64;
-import java.util.concurrent.*;
-import java.util.function.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Scanner;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -284,7 +352,9 @@ public final class Server implements ServerConfig, ActionServices {
     final InputSource inputSource =
         (format, readStale) ->
             ErrorableStream.concatWithErrors(
-                    AnnotatedInputFormatDefinition.formats(), Stream.of(pluginManager, processor))
+                    AnnotatedInputFormatDefinition.formats(),
+                    ErrorableStream.concatWithErrors(
+                        JsonInputFormatDefinition.formats(), Stream.of(pluginManager, processor)))
                 .flatMap(source -> source.fetch(format, readStale));
     master =
         new MasterRunner(
@@ -485,7 +555,7 @@ public final class Server implements ServerConfig, ActionServices {
           }
         });
 
-    AnnotatedInputFormatDefinition.formats()
+    Stream.concat(AnnotatedInputFormatDefinition.formats(), JsonInputFormatDefinition.formats())
         .sorted(Comparator.comparing(InputFormatDefinition::name))
         .forEach(
             format ->
@@ -552,7 +622,9 @@ public final class Server implements ServerConfig, ActionServices {
                         staticActions.listConfiguration(),
                         guidedMeditations.stream().map(GuidedMeditation::configuration),
                         AnnotatedInputFormatDefinition.formats()
-                            .flatMap(AnnotatedInputFormatDefinition::configuration))
+                            .flatMap(AnnotatedInputFormatDefinition::configuration),
+                        JsonInputFormatDefinition.formats()
+                            .flatMap(JsonInputFormatDefinition::configuration))
                     .flatMap(Function.identity());
               }
             }.renderPage(os);
@@ -905,7 +977,9 @@ public final class Server implements ServerConfig, ActionServices {
 
               @Override
               protected void renderContent(XMLStreamWriter writer) {
-                AnnotatedInputFormatDefinition.formats()
+                Stream.concat(
+                        AnnotatedInputFormatDefinition.formats(),
+                        JsonInputFormatDefinition.formats())
                     .sorted(Comparator.comparing(InputFormatDefinition::name))
                     .forEach(
                         format -> {
@@ -1185,6 +1259,7 @@ public final class Server implements ServerConfig, ActionServices {
                 pluginManager.dumpPluginConfig(row);
                 AnnotatedInputFormatDefinition.formats()
                     .forEach(format -> format.dumpPluginConfig(row));
+                JsonInputFormatDefinition.formats().forEach(format -> format.dumpPluginConfig(row));
               }
             }.renderPage(os);
           }
@@ -1935,7 +2010,8 @@ public final class Server implements ServerConfig, ActionServices {
         "/variables",
         (mapper, query) -> {
           final var node = mapper.createObjectNode();
-          AnnotatedInputFormatDefinition.formats()
+          Stream.concat(
+                  AnnotatedInputFormatDefinition.formats(), JsonInputFormatDefinition.formats())
               .forEach(
                   source -> {
                     final var sourceNode = node.putObject(source.name());
@@ -1966,7 +2042,7 @@ public final class Server implements ServerConfig, ActionServices {
           return node;
         });
 
-    AnnotatedInputFormatDefinition.formats()
+    Stream.concat(AnnotatedInputFormatDefinition.formats(), JsonInputFormatDefinition.formats())
         .forEach(
             format -> {
               add(
@@ -2635,10 +2711,7 @@ public final class Server implements ServerConfig, ActionServices {
   }
 
   public void downloadInputData(
-      HttpExchange t,
-      InputSource inputSource,
-      AnnotatedInputFormatDefinition format,
-      boolean readStale)
+      HttpExchange t, InputSource inputSource, BaseInputFormatDefinition format, boolean readStale)
       throws IOException {
 
     if (!readStale
