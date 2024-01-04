@@ -30,6 +30,7 @@ import ca.on.oicr.gsi.shesmu.server.InputSource;
 import ca.on.oicr.gsi.shesmu.server.ShesmuThreadFactory;
 import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.CallSiteRegistry;
+import ca.on.oicr.gsi.shesmu.server.plugins.JsonInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
@@ -776,7 +777,10 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
           .register();
   private static final CallSiteRegistry<String> SCRIPT_REGISTRY = new CallSiteRegistry<>();
   public static final NameLoader<InputFormatDefinition> SOURCES =
-      new NameLoader<>(AnnotatedInputFormatDefinition.formats(), InputFormatDefinition::name);
+      new NameLoader<>(
+          Stream.concat(
+              AnnotatedInputFormatDefinition.formats(), JsonInputFormatDefinition.formats()),
+          InputFormatDefinition::name);
   private static final Gauge compileTime =
       Gauge.build(
               "shesmu_source_compile_time",
