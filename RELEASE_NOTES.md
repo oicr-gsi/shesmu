@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.29.0] - 2024-01-11
+
+### Changed
+
+* Table files such as .lookup and .commalookup support comments with #
+
+
 ## [1.28.0] - 2023-10-26
 
 ### Changed
