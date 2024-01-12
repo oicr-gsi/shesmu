@@ -54,7 +54,7 @@ public abstract class ValueCache<S> implements Owner {
    * @param name the name, as presented to Prometheus
    * @param ttl the number of minutes an item will remain in cache
    */
-  public ValueCache(String name, int ttl, RecordFactory<S, S> recordCtor) {
+  public ValueCache(String name, int ttl, RecordFactory<S> recordCtor) {
     super();
     this.name = name;
     this.ttl = ttl;

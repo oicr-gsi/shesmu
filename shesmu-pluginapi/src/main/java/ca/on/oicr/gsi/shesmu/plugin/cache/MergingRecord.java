@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 public final class MergingRecord<V, I> extends BaseRecord<Stream<V>, List<V>> {
 
   /** Merge records by the supplied id */
-  public static <V, I> RecordFactory<Stream<V>, Stream<V>> by(Function<V, I> getId) {
+  public static <V, I> RecordFactory<Stream<V>> by(Function<V, I> getId) {
     return fetcher -> new MergingRecord<>(fetcher, getId);
   }
 

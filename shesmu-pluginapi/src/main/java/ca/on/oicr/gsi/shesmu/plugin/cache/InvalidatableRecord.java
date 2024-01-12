@@ -14,7 +14,7 @@ public class InvalidatableRecord<V> implements Record<Optional<V>> {
    * @param isValid the predicate to check if the cached value is still valid
    * @param destructor the clean up procedure
    */
-  public static <V> RecordFactory<Optional<V>, Optional<V>> checking(
+  public static <V> RecordFactory<Optional<V>> checking(
       Predicate<? super V> isValid, Consumer<? super V> destructor) {
     return (fetcher) -> new InvalidatableRecord<>(fetcher, isValid, destructor);
   }
