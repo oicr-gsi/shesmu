@@ -54,8 +54,7 @@ import net.schmizz.sshj.sftp.SFTPException;
 public class SftpServer extends JsonPluginFile<Configuration> {
 
   private class FileAttributeCache
-      extends KeyValueCache<
-          Pair<Path, Boolean>, Optional<AlgebraicValue>, Optional<AlgebraicValue>> {
+      extends KeyValueCache<Pair<Path, Boolean>, Optional<AlgebraicValue>> {
     public FileAttributeCache(Path fileName) {
       super("sftp " + fileName.toString(), 10, SimpleRecord::new);
     }
@@ -472,7 +471,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
       final var returns = entry.getValue().getReturns();
       final var parameters = entry.getValue().getParameters().toArray(Imyhat[]::new);
       final var cache =
-          new KeyValueCache<Tuple, Optional<Object>, Optional<Object>>(
+          new KeyValueCache<Tuple, Optional<Object>>(
               String.format("sftp-function %s %s", fileName(), entry.getKey()),
               entry.getValue().getTtl(),
               SimpleRecord::new) {

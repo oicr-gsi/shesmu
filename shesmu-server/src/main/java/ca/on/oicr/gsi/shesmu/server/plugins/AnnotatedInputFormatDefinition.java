@@ -151,7 +151,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   }
 
   private class DynamicInputDataSourceFromJsonStream implements DynamicInputDataSource {
-    private final LabelledKeyValueCache<Object, String, Stream<Object>, Stream<Object>> cache;
+    private final LabelledKeyValueCache<Object, String, Stream<Object>> cache;
 
     public DynamicInputDataSourceFromJsonStream(
         String name, int ttl, DynamicInputJsonSource source) {
@@ -195,7 +195,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   }
 
   private class InputDataSourceFromJsonStream implements InputDataSource {
-    private final ValueCache<Stream<Object>, Stream<Object>> cache;
+    private final ValueCache<Stream<Object>> cache;
 
     public InputDataSourceFromJsonStream(String name, int ttl, JsonInputSource source) {
       cache =
@@ -236,7 +236,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     private final ConfigurationSection configuration;
     private volatile boolean dirty = true;
     private final String fileName;
-    private final ValueCache<Optional<List<Object>>, Optional<List<Object>>> values;
+    private final ValueCache<Optional<List<Object>>> values;
 
     public LocalJsonFile(Path fileName) {
       this.fileName = fileName.toString();
@@ -302,7 +302,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   }
 
   private class RemoteJsonSource implements WatchedFileListener {
-    private class RemoteReloader extends ValueCache<Stream<Object>, Stream<Object>> {
+    private class RemoteReloader extends ValueCache<Stream<Object>> {
       public RemoteReloader(Path fileName) {
         super("remotejson " + format.name() + " " + fileName.toString(), 10, ReplacingRecord::new);
       }
@@ -332,7 +332,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
       }
     }
 
-    private final ValueCache<Stream<Object>, Stream<Object>> cache;
+    private final ValueCache<Stream<Object>> cache;
     private Optional<Configuration> config = Optional.empty();
     private final Path fileName;
 

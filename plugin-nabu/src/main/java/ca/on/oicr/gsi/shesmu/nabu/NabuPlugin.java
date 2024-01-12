@@ -21,8 +21,7 @@ import java.util.stream.Stream;
 
 public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
 
-  private final class CaseArchiveCache
-      extends ValueCache<Stream<NabuCaseArchiveValue>, Stream<NabuCaseArchiveValue>> {
+  private final class CaseArchiveCache extends ValueCache<Stream<NabuCaseArchiveValue>> {
 
     private CaseArchiveCache(Path fileName) {
       super("case_archive " + fileName.toString(), 30, ReplacingRecord::new);
@@ -70,8 +69,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
     }
   }
 
-  private final class FileQcCache
-      extends ValueCache<Stream<NabuFileQcValue>, Stream<NabuFileQcValue>> {
+  private final class FileQcCache extends ValueCache<Stream<NabuFileQcValue>> {
 
     private FileQcCache(Path fileName) {
       super("file_qc " + fileName.toString(), 30, ReplacingRecord::new);

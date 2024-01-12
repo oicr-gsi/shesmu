@@ -19,12 +19,11 @@ import java.util.stream.Stream;
  * @param <K> the keys to use to lookup data in the cache
  * @param <L> the "label" associated with a key; this allows a key's lifecycle to be different from
  *     its data's
- * @param <S> the state that is stored in the cache
  * @param <V> the values retrievable from the cache based on state and key
  */
-public abstract class LabelledKeyValueCache<K, L, S, V>
+public abstract class LabelledKeyValueCache<K, L, V>
     implements Owner, Iterable<Map.Entry<L, Record<V>>> {
-  private class LabelledKeyValueUpdater implements Updater<S> {
+  private class LabelledKeyValueUpdater implements Updater<V> {
     private final K key;
     private final L label;
 
@@ -44,7 +43,7 @@ public abstract class LabelledKeyValueCache<K, L, S, V>
     }
 
     @Override
-    public S update(Instant lastModified) throws Exception {
+    public V update(Instant lastModified) throws Exception {
       var cpuStart = Owner.CPU_TIME.getAsDouble();
       try (final var _ignored = fetchTime.start(name)) {
         return fetch(key, label, lastModified);
@@ -54,7 +53,7 @@ public abstract class LabelledKeyValueCache<K, L, S, V>
     }
   }
 
-  private static final Map<String, SoftReference<LabelledKeyValueCache<?, ?, ?, ?>>> CACHES =
+  private static final Map<String, SoftReference<LabelledKeyValueCache<?, ?, ?>>> CACHES =
       new ConcurrentHashMap<>();
   private static final Gauge count =
       Gauge.build("shesmu_cache_lkv_item_count", "Number of items in a cache.")
@@ -81,7 +80,7 @@ public abstract class LabelledKeyValueCache<K, L, S, V>
           .labelNames("name")
           .register();
 
-  public static Stream<? extends LabelledKeyValueCache<?, ?, ?, ?>> caches() {
+  public static Stream<? extends LabelledKeyValueCache<?, ?, ?>> caches() {
     return CACHES.values().stream().map(SoftReference::get).filter(Objects::nonNull);
   }
 
@@ -89,7 +88,7 @@ public abstract class LabelledKeyValueCache<K, L, S, V>
 
   private final String name;
 
-  private final RecordFactory<S, V> recordCtor;
+  private final RecordFactory<V, V> recordCtor;
   private final Map<L, Record<V>> records = new ConcurrentHashMap<>();
   private int ttl;
 
@@ -99,7 +98,7 @@ public abstract class LabelledKeyValueCache<K, L, S, V>
    * @param name the name, as presented to Prometheus
    * @param ttl the number of minutes an item will remain in cache
    */
-  public LabelledKeyValueCache(String name, int ttl, RecordFactory<S, V> recordCtor) {
+  public LabelledKeyValueCache(String name, int ttl, RecordFactory<V, V> recordCtor) {
     super();
     this.name = name;
     this.ttl = ttl;
@@ -118,7 +117,7 @@ public abstract class LabelledKeyValueCache<K, L, S, V>
    * @return the cached value
    * @throws Exception if an error occurs, the previous value will be retained
    */
-  protected abstract S fetch(K key, L label, Instant lastUpdated) throws Exception;
+  protected abstract V fetch(K key, L label, Instant lastUpdated) throws Exception;
 
   /**
    * Get an item from cache

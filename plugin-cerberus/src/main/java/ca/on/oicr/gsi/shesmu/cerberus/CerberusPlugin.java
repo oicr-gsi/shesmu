@@ -32,8 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class CerberusPlugin extends JsonPluginFile<Configuration> {
-  private class FileProvenanceCache
-      extends ValueCache<Optional<FileProvenanceOutput>, Optional<FileProvenanceOutput>> {
+  private class FileProvenanceCache extends ValueCache<Optional<FileProvenanceOutput>> {
 
     public FileProvenanceCache(String name) {
       super("cerberus-fpr " + name, 10, SimpleRecord::new);

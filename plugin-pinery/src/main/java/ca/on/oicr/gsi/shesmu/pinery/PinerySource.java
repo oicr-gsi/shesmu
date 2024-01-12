@@ -46,8 +46,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
    * This input format filters out skipped samples and lanes, and provides only items that would be
    * desirable to analyze.
    */
-  private final class AnalysisItemCache
-      extends ValueCache<Stream<PineryIUSForAnalysisValue>, Stream<PineryIUSForAnalysisValue>> {
+  private final class AnalysisItemCache extends ValueCache<Stream<PineryIUSForAnalysisValue>> {
     private AnalysisItemCache(Path fileName) {
       super("pinery " + fileName.toString(), 30, ReplacingRecord::new);
     }
@@ -326,8 +325,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
   /** This input format includes skipped samples and lanes. */
   private final class IncludeSkippedItemCache
-      extends ValueCache<
-          Stream<PineryIUSIncludeSkippedValue>, Stream<PineryIUSIncludeSkippedValue>> {
+      extends ValueCache<Stream<PineryIUSIncludeSkippedValue>> {
     private IncludeSkippedItemCache(Path fileName) {
       super("pinery-include-skipped " + fileName.toString(), 30, ReplacingRecord::new);
     }
@@ -602,8 +600,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     }
   }
 
-  private final class PlatformCache
-      extends ValueCache<Optional<Map<String, String>>, Optional<Map<String, String>>> {
+  private final class PlatformCache extends ValueCache<Optional<Map<String, String>>> {
     private PlatformCache(Path fileName) {
       super("pinery-platform " + fileName.toString(), 30, SimpleRecord::new);
     }
@@ -629,8 +626,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     }
   }
 
-  private class ProjectCache
-      extends ValueCache<Stream<SampleProjectDto>, Stream<SampleProjectDto>> {
+  private class ProjectCache extends ValueCache<Stream<SampleProjectDto>> {
 
     public ProjectCache(Path fileName) {
       super(

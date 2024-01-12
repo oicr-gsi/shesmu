@@ -49,8 +49,7 @@ import java.util.stream.Stream;
 
 public class VidarrPlugin extends JsonPluginFile<Configuration> {
 
-  private class MaxInFlightCache
-      extends ValueCache<Optional<MaxInFlightDeclaration>, Optional<MaxInFlightDeclaration>> {
+  private class MaxInFlightCache extends ValueCache<Optional<MaxInFlightDeclaration>> {
 
     public MaxInFlightCache(String name) {
       super("max-in-flight " + name, 10, SimpleRecord::new);
@@ -76,8 +75,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
     }
   }
 
-  private class WorkflowRunInformationCache
-      extends KeyValueCache<String, Optional<Tuple>, Optional<Tuple>> {
+  private class WorkflowRunInformationCache extends KeyValueCache<String, Optional<Tuple>> {
 
     public WorkflowRunInformationCache(String instanceName) {
       super("workflow-info " + instanceName, 10, SimpleRecord::new);
