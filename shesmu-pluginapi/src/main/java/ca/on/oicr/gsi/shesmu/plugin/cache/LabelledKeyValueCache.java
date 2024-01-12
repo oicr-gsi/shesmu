@@ -88,7 +88,7 @@ public abstract class LabelledKeyValueCache<K, L, V>
 
   private final String name;
 
-  private final RecordFactory<V, V> recordCtor;
+  private final RecordFactory<V> recordCtor;
   private final Map<L, Record<V>> records = new ConcurrentHashMap<>();
   private int ttl;
 
@@ -98,7 +98,7 @@ public abstract class LabelledKeyValueCache<K, L, V>
    * @param name the name, as presented to Prometheus
    * @param ttl the number of minutes an item will remain in cache
    */
-  public LabelledKeyValueCache(String name, int ttl, RecordFactory<V, V> recordCtor) {
+  public LabelledKeyValueCache(String name, int ttl, RecordFactory<V> recordCtor) {
     super();
     this.name = name;
     this.ttl = ttl;

@@ -79,7 +79,7 @@ public abstract class KeyValueCache<K, V> implements Owner, Iterable<Map.Entry<K
 
   private long maxCount = 0;
   private final String name;
-  private final RecordFactory<V, V> recordFactory;
+  private final RecordFactory<V> recordFactory;
   private final Map<K, Record<V>> records = new ConcurrentHashMap<>();
   private int ttl;
 
@@ -89,7 +89,7 @@ public abstract class KeyValueCache<K, V> implements Owner, Iterable<Map.Entry<K
    * @param name the name, as presented to Prometheus
    * @param ttl the number of minutes an item will remain in cache
    */
-  public KeyValueCache(String name, int ttl, RecordFactory<V, V> recordFactory) {
+  public KeyValueCache(String name, int ttl, RecordFactory<V> recordFactory) {
     super();
     this.name = name;
     this.ttl = ttl;
