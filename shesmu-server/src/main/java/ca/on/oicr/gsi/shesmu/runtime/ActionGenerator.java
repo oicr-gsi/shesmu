@@ -29,7 +29,9 @@ public abstract class ActionGenerator implements RequiredServices {
         }
 
         @Override
-        public Lookup privateLookup() {
+        public Lookup lookup() {
+          // Because this is a dummy instance, we're going to get the public lookup instance since
+          // there will be no exports that require using it.
           return MethodHandles.publicLookup();
         }
 
@@ -66,10 +68,12 @@ public abstract class ActionGenerator implements RequiredServices {
   /**
    * Gets a private lookup for this class
    *
-   * <p></p>This is kind of dangerous and weird, but since this is generated code, we need a way into the unnamed module it was compiled in, so we rummage.
+   * <p>This is kind of dangerous and weird, but since this is generated code, we need a way into
+   * the unnamed module it was compiled in, so we rummage.
+   *
    * @return the private lookup instance
    */
-  public abstract Lookup privateLookup();
+  public abstract Lookup lookup();
 
   /**
    * Add all Prometheus monitoring for this program.
