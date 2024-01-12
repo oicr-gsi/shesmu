@@ -16,11 +16,9 @@ import java.util.stream.Stream;
  * time.
  *
  * @param <S> the state that is stored in the cache
- * @param <V> the value retrievable from the cache based on the state
  */
-public abstract class ValueCache<S, V> implements Owner {
-  private static final Map<String, SoftReference<ValueCache<?, ?>>> CACHES =
-      new ConcurrentHashMap<>();
+public abstract class ValueCache<S> implements Owner {
+  private static final Map<String, SoftReference<ValueCache<?>>> CACHES = new ConcurrentHashMap<>();
   private static final Histogram fetchCpuTime =
       Histogram.build()
           .buckets(1.0, 5.0, 10.0, 30.0, 60.0, 300.0, 600.0, 3600.0)
@@ -40,7 +38,7 @@ public abstract class ValueCache<S, V> implements Owner {
           .labelNames("name")
           .register();
 
-  public static Stream<? extends ValueCache<?, ?>> caches() {
+  public static Stream<? extends ValueCache<?>> caches() {
     return CACHES.values().stream().map(SoftReference::get).filter(Objects::nonNull);
   }
 
@@ -48,7 +46,7 @@ public abstract class ValueCache<S, V> implements Owner {
 
   private int ttl;
 
-  private final Record<V> value;
+  private final Record<S> value;
 
   /**
    * Create a new cache
@@ -56,7 +54,7 @@ public abstract class ValueCache<S, V> implements Owner {
    * @param name the name, as presented to Prometheus
    * @param ttl the number of minutes an item will remain in cache
    */
-  public ValueCache(String name, int ttl, RecordFactory<S, V> recordCtor) {
+  public ValueCache(String name, int ttl, RecordFactory<S, S> recordCtor) {
     super();
     this.name = name;
     this.ttl = ttl;
@@ -108,8 +106,8 @@ public abstract class ValueCache<S, V> implements Owner {
    * @return the value, if it was possible to fetch; the value may be stale if the remote end-point
    *     is in an error state
    */
-  public V get() {
-    final V item = value.refresh(name);
+  public S get() {
+    final S item = value.refresh(name);
     innerCount.labels(name).set(value.collectionSize());
     return item;
   }
@@ -118,7 +116,7 @@ public abstract class ValueCache<S, V> implements Owner {
    *
    * @return the last value put in the cache
    */
-  public V getStale() {
+  public S getStale() {
     return value.readStale();
   }
 

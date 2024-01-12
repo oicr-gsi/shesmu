@@ -3030,7 +3030,7 @@ public final class Server implements ServerConfig, ActionServices {
     pluginManager.log("Shesmu started.", Map.of());
   }
 
-  private <L, V> void storeEntries(ObjectNode entries, LabelledKeyValueCache<?, ?, ?, ?> cache) {
+  private <L, V> void storeEntries(ObjectNode entries, LabelledKeyValueCache<?, ?, ?> cache) {
     for (final var record : cache) {
       final var node = entries.putObject(record.getKey().toString());
       node.put("collectionSize", record.getValue().collectionSize());
@@ -3038,7 +3038,7 @@ public final class Server implements ServerConfig, ActionServices {
     }
   }
 
-  private <K, V> void storeEntries(ObjectNode entries, KeyValueCache<?, ?, ?> cache) {
+  private <K, V> void storeEntries(ObjectNode entries, KeyValueCache<?, ?> cache) {
     for (final var record : cache) {
       final var node = entries.putObject(record.getKey().toString());
       node.put("collectionSize", record.getValue().collectionSize());
