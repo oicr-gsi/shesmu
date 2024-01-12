@@ -64,8 +64,8 @@ public abstract class RootBuilder {
           false);
   private static final Method METHOD_ACTION_GENERATOR__INPUTS =
       new Method("inputs", A_STREAM_TYPE, new Type[] {});
-  private static final Method METHOD_ACTION_GENERATOR__PRIVATE_LOOKUP =
-      new Method("privateLookup", A_LOOKUP_TYPE, new Type[] {});
+  private static final Method METHOD_ACTION_GENERATOR__LOOKUP =
+      new Method("lookup", A_LOOKUP_TYPE, new Type[] {});
   private static final Method METHOD_ACTION_GENERATOR__RUN =
       new Method("run", VOID_TYPE, new Type[] {A_OLIVE_SERVICES_TYPE, A_INPUT_PROVIDER_TYPE});
   private static final Method METHOD_ACTION_GENERATOR__RUN_PREPARE =
@@ -237,7 +237,7 @@ public abstract class RootBuilder {
     timeoutMethod.visitEnd();
     final var lookupMethod =
         new GeneratorAdapter(
-            Opcodes.ACC_PUBLIC, METHOD_ACTION_GENERATOR__PRIVATE_LOOKUP, null, null, classVisitor);
+            Opcodes.ACC_PUBLIC, METHOD_ACTION_GENERATOR__LOOKUP, null, null, classVisitor);
     lookupMethod.visitCode();
     lookupMethod.invokeStatic(A_METHOD_HANDLES_TYPE, METHOD_HANDLES__LOOKUP);
     lookupMethod.returnValue();

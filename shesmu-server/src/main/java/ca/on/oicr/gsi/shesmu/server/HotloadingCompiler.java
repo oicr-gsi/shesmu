@@ -185,7 +185,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                     try {
                       exportConsumer.constant(
                           instance
-                              .privateLookup()
+                              .lookup()
                               .unreflectGetter(instance.getClass().getField(name + "$constant"))
                               .bindTo(instance),
                           name,
@@ -208,7 +208,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                     try {
                       exportConsumer.defineOlive(
                           instance
-                              .privateLookup()
+                              .lookup()
                               .unreflect(
                                   instance
                                       .getClass()
@@ -241,7 +241,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                                           v.flavour(),
                                           v.type(),
                                           instance
-                                              .privateLookup()
+                                              .lookup()
                                               .unreflect(
                                                   instance
                                                       .getClass()
@@ -266,7 +266,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                                               v.flavour(),
                                               v.type(),
                                               instance
-                                                  .privateLookup()
+                                                  .lookup()
                                                   .unreflect(
                                                       instance
                                                           .getClass()
@@ -295,7 +295,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                     try {
                       exportConsumer.function(
                           instance
-                              .privateLookup()
+                              .lookup()
                               .unreflect(
                                   instance
                                       .getClass()
