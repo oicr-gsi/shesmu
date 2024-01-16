@@ -1,4 +1,8 @@
-import { fetchJsonWithBusyDialog, locallyStored } from "./io.js";
+import {
+  fetchJsonWithBusyDialog,
+  locallyStored,
+  locallyStoredString,
+} from "./io.js";
 import {
   DisplayElement,
   IconName,
@@ -12,7 +16,7 @@ import {
   hr,
   indented,
   inputSearch,
-  inputText,
+  inputTextArea,
   italic,
   link,
   mono,
@@ -29,7 +33,7 @@ import {
 } from "./html.js";
 import { parse } from "./parser.js";
 import * as valueParser from "./parser.js";
-import { commonPathPrefix, mapModel } from "./util.js";
+import { combineModels, commonPathPrefix, mapModel } from "./util.js";
 
 export type Definition =
   | ActionDefintion
@@ -689,11 +693,32 @@ function testFunction(func: FunctionDefinition): void {
   const parsers = func.parameters.map(
     (p) => parseDescriptor(p.type, valueParser)[0]
   );
-  const inputs = func.parameters.map(() => inputText());
+  const savedFormat = locallyStoredString("shesmu_try_it_format", "shesmu");
+  const inputs = func.parameters.map(() => inputTextArea("", true));
   const errors = func.parameters.map(() => pane("blank"));
   dialog((_close) => [
     "Test function ",
     func.name,
+    br(),
+    "Argument Format: ",
+    dropdown(
+      (format, selected) => {
+        if (format == "json") {
+          return [{ type: "icon", icon: "braces" }, "JSON"];
+        } else {
+          return [{ type: "icon", icon: "card-text" }, "Shesmu"];
+        }
+      },
+      (format) => format == savedFormat.get(),
+      combineModels(),
+      {
+        synchronizer: savedFormat,
+        predicate: (recovered, item) => recovered == item,
+        extract: (x) => x,
+      },
+      "shesmu",
+      "json"
+    ),
     br(),
     tableFromRows(
       func.parameters.map((p, index) =>
@@ -715,21 +740,35 @@ function testFunction(func: FunctionDefinition): void {
       () => {
         const args: any[] = [];
         if (
-          parsers.every((parser, index) =>
-            parse(
-              inputs[index].value,
-              parser,
-              (x) => {
-                args.push(x);
+          parsers.every((parser, index) => {
+            if (savedFormat.get() == "json") {
+              try {
+                args.push(JSON.parse(inputs[index].value));
                 errors[index].model.statusChanged(blank());
-              },
-              (message, position) =>
+                return true;
+              } catch (e) {
                 errors[index].model.statusChanged({
                   type: "b",
-                  contents: `${position + 1}: ${message}`,
-                })
-            )
-          )
+                  contents: `${e}`,
+                });
+                return false;
+              }
+            } else {
+              return parse(
+                inputs[index].value,
+                parser,
+                (x) => {
+                  args.push(x);
+                  errors[index].model.statusChanged(blank());
+                },
+                (message, position) =>
+                  errors[index].model.statusChanged({
+                    type: "b",
+                    contents: `${position + 1}: ${message}`,
+                  })
+              );
+            }
+          })
         ) {
           fetchJsonWithBusyDialog(
             "function",

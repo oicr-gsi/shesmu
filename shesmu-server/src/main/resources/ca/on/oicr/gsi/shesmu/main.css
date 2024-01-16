@@ -837,6 +837,8 @@ th {
 
 textarea {
   width: 100%;
+}
+textarea.tall {
   height: 50vh;
 }
 
