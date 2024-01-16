@@ -2829,10 +2829,16 @@ export function inputText(initial?: string): InputField<string> {
 /**
  * Create a big text input box.
  */
-export function inputTextArea(initial?: string): InputField<string> {
+export function inputTextArea(
+  initial?: string,
+  short?: boolean
+): InputField<string> {
   const input = createUiFromTag("textarea");
   if (initial) {
     input.element.value = initial;
+  }
+  if (!short) {
+    input.element.classList.add("tall");
   }
   return {
     ui: input,
