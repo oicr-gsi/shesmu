@@ -185,7 +185,7 @@ public final class ActionProcessor
     }
   }
 
-  private static class Information {
+  private static class Information implements Comparable<Information> {
 
     public final Instant created = Instant.now();
     final String id;
@@ -210,6 +210,11 @@ public final class ActionProcessor
         id = "";
       }
       this.id = id;
+    }
+
+    @Override
+    public int compareTo(Information information) {
+      return Integer.compare(lastState.processPriority(), information.lastState.processPriority());
     }
   }
 
@@ -1706,7 +1711,7 @@ public final class ActionProcessor
                                     .getSeconds()
                                 / 600)
                     .thenComparingInt(e -> e.getKey().priority()))
-            .sorted(Comparator.comparingInt(x -> x.getValue().lastState.processPriority()))
+            .sorted(Map.Entry.comparingByValue())
             .limit(1000L * ACTION_PERFORM_THREADS - currentRunningActions.get())
             .collect(Collectors.toList());
     currentRunningActionsGauge.set(currentRunningActions.addAndGet(candidates.size()));
