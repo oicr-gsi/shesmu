@@ -22,10 +22,7 @@ To start off, compiling a simple script:
 
      Input shesmu;
 
-<details>
-<summary>
 is compiled to:
-</summary>
 
     public class dyn/shesmu/Program extends ca/on/oicr/gsi/shesmu/ActionGenerator {
     
@@ -55,7 +52,6 @@ is compiled to:
         MAXSTACK = 0
         MAXLOCALS = 0
     }
-</details>
 
 This class, `dyn.shesmu.Program`, extends the `ActionGenerator` superclass,
 which is used by the server to execute actions. The class name is reused for
@@ -82,10 +78,7 @@ Let's move to a script with an olive:
 The output bytecode is more complicated. It is laid out below in chunks with
 commentary.
 
-<details>
-<summary>
 The initialisation is much the same:
-</summary>
     
     public class dyn/shesmu/Program extends ca/on/oicr/gsi/shesmu/ActionGenerator {
     
@@ -105,7 +98,6 @@ The initialisation is much the same:
         ALOAD 0
         INVOKEVIRTUAL dyn/shesmu/Program.clearGauge ()V
 
-</details>
 
 Now there are interesting differences. First, the current time is stored for timing the olive runtime.
 
@@ -114,20 +106,19 @@ Now there are interesting differences. First, the current time is stored for tim
         LSTORE 3
 
 Now, a stream of the correct type must be started that will contain the right
-objects. The supplied argument is
-[`InputProvider`](shesmu-server/src/main/java/ca/on/oicr/gsi/shesmu/InputProvider.java)
-and its purpose is to provide a stream of values for a class specified by the
-input format. The olives can request all the data for the required format.
+objects. The supplied argument is `ca.on.oicr.gsi.shesmu.InputProvider` and its
+purpose is to provide a stream of values for a class specified by the input
+format. The olives can request all the data for the required format.
 
 For every script, there is one input format. At the top of the file `Input
 shesmu;` selects the input format. Each format has a corresponding
 `InputFormatDefinition` class. For `Input shesmu;`,
-[`ShesmuIntrospectionFormatDefinition.java`](shesmu-server/src/main/java/ca/on/oicr/gsi/shesmu/core/input/shesmu/ShesmuIntrospectionFormatDefinition.java)
+`ca.on.oicr.shesmu.core.input.shesmu.ShesmuIntrospectionFormatDefinition.java`
 describes the input format. Each input format has a method `itemClass()` that
 returns a class that holds the values that are passed through the stream, that
 is, the `T` in `InputProvider.<T>fetch`. For
 `ShesmuIntrospectionFormatDefinition`, the specified class is
-[`ShesmuIntrospectionValue.java`](shesmu-server/src/main/java/ca/on/oicr/gsi/shesmu/core/input/shesmu/ShesmuIntrospectionValue.java).
+`ca.on.oicr.shesmu.core.input.shesmu.ShesmuIntrospectionValue`.
 
 When the `InputProvider.fetch` is invoked, it will provide a stream of data of the
 correct type from all the input repositories. If the input format is a
@@ -139,12 +130,9 @@ implementation guide](implementation.md), this will call effectively do
         LDC Lca/on/oicr/gsi/shesmu/core/input/shesmu/ShesmuIntrospectionValue;.class
         INVOKEINTERFACE ca/on/oicr/gsi/shesmu/InputProvider.fetch (Ljava/lang/Class;)Ljava/util/stream/Stream; (itf)
 
-<details>
-<summary>
 This particular olive has no filters, so, a method reference/lambda is
 generated and then <tt>forEach</tt> is called on the stream and the stream is
 closed:
-</summary>
 
 
        L1
@@ -164,12 +152,8 @@ closed:
         INVOKEINTERFACE java/util/stream/Stream.forEach (Ljava/util/function/Consumer;)V (itf)
         INVOKEINTERFACE java/util/stream/Stream.close ()V (itf)
 
-</details>
 
-<details>
-<summary>
 Finally, the olive's run time is recorded using the time stored earlier:
-</summary>
 
         GETSTATIC ca/on/oicr/gsi/shesmu/ActionGenerator.OLIVE_RUN_TIME : Lio/prometheus/client/Gauge;
         ICONST_2
@@ -192,29 +176,21 @@ Finally, the olive's run time is recorded using the time stored earlier:
         DDIV
         INVOKEVIRTUAL io/prometheus/client/Gauge$Child.set (D)V
 
-</details>
 
-<details>
-<summary>
 And the <tt>run</tt> method is finished:
-</summary>
 
        L2
         RETURN
         MAXSTACK = 0
         MAXLOCALS = 5
 
-</details>
 
 The _signature_ feature of Shesmu can generate two kinds of signatures: ones that
 are the same for any input and ones that are computed from the input data. The
 first are stored as constants and the second are method.
 
-<details>
-<summary>
 Therefore, the class constructor, <tt>&lt;clinit&gt;</tt>, prepares the ones that
 are constants:
-</summary>
 
       static J Olive 2:6 signable_count
     
@@ -241,12 +217,8 @@ are constants:
         MAXSTACK = 0
         MAXLOCALS = 0
 
-</details>
 
-<details>
-<summary>
 and the signatures based on data are created as methods:
-</summary>
     
       private static Olive 2:6 json_signature(Lca/on/oicr/gsi/shesmu/core/input/shesmu/ShesmuIntrospectionValue;)Ljava/lang/String;
         NEW ca/on/oicr/gsi/shesmu/core/signers/JsonSigner
@@ -268,7 +240,6 @@ and the signatures based on data are created as methods:
         MAXSTACK = 0
         MAXLOCALS = 1
 
-</details>
 
 Earlier, a method was referenced that would be converted to a `Consumer` and
 fed to the `forEach` call. Here, this method is defined. This method will
@@ -278,22 +249,15 @@ produce an action (or alert if an `Alert` olive):
        L0
         LINENUMBER 2 L0
 
-<details>
-<summary>
 It constructs a new action:
-</summary>
 
         NEW ca/on/oicr/gsi/shesmu/core/NothingAction
         DUP
         INVOKESPECIAL ca/on/oicr/gsi/shesmu/core/NothingAction.<init> ()V
         ASTORE 3
 
-</details>
 
-<details>
-<summary>
 The loads in all the arguments:
-</summary>
 
        L1
         LINENUMBER 3 L1
@@ -304,12 +268,8 @@ The loads in all the arguments:
        L2
         LINENUMBER 2 L2
 
-</details>
 
-<details>
-<summary>
 Then sends the action in to the consumer with data about the olive that generated it:
-</summary>
 
         ALOAD 3
         INVOKEVIRTUAL ca/on/oicr/gsi/shesmu/core/NothingAction.prepare ()V
@@ -325,7 +285,6 @@ Then sends the action in to the consumer with data about the olive that generate
         MAXSTACK = 0
         MAXLOCALS = 4
     }
-</details>
 
 This is the end of the example olive bytecode.
 
@@ -485,9 +444,9 @@ The compiler operates in a few phases:
 
 There are a lot of classes in the compiler, but the major ones are:
 
-- [`OliveNode`](shesmu-server/src/main/java/ca/on/oicr/gsi/shesmu/compiler/OliveNode.java), which declares each top-level element in the file (function, olive, define olive, constant)
-- [`OliveClauseNode`](shesmu-server/src/main/java/ca/on/oicr/gsi/shesmu/compiler/OliveClauseNode.java), which defines clauses in an olive
-- [`ExpressionNode`](shesmu-server/src/main/java/ca/on/oicr/gsi/shesmu/compiler/ExpressionNode.java), which defines all the bits and pieces of expressions
+- `OliveNode`, which declares each top-level element in the file (function, olive, define olive, constant)
+- `OliveClauseNode`, which defines clauses in an olive
+- `ExpressionNode`, which defines all the bits and pieces of expressions
 
 For details on components, the JavaDoc outlines the behaviour and expectations
 of the classes. Most of the documentation is on the abstract classes and the
@@ -495,7 +454,7 @@ concrete classes have less since they just execute the behaviour defined by the
 abstract class.
 
 For general naming conventions:
-- _resolve_ methods convert strings into useful metadata (_e.g._ find the [`FunctionDefinition`](shesmu-server/src/main/java/ca/on/oicr/gsi/shesmu/FunctionDefinition.java) given the name in the script)
+- _resolve_ methods convert strings into useful metadata (_e.g._ find the `FunctionDefinition` given the name in the script)
 - _render_ methods generate bytecode
 - classes that end in _Node_ are a general chunk of syntax in the language (_e.g._ expressions); their subclasses represent concrete bits of syntax the user can write and they should be completely interchangeable
 - classes that end in _Builder_ are utility classes that make generating bytecode simpler
@@ -536,12 +495,11 @@ up. This is meant to keep the compiler simple.
 When generating bytecode, Shesmu uses
 [`GeneratorAdapter`](https://asm.ow2.io/javadoc/org/objectweb/asm/commons/GeneratorAdapter.html)
 from the ASM package to write bytecode. It wraps this in a
-[`Renderer`](shesmu-server/src/main/java/ca/on/oicr/gsi/shesmu/compiler/Renderer.java)
-class. `Renderer` provides a number of utility functions, such as inserting
-`Imyhat` objects into the bytecode. Its real purpose is to track extra
-information. It knows where the current stream value is stored, which will be
-different through many layers of capturing. It also tracks how to access
-signatures.
+`ca.on.oicr.gsi.shesmu.compiler.Renderer` class. `Renderer` provides a number
+of utility functions, such as inserting `Imyhat` objects into the bytecode. Its
+real purpose is to track extra information. It knows where the current stream
+value is stored, which will be different through many layers of capturing. It
+also tracks how to access signatures.
 
 The ASM bytecode generation library has a class `Type` that describes JVM
 types. A `Type` object can be constructed either by knowing the JVM name for a

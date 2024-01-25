@@ -1,4 +1,6 @@
 theme: jekyll-theme-slate
+base_url: /shesmu
+source: ./docs
 plugins:
   - jekyll-relative-links
 markdown: kramdown
@@ -7,5 +9,3 @@ kramdown:
 relative_links:
   enabled:     true
   collections: false
-keep_files:
-  - javadoc

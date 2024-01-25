@@ -62,7 +62,7 @@ as a tuple:
     }
 
 The parameter and return types are JSON-enhanced descriptors. See [types
-in the language description](../language.md#types) for details.
+in the language description](language.md#types) for details.
 
 ## Refillers
 A remote server can provide programs that will ingest data from a `Refill`
@@ -79,7 +79,7 @@ olive. To create one, add an entry in the `"refillers"` section as follows:
 This will create `example` as a refiller available to olives. It will take
 parameters as defined in the `"parameters"` block; the value of each parameter
 is a JSON-enhanced Shesmu type descriptors (see [types in the language
-description](../language.md#types) for details).  When the olive is ready,
+description](language.md#types) for details).  When the olive is ready,
 Shesmu will compute an order-independent hash from the data. Then, over SSH,
 `"command"` will be run with the hash (as a hexadecimal string) after it.
 
@@ -142,7 +142,25 @@ default value of 60 minutes is used.
 Shesmu tries to use GNU findutils to explore the remote directory. This is
 convenient because it is standard with Linux. However, if file have names which
 are not allowed in JSON strings, it falls apart rather quickly. If this is the
-case, use the [JSON directory listing tool](../json-dir-list) to ensure the
-output is always correctly encoded. Install it on the target system and then
-set `"listCommand"` to the path to the program or just `"json-dir-list"` if
-it's installed into a location on the `PATH`.
+case, use the JSON directory listing tool included in the Shesmu repository to
+ensure the output is always correctly encoded. Install it on the target system
+and then set `"listCommand"` to the path to the program or just
+`"json-dir-list"` if it's installed into a location on the `PATH`.
+
+## JSON Directory Listing Tool
+For the `unix_file` input format, Shesmu will try to crawl the directory
+structure using a `find` command to produce JSON output. This works about as
+well as one could hope. If file names, user names, or group names have
+characters that are now allowed in JSON strings, it does not go well. This tool
+provides a more robust alternative that does the JSON encoding correctly.
+
+The easiest way to get the tool, is to download a pre-built version from
+[GitHub Releases](https://github.com/oicr-gsi/shesmu/releases/latest).
+
+To build it, first, [install Rust](https://www.rust-lang.org/tools/install) and
+then invoke:
+
+    cargo install --path .
+
+Once installed, in the `.sftp` configuration for Shesmu, the `"listCommand"`
+can be set to `"/install/dir/bin/json-dir-list"` to use this command instead.

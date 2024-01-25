@@ -14,6 +14,12 @@ A [Prometheus](https://prometheus.io/) alert. Shesmu follows the semantics laid
 out by Prometheus: an alert is effectively a set of key-value string pairs that
 define some emergency for a limited (but extendible) period of time.
 
+## Algebraic Data Type
+An [algebraic data type](https://en.wikipedia.org/wiki/Algebraic_data_type) is
+a type that can be in one of several states. It can do some of the job of
+inheritance in object-oriented languages. For details see [the guide to
+algebraic data types](algebraicguide.md).
+
 ## Clause
 Syntax in an olive that reshapes data. In a functional programming model, these
 are filter (`Where`), map (`Let`), or reduce (`Group`).

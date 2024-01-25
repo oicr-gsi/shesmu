@@ -17,7 +17,8 @@ uses comma-separated values instead of tab-separated. Lines starting with `#` ar
 a value for each column, or `*` for a wild card match. The final column, which
 cannot be a wild card, is the result value.
 
-For example, suppose we want to create a way to assign users responsibility for projects. Create a `person_for_project.lookup`:
+For example, suppose we want to create a way to assign users responsibility for
+projects. Create a `person_for_project.lookup`:
 
      string	string
      worlddomination	bill
@@ -105,8 +106,8 @@ The name of the file will be the service name that will be inhibited. If called
 
 The times must be formatted in a way that can be parsed by
 [`DateTimeFormatter.ISO_DATE_TIME`](https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_DATE_TIME).
-If that sounds unappealing, there's a graphical [maintenance schedule
-editor](../maintenance-editor).
+If that sounds unappealing, there's a graphical maintenance schedule
+editor included in the Shesmu repository.
 
 ## Ranges
 Ranges return a particular string value for a time range.
@@ -152,7 +153,7 @@ empty optional. If `"missingUsesDefaults"` is true, then, the values in
 `"types"` have a default value (or are optional).
 
 The types are JSON-enhanced descriptors. See [types in the language
-description](../language.md#types) for details.
+description](language.md#types) for details.
 
 It is also possible to use data from a remote server using a `.remotejsonconfig`:
 
@@ -193,5 +194,5 @@ may be updated during an olive's run, so multiple accesses can produce
 different results.
 
 The types are JSON-enhanced descriptors. See [types in the language
-description](../language.md#types) for details.
+description](language.md#types) for details.
 

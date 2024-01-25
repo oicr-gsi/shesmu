@@ -103,7 +103,7 @@ that have non-conflicting structures can be merged. For instance, in:
 
 this expression will have a type `ALIGN{string} | ALING {string} | NO_ALIGN`.
 Realistically, that `ALING` is probably a typo, but Shesmu doesn't know that.
-It would be an error two write this:
+It would be an error to write this:
 
       Switch foo
         When 0 Then ALIGN {"hg19"}
