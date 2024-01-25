@@ -2,6 +2,15 @@
 name = "shawk"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/oicr-gsi/shesmu"
+authors = ["Andre Masella <andre@masella.name>"]
+description = "Shesmu command-line data extraction tool"
+
+[package.metadata.wix]
+upgrade-guid = "5ABBED1A-D1EE-446A-B684-E664CF1BD0CD"
+path-guid = "4FEA0398-D223-4826-85A5-A56040AA3C8B"
+license = false
+eula = false
 
 [dependencies]
 clap = { version = "^4.4", features = ["derive"] }

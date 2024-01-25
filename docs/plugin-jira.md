@@ -1,7 +1,6 @@
 # JIRA Plugin
 [JIRA](https://www.atlassian.com/software/jira) is an issue and project tracking
-application.
-The JIRA plugin for Shesmu can be used to:
+application. The JIRA plugin for Shesmu can be used to:
 
 - open and close issues
 - search for issues matching a JQL query

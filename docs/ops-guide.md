@@ -48,7 +48,7 @@ For the histograms, clicking and dragging will filter on that range. Histograms
 can provide a lot of useful information about what is going on in an olive. For
 instance:
 
-![Histogram showing changed data](https://raw.githubusercontent.com/oicr-gsi/shesmu/master/ops-histo-orphan.png)
+![Histogram showing changed data](ops-histo-orphan.png)
 
 In this histogram there are a number of actions that haven not been generated
 by an olive recently. This likely means that the input data changed and these
@@ -73,6 +73,27 @@ _To File_ are all useful for importing the search later. There are also buttons
 to create purge or fetch shell commands, for use in scripts. The JIRA plugin
 also allows exporting searches to tickets; more details on that in the next
 section.
+
+## Saved Searches
+Shesmu's _Actions_ dashboard provides a way to sift through the actions that
+olives have generated. It can be useful to save these searches. By clicking the
+_Save Search_, the search will be saved in the browser. They can be shared by
+clicking the clipboard icon beside a saved search to copy the search and then
+using the _Add Search_ button on the dashboard and pasting in the text
+copied. The _Import Searches_ and _Export Searches_ can also be used to copy
+all searches and upload them to a different instance.
+
+To go beyond person-to-person sharing, the search filter JSON, created by
+either clicking the _Show Search_ button, can be saved to a file ending in
+`.search` in the Shesmu configuration directory. The name of the file will be
+used as the name of the search.
+
+It is not recommended to save searches that reference a particular olive source
+location. Every time the file is updated, the olive's hash will be updated and
+the filter will no longer match. The `hash` property in the filter can be
+changed to `null` to avoid this issue. Even if this were not the case, it is
+possible that the olive will move around in the script and the line and column
+that mark the start of each olive will change.
 
 ## Understanding Delegation
 Shesmu can use JIRA and custom searches to create delegation. A JIRA ticket can
@@ -212,7 +233,7 @@ use this data will not run.
 To engage a throttle, there are several ways:
 
 - using a maintenance schedule: a file named _throttle_`.maintenance` contains a list of times to engage a throttle. These are useful for planned events, such as IT maintenance. There's a graphical [maintenance schedule editor](maintenance-editor).
-- [token bucket throttling](plugin-ratelimit/README.md): used to slow down access to services that overload easily. I'm looking at you, JIRA.
+- [token bucket throttling](plugin-ratelimit.md): used to slow down access to services that overload easily. I'm looking at you, JIRA.
 - Prometheus Alerts: used to throttle based on external conditions
 
 Prometheus is the most flexible of the system. Prometheus rules monitor systems
@@ -287,16 +308,16 @@ working in bulk.
 
 | State | Description |
 |-------|-------------|
-| FAILED | The action has been attempted and encounter an error (possibly recoverable). |
-| HALP | The action is in a state where it needs human attention or intervention to correct itself. |
-| INFLIGHT | The action is currently being executed. |
-| QUEUED | The action is waiting for a remote system to start it. |
-| SAFETY_LIMIT_REACHED | The action has encountered some user-defined limit stopping it from proceeding. |
-| SUCCEEDED | The action is complete. |
-| THROTTLED | The action is being rate limited by a Shesmu throttler or by an over-capacity signal. |
-| UNKNOWN | The actions state is not currently known either due to an exception or not having been attempted. |
-| WAITING | The action cannot be started due to a resource being unavailable. |
-| ZOMBIE | The action is never going to complete. This is not necessarily a failed state; testing or debugging actions should be in this state. |
+| `FAILED` | The action has been attempted and encounter an error (possibly recoverable). |
+| `HALP` | The action is in a state where it needs human attention or intervention to correct itself. |
+| `INFLIGHT` | The action is currently being executed. |
+| `QUEUED` | The action is waiting for a remote system to start it. |
+| `SAFETY_LIMIT_REACHED` | The action has encountered some user-defined limit stopping it from proceeding. |
+| `SUCCEEDED` | The action is complete. |
+| `THROTTLED` | The action is being rate limited by a Shesmu throttler or by an over-capacity signal. |
+| `UNKNOWN` | The actions state is not currently known either due to an exception or not having been attempted. |
+| `WAITING` | The action cannot be started due to a resource being unavailable. |
+| `ZOMBIE` | The action is never going to complete. This is not necessarily a failed state; testing or debugging actions should be in this state. |
 
 ### SFTP Delete Actions
 Files can be deleted from disk by the SFTP delete action. To have a human
@@ -341,3 +362,11 @@ Vidarr actions have a few states they can be in:
 - `ZOMBIE` -- the workflow has input which is stale; normal procedures for
   fixing stale records will eventually generate a non-stale version of this
   action.
+
+## Static Actions
+Due to the imperfect nature of reality, it might be useful to launch bespoke
+actions not defined by olives. To do this, create a JSON file that ends in
+[`.actnow`](actnow.md).
+
+Shesmu will add these actions to its queue and attempt to run them as if they
+were produced by an olive.

@@ -23,10 +23,9 @@ Guanyin report actions require a Python script and a JSON file of the same name
 (`<action-name>` and `<action-name>.json`, respectively). 
 
 ### Guanyin report action JSON file
-The JSON file defines what parameters the script will expect to receive from the
-olive. Each parameter has a `type` (a [Shesmu
-type signature](https://github.com/oicr-gsi/shesmu/blob/master/language.md#types))
-and a `required` value:
+The JSON file defines what parameters the script will expect to receive from
+the olive. Each parameter has a `type` (a [Shesmu type
+signature](language.md#types)) and a `required` value:
 
     {
       "environment": {
@@ -89,15 +88,3 @@ script.
       recipients,
       "brief description of this report"
     )
-
-### Guanyin report olives
-The olive specifies how files should be selected for running the given report.
-The
-[language.md](https://github.com/oicr-gsi/shesmu/blob/master/language.md#olives-and-clauses)
-document describes the Shesmu language that is used in the olives. The process
-of writing a Guanyin report olive is much the same as that for writing and
-testing any other olive. The biggest change is that the action name in the `Run
-<action-name> With` clause must match the `<action-name>` of the [Guanyin
-report action script](#guanyin-report-action-script) above, and the key-value
-pairs in the `With` clause must be of the same type as declared in the [Guanyin
-report action JSON file](#guanyin-report-action-json-file) above.

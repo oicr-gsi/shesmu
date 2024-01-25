@@ -24,9 +24,6 @@ From _Internals_, select _Active Server Processes_ to see a list of things the
 ## What does `at3sis` mean?
 From _Tools_, select _Type Converter_ and enter the type descriptor in the box and then hit the button to get a human-friendly type.
 
-## How do I figured out how why my action failed? Why is this action unknown?
-Follow the SOP: Investigating Failure to figure out the source of the problem. //TODO
-
 ## There was a thing that failed. How do I make it go away?
 If it's a Vidarr workflow, choose the command to retry the failed workflow.
 

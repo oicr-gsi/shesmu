@@ -46,10 +46,10 @@ recover its state by reading in all the input data again and generating all
 actions again through the olives.
 
 ## Provided Utilities
-The class `AutoUpdatingDirectory` provides a mechanism to scan for new
-configuration files in the Shesmu data directory and update the files when they
-change on disk. If the configuration is a JSON file, `AutoUpdatingJsonFile` is
-a utility class for parsing the JSON files.
+The class
+[`AutoUpdatingDirectory`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/files/AutoUpdatingDirectory.html)
+provides a mechanism to scan for new configuration files in the Shesmu data
+directory and update the files when they change on disk.
 
 ## Types and Erasure
 The correct handling of types in Shesmu is complicated. There are different but
@@ -123,13 +123,16 @@ type safe. To create a new source format:
 data. It must be a class and not an interface.
 1. Create a parameterless method in _V_ for every variable to be exposed. The
 method names must be valid Shemsu names (lowercase with underscores) and
-decorated with `@ShesmuVariable` annotations with the correct type descriptor. All
-methods must return `boolean`, `long`, `String`, `Instant`, `Set`, or `Tuple`
-(and `Set` and `Tuple` may only contain more of the same).
-1. Create a new _F_ class that extends `InputFormat<`_V_`>` and
-provides the types to the constructor as well as a name that will be used in
-the `Input` instruction.
-1. In `module-info` add `provides InputFormatDefinition with `_F_`;`.
+decorated with
+[`@ShesmuVariable`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/input/ShesmuVariable.html)
+annotations with the correct type descriptor. All methods must return
+`boolean`, `long`, `String`, `Instant`, `Set`, or `Tuple` (and `Set` and
+`Tuple` may only contain more of the same).
+1. Create a new _F_ class that extends
+[`InputFormat<`_V_`>`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/input/InputFormat.html)
+and provides the types to the constructor as well as a name that will be used
+in the `Input` instruction.
+1. In `module-info` add `provides InputFormat with `_F_`;`.
 
 For each variable, Shesmu can try to infer the type from the return type of the
 method. If the type is `Tuple` or an erased `Optional`, `Map`, or `Set`, it
@@ -146,7 +149,9 @@ in the JSON format at `/input/` followed by the input format name.
 ### Variable Gangs
 Variables in an input format can be attached to _gang_ to provide
 convenient grouping criteria. Please see the [language reference](language.md)
-for the purpose and uses of gangs. In the `@ShesmuVariable`, set:
+for the purpose and uses of gangs. In the
+[`@ShesmuVariable`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/input/ShesmuVariable.html),
+set:
 
     gangs = { @Gang(name = "useful_stuff", order = 0) })
 
@@ -186,25 +191,36 @@ The exact configuration will depend on what information the grouper requires.
 It maybe easiest to implement the grouper and see what information is necessary
 and then work backward to the grouper definition.
 
-1. Create a class _G_ that implements `Grouper` parameterised over _I_ and _O_.
-1. Create a class _D_ that extends `GrouperDefinition` and is exposed with
-`provides GrouperDefinition with `_G_`;` in `module-info`.
+1. Create a class _G_ that implements
+   [`Grouper`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/grouper/Grouper.html)
+   parameterised over _I_ and _O_.
+1. Create a class _D_ that extends
+   [`GrouperDefinition`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/grouper/GrouperDefinition.html)
+   and is exposed with `provides GrouperDefinition with `_G_`;` in `module-info`.
 1. In _D_, call the appropriate super constructor. They vary by the number of
-input parameters the grouper requires. Use `GrouperParameter` to fill in each
-parameter required.
-1. In _D_, select a `GrouperOutputs` to use. This sets the number of variables
-exported to the olive for each group.
+   input parameters the grouper requires. Use
+   [`GrouperParameter`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/grouper/GrouperParameter.html)
+   to fill in each parameter required.
+1. In _D_, select a
+   [`GrouperOutputs`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/grouper/GrouperOutputs.html)
+   to use. This sets the number of variables exported to the olive for each
+   group.
 1. Create a constructor that fits in the pattern of input and outputs in _G_.
-1. Perform the grouping operation and create a `Subgroup` for each subgroup.
+1. Perform the grouping operation and create a
+   [`Subgroup`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/grouper/Subgroup.html)
+   for each subgroup.
 
 Note that a grouper will be reused arbitrarily many times by an olive, so do
 not store any state in fields.
 
 ## Writing a Plugin
 Shesmu has many different systems that can be fed by plugins. Each plugin
-requires two classes, a `PluginFileType` that defines the plugin itself and
-`PluginFile` that is created for each matching configuration file discovered in
-the Shesmu data directories.
+requires two classes, a
+[`PluginFileType`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/PluginFileType.html)
+that defines the plugin itself and
+[`PluginFile`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/PluginFile.html)
+that is created for each matching configuration file discovered in the Shesmu
+data directories.
 
 As a general outline, for a plugin `Foo`, the two classes would be:
 
@@ -266,8 +282,9 @@ strings. To create a new throttler, override `isOverloaded` in either
 ###  Dumpers
 Dumpers write intermediate values for debugging purposes.
 
-1. Create a class that implements `Dumper`. The `stop()` will be called at the
-end, even if an exception occurs.
+1. Create a class that implements
+   [`Dumper`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/dumper/Dumper.html).
+   The `stop()` will be called at the end, even if an exception occurs.
 1. Override `findDumper` in either `PluginFileType` or `PluginFile`.
 
 Dumpers will get an array of values, one for each of the expressions provided
@@ -295,17 +312,20 @@ There are three ways to create a constant or function:
 
 #### Annotated Methods
 In classes derived from `PluginFileType` or `PluginFile` classes, create a
-method and add the `@ShesmuMethod` annotation. This method will now be exported
-to Shesmu automatically. If the method takes no arguments, it will be exported
-as a constant, otherwise as a function.
+method and add the
+[`@ShesmuMethod`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/functions/ShesmuMethod.html)
+annotation. This method will now be exported to Shesmu automatically. If the
+method takes no arguments, it will be exported as a constant, otherwise as a
+function.
 
 The method must handle Shesmu-compatible types. Shesmu will try to determine
 the matching Shesmu type from the type information provided by the JVM. If it
 cannot determine the correct type, it will throw an error. The correct type can
 be provided using a Shesmu type descriptor in the `type` parameter of the
-`@ShesmuMethod` for return types or by adding a `@ShesmuParameter` annotation
-to any parameters. The `@ShesmuParameter` annotation can also provide help
-text.
+`@ShesmuMethod` for return types or by adding a
+[`@ShesmuParameter`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/functions/ShesmuParameter.html)
+annotation to any parameters. The `@ShesmuParameter` annotation can also
+provide help text.
 
 The name can be provided two ways: from the name of the method itself or fro
 the `name` parameter of `@ShemsuMethod` annotation. If the name is associated
@@ -320,21 +340,25 @@ will be replace with the instance name and configuration file path,
 respectively.
 
 #### Using the Definer
-The `Definer` can be used to create functions and constants. It can create as
-many as desired and they can be updated or erased. For details, see the
-`Definer` interface. The `Definer` interface has multiple versions of the same
-methods for different needs.
+The
+[`Definer`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/Definer.html)
+can be used to create functions and constants. It can create as many as desired
+and they can be updated or erased. For details, see the `Definer` interface.
+The `Definer` interface has multiple versions of the same methods for different
+needs.
 
-- some methods take `TypeGuarantee` objects that ensure matching Java and
-  Shesmu types; some take Imyhat objects directly and casting is done. If the
-  types are incorrect, runtime errors will occur
+- some methods take
+  [`TypeGuarantee`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/types/TypeGuarantee.html)
+  objects that ensure matching Java and Shesmu types; some take Imyhat objects
+  directly and casting is done. If the types are incorrect, runtime errors will
+  occur
 - constants can be defined with fixed values or with a `Supplier` that produces
   the value when necessary
 - functions with a fixed number of arguments can be supplied using Java's
   `Function` and `BiFunction` interfaces
 - functions with an arbitrary number of arguments can be defined using the
-  `VariadicFunction` interface. All arguments are provided as an array of
-  `Object`
+  [`VariadicFunction`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/functions/VariadicFunction.html)
+  interface. All arguments are provided as an array of `Object`
 
 ### Actions
 Actions have a complicated set of restrictions. Shesmu pushes a number of
@@ -356,15 +380,19 @@ Which parameters must be considered for two actions to be identical is entirely
 chosen by the implementer.
 
 When the system is going to perform actions, it sorts them by how long it has 
-been since the `Action` was last checked, an `Action`'s `priority` 
-(smaller numbers are higher 
-priority), and prioritizes `Action`s in certain `ActionState`s. If two 
-actions are going to use the same
+been since the
+[`Action`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/action/Action.html)
+was last checked, an `Action`'s `priority` (smaller numbers are higher 
+priority), and prioritizes `Action`s in certain `ActionState`s. If two actions
+are going to use the same
 resource, then priority is a good way to allocate the resource to the most
 appropriate action. Since new actions are being generated constantly, priority
-inversion may occur. An item can also return a different priority over its life.
-A plugin may choose to expose `priority` as an `@ActionParameter` so it can be 
-set procedurally by an olive. (See 'Action Parameters')
+inversion may occur. An item can also return a different priority over its
+life.
+A plugin may choose to expose `priority` as an
+[`@ActionParameter`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/action/ActionParameter.html)
+so it can be set procedurally by an olive. (See [Action
+Parameters](#action-parameters) for details.)
 
 At some point, an action will be given time to `perform`. There is a limited CPU pool
 for actions to run in, so blocking is strongly discouraged. An action should
@@ -378,9 +406,10 @@ where _x_, _y_, and _z_ are service names this action should throttle on. These
 might come from the service configuration (_e.g._, for a JIRA project _ABC_, the
 JIRA ticketing action will throttle on `jira` and _ABC_).
 
-After running, it must return an `ActionState` to indicate its current status.
-If the action throws an exception, it will be caught, reported, and given
-`ActionState.UNKNOWN`.
+After running, it must return an
+[`ActionState`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/action/ActionState.html)
+to indicate its current status.  If the action throws an exception, it will be
+caught, reported, and given `ActionState.UNKNOWN`.
 
 The meaning of each `ActionState` is defined in the enum's documentation. The
 `perform` method will be called periodically until `SUCCEEDED` is returned. If
@@ -401,7 +430,7 @@ To create an action:
 To deliver an action to olives using `PluginFileType` or `PluginFile`:
 
 1. Create a static method in `PluginFileType` or a virtual method in `PluginFile` that return _A_
-1. Annotate this method with `@ShesmuAction`.
+1. Annotate this method with [`@ShesmuAction`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/action/ShesmuAction.html).
 1. Name this method with a Shesmu-compatible name or set the `name` property in
 	 the annotation. If the name is associated with an instance, it must contain
    a `$` which will be substituted for the instance name.
@@ -415,7 +444,8 @@ To deliver an action to olives using a `Definer`:
 It is very important to use _A_ and not `Action`, since this type information
 is used to discover the properties of the action.
 
-For details on the parameters to an action, see the _Action Parameters_ section.
+For details on the parameters to an action, see [Action
+Parameters](#action-parameters) section.
 
 These two methods are a bit different in how they operate:
 
@@ -441,6 +471,7 @@ Typically, dynamically created actions need extra information, so the `Definer`
 can capture extra information needed by the action's constructor as part of the
 `Supplier`.
 
+<a id="action-parameters"></a>
 #### Action Parameters
 An action needs to take some data from the Shesmu olive. Since the number of
 parameters an action might require can be very large, they are not passed to
@@ -451,9 +482,9 @@ mapping, where an empty object is created and then populated from the data
 being loaded. There are multiple methods to import data from an olive:
 
 1. Put data in a field or setter method using the `@ActionParameter` annotation.
-1. Put data in a JSON object using the `@JsonParameter` annotation. _A_ must extend `JsonParameterisedAction`.
-1. Put data in a JSON object using the `JsonParameter` class and a `Definer`. _A_ must extend `JsonParameterisedAction`.
-1. Use the `CustomActionParameter` class and a `Definer`.
+1. Put data in a JSON object using the [`@JsonParameter`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/json/JsonParameter.html) annotation. _A_ must extend [`JsonParameterisedAction`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/action/JsonParameterisedAction.html).
+1. Put data in a JSON object using the [`JsonActionParameter`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/action/JsonActionParameter.html) class and a `Definer`. _A_ must extend [`JsonParameterisedAction`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/action/JsonParameterisedAction.html).
+1. Use the [`CustomActionParameter`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/action/CustomActionParameter.html) class and a `Definer`.
 
 When using the `@ActionParameter` annotation, it may be applied to any field or
 virtual method taking one argument and returning void. The type will be
@@ -485,8 +516,9 @@ list of entries.
 
 To create a refiller:
 
-1. Create a class _F_`<T>` that extends `Refiller<T>`. `T` is the input row
-   type and will be used throughout.
+1. Create a class _F_`<T>` that extends
+   [`Refiller<T>`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/refill/Refiller.html).
+   `T` is the input row type and will be used throughout.
 1. Decide on the schema and set up parameters to collect the readers.
 1. Implement the `consume` method that uses the readers to consume the data in
    the provided input stream.
@@ -502,14 +534,14 @@ will provide it with the functions it requires to manipulate that type.
 To deliver a database to olives using `PluginFileType` or `PluginFile`:
 
 1. Create a static method in `PluginFileType` or a virtual method in `PluginFile`, parameterized by `<T>`, that return _F_`<T>`. The returned type is used to discover parameters, so it must the be the correct subtype.
-1. Annotate this method with `@ShesmuRefill`.
+1. Annotate this method with [`@ShesmuRefill`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/refill/ShesmuRefill.html).
 1. Name this method with a Shesmu-compatible name or set the `name` property in
 	 the annotation.
 1. Return a new instance of _F_ from this method.
 
 To deliver a database to olives using a `Definer`:
 
-1. Call the `defineRefiller` method. This must take an implementation of `RefillerDefiner` which returns an implementation of `RefillerInfo`. These interfaces are there to ensure type safety.
+1. Call the `defineRefiller` method. This must take an implementation of [`RefillerDefiner`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/Definer.RefillDefiner.html) which returns an implementation of [`RefillerInfo`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/Definer.RefillInfo.html). These interfaces are there to ensure type safety.
 1. The `RefillerInfo` interface returns _F_`.class`, which is used to discover parameters, so it must be the correct subtype.
 1. The `RefillerInfo` interface must return stream of non-annotated parameters.
 
@@ -521,13 +553,15 @@ row and determined by the olive. The refiller implementation may make no
 assumptions about `T`.  There are multiple ways to accept readers:
 
 1. Create a public field of type `Function<T,`_C_`>` annotated with
-   `@RefillerParameter`. The name of the field will be used unless `name` is set
-   in the annotation.
+   [`@RefillerParameter`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/refill/RefillerParameter.html).
+   The name of the field will be used unless `name` is set in the annotation.
 1. Create a public method that takes a single argument of type
    `Function<T,`_C_`>` annotated with `@RefillerParameter`. The name of the method
    will be used unless `name` is set in the annotation.
-1. Create a subclass of `CustomRefillerParameter` that defines the name and
-   type of the parameter and provides a mechanism to store it in the database.
+1. Create a subclass of
+   [`CustomRefillerParameter`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/refill/CustomRefillerParameter.html)
+   that defines the name and type of the parameter and provides a mechanism to
+   store it in the database.
 
 When using `@RefillerParameter`, Shesmu will attempt to determine the correct
 type from the annotation; raw types (_i.e._ `Function`) are not allowed. `T`
@@ -548,7 +582,7 @@ the `signable_names` works.
 
 To create a signature variable:
 
-1. Create a class that extends `StaticSigner` or `DynamicSigner`.
+1. Create a class that extends [`StaticSigner`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/signature/StaticSigner.html) or [`DynamicSigner`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/signature/DynamicSigner.html).
 1. Implement the `addVariable` method to compute a value. If static, no input is
 	 provided. If varying for each record, the input will be the only argument to
    the method.
@@ -556,9 +590,9 @@ To create a signature variable:
 
 Signatures can be made available to olives by:
 
-1. Adding a static method decorated with `@ShesmuSigner` to `PluguinFileType`
+1. Adding a static method decorated with [`@ShesmuSigner`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/signature/ShesmuSigner.html) to `PluguinFileType`
    which returns `StaticSigner` or `DynamicSigner`.
-1. Adding a virtual method decorated with `@ShesmuSigner` to `PluguinFile`
+1. Adding a virtual method decorated with `@ShesmuSigner` to `PluginFile`
    which returns `StaticSigner` or `DynamicSigner`.
 1. Use `Definer.defineStaticSigner` with a `Supplier` that returns new static
    signers.
@@ -579,7 +613,7 @@ exist. Suppose the type of the format is _T_. To add a source of data:
 1. Create a static method in `PluginFileType` or a virtual method in
    `PluginFile`. It must take no arguments or one `boolean` argument and it
    must return `Stream<`_T_`>`.
-1. Add the `@ShesmuInputSource` to this method.
+1. Add the [`@ShesmuInputSource`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/input/ShesmuInputSource.html) to this method.
 
 The method may also return a subclass of _T_, but not a wildcard (_e.g._,
 `Stream<? extends `_T_`>`).
@@ -619,10 +653,12 @@ Corrupt data will be discarded.
 To provide a stream of JSON data:
 
 1. Create a static method in `PluginFileType` or a virtual method in
-	 `PluginFile`. It must take no arguments and it must return
-    `java.io.InputStream` or a subtype. It may throw any exceptions.
-1. Add the `@ShesmuJsonInputSource` to this method. Set `format` to the name of
-	 the format, and, optionally, `ttl` to adjust the cache time (in minutes).
+   `PluginFile`. It must take no arguments and it must return
+   `java.io.InputStream` or a subtype. It may throw any exceptions.
+1. Add the
+   [`@ShesmuJsonInputSource`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/input/JsonInputSource.html)
+   to this method. Set `format` to the name of the format, and, optionally,
+   `ttl` to adjust the cache time (in minutes).
 
 #### Stream JSON Using a Definer
 Using a definer will allow registering sources of JSON data dynamically. Many

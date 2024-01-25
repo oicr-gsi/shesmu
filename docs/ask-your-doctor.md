@@ -94,7 +94,7 @@ REST interface is different depending on the plugins that are active.
 ## Planning Your Deploy
 To perform a deploy, we recommend the following steps:
 
-1. Have a look through the `plugin-*/README.md` and see if any of the plugins seem useful.
+1. Have a look through the [plugins](index.md#plugins) list and see if any of the plugins seem useful.
 1. Determine what input data you will need.
 1. Develop an input format for this data. See [the implementation guide](implementation.md).
 1. Deploy a test instance and get comfortable with writing an olive using the simulation dashboard on your test instance (_Tool_ → _Olive Simulator_).

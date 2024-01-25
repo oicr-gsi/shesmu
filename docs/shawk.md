@@ -5,9 +5,18 @@ for extracting and filtering data using an AWK-like syntax: `shawk`. The
 tool uses an HTTP endpoint `/extract` so it is also possible to use `curl` or
 `wget` to access the same data.
 
+## Downloading the ShAWK command line tool
+The easiest way to get the tool, is to download a pre-built version from
+[GitHub Releases](https://github.com/oicr-gsi/shesmu/releases/latest).
+
+The ShAWK tool doesn't change much, so there's no need to upgrade every Shesmu
+release.
+
+
 ## Building the ShAWK command line tool
-To build the command line tool, first, [install
-Rust](https://www.rust-lang.org/tools/install) and then invoke:
+If downloading a release sounds too easy, you can build the command line tool,
+by first, [install Rust](https://www.rust-lang.org/tools/install) and then
+invoking:
 
 ```
 wget https://github.com/oicr-gsi/shesmu/archive/refs/heads/master.zip
