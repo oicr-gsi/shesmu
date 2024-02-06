@@ -28,6 +28,7 @@ ca.on.oicr.gsi.shesmu.pinery
 ca.on.oicr.gsi.shesmu.pinery.barcodes
 ca.on.oicr.gsi.shesmu.plugin
 ca.on.oicr.gsi.shesmu.plugin.action
+ca.on.oicr.gsi.shesmu.plugin.authentication
 ca.on.oicr.gsi.shesmu.plugin.cache
 ca.on.oicr.gsi.shesmu.plugin.dumper
 ca.on.oicr.gsi.shesmu.plugin.files
