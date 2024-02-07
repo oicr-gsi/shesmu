@@ -281,7 +281,7 @@ public final class SubmitAction extends Action {
   @ActionParameter(
       name = "submission_policy",
       required = false,
-      type = "u3ALWAYS$t0DRY_RUN$t0IS_LIVE$t0MAX_DELAY$t1i")
+      type = "u4ALWAYS$t0DRY_RUN$t0IS_LIVE$t0MAX_DELAY$t1i")
   public void submissionPolicy(AlgebraicValue policy) {
     submissionPolicy =
         switch (policy.name()) {
