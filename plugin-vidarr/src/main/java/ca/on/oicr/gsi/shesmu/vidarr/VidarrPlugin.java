@@ -16,6 +16,7 @@ import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.OptionalImyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.gsi.vidarr.BasicType;
 import ca.on.oicr.gsi.vidarr.BasicType.Visitor;
@@ -307,13 +308,14 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
           if (target.getValue().getConsumableResources() != null
               && !target.getValue().getConsumableResources().isEmpty()) {
             for (final var resource : target.getValue().getConsumableResources().entrySet()) {
+              final var type = resource.getValue().apply(SIMPLE_TO_IMYHAT);
               targetParameters.add(
                   new CustomActionParameter<>(
                       sanitise("resource_" + resource.getKey()),
-                      // temporary workaround for making 'priority' resource optional
-                      // TODO: update this when releasing a Vidarr version with GP-4042 enabled
-                      ("priority".equals(resource.getKey()) ? false : true),
-                      resource.getValue().apply(SIMPLE_TO_IMYHAT)) {
+                      // Optional resources can be absent from the request and Vidarr will
+                      // behave properly, so we can safely make them not required
+                      !(type instanceof OptionalImyhat),
+                      type) {
                     private final String name = resource.getKey();
 
                     @Override
