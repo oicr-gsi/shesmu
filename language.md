@@ -894,6 +894,11 @@ Compute the logical complement of the expression, which must be a boolean.
 
 Computes the arithmetic additive inverse of the expression, which must be an integer.
 
+#### List Size
+- `Count` _expr_
+
+Counts the number of elements _expr_, which must be a list.
+
 #### WDL Pair Conversion
 - `ConvertWdlPair` _expr_
 

@@ -1,0 +1,4 @@
+Version 1;
+Input test;
+
+Olive Run ok With ok = (Count [] == 0) && (Count [3] == 1);
