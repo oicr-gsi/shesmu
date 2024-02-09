@@ -658,6 +658,7 @@ public abstract class ExpressionNode implements Renderable {
     UNARY.addSymbol("!", just(ExpressionNodeLogicalNot::new));
     UNARY.addSymbol("-", just(ExpressionNodeNegate::new));
     UNARY.addKeyword("ConvertWdlPair", just(ExpressionNodeWdlPair::new));
+    UNARY.addKeyword("Count", just(ExpressionNodeCount::new));
 
     SUFFIX_TIGHT.addSymbol(
         "[",
