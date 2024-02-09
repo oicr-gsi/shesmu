@@ -59,7 +59,12 @@ public class RunScannerPluginType extends PluginFileType<RunScannerClient> {
           "Check if a sequencing workflow type has a flow cell where all the lanes are joined or not.")
   public static boolean isWorkflowTypeJoined(
       @ShesmuParameter(description = "The type of the workflow") String workflowType) {
-    return workflowType.equals("NovaSeqStandard") || workflowType.equals("OnBoardClustering");
+    return workflowType.equals("NovaSeqStandard")
+        || workflowType.equals("OnBoardClustering")
+        // Note: HISEQ_ONBOARD == OnBoardClustering
+        // Pinery exports OnBoardClustering as HISEQ_ONBOARD
+        // See: https://jira.oicr.on.ca/browse/GP-3456 and https://jira.oicr.on.ca/browse/GLT-3661
+        || workflowType.equals("HISEQ_ONBOARD");
   }
 
   public RunScannerPluginType() {
