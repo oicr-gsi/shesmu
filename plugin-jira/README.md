@@ -28,7 +28,7 @@ Shesmu supports `"V2"` (datacenter) and `"V3"` (cloud) API versions.
 Any other status is considered open.
 
 The `url` defines the JIRA server that will be used and `authentication` is the
-authentication mechanim to use. It is the same as the authentication
+authentication mechanism to use. It is the same as the authentication
 configuration described for [input definitions](README.md). One configuration
 file is needed for each JIRA project, which is specified in the `projectKey`
 property. Normally, the `closeActions`, `reopenActions`, and `closedStatuses`
