@@ -47,6 +47,7 @@ public enum AvailableCommands {
           "VIDARR-REATTEMPT",
           FrontEndIcon.ARROW_REPEAT,
           "Reattempt Failed Workflow",
+          10,
           Preference.PROMPT,
           Preference.ALLOW_BULK) {
         @Override
@@ -75,6 +76,7 @@ public enum AvailableCommands {
           "VIDARR-RETRY-PROVISION-OUT",
           FrontEndIcon.ARROW_RIGHT_SQUARE_FILL,
           "Retry Provision Out",
+          10,
           Preference.ALLOW_BULK,
           Preference.PROMPT) {
         @Override

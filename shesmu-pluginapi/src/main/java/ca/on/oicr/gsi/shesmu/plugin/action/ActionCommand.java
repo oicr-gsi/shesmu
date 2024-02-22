@@ -175,7 +175,34 @@ public abstract class ActionCommand<A extends Action> {
   private final Class<A> clazz;
   private final String command;
   private final FrontEndIcon icon;
+  private final int importance;
   private final EnumSet<Preference> preferences = EnumSet.noneOf(Preference.class);
+
+  /**
+   * Define a new command
+   *
+   * @param clazz the action class on which this command is performed
+   * @param command an identifier for this command; although the implementation is unique to this
+   *     action type, this can be shared across different action types for bulk actions
+   * @param icon the icon that should appear in the UI
+   * @param buttonText the text that should appear in the UI
+   * @param importance the relative sort order of this command in the UI (larger comes first)
+   * @param preferences UI settings for this command
+   */
+  public ActionCommand(
+      Class<A> clazz,
+      String command,
+      FrontEndIcon icon,
+      String buttonText,
+      int importance,
+      Preference... preferences) {
+    this.clazz = clazz;
+    this.command = command;
+    this.icon = icon;
+    this.buttonText = buttonText;
+    this.importance = importance;
+    this.preferences.addAll(List.of(preferences));
+  }
 
   /**
    * Define a new command
@@ -193,11 +220,7 @@ public abstract class ActionCommand<A extends Action> {
       FrontEndIcon icon,
       String buttonText,
       Preference... preferences) {
-    this.clazz = clazz;
-    this.command = command;
-    this.icon = icon;
-    this.buttonText = buttonText;
-    this.preferences.addAll(List.of(preferences));
+    this(clazz, command, icon, buttonText, 0, preferences);
   }
 
   /**
@@ -235,6 +258,17 @@ public abstract class ActionCommand<A extends Action> {
    */
   public FrontEndIcon icon() {
     return icon;
+  }
+
+  /**
+   * The relative order this command should be displayed in the UI.
+   *
+   * <p>Higher numbers will cause the command to be displayed first
+   *
+   * @return the sort priority
+   */
+  public final int importance() {
+    return importance;
   }
 
   /**

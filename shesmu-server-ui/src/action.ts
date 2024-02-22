@@ -118,6 +118,7 @@ interface BaseCommand {
   command: string;
   buttonText: string;
   icon: IconName;
+  importance: number;
   showPrompt: boolean;
 }
 interface BulkCommand extends BaseCommand {
@@ -412,6 +413,7 @@ export function actionDisplay(exportSearches: ExportSearchCommand[]): {
                     ),
                     menuForCommands(
                       "Commands",
+                      2,
                       action.commands,
                       (command) =>
                         `Perform special command ${command.command} on this action.`,
@@ -527,6 +529,7 @@ export function actionDisplay(exportSearches: ExportSearchCommand[]): {
         response
           ? menuForCommands(
               "Bulk Commands",
+              3,
               response.bulkCommands,
               (command) =>
                 `Perform special command ${command.command} on ${command.count} actions.`,
@@ -1098,36 +1101,42 @@ export function initialiseActionDash(
 
 function menuForCommands<T extends BaseCommand>(
   overflowName: string,
+  count: number,
   commands: T[],
   titleGenerator: (command: T) => string,
   callbackGenerator: (commad: T) => () => void
 ): UIElement {
-  return commands.length < 4
-    ? commands
-        .sort((a, b) => a.buttonText.localeCompare(b.buttonText))
-        .map((command) =>
-          buttonDanger(
-            [{ type: "icon", icon: command.icon }, command.buttonText],
-            titleGenerator(command),
-            callbackGenerator(command)
-          )
+  commands.sort(
+    (a, b) =>
+      b.importance - a.importance || a.buttonText.localeCompare(b.buttonText)
+  );
+  return [
+    ...commands
+      .slice(0, count)
+      .map((command) =>
+        buttonDanger(
+          [{ type: "icon", icon: command.icon }, command.buttonText],
+          titleGenerator(command),
+          callbackGenerator(command)
         )
-    : buttonDanger(
-        [{ type: "icon", icon: "wrench" }, overflowName, " ▼"],
-        "Perform action-specific commands.",
-        popupMenu(
-          true,
-          ...commands
-            .sort((a, b) => a.buttonText.localeCompare(b.buttonText))
-            .map((command) => ({
+      ),
+    commands.length > count
+      ? buttonDanger(
+          [{ type: "icon", icon: "wrench" }, overflowName, " ▼"],
+          "Perform action-specific commands.",
+          popupMenu(
+            true,
+            ...commands.slice(count).map((command) => ({
               label: [
                 { type: "icon" as const, icon: command.icon },
                 command.buttonText,
               ],
               action: callbackGenerator(command),
             }))
+          )
         )
-      );
+      : "",
+  ];
 }
 
 /**
