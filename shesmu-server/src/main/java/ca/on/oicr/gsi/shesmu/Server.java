@@ -1643,6 +1643,7 @@ public final class Server implements ServerConfig, ActionServices {
                 jsonOutput.writeStringField("command", command.getKey().command());
                 jsonOutput.writeStringField("buttonText", command.getKey().buttonText());
                 jsonOutput.writeStringField("icon", command.getKey().icon().icon());
+                jsonOutput.writeNumberField("importance", command.getKey().importance());
                 jsonOutput.writeBooleanField(
                     "showPrompt", command.getKey().prefers(Preference.PROMPT));
                 jsonOutput.writeBooleanField(

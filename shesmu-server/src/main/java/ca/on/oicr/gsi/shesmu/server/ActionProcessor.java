@@ -1464,6 +1464,7 @@ public final class ActionProcessor
                 command.put("command", c.command());
                 command.put("buttonText", c.buttonText());
                 command.put("icon", c.icon().icon());
+                command.put("importance", c.importance());
                 command.put("showPrompt", c.prefers(Preference.PROMPT));
                 command.put("allowBulk", c.prefers(Preference.ALLOW_BULK));
               });

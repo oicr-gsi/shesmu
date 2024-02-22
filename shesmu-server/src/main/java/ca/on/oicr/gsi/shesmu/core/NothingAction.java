@@ -38,6 +38,7 @@ public class NothingAction extends Action {
           "NOTHING-SCREAM-TO-DEATH",
           FrontEndIcon.TRASH_FILL,
           "Write to Server Console and Purge",
+          100,
           Preference.ALLOW_BULK,
           Preference.PROMPT) {
         @Override
