@@ -7,6 +7,34 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.30.0] - 2024-02-23
+
+### Added
+
+* * Adds a new `orphaned` action filter
+* * Allow actions to know if the olive is live
+  * Add `IS_LIVE` submission policy for Vidarr submit action
+* * Allow HTTP authentication for `-remote` input format sources
+* * Add `std::json::encode` and `std::json::decode` functions
+* * Add new type conversion for dictionaries and JSON values in the Java API
+* * Add new `Count` operator for lists
+* * Allow defining input formats using JSON files
+* * Add `OnReject` support to `Group` clauses
+
+### Changed
+
+* * Merge JIRA `open_ticket` and `resolve_ticket` into a single `issue` action
+* * Allow optional consumable resources to be omitted in Vidarr submit actions
+* * Allow _Try It_ for functions on _Definitions_ page to take JSON or Shesmu input
+* Remove confusing second generic from cache types
+* * Replace `OnlyIf` in `Group` clause with more sophisticated syntax for handling optionals
+* Add support for Pinery's HISEQ_ONBOARD workflow type
+
+### Removed
+
+* * Remove unused `ActionState.sortPriority`
+
+
 ## [1.29.0] - 2024-01-11
 
 ### Changed
