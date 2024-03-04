@@ -3,17 +3,125 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import org.objectweb.asm.Label;
+import java.util.stream.Collectors;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 public class ExpressionNodeOptionalOf extends ExpressionNode {
+
+  /**
+   * For each question mark we encounter, we need to track the question marks inside of it. To do
+   * this, we divide the operations into layers of nesting. Each layer is defined by an integer
+   * number that starts at zero and decreases for every inner layer. Processing is done in layer
+   * order.
+   *
+   * <p>Given <code>foo(x?)? + y?</code>, this will be divided into two layers (plus the base
+   * expression):
+   *
+   * <ul>
+   *   <li>Base expression: <code>$0 + $1</code>
+   *   <li>Layer 0: <code>$0 = foo($2)</code> and <code>$1 = y</code>
+   *   <li>Layer -1: <code>$2 = x</code>
+   * </ul>
+   *
+   * The order of the expressions in each layer is arbitrary, but there is no way for them to
+   * interfere, so it doesn't matter.
+   */
+  private class OptionalCaptureCompilerServices implements ExpressionCompilerServices {
+    private final Consumer<String> errorHandler;
+    private final ExpressionCompilerServices expressionCompilerServices;
+    private final int layer;
+
+    public OptionalCaptureCompilerServices(
+        ExpressionCompilerServices expressionCompilerServices,
+        Consumer<String> errorHandler,
+        int layer) {
+      this.expressionCompilerServices = expressionCompilerServices;
+      this.errorHandler = errorHandler;
+      this.layer = layer;
+    }
+
+    @Override
+    public Optional<TargetWithContext> captureOptional(
+        ExpressionNode expression, int line, int column, Consumer<String> errorHandler) {
+      if (expression.resolveDefinitions(
+          new OptionalCaptureCompilerServices(
+              expressionCompilerServices, this.errorHandler, layer - 1),
+          this.errorHandler)) {
+        final var target = new UnboxableExpression(expression);
+        captures.computeIfAbsent(layer, k -> new ArrayList<>()).add(target);
+        return Optional.of(target);
+      } else {
+        return Optional.empty();
+      }
+    }
+
+    @Override
+    public FunctionDefinition function(String name) {
+      return expressionCompilerServices.function(name);
+    }
+
+    @Override
+    public InputFormatDefinition inputFormat(String format) {
+      return expressionCompilerServices.inputFormat(format);
+    }
+
+    @Override
+    public Imyhat imyhat(String name) {
+      return expressionCompilerServices.imyhat(name);
+    }
+
+    @Override
+    public InputFormatDefinition inputFormat() {
+      return expressionCompilerServices.inputFormat();
+    }
+  }
+
+  private static class UnboxableExpression implements TargetWithContext {
+    private Optional<NameDefinitions> defs = Optional.empty();
+    private final ExpressionNode expression;
+    private final String name;
+
+    public UnboxableExpression(ExpressionNode expression) {
+      this.expression = expression;
+      name = String.format("Lift of %d:%d", expression.line(), expression.column());
+    }
+
+    @Override
+    public Flavour flavour() {
+      return Flavour.LAMBDA;
+    }
+
+    @Override
+    public String name() {
+      return name;
+    }
+
+    @Override
+    public void read() {
+      // Super. Don't care.
+    }
+
+    @Override
+    public void setContext(NameDefinitions defs) {
+      this.defs = Optional.of(defs);
+    }
+
+    @Override
+    public Imyhat type() {
+      return expression.type() instanceof Imyhat.OptionalImyhat
+          ? ((Imyhat.OptionalImyhat) expression.type()).inner()
+          : expression.type();
+    }
+  }
 
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 
@@ -25,45 +133,6 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
       new Method("isPresent", Type.BOOLEAN_TYPE, new Type[0]);
   private static final Method METHOD_OPTIONAL__OF =
       new Method("of", A_OPTIONAL_TYPE, new Type[] {A_OBJECT_TYPE});
-
-  static void renderLayers(
-      Renderer renderer, Label empty, Map<Integer, List<UnboxableExpression>> captures) {
-    for (final var layer : captures.values()) {
-      for (final var capture : layer) {
-        final var optional = renderer.methodGen().newLocal(A_OPTIONAL_TYPE);
-        capture.render(renderer);
-        renderer.methodGen().dup();
-        renderer.methodGen().storeLocal(optional);
-        renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__IS_PRESENT);
-        renderer.methodGen().ifZCmp(GeneratorAdapter.EQ, empty);
-        renderer.methodGen().loadLocal(optional);
-        renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__GET);
-        final var type = capture.type().apply(TO_ASM);
-        renderer.methodGen().unbox(type);
-        final var local = renderer.methodGen().newLocal(type);
-        renderer.methodGen().storeLocal(local);
-        renderer.define(
-            capture.name(),
-            new LoadableValue() {
-              @Override
-              public void accept(Renderer renderer) {
-                renderer.methodGen().loadLocal(local);
-              }
-
-              @Override
-              public String name() {
-                return capture.name();
-              }
-
-              @Override
-              public Type type() {
-                return type;
-              }
-            });
-      }
-    }
-  }
-
   private final Map<Integer, List<UnboxableExpression>> captures = new TreeMap<>();
   private final ExpressionNode item;
   private Imyhat type = Imyhat.BAD;
@@ -77,7 +146,7 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     for (final var layer : captures.values()) {
       for (final var capture : layer) {
-        capture.collectFreeVariables(names, predicate);
+        capture.expression.collectFreeVariables(names, predicate);
       }
     }
     item.collectFreeVariables(names, predicate);
@@ -87,10 +156,62 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
   public void collectPlugins(Set<Path> pluginFileNames) {
     for (final var layer : captures.values()) {
       for (final var capture : layer) {
-        capture.collectPlugins(pluginFileNames);
+        capture.expression.collectPlugins(pluginFileNames);
       }
     }
     item.collectPlugins(pluginFileNames);
+  }
+
+  class LayerUnNester implements Consumer<EcmaScriptRenderer> {
+
+    private final Iterator<List<UnboxableExpression>> iterator;
+    private final String output;
+
+    LayerUnNester(Iterator<List<UnboxableExpression>> iterator, String output) {
+      this.iterator = iterator;
+      this.output = output;
+    }
+
+    @Override
+    public void accept(EcmaScriptRenderer renderer) {
+      if (iterator.hasNext()) {
+        renderer.conditional(
+            iterator.next().stream()
+                .map(
+                    capture -> {
+                      final var capturedValue =
+                          renderer.newConst(capture.expression.renderEcma(renderer));
+                      renderer.define(
+                          new EcmaLoadableValue() {
+                            @Override
+                            public String name() {
+                              return capture.name;
+                            }
+
+                            @Override
+                            public String get() {
+                              return capturedValue;
+                            }
+                          });
+                      return capturedValue + " !== null";
+                    })
+                .collect(Collectors.joining(" && ")),
+            this);
+      } else {
+        renderer.statement(String.format("%s = %s", output, item.renderEcma(renderer)));
+      }
+    }
+  }
+
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    if (captures.isEmpty()) {
+      return item.renderEcma(renderer);
+    } else {
+      final var result = renderer.newLet("null");
+      new LayerUnNester(captures.values().iterator(), result).accept(renderer);
+      return result;
+    }
   }
 
   @Override
@@ -112,28 +233,48 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
       // and then wrap it all back up in an optional (if the inner result isn't already)
       final var end = renderer.methodGen().newLabel();
       final var empty = renderer.methodGen().newLabel();
-      renderLayers(renderer, empty, captures);
+      for (final var layer : captures.values()) {
+        for (final var capture : layer) {
+          capture.expression.render(renderer);
+          renderer.methodGen().dup();
+          renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__IS_PRESENT);
+          renderer.methodGen().ifZCmp(GeneratorAdapter.EQ, empty);
+          renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__GET);
+          final var type = capture.type().apply(TO_ASM);
+          renderer.methodGen().unbox(type);
+          final var local = renderer.methodGen().newLocal(type);
+          renderer.methodGen().storeLocal(local);
+          renderer.define(
+              capture.name(),
+              new LoadableValue() {
+                @Override
+                public void accept(Renderer renderer) {
+                  renderer.methodGen().loadLocal(local);
+                }
+
+                @Override
+                public String name() {
+                  return capture.name();
+                }
+
+                @Override
+                public Type type() {
+                  return type;
+                }
+              });
+        }
+      }
       item.render(renderer);
-      // The value might already be wrapped in an optional; if it isn't do that now.
+      // The value might already be wrapped in an optional; if it ins't do that now.
       if (!item.type().isSame(item.type().asOptional())) {
         renderer.methodGen().box(item.type().apply(TO_ASM));
         renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__OF);
       }
       renderer.methodGen().goTo(end);
       renderer.methodGen().mark(empty);
+      renderer.methodGen().pop();
       renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__EMPTY);
       renderer.methodGen().mark(end);
-    }
-  }
-
-  @Override
-  public String renderEcma(EcmaScriptRenderer renderer) {
-    if (captures.isEmpty()) {
-      return item.renderEcma(renderer);
-    } else {
-      final var result = renderer.newLet("null");
-      new LayerUnNester(captures.values().iterator(), item, result).accept(renderer);
-      return result;
     }
   }
 
@@ -154,7 +295,13 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
         && captures.values().stream()
             .allMatch(
                 layer ->
-                    layer.stream().filter(capture -> capture.resolve(defs, errorHandler)).count()
+                    layer.stream()
+                            .filter(
+                                capture ->
+                                    capture.expression.resolve(
+                                        capture.defs.map(defs::withShadowContext).orElse(defs),
+                                        errorHandler))
+                            .count()
                         == layer.size());
   }
 
@@ -162,7 +309,7 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return item.resolveDefinitions(
-        new OptionalCaptureCompilerServices(expressionCompilerServices, errorHandler, captures),
+        new OptionalCaptureCompilerServices(expressionCompilerServices, errorHandler, 0),
         errorHandler);
   }
 
@@ -186,7 +333,23 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
           captures.values().stream()
                   .allMatch(
                       layer ->
-                          layer.stream().filter(capture -> capture.typeCheck(errorHandler)).count()
+                          layer.stream()
+                                  .filter(
+                                      capture -> {
+                                        final var captureOk =
+                                            capture.expression.typeCheck(errorHandler);
+                                        if (captureOk
+                                            && !capture
+                                                .expression
+                                                .type()
+                                                .isSame(capture.expression.type().asOptional())) {
+                                          capture.expression.typeError(
+                                              "optional", capture.expression.type(), errorHandler);
+                                          return false;
+                                        }
+                                        return captureOk;
+                                      })
+                                  .count()
                               == layer.size())
               && item.typeCheck(errorHandler);
       type = item.type();

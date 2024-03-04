@@ -1,7 +1,0 @@
-Version 1;
-Input test;
-
-Olive
- Let workflow, project = If library_size == 307 Then `project` Else ``
- Group By workflow Into a = Require All `Univalued project?`
- Run ok With ok = a == "the_foo_study";

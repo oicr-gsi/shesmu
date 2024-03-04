@@ -2,39 +2,12 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.GeneratorAdapter;
 
 /** Build a grouping operation */
 public interface Regrouper {
-  static String badCount(String fieldName) {
-    return fieldName + " Bad Count";
-  }
-
-  static String goodCount(String fieldName) {
-    return fieldName + " Good Count";
-  }
-
-  interface OnlyIfConsumer {
-    void build(Renderer renderer, String fieldName, Type owner, Label failurePath);
-
-    boolean countsRequired();
-
-    void failIfBad(
-        GeneratorAdapter checker,
-        String fieldName,
-        Type owner,
-        BiConsumer<GeneratorAdapter, Label> checkInner,
-        Label failure);
-
-    void renderGetter(GeneratorAdapter getter, String fieldName, Type owner);
-
-    Type type();
-  }
 
   /**
    * Add a new collection of values slurped during iteration
@@ -111,10 +84,11 @@ public interface Regrouper {
    *
    * <p>The row will be rejected if it has zero or 2 or more items.
    *
+   * @param valueType the type of the values in the collection
    * @param fieldName the name of the output variable
-   * @param consumer the behaviour for checking the optional value
+   * @param loader a function to load the variable; this must return an optional
    */
-  Regrouper addOnlyIf(String fieldName, OnlyIfConsumer consumer);
+  void addOnlyIf(Imyhat valueType, String fieldName, Consumer<Renderer> loader);
 
   /**
    * A single value which is the optima from all input values
