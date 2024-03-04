@@ -7,6 +7,17 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.31.0] - 2024-03-04
+
+### Added
+
+* * Add Vidarr _retry failed provision-out_ command
+
+### Fixed
+
+* Revert broken grouping rewrite until further fixes can be applied.
+
+
 ## [1.30.0] - 2024-02-23
 
 ### Added
