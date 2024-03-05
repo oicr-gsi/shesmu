@@ -71,8 +71,7 @@ public final class AnnotatedInputFormatDefinition extends BaseInputFormatDefinit
       final var handle =
           MethodHandles.guardWithTest(
               MH_TUPLE_IS_INSTANCE,
-              MethodHandles.insertArguments(MH_TUPLE_GET, 1, variables.size() - 1)
-                  .asType(methodType),
+              MethodHandles.insertArguments(MH_TUPLE_GET, 1, variables.size()).asType(methodType),
               getter);
       variables.add(
           new InputVariableDefinition(
