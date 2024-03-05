@@ -1,0 +1,10 @@
+Version 1;
+Input test;
+
+project_info = Dict {
+	"the_foo_study" = 3 As json
+};
+
+Olive
+ Group By workflow Into a = Require Any `Univalued (project_info[project]? As integer)?`
+ Run ok With ok = a == 3;
