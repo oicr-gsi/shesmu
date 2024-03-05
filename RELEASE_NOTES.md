@@ -7,6 +7,14 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.31.1] - 2024-03-05
+
+### Fixed
+
+* Fixes 'Cannot cast Optional to Set' error; reinstates new Grouping logic
+  
+
+
 ## [1.31.0] - 2024-03-04
 
 ### Added
