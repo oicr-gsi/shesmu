@@ -13,15 +13,8 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureVariableForDynamicSigner;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureVariableForStaticSigner;
-import ca.on.oicr.gsi.shesmu.plugin.Definer;
-import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
-import ca.on.oicr.gsi.shesmu.plugin.Parser;
-import ca.on.oicr.gsi.shesmu.plugin.PluginFile;
-import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
-import ca.on.oicr.gsi.shesmu.plugin.RequiredServices;
+import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLocationLinker;
-import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
-import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
@@ -70,15 +63,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Queue;
-import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -760,7 +745,7 @@ public final class PluginManager
 
       @Override
       public void defineSource(String formatName, int ttl, JsonInputSource source) {
-        Stream.concat(AnnotatedInputFormatDefinition.formats(), JsonInputFormatDefinition.formats())
+        AnnotatedInputFormatDefinition.formats()
             .filter(format -> format.name().equals(formatName))
             .forEach(
                 format ->
@@ -1687,7 +1672,7 @@ public final class PluginManager
                 "Method %s of %s does not return InputStream (or a subclass).",
                 method.getName(), method.getDeclaringClass().getName()));
       }
-      final Consumer<BaseInputFormatDefinition> writeSource;
+      final Consumer<AnnotatedInputFormatDefinition> writeSource;
       final var handle = fileFormat.lookup().unreflect(method);
       final var cacheName = method.getDeclaringClass().getCanonicalName() + " " + method.getName();
       if (isInstance) {
@@ -1706,7 +1691,7 @@ public final class PluginManager
                     .computeIfAbsent(format.name(), k -> new ConcurrentLinkedQueue<>())
                     .add(format.fromJsonStream(cacheName, annotation.ttl(), source));
       }
-      Stream.concat(AnnotatedInputFormatDefinition.formats(), JsonInputFormatDefinition.formats())
+      AnnotatedInputFormatDefinition.formats()
           .filter(format -> format.name().equals(annotation.format()))
           .forEach(writeSource);
     }

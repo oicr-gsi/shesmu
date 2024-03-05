@@ -1,5 +1,0 @@
-Version 1;
-Input test_json;
-
-Olive
- Run ok With ok = {@hello} == {1, "a"};

@@ -21,7 +21,6 @@ import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.server.HotloadingCompiler;
 import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.server.plugins.JsonInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -152,12 +151,7 @@ public class RunTest {
 
     public Stream<Object> fetch(String format) {
       usedFormats.add(format);
-      return switch (format) {
-        case "inner_test" -> Stream.of(INNER_TEST_DATA);
-        case "test" -> Stream.of(TEST_DATA);
-        case "test_json" -> JSON_DATA.stream();
-        default -> Stream.empty();
-      };
+      return format.equals("inner_test") ? Stream.of(INNER_TEST_DATA) : Stream.of(TEST_DATA);
     }
 
     public boolean ok(ActionGenerator generator) {
@@ -325,7 +319,6 @@ public class RunTest {
           return Imyhat.STRING;
         }
       };
-  public static final List<Object> JSON_DATA;
   private static final ActionDefinition OK_ACTION_DEFINITION =
       new ActionDefinition(
           "ok",
@@ -393,26 +386,19 @@ public class RunTest {
 
   static {
     NameLoader<InputFormatDefinition> inputFormats = null;
-    List<Object> jsonData = null;
     try {
-      final var json =
-          JsonInputFormatDefinition.create(
-              Path.of(RunTest.class.getResource("/test_json.shesmuschema").getPath()));
-      jsonData = json.readJsonString("[{\"x\":1,\"y\":\"a\",\"z\":[]}]");
       inputFormats =
           new NameLoader<>(
               Stream.of(
-                  AnnotatedInputFormatDefinition.create(
+                  new AnnotatedInputFormatDefinition(
                       new InputFormat("test", TestValue.class, MethodHandles.lookup())),
-                  AnnotatedInputFormatDefinition.create(
-                      new InputFormat("inner_test", InnerTestValue.class, MethodHandles.lookup())),
-                  json),
+                  new AnnotatedInputFormatDefinition(
+                      new InputFormat("inner_test", InnerTestValue.class, MethodHandles.lookup()))),
               InputFormatDefinition::name);
-    } catch (IllegalAccessException | IOException e) {
+    } catch (IllegalAccessException e) {
       e.printStackTrace();
     }
     INPUT_FORMATS = inputFormats;
-    JSON_DATA = jsonData;
   }
 
   @Test

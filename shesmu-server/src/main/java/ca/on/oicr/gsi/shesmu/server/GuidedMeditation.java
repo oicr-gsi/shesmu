@@ -15,7 +15,6 @@ import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.server.plugins.JsonInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
@@ -76,12 +75,9 @@ public class GuidedMeditation implements WatchedFileListener {
       final Map<String, WizardDefineNode> crossReferences = new TreeMap<>();
       final var expressionCompilerServices =
           new ExpressionCompilerServices() {
-            private final NameLoader<InputFormatDefinition> formats =
+            private final NameLoader<AnnotatedInputFormatDefinition> formats =
                 new NameLoader<>(
-                    Stream.concat(
-                        AnnotatedInputFormatDefinition.formats(),
-                        JsonInputFormatDefinition.formats()),
-                    InputFormatDefinition::name);
+                    AnnotatedInputFormatDefinition.formats(), InputFormatDefinition::name);
             private final NameLoader<FunctionDefinition> functions =
                 new NameLoader<>(new StandardDefinitions().functions(), FunctionDefinition::name);
 
