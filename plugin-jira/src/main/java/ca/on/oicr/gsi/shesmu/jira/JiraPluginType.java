@@ -6,9 +6,22 @@ import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import org.kohsuke.MetaInfServices;
+import java.util.Optional;
 
 @MetaInfServices
 public final class JiraPluginType extends PluginFileType<JiraConnection> {
+
+  private static final Tuple FORMATTING =
+      new Tuple("|", "|", "|", "||", "||", "||", Optional.empty());
+
+  @ShesmuMethod(
+      type =
+          "o7data_end$sdata_separator$sdata_start$sheader_end$sheader_separator$sheader_start$sheader_underline$qs",
+      description =
+          "The formatting information used for generating JIRA-compatible tables using For...Table")
+  public static Tuple table_formatting() {
+    return FORMATTING;
+  }
 
   public JiraPluginType() {
     super(MethodHandles.lookup(), JiraConnection.class, ".jira", "jira");
