@@ -468,7 +468,7 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
             .map(
                 variable ->
                     new Pair<>(
-                        name,
+                        variable.name(),
                         MethodHandleProxies.asInterfaceInstance(
                             JsonFieldWriter.class,
                             MethodHandles.collectArguments(
