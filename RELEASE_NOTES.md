@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.31.2] - 2024-03-12
+
+### Fixed
+
+* * Fix bug causing wrong field names in serialization
+
+
 ## [1.31.1] - 2024-03-05
 
 ### Fixed
