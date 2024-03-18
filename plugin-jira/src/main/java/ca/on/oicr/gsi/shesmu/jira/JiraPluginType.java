@@ -2,11 +2,13 @@ package ca.on.oicr.gsi.shesmu.jira;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import org.kohsuke.MetaInfServices;
 import java.util.Optional;
+import org.kohsuke.MetaInfServices;
 
 @MetaInfServices
 public final class JiraPluginType extends PluginFileType<JiraConnection> {
