@@ -117,7 +117,7 @@ public final class SubmitAction extends Action {
       return false;
     }
     var that = (SubmitAction) o;
-    return stale == that.stale && request.equalsIgnoreAttempt(that.request);
+    return stale == that.stale && request.equalsIgnoreAttemptAndConsumableResources(that.request);
   }
 
   @SuppressWarnings("unchecked")
@@ -154,7 +154,7 @@ public final class SubmitAction extends Action {
 
   @Override
   public int hashCode() {
-    return request.hashCodeIgnoreAttempt() * 31 + Boolean.hashCode(stale);
+    return request.hashCodeIgnoreAttemptAndConsumableResources() * 31 + Boolean.hashCode(stale);
   }
 
   @Override
