@@ -7,6 +7,14 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.32.1] - 2024-03-21
+
+### Fixed
+
+* Fix modular access errors
+  
+
+
 ## [1.32.0] - 2024-03-21
 
 ### Added
