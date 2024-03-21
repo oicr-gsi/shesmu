@@ -5,6 +5,7 @@ import static ca.on.oicr.gsi.shesmu.compiler.JoinSourceNode.METHOD_INPUT_PROVIDE
 
 import ca.on.oicr.gsi.shesmu.compiler.ExtractionNode.OutputCollector;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ExtractionDataSource;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
@@ -151,6 +152,11 @@ public final class ExtractRuleNode implements ExtractionDataSource {
 
     final var services =
         new ExpressionCompilerServices() {
+          @Override
+          public ActionDefinition action(String name) {
+            return null;
+          }
+
           @Override
           public FunctionDefinition function(String name) {
             return definedFunctions.apply(name);

@@ -59,11 +59,17 @@ public abstract class VariableTagNode {
     expression.collectPlugins(pluginFileNames);
   }
 
+  protected abstract String decorateEcma(String data);
+
   protected final void render(Renderer renderer) {
     expression.render(renderer);
   }
 
   public abstract Optional<IntConsumer> renderDynamicSize(Renderer renderer);
+
+  public final String renderEcma(EcmaScriptRenderer renderer) {
+    return decorateEcma(expression.renderEcma(renderer));
+  }
 
   public abstract int renderStaticTag(Renderer renderer, int tagIndex);
 

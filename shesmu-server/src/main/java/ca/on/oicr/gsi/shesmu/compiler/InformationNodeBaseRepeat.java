@@ -57,7 +57,7 @@ public abstract class InformationNodeBaseRepeat extends InformationNode {
                 .map(
                     name -> {
                       final var collectorName = defs.replaceStream(name.targets(), true);
-                      return resolveTerminal(collectorName, errorHandler);
+                      return resolveTerminal(defs, collectorName, errorHandler);
                     })
                 .orElse(false);
     return ok;
@@ -79,7 +79,7 @@ public abstract class InformationNodeBaseRepeat extends InformationNode {
   }
 
   protected abstract boolean resolveTerminal(
-      NameDefinitions collectorName, Consumer<String> errorHandler);
+      NameDefinitions parentName, NameDefinitions collectorName, Consumer<String> errorHandler);
 
   protected abstract boolean resolveTerminalDefinitions(
       ExpressionCompilerServices expressionCompilerServices,

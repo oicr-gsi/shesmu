@@ -40,6 +40,11 @@ public final class OliveArgumentNodeProvided extends OliveArgumentNode {
     storeAll(renderer, action, expression::render);
   }
 
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return storeAll(renderer, expression.renderEcma(renderer));
+  }
+
   /** Resolve variables in the expression of this argument */
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
@@ -49,8 +54,8 @@ public final class OliveArgumentNodeProvided extends OliveArgumentNode {
   /** Resolve functions in this argument */
   @Override
   public boolean resolveExtraFunctions(
-      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    return expression.resolveDefinitions(oliveCompilerServices, errorHandler);
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return expression.resolveDefinitions(expressionCompilerServices, errorHandler);
   }
 
   @Override
