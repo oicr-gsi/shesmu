@@ -7,6 +7,22 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.32.0] - 2024-03-21
+
+### Added
+
+* * Actions can be sorted in the UI
+* * Add new function in JIRA plugin for formatting tables
+* * Add priority tracing information to Vidarr submission action tiles
+* * Adds tool to do quick extracts of data from the command line as JSON or delimited text.
+
+### Changed
+
+* * Move to the Java Platform Module System (JPMS, aka Jigsaw)
+* * Reorganize documentation
+* * Show the top few commands for each action
+
+
 ## [1.31.2] - 2024-03-12
 
 ### Fixed
