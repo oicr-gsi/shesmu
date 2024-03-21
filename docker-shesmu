@@ -1,5 +1,4 @@
 #!/bin/sh
-export MODULEPATH=/usr/share/shesmu/*
 IFS=":"
 export SHESMU_DATA="$*"
 
@@ -15,4 +14,5 @@ exec java \
 	-XX:+ExitOnOutOfMemoryError \
 	-Xms${MEMORY:-13g} \
 	-Xmx${MEMORY:-13g} \
+	-p /usr/share/shesmu \
 	-m ca.on.oicr.gsi.shesmu.server/ca.on.oicr.gsi.shesmu.Server
