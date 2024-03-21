@@ -98,9 +98,8 @@ On a Linux server, create a systemd configuration in `/lib/systemd/system/shesmu
     Description=Shesmu decision-action server
 
     [Service]
-    Environment=MODULEPATH=/srv/shesmu/*
     Environment=SHESMU_DATA=/srv/shesmu
-    ExecStart=/usr/bin/java ca.on.oicr.gsi.shesmu.server/ca.on.oicr.gsi.shesmu.Server
+    ExecStart=/usr/bin/java -p /srv/shesmu/* -m ca.on.oicr.gsi.shesmu.server/ca.on.oicr.gsi.shesmu.Server
     KillMode=process
 
     [Install]
