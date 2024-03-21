@@ -17,6 +17,7 @@ module ca.on.oicr.gsi.shesmu.server {
   exports ca.on.oicr.gsi.shesmu.runtime.subsample;
   exports ca.on.oicr.gsi.shesmu.runtime;
   exports ca.on.oicr.gsi.shesmu.server;
+  exports ca.on.oicr.gsi.shesmu.server.plugins;
   exports ca.on.oicr.gsi.shesmu;
 
   uses ca.on.oicr.gsi.shesmu.plugin.PluginFileType;

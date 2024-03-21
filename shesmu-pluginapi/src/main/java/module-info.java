@@ -19,6 +19,8 @@ module ca.on.oicr.gsi.shesmu {
   exports ca.on.oicr.gsi.shesmu.plugin.wdl;
   exports ca.on.oicr.gsi.shesmu.plugin;
 
+  opens ca.on.oicr.gsi.shesmu.plugin.filter;
+
   requires ca.on.oicr.gsi.serverutils;
   requires com.fasterxml.jackson.annotation;
   requires com.fasterxml.jackson.core;
