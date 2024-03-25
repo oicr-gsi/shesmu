@@ -7,6 +7,7 @@ import ca.on.oicr.gsi.shesmu.plugin.input.InputFormat;
 module ca.on.oicr.gsi.shesmu.plugin.guanyin {
   exports ca.on.oicr.gsi.shesmu.guanyin;
   exports ca.on.oicr.gsi.shesmu.onlinereport;
+  exports ca.on.oicr.gsi.shesmu.cromwell;
 
   requires ca.on.oicr.gsi.serverutils;
   requires ca.on.oicr.gsi.shesmu;
