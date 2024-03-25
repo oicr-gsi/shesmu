@@ -11,6 +11,9 @@ module ca.on.oicr.gsi.shesmu.plugin.sftp {
   requires simpleclient;
   requires org.slf4j.jul;
   requires org.slf4j;
+  requires org.bouncycastle.util;
+  requires org.bouncycastle.provider;
+  requires org.bouncycastle.pkix;
 
   provides PluginFileType with
       SftpPluginType;
