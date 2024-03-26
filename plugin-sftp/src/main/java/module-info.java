@@ -9,6 +9,8 @@ module ca.on.oicr.gsi.shesmu.plugin.sftp {
   requires com.fasterxml.jackson.databind;
   requires com.hierynomus.sshj;
   requires simpleclient;
+  requires org.slf4j.jul;
+  requires org.slf4j;
 
   provides PluginFileType with
       SftpPluginType;
