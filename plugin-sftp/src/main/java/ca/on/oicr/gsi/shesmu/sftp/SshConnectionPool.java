@@ -11,9 +11,14 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import net.schmizz.sshj.DefaultConfig;
 import net.schmizz.sshj.SSHClient;
+import net.schmizz.sshj.common.LoggerFactory;
 import net.schmizz.sshj.sftp.SFTPClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
+import org.slf4j.ILoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.jul.JDK14LoggerFactory;
 
 public class SshConnectionPool implements Supplier<PooledSshConnection>, AutoCloseable {
   private static final class ConnectionInfo {
@@ -38,7 +43,9 @@ public class SshConnectionPool implements Supplier<PooledSshConnection>, AutoClo
     public PooledSshConnection(ConnectionInfo info) throws IOException {
       this.info = info;
       try {
-        client = new SSHClient();
+        final var config = new DefaultConfig();
+        config.setLoggerFactory(LOGGER_FACTORY);
+        client = new SSHClient(config);
         client.addHostKeyVerifier(new PromiscuousVerifier());
         client.connect(info.host, info.port);
         client.authPublickey(info.user);
@@ -82,6 +89,26 @@ public class SshConnectionPool implements Supplier<PooledSshConnection>, AutoClo
     }
   }
 
+  private static final LoggerFactory LOGGER_FACTORY =
+      new LoggerFactory() {
+        private final ILoggerFactory factory = new JDK14LoggerFactory();
+
+        @Override
+        public Logger getLogger(String name) {
+          return factory.getLogger(name);
+        }
+
+        @Override
+        public Logger getLogger(Class<?> clazz) {
+          return factory.getLogger(clazz.getName());
+        }
+      };
+  private static final Counter connectionErrors =
+      Counter.build(
+              "shesmu_get_ssh_pool_conn_error",
+              "The number of times getting an SSH connection threw an error")
+          .labelNames("host", "port", "user")
+          .register();
   private static final LatencyHistogram connectionLife =
       new LatencyHistogram(
           "shesmu_ssh_pool_conn_lifespan",
@@ -95,12 +122,6 @@ public class SshConnectionPool implements Supplier<PooledSshConnection>, AutoClo
           .register();
   private static final Counter destroyedConnections =
       Counter.build("shesmu_ssh_pool_conn_destroyed", "The number of SSH connections destroyed")
-          .labelNames("host", "port", "user")
-          .register();
-  private static final Counter connectionErrors =
-      Counter.build(
-              "shesmu_get_ssh_pool_conn_error",
-              "The number of times getting an SSH connection threw an error")
           .labelNames("host", "port", "user")
           .register();
   private final AtomicReference<ConnectionInfo> connectionInfo = new AtomicReference<>();
