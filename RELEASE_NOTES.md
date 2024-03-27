@@ -7,6 +7,16 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.32.2] - 2024-03-27
+
+### Fixed
+
+* Fix module exports in guanyin plugin
+  
+* * Upgrade and fix logging infrastructure for sshj
+* Explicitly include bouncycastle to clear SSL errors
+
+
 ## [1.32.1] - 2024-03-21
 
 ### Fixed
