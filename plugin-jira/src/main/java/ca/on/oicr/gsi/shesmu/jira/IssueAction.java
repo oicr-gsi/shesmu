@@ -14,12 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -86,8 +81,15 @@ public final class IssueAction extends Action {
       return false;
     }
     if (summary == null) {
-      return other.summary == null;
-    } else return summary.equals(other.summary);
+      if (other.summary != null) {
+        return false;
+      }
+    } else if (!summary.equals(other.summary)) {
+      return false;
+    }
+    if (verb == null) {
+      return other.verb == null;
+    } else return verb.verb().equals(other.verb.verb());
   }
 
   @Override
@@ -106,11 +108,7 @@ public final class IssueAction extends Action {
 
   @Override
   public int hashCode() {
-    final var prime = 31;
-    var result = 1;
-    result = prime * result + (connection == null ? 0 : connection.hashCode());
-    result = prime * result + (summary == null ? 0 : summary.hashCode());
-    return result;
+    return Objects.hash(connection, summary, verb);
   }
 
   @ActionParameter(required = false)
