@@ -7,6 +7,14 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.32.3] - 2024-04-05
+
+### Fixed
+
+* Fix jira tickets not closing if open was once generated, and vice versa
+  
+
+
 ## [1.32.2] - 2024-03-27
 
 ### Fixed
