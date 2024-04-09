@@ -77,8 +77,18 @@ echo "Preparing ${RELEASE_TYPE} release ${NEW_VERSION}..."
 ./compact-changelog.sh ${NEW_VERSION} || exit 2
 git commit -a -m "Update release notes for release"
 
-# Do the Maven release step
-mvn release:prepare -DreleaseVersion=${NEW_VERSION} -DtagNameFormat=v@{version} --batch-mode release:clean
+# Release
+mvn versions:set -DnewVersion=${NEW_VERSION} -DgenerateBackupPoms=false
+sed -i -e 's/^version = .*$/version = "'$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | cut -f 1 -d -)'"/' */Cargo.toml
+git commit -a -m "prepare release v${NEW_VERSION}"
+git tag -a v${NEW_VERSION} -m "prepare v${NEW_VERSION} release"
+mvn clean install
+mvn versions:set -DnextSnapshot=true -DgenerateBackupPoms=false
+git commit -a -m "prepared for next development iteration"
+git push origin master
+git push origin v${NEW_VERSION}
+
+# Deploy
 git checkout v${NEW_VERSION}
 mvn deploy
 git checkout master
