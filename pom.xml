@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>ca.on.oicr.gsi</groupId>
   <artifactId>shesmu</artifactId>
-  <version>1.32.4</version>
+  <version>1.32.5-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Shesmu Decision-Action Server</name>
   <url>https://github.com/oicr-gsi/shesmu</url>
