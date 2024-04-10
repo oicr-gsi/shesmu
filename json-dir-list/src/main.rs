@@ -1,10 +1,7 @@
 use serde::ser::SerializeSeq;
 use serde::{Serialize, Serializer};
 use std::collections::VecDeque;
-use std::os::linux::fs::MetadataExt;
-use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
-use std::time::SystemTime;
 
 #[derive(Serialize)]
 struct UnixFileData<'a> {
@@ -28,20 +25,74 @@ struct UnixFileData<'a> {
 
     user: &'a str,
 }
-// Convert a timespec to an approximate floating point value of second since
-// the epoch; this is a terrible format, but it's what `find` gives us, so
-// we're going with it.
-fn to_seconds(time: std::io::Result<SystemTime>) -> f64 {
-    match time {
-        Err(_) => 0.0,
-        Ok(time) => {
-            let (duration, multiplier) = match time.duration_since(SystemTime::UNIX_EPOCH) {
-                Err(err) => (err.duration(), -1.0),
-                Ok(duration) => (duration, 1.0),
-            };
-            duration.as_secs_f64() * multiplier
+#[cfg(unix)]
+fn write_record(
+    output: &mut impl serde::ser::SerializeSeq,
+    host: &str,
+    fetched: &str,
+    entry: &std::fs::DirEntry,
+    metadata: &impl std::os::unix::fs::MetadataExt,
+) {
+    // Convert a timespec to an approximate floating point value of second since
+    // the epoch; this is a terrible format, but it's what `find` gives us, so
+    // we're going with it.
+    fn to_seconds(time: i64, time_ns: i64) -> f64 {
+        (time as f64) + (time_ns as f64) / 1e9
+    }
+
+    let Some(user) = users::get_user_by_uid(metadata.uid()) else {
+        return;
+    };
+    let Some(group) = users::get_group_by_gid(metadata.gid()) else {
+        return;
+    };
+    output
+        .serialize_element(&UnixFileData {
+            atime: to_seconds(metadata.atime(), metadata.atime_nsec()),
+            ctime: to_seconds(metadata.ctime(), metadata.ctime_nsec()),
+            fetched,
+            file: entry.path().to_str().expect("File name is not Unicode"),
+            group: group.name().to_str().unwrap_or(""),
+            host,
+            mtime: to_seconds(metadata.mtime(), metadata.mtime_nsec()),
+            perms: metadata.mode(),
+            size: metadata.size(),
+            user: user.name().to_str().unwrap_or(""),
+        })
+        .expect("Failed to write entry");
+}
+
+#[cfg(windows)]
+fn write_record(
+    output: &mut impl serde::ser::SerializeSeq,
+    host: &str,
+    fetched: &str,
+    entry: &std::fs::DirEntry,
+    metadata: impl std::os::windows::fs::MetadataExt,
+) {
+    // Windows timespecs are 100ns ticks from January 1, 1601
+    fn to_seconds(time: u64) -> f64 {
+        if time == 0 {
+            // The underlying file system doesn't know, so use a convenient lie
+            0.0
+        } else {
+            (time as f64) / 100e9 - 11_643_609_600f64
         }
     }
+    output
+        .serialize_element(&UnixFileData {
+            atime: to_seconds(metadata.last_access_time()),
+            ctime: to_seconds(metadata.creation_time()),
+            fetched,
+            file: file.to_str().expect("File name is not Unicode"),
+            group: "",
+            host,
+            mtime: to_seconds(metadata.last_write_time()),
+            perms: 0644,
+            size: metadata.file_size(),
+            user: "",
+        })
+        .expect("Failed to write entry");
 }
 
 pub fn main() {
@@ -67,34 +118,14 @@ pub fn main() {
             if entry.file_name() == "." || entry.file_name() == ".." {
                 continue;
             }
-            let file = entry.path();
             let Ok(metadata) = entry.metadata() else {
                 continue;
             };
             if metadata.is_dir() {
                 // Any child directories should be explored later
-                roots.push_back(file)
+                roots.push_back(entry.path())
             } else {
-                let Some(user) = users::get_user_by_uid(metadata.st_uid()) else {
-                    continue;
-                };
-                let Some(group) = users::get_group_by_gid(metadata.st_gid()) else {
-                    continue;
-                };
-                output
-                    .serialize_element(&UnixFileData {
-                        atime: to_seconds(metadata.accessed()),
-                        ctime: to_seconds(metadata.created()),
-                        fetched: &fetched,
-                        file: file.to_str().expect("File name is not Unicode"),
-                        group: group.name().to_str().unwrap_or(""),
-                        host: &hostname,
-                        mtime: to_seconds(metadata.modified()),
-                        perms: metadata.permissions().mode(),
-                        size: metadata.len(),
-                        user: user.name().to_str().unwrap_or(""),
-                    })
-                    .expect("Failed to write entry");
+                write_record(&mut output, &hostname, &fetched, &entry, &metadata);
             }
         }
     }
