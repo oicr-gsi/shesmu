@@ -1,6 +1,6 @@
 [package]
 name = "shawk"
-version = "0.1.0"
+version = "1.32.4"
 edition = "2021"
 repository = "https://github.com/oicr-gsi/shesmu"
 authors = ["Andre Masella <andre@masella.name>"]
