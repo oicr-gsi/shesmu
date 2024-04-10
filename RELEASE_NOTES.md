@@ -7,6 +7,14 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.32.4] - 2024-04-10
+
+### Fixed
+
+* Add fix for building rust projects in github actions
+  
+
+
 ## [1.32.3] - 2024-04-05
 
 ### Fixed
