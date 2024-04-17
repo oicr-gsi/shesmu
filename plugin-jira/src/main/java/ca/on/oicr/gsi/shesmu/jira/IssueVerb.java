@@ -52,6 +52,16 @@ public abstract class IssueVerb {
             .orElse(false)) {
           bestMatch.accept(issue);
           if (!connection.transition(issue, Stream::anyMatch, comment)) {
+            StringBuilder errorBuilder = new StringBuilder();
+            errorBuilder
+                .append("Unable to transition issue ")
+                .append(issue.getKey())
+                .append("\nConnection: " + connection);
+            if (connection != null)
+              errorBuilder
+                  .append("\nConnection has closedStatuses: ")
+                  .append(connection.closedStatuses());
+            System.err.println(errorBuilder);
             return ActionState.FAILED;
           }
         }

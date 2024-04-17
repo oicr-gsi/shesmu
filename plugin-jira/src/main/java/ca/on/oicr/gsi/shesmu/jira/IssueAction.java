@@ -120,6 +120,7 @@ public final class IssueAction extends Action {
   public ActionState perform(
       ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
     if (connection == null) {
+      System.err.println("JIRA Connection for " + issueUrl + " is null.");
       return ActionState.FAILED;
     }
     final var current = connection.get();
