@@ -444,16 +444,26 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
         authenticationHeader.ifPresent(
             header -> commentRequestBuilder.header("Authorization", header));
 
-        return CLIENT
-                    .send(
-                        commentRequestBuilder
-                            .header("Content-Type", "application/json")
-                            .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(updateComment)))
-                            .build(),
-                        BodyHandlers.discarding())
-                    .statusCode()
-                / 100
-            == 2;
+        var result =
+            CLIENT.send(
+                commentRequestBuilder
+                    .header("Content-Type", "application/json")
+                    .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(updateComment)))
+                    .build(),
+                BodyHandlers.ofString());
+        boolean isGood = result.statusCode() / 100 == 2;
+        if (!isGood) {
+          StringBuilder errorBuilder = new StringBuilder();
+          errorBuilder
+              .append("Unable to transition issue ")
+              .append(issue.getKey())
+              .append(" using any of ")
+              .append(transitions)
+              .append("\nGot ")
+              .append(result.body());
+          System.err.println(errorBuilder);
+        }
+        return isGood;
       }
     }
     return false;
