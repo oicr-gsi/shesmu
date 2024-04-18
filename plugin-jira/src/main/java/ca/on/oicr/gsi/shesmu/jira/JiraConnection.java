@@ -62,6 +62,16 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
         throws URISyntaxException, IOException, InterruptedException {
       return search(jql, FIELDS).stream();
     }
+
+    @Override
+    protected String getKType() {
+      return "String";
+    }
+
+    @Override
+    protected String getVType() {
+      return "Stream<Issue>";
+    }
   }
 
   static class JiraActionFilter {
@@ -515,5 +525,35 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
 
   public String url() {
     return url;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder writeOut = new StringBuilder();
+    writeOut
+        .append("JiraConnection with closedStatuses = ")
+        .append(closedStatuses)
+        .append(", defaultFieldValues = ")
+        .append(defaultFieldValues.entrySet())
+        .append(", definer = ")
+        .append(definer)
+        .append(", issueTypeId = ")
+        .append(issueTypeId)
+        .append(", issueTypeName = ")
+        .append(issueTypeName)
+        .append(", cached issues = ")
+        .append(issues)
+        .append(", projectId = ")
+        .append(projectId)
+        .append(", projectKey = ")
+        .append(projectKey)
+        .append(", searches = ")
+        .append(searches)
+        .append(", url = ")
+        .append(url)
+        .append(", version = ")
+        .append(version);
+    authenticationHeader.ifPresent(s -> writeOut.append(", authenticationHeader = ").append(s));
+    return writeOut.toString();
   }
 }
