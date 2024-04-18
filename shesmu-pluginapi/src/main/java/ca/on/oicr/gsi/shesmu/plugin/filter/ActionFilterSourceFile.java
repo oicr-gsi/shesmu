@@ -32,4 +32,14 @@ public class ActionFilterSourceFile extends ActionFilter {
   public void setFiles(String[] files) {
     this.files = files;
   }
+
+  @Override
+  public String toString() {
+    StringBuilder writeOut = new StringBuilder();
+    writeOut.append("Source file action filter for file: ");
+    for (String file : files) {
+      writeOut.append(file).append(", ");
+    }
+    return writeOut.toString();
+  }
 }

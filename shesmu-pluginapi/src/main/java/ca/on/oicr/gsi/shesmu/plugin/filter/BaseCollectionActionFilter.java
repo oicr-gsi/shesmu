@@ -45,4 +45,16 @@ public abstract class BaseCollectionActionFilter extends ActionFilter {
   public final void setFilters(ActionFilter[] filters) {
     this.filters = filters;
   }
+
+  @Override
+  public String toString() {
+    StringBuilder writeOut = new StringBuilder();
+    writeOut.append("Collection Action Filter (").append(getOperation()).append(" of: ");
+    for (ActionFilter af : filters) {
+      writeOut.append(af.toString()).append(", ");
+    }
+    return writeOut.toString();
+  }
+
+  protected abstract String getOperation();
 }

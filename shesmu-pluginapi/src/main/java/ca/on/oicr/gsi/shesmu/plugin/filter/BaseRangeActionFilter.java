@@ -69,4 +69,19 @@ public abstract class BaseRangeActionFilter extends ActionFilter {
   public final void setStart(Long start) {
     this.start = start;
   }
+
+  protected abstract String getName();
+
+  @Override
+  public String toString() {
+    StringBuilder writeOut = new StringBuilder();
+    writeOut
+        .append("Range filter of type: ")
+        .append(getName())
+        .append(" between ")
+        .append(start)
+        .append(" and ")
+        .append(end);
+    return writeOut.toString();
+  }
 }

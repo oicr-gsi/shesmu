@@ -10,4 +10,9 @@ public class ActionFilterCreatedAgo extends BaseAgoActionFilter {
       long offset, ActionFilterBuilder<F, ActionState, String, Instant, Long> filterBuilder) {
     return filterBuilder.createdAgo(offset);
   }
+
+  @Override
+  protected String getOperation() {
+    return "created (ago)";
+  }
 }

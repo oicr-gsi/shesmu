@@ -10,4 +10,9 @@ public class ActionFilterCheckedAgo extends BaseAgoActionFilter {
       long offset, ActionFilterBuilder<F, ActionState, String, Instant, Long> filterBuilder) {
     return filterBuilder.checkedAgo(offset);
   }
+
+  @Override
+  protected String getOperation() {
+    return "Last run by scheduler (ago)";
+  }
 }
