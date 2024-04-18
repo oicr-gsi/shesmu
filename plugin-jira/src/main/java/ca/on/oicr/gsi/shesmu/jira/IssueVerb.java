@@ -56,11 +56,8 @@ public abstract class IssueVerb {
             errorBuilder
                 .append("Unable to transition issue ")
                 .append(issue.getKey())
-                .append("\nConnection: " + connection);
-            if (connection != null)
-              errorBuilder
-                  .append("\nConnection has closedStatuses: ")
-                  .append(connection.closedStatuses());
+                .append("\nConnection: ")
+                .append(connection);
             System.err.println(errorBuilder);
             return ActionState.FAILED;
           }
@@ -77,6 +74,11 @@ public abstract class IssueVerb {
     @Override
     public String verb() {
       return "Close";
+    }
+
+    @Override
+    public String toString() {
+      return "Close JIRA Issue with comment " + comment;
     }
   }
 
@@ -158,6 +160,19 @@ public abstract class IssueVerb {
     @Override
     public String verb() {
       return "Open";
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder writeOut = new StringBuilder();
+      writeOut
+          .append("Re/open JIRA Issue with description '")
+          .append(description)
+          .append("', reopen with comment '")
+          .append(comment)
+          .append("'");
+      assignee.ifPresent(s -> writeOut.append(", with assignee '").append(s));
+      return writeOut.toString();
     }
   }
 
