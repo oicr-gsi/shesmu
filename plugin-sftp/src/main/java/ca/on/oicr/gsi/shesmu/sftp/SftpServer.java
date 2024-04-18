@@ -95,6 +95,16 @@ public class SftpServer extends JsonPluginFile<Configuration> {
         throw e;
       }
     }
+
+    @Override
+    protected String getKType() {
+      return "Pair<Path, Boolean>";
+    }
+
+    @Override
+    protected String getVType() {
+      return "Optional<AlgebraicValue>";
+    }
   }
 
   static final ObjectMapper MAPPER = new ObjectMapper();

@@ -169,4 +169,30 @@ public abstract class KeyValueCache<K, V> implements Owner, Iterable<Map.Entry<K
     this.ttl = ttl;
     ttlValue.labels(name).set(ttl);
   }
+
+  public String toString() {
+    StringBuilder writeOut = new StringBuilder();
+    writeOut
+        .append("KeyValueCache of types ")
+        .append(getKType())
+        .append(" and ")
+        .append(getVType())
+        .append(" with CACHES = ")
+        .append(CACHES.entrySet())
+        .append(", maxCount = ")
+        .append(maxCount)
+        .append(", name = ")
+        .append(name)
+        .append(", recordFactory = ")
+        .append(recordFactory)
+        .append(", records = ")
+        .append(records.entrySet())
+        .append(", ttl = ")
+        .append(ttl);
+    return writeOut.toString();
+  }
+
+  protected abstract String getKType();
+
+  protected abstract String getVType();
 }
