@@ -10,4 +10,9 @@ public class ActionFilterStatusChangedAgo extends BaseAgoActionFilter {
       long offset, ActionFilterBuilder<F, ActionState, String, Instant, Long> filterBuilder) {
     return filterBuilder.statusChangedAgo(offset);
   }
+
+  @Override
+  protected String getOperation() {
+    return "Last status change";
+  }
 }

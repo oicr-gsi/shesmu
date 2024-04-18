@@ -30,4 +30,14 @@ public class ActionFilterType extends ActionFilter {
   public void setTypes(String[] types) {
     this.types = types;
   }
+
+  @Override
+  public String toString() {
+    StringBuilder writeOut = new StringBuilder();
+    writeOut.append("Action type filter of types: ");
+    for (String type : types) {
+      writeOut.append(type).append(", ");
+    }
+    return writeOut.toString();
+  }
 }

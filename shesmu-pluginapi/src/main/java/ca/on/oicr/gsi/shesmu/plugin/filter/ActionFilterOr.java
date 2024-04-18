@@ -12,4 +12,9 @@ public class ActionFilterOr extends BaseCollectionActionFilter {
       ActionFilterBuilder<F, ActionState, String, Instant, Long> filterBuilder, Stream<F> filters) {
     return filterBuilder.or(filters);
   }
+
+  @Override
+  protected String getOperation() {
+    return "OR";
+  }
 }

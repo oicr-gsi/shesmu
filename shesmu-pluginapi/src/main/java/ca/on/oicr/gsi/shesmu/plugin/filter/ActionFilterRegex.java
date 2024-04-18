@@ -52,4 +52,13 @@ public class ActionFilterRegex extends ActionFilter {
   public void setPattern(String pattern) {
     this.pattern = pattern;
   }
+
+  @Override
+  public String toString() {
+    StringBuilder writeOut = new StringBuilder();
+    writeOut.append("Text matching regex filter of pattern: '").append(pattern).append("'");
+    if (!matchCase) writeOut.append(" not");
+    writeOut.append(" matching case");
+    return writeOut.toString();
+  }
 }

@@ -30,4 +30,14 @@ public class ActionFilterStatus extends ActionFilter {
   public void setState(ActionState[] states) {
     this.states = states;
   }
+
+  @Override
+  public String toString() {
+    StringBuilder writeOut = new StringBuilder();
+    writeOut.append("Action state filter for state: ");
+    for (ActionState state : states) {
+      writeOut.append(state).append(", ");
+    }
+    return writeOut.toString();
+  }
 }

@@ -30,4 +30,14 @@ public class ActionFilterSourceLocation extends ActionFilter {
   public void setLocations(SourceOliveLocation[] locations) {
     this.locations = locations;
   }
+
+  @Override
+  public String toString() {
+    StringBuilder writeOut = new StringBuilder();
+    writeOut.append("Source location action filter for location: ");
+    for (SourceOliveLocation location : locations) {
+      writeOut.append(location).append(", ");
+    }
+    return writeOut.toString();
+  }
 }

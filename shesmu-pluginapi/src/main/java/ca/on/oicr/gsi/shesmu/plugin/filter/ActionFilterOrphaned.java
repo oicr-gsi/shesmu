@@ -10,4 +10,9 @@ public class ActionFilterOrphaned extends ActionFilter {
   public <F> F convert(ActionFilterBuilder<F, ActionState, String, Instant, Long> filterBuilder) {
     return filterBuilder.orphaned();
   }
+
+  @Override
+  public String toString() {
+    return "Action filter for orphaned actions";
+  }
 }

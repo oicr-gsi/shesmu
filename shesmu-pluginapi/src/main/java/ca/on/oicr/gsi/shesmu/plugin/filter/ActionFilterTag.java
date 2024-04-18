@@ -30,4 +30,14 @@ public class ActionFilterTag extends ActionFilter {
   public void setTags(String[] tags) {
     this.tags = tags;
   }
+
+  @Override
+  public String toString() {
+    StringBuilder writeOut = new StringBuilder();
+    writeOut.append("Tag filter for tags: ");
+    for (String tag : tags) {
+      writeOut.append(tag).append(", ");
+    }
+    return writeOut.toString();
+  }
 }

@@ -42,4 +42,13 @@ public abstract class BaseAgoActionFilter extends ActionFilter {
   public final void setOffset(long offset) {
     this.offset = offset;
   }
+
+  @Override
+  public String toString() {
+    StringBuilder writeOut = new StringBuilder();
+    writeOut.append(getOperation()).append(" filter of offset: ").append(offset);
+    return writeOut.toString();
+  }
+
+  protected abstract String getOperation();
 }

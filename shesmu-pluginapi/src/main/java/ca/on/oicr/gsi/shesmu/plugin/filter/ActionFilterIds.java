@@ -30,4 +30,11 @@ public class ActionFilterIds extends ActionFilter {
   public void setIds(List<String> ids) {
     this.ids = ids;
   }
+
+  @Override
+  public String toString() {
+    StringBuilder writeOut = new StringBuilder();
+    writeOut.append("Action filter for action identifier: ").append(ids);
+    return writeOut.toString();
+  }
 }

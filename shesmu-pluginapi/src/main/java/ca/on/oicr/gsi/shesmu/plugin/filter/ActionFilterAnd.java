@@ -11,4 +11,9 @@ public class ActionFilterAnd extends BaseCollectionActionFilter {
       ActionFilterBuilder<F, ActionState, String, Instant, Long> filterBuilder, Stream<F> filters) {
     return filterBuilder.and(filters);
   }
+
+  @Override
+  protected String getOperation() {
+    return "AND";
+  }
 }

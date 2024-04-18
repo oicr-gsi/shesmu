@@ -47,4 +47,13 @@ public class ActionFilterText extends ActionFilter {
   public void setText(String text) {
     this.text = text;
   }
+
+  @Override
+  public String toString() {
+    StringBuilder writeOut = new StringBuilder();
+    writeOut.append("Text action filter for text: '").append(text).append("'");
+    if (!matchCase) writeOut.append(" not");
+    writeOut.append(" matching case");
+    return writeOut.toString();
+  }
 }
