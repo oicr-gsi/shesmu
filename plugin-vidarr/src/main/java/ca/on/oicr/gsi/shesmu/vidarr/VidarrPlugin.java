@@ -120,6 +120,16 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
       }
       return Optional.empty();
     }
+
+    @Override
+    protected String getKType() {
+      return "String";
+    }
+
+    @Override
+    protected String getVType() {
+      return "Optional<Tuple>";
+    }
   }
 
   private static final Imyhat EXTERNAL_KEY_TYPE =
