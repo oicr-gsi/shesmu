@@ -341,12 +341,12 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
           .flatMap(
               search ->
                   search
-                      .getType()
+                      .type()
                       .join(
-                          search.getName(),
-                          search.getFilter().convert(builder),
+                          search.name(),
+                          search.filter().convert(builder),
                           issues
-                              .get(search.getJql())
+                              .get(search.jql())
                               .flatMap(
                                   issue -> {
                                     final var assignee =
