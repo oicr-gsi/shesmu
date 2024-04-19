@@ -71,61 +71,67 @@ fn config_file() -> String {
         .to_string()
 }
 fn run() -> Result<bool, ErrorMessage> {
-    {
-        let args = Args::parse();
+    let args = Args::parse();
 
-        let config: Configuration = match std::fs::File::open(&args.config) {
-            Ok(file) => serde_yaml::from_reader(file)?,
-            Err(_) => Default::default(),
-        };
+    let config: Configuration = match std::fs::File::open(&args.config) {
+        Ok(file) => serde_yaml::from_reader(file)?,
+        Err(_) => Default::default(),
+    };
 
-        let instance = args
-            .host
+    let instance = args
+        .host
+        .as_ref()
+        .or(config.default_host.as_ref())
+        .ok_or("A Shesmu host must be specified with `-H`.")?;
+    let mut url = reqwest::Url::parse(
+        config
+            .aliases
             .as_ref()
-            .or(config.default_host.as_ref())
-            .ok_or("A Shesmu host must be specified with `-H`.")?;
-        let url = reqwest::Url::parse(
-            config
-                .aliases
-                .as_ref()
-                .map(|a| a.get(instance))
-                .flatten()
-                .unwrap_or(instance),
-        )
-        .expect("Invalid host URL")
-        .join("extract")
-        .expect("Could not add endpoint to URL");
+            .map(|a| a.get(instance))
+            .flatten()
+            .unwrap_or(instance),
+    )
+    .expect("Invalid host URL")
+    .join("extract")
+    .expect("Could not add endpoint to URL");
 
-        let basic_auth = if !url.username().is_empty() && url.password().is_none() {
-            Some((
-                url.username().to_string(),
-                rpassword::prompt_password(&format!("Password for {}: ", url.authority()))
-                    .expect("Failed to get password."),
-            ))
-        } else {
-            None
-        };
+    let mut basic_auth = if !url.username().is_empty() && url.password().is_none() {
+        let username = url.username().to_string();
+        url.set_username("")
+            .expect("Internal error resetting username in URL");
+        Some((
+            username,
+            rpassword::prompt_password(&format!("Password for {}: ", url.authority()))
+                .expect("Failed to get password."),
+        ))
+    } else {
+        None
+    };
 
+    let extract_request = ExtractRequest {
+        inputFormat: args
+            .input
+            .as_ref()
+            .or(config.default_input_format.as_ref())
+            .ok_or("An input format must be specified with `-i`.")?,
+        outputFormat: args
+            .format
+            .as_ref()
+            .or(config.default_output_format.as_ref())
+            .ok_or("An output format must be specified with `-f`.")?,
+        preparedColumns: config.prepared_columns.as_ref(),
+        query: &args.query,
+        readStale: args.wait_for_fresh,
+    };
+    loop {
         let client = reqwest::blocking::Client::new();
-        let request = client.post(url).json(&ExtractRequest {
-            inputFormat: args
-                .input
-                .as_ref()
-                .or(config.default_input_format.as_ref())
-                .ok_or("An input format must be specified with `-i`.")?,
-            outputFormat: args
-                .format
-                .as_ref()
-                .or(config.default_output_format.as_ref())
-                .ok_or("An output format must be specified with `-f`.")?,
-            preparedColumns: config.prepared_columns.as_ref(),
-            query: &args.query,
-            readStale: args.wait_for_fresh,
-        });
+        let request = client.post(url.clone()).json(&extract_request);
 
-        let mut result = match basic_auth {
+        let mut result = match &basic_auth {
             None => request,
-            Some((username, password)) => request.basic_auth(username, Some(password)),
+            Some((username, password)) => {
+                request.basic_auth(username.clone(), Some(password.clone()))
+            }
         }
         .send()?;
         if result.status().is_success() {
@@ -137,10 +143,14 @@ fn run() -> Result<bool, ErrorMessage> {
                     result.copy_to(&mut output_file)
                 }
             }?;
-            Ok(true)
+            break Ok(true);
+        } else if result.status() == reqwest::StatusCode::UNAUTHORIZED && basic_auth.is_some() {
+            let (_, password) = basic_auth.as_mut().unwrap();
+            *password = rpassword::prompt_password("Incorrect password. Try again: ")
+                .expect("Failed to get password.");
         } else {
             result.copy_to(&mut std::io::stderr())?;
-            Ok(false)
+            break Ok(false);
         }
     }
 }
