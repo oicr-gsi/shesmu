@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin.filter;
 
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 /** An action filter that checks if an action comes from a particular olive definition */
@@ -34,10 +35,9 @@ public class ActionFilterSourceLocation extends ActionFilter {
   @Override
   public String toString() {
     StringBuilder writeOut = new StringBuilder();
-    writeOut.append("Source location action filter for location: ");
-    for (SourceOliveLocation location : locations) {
-      writeOut.append(location).append(", ");
-    }
+    writeOut
+        .append("Source location action filter for location: ")
+        .append(Arrays.toString(locations));
     return writeOut.toString();
   }
 }
