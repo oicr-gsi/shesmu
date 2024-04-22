@@ -13,9 +13,4 @@ public class ActionFilterStatusChanged extends BaseRangeActionFilter {
       ActionFilterBuilder<F, ActionState, String, Instant, Long> filterBuilder) {
     return filterBuilder.statusChanged(start, end);
   }
-
-  @Override
-  protected String getName() {
-    return "last state change";
-  }
 }

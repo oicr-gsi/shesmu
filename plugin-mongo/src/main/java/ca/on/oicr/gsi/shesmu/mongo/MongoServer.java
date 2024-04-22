@@ -56,16 +56,6 @@ public class MongoServer extends JsonPluginFile<Configuration> {
                   protected Optional<Object> fetch(Tuple key, Instant lastUpdated) {
                     return Optional.of(function.apply(definer.get().connection.get(), key));
                   }
-
-                  @Override
-                  protected String getKType() {
-                    return "Tuple";
-                  }
-
-                  @Override
-                  protected String getVType() {
-                    return "Optional<Object>";
-                  }
                 };
 
             @Override

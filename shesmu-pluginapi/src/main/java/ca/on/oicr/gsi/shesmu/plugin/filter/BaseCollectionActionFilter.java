@@ -52,11 +52,9 @@ public abstract class BaseCollectionActionFilter extends ActionFilter {
     StringBuilder writeOut = new StringBuilder();
     writeOut
         .append("Collection Action Filter (")
-        .append(getOperation())
+        .append(this.getClass())
         .append(" of: ")
         .append(Arrays.toString(filters));
     return writeOut.toString();
   }
-
-  protected abstract String getOperation();
 }

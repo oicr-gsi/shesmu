@@ -13,9 +13,4 @@ public class ActionFilterExternal extends BaseRangeActionFilter {
       ActionFilterBuilder<F, ActionState, String, Instant, Long> filterBuilder) {
     return filterBuilder.external(start, end);
   }
-
-  @Override
-  protected String getName() {
-    return "External Modification";
-  }
 }

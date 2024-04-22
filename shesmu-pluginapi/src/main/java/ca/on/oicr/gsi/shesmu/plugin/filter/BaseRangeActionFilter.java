@@ -70,14 +70,12 @@ public abstract class BaseRangeActionFilter extends ActionFilter {
     this.start = start;
   }
 
-  protected abstract String getName();
-
   @Override
   public String toString() {
     StringBuilder writeOut = new StringBuilder();
     writeOut
         .append("Range filter of type: ")
-        .append(getName())
+        .append(this.getClass())
         .append(" between ")
         .append(start)
         .append(" and ")
