@@ -13,9 +13,4 @@ public class ActionFilterCreated extends BaseRangeActionFilter {
       ActionFilterBuilder<F, ActionState, String, Instant, Long> filterBuilder) {
     return filterBuilder.checked(start, end);
   }
-
-  @Override
-  protected String getName() {
-    return "created";
-  }
 }

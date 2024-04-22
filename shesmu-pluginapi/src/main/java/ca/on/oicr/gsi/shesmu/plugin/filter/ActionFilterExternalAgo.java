@@ -11,9 +11,4 @@ public class ActionFilterExternalAgo extends BaseAgoActionFilter {
       long offset, ActionFilterBuilder<F, ActionState, String, Instant, Long> filterBuilder) {
     return filterBuilder.externalAgo(offset);
   }
-
-  @Override
-  protected String getOperation() {
-    return "External Modification (ago)";
-  }
 }

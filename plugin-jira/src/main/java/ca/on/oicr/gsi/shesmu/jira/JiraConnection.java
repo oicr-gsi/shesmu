@@ -62,16 +62,6 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
         throws URISyntaxException, IOException, InterruptedException {
       return search(jql, FIELDS).stream();
     }
-
-    @Override
-    protected String getKType() {
-      return "String";
-    }
-
-    @Override
-    protected String getVType() {
-      return "Stream<Issue>";
-    }
   }
 
   static class JiraActionFilter {
