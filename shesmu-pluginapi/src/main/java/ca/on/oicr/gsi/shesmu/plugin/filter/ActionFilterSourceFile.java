@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin.filter;
 
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 /**
@@ -36,10 +37,7 @@ public class ActionFilterSourceFile extends ActionFilter {
   @Override
   public String toString() {
     StringBuilder writeOut = new StringBuilder();
-    writeOut.append("Source file action filter for file: ");
-    for (String file : files) {
-      writeOut.append(file).append(", ");
-    }
+    writeOut.append("Source file action filter for file: ").append(Arrays.toString(files));
     return writeOut.toString();
   }
 }

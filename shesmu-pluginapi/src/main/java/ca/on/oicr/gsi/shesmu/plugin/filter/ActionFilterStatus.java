@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin.filter;
 
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 /** An action filter that checks for actions in a particular state */
@@ -34,10 +35,7 @@ public class ActionFilterStatus extends ActionFilter {
   @Override
   public String toString() {
     StringBuilder writeOut = new StringBuilder();
-    writeOut.append("Action state filter for state: ");
-    for (ActionState state : states) {
-      writeOut.append(state).append(", ");
-    }
+    writeOut.append("Action state filter for state: ").append(Arrays.toString(states));
     return writeOut.toString();
   }
 }

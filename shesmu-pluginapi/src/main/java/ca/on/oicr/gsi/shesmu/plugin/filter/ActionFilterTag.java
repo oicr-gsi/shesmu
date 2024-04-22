@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin.filter;
 
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 /** An action filter that checks if an action has a particular tag associated with it */
@@ -34,10 +35,7 @@ public class ActionFilterTag extends ActionFilter {
   @Override
   public String toString() {
     StringBuilder writeOut = new StringBuilder();
-    writeOut.append("Tag filter for tags: ");
-    for (String tag : tags) {
-      writeOut.append(tag).append(", ");
-    }
+    writeOut.append("Tag filter for tags: ").append(Arrays.toString(tags));
     return writeOut.toString();
   }
 }

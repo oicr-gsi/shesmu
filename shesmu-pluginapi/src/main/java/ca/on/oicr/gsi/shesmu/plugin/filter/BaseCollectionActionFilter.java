@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin.filter;
 
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 /** Utility class for action filters that operate on a collection of other filters */
@@ -49,10 +50,11 @@ public abstract class BaseCollectionActionFilter extends ActionFilter {
   @Override
   public String toString() {
     StringBuilder writeOut = new StringBuilder();
-    writeOut.append("Collection Action Filter (").append(getOperation()).append(" of: ");
-    for (ActionFilter af : filters) {
-      writeOut.append(af.toString()).append(", ");
-    }
+    writeOut
+        .append("Collection Action Filter (")
+        .append(getOperation())
+        .append(" of: ")
+        .append(Arrays.toString(filters));
     return writeOut.toString();
   }
 
