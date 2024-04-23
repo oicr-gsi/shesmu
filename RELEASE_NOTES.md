@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.32.6] - 2024-04-23
+
+### Fixed
+
+* * Remove `users` crate from dependency list when building `json-dir-list` on Windows
+
+
 ## [1.32.5] - 2024-04-23
 
 ### Fixed
