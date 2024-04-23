@@ -7,6 +7,16 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.32.5] - 2024-04-23
+
+### Fixed
+
+* * Fix authentication using ShAWK client
+* Additional server logging for jira errors
+  
+* * Fix build issue with json-dir-list on Windows and MacOS
+
+
 ## [1.32.4] - 2024-04-10
 
 ### Fixed
