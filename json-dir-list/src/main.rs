@@ -68,7 +68,7 @@ fn write_record(
     host: &str,
     fetched: &str,
     entry: &std::fs::DirEntry,
-    metadata: impl std::os::windows::fs::MetadataExt,
+    metadata: &impl std::os::windows::fs::MetadataExt,
 ) {
     // Windows timespecs are 100ns ticks from January 1, 1601
     fn to_seconds(time: u64) -> f64 {
@@ -84,7 +84,7 @@ fn write_record(
             atime: to_seconds(metadata.last_access_time()),
             ctime: to_seconds(metadata.creation_time()),
             fetched,
-            file: file.to_str().expect("File name is not Unicode"),
+            file: entry.path().to_str().expect("File name is not Unicode"),
             group: "",
             host,
             mtime: to_seconds(metadata.last_write_time()),
