@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.32.7] - 2024-04-24
+
+### Fixed
+
+* * Fix build issue with json-dir-list on Windows and MacOS
+
+
 ## [1.32.6] - 2024-04-23
 
 ### Fixed
