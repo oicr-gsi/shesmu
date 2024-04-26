@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.32.8] - 2024-04-26
+
+### Fixed
+
+* Stop caches from overloading the log
+
+
 ## [1.32.7] - 2024-04-24
 
 ### Fixed
