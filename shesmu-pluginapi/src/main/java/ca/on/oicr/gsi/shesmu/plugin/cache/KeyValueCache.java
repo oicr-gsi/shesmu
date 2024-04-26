@@ -182,8 +182,8 @@ public abstract class KeyValueCache<K, V> implements Owner, Iterable<Map.Entry<K
         .append(name)
         .append(", recordFactory = ")
         .append(recordFactory)
-        .append(", records = ")
-        .append(records.entrySet())
+        .append(", cache size = ")
+        .append(records.size())
         .append(", ttl = ")
         .append(ttl);
     return writeOut.toString();
