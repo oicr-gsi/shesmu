@@ -5,12 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class IssueField {
   private boolean hasDefaultValue;
-  private String key;
   private boolean required;
-
-  public String getKey() {
-    return key;
-  }
 
   public boolean isHasDefaultValue() {
     return hasDefaultValue;
@@ -22,10 +17,6 @@ public final class IssueField {
 
   public void setHasDefaultValue(boolean hasDefaultValue) {
     this.hasDefaultValue = hasDefaultValue;
-  }
-
-  public void setKey(String key) {
-    this.key = key;
   }
 
   public void setRequired(boolean required) {

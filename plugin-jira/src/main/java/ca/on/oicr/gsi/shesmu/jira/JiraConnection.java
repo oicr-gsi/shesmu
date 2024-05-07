@@ -412,16 +412,23 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                         url, version.slug(), issue.getId())));
         authenticationHeader.ifPresent(header -> requestBuilder.header("Authorization", header));
 
-        if (CLIENT
-                    .send(
-                        requestBuilder
-                            .header("Content-Type", "application/json")
-                            .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(request)))
-                            .build(),
-                        BodyHandlers.discarding())
-                    .statusCode()
-                / 100
-            != 2) {
+        var transitionResult =
+            CLIENT.send(
+                requestBuilder
+                    .header("Content-Type", "application/json")
+                    .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(request)))
+                    .build(),
+                BodyHandlers.ofString());
+        if (transitionResult.statusCode() / 100 != 2) { // get 400 here
+          StringBuilder errorBuilder = new StringBuilder();
+          errorBuilder
+              .append("Unable to transition issue: ")
+              .append(issue.getKey())
+              .append(" using any of ")
+              .append(transitions)
+              .append(", server returned: ")
+              .append(transitionResult);
+          System.err.println(errorBuilder);
           return false;
         }
 
@@ -435,23 +442,23 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
         authenticationHeader.ifPresent(
             header -> commentRequestBuilder.header("Authorization", header));
 
-        var result =
+        var commentResult =
             CLIENT.send(
                 commentRequestBuilder
                     .header("Content-Type", "application/json")
                     .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(updateComment)))
                     .build(),
                 BodyHandlers.ofString());
-        boolean isGood = result.statusCode() / 100 == 2;
+        boolean isGood = commentResult.statusCode() / 100 == 2;
         if (!isGood) {
           StringBuilder errorBuilder = new StringBuilder();
           errorBuilder
-              .append("Unable to transition issue ")
+              .append("Unable to comment on issue ")
               .append(issue.getKey())
-              .append(" using any of ")
-              .append(transitions)
+              .append(" using comment ")
+              .append(comment)
               .append("\nGot ")
-              .append(result.body());
+              .append(commentResult.body());
           Map<String, String> lokiLabels = new HashMap<>();
           lokiLabels.put("issue", issue.getKey());
           ((Definer<JiraConnection>) definer).log(errorBuilder.toString(), lokiLabels);
