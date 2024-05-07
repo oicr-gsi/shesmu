@@ -60,6 +60,20 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
                           : Optional.of(ca.getWorkflowRunIdsForVidarrArchival())));
     }
 
+    private Stream<NabuCaseArchiveValue> caseArchiveCreate(String baseUrl)
+        throws IOException, InterruptedException {
+      final HttpRequest request;
+      final var body = MAPPER.createObjectNode();
+
+      // This doesn't use the built-in constant for JSON because that one includes a charset
+      // and Loki then thinks the request is a protobuf
+      return request =
+          HttpRequest.newBuilder(URI.create(c.getUrl()))
+              .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(body)))
+              .header("Content-type", "application/json")
+              .build();
+    }
+
     @Override
     protected Stream<NabuCaseArchiveValue> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) {
