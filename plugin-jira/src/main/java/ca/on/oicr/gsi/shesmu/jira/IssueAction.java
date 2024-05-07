@@ -221,4 +221,9 @@ public final class IssueAction extends Action {
           default -> throw new IllegalArgumentException();
         };
   }
+
+  @Override
+  public Stream<String> tags() {
+    return Stream.of("jira-verb:" + verb.verb());
+  }
 }
