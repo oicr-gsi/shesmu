@@ -1854,7 +1854,7 @@ public final class PluginManager
     // Now we smash the instance from above with the method. We can create a
     // constant call site (i.e., one that can't be updated) because the method
     // called
-    // will never change but the instance is referenced through it's mutable call
+    // will never change but the instance is referenced through its mutable call
     // site, so we can update the instance.
     return new ConstantCallSite(
         MethodHandles.foldArguments(methodHandle, instance.dynamicInvoker()));
@@ -1889,7 +1889,8 @@ public final class PluginManager
               collector,
               callsite.dynamicInvoker().asType(MethodType.methodType(RequiredServices.class)));
     }
-    // Now, we should have a method thats () → String[], which is what we wanted, so shove it in the
+    // Now, we should have a method that's () → String[], which is what we wanted, so shove it in
+    // the
     // olive
     return new ConstantCallSite(collector.asType(methodType));
   }

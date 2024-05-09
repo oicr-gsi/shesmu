@@ -122,7 +122,7 @@ type safe. To create a new source format:
 1. Create a class, _V_, that will hold all the data for a “row” in the incoming
 data. It must be a class and not an interface.
 1. Create a parameterless method in _V_ for every variable to be exposed. The
-method names must be valid Shemsu names (lowercase with underscores) and
+method names must be valid Shesmu names (lowercase with underscores) and
 decorated with
 [`@ShesmuVariable`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/input/ShesmuVariable.html)
 annotations with the correct type descriptor. All methods must return
@@ -188,7 +188,7 @@ of these can be fixed (the same across all rows) or dynamic (a function that
 takes an input row as a parameter). There are a number of overrides and
 super-constructors to handle different numbers of input and output variables.
 The exact configuration will depend on what information the grouper requires.
-It maybe easiest to implement the grouper and see what information is necessary
+It may be easiest to implement the grouper and see what information is necessary
 and then work backward to the grouper definition.
 
 1. Create a class _G_ that implements
@@ -262,7 +262,7 @@ All plugin integration is provided by:
 
 A number of plugin features can be added to the `PluginFileType` or the
 `PluginFile`. Anything placed in the `PluginFileType` will be a global
-defintion. When Shesmu administrator creates configuration file, Shesmu will
+definition. When Shesmu administrator creates configuration file, Shesmu will
 spawn an instance of `PluginFile` to read that file. Any annotated methods
 attached the `PluginFile` will be created per-instance. The name of the
 configuration file will be included in the definition if it is created
@@ -327,8 +327,8 @@ be provided using a Shesmu type descriptor in the `type` parameter of the
 annotation to any parameters. The `@ShesmuParameter` annotation can also
 provide help text.
 
-The name can be provided two ways: from the name of the method itself or fro
-the `name` parameter of `@ShemsuMethod` annotation. If the name is associated
+The name can be provided two ways: from the name of the method itself or from
+the `name` parameter of `@ShesmuMethod` annotation. If the name is associated
 with a `PluginFile` class, it must contain a `$` which will be replaced with
 the name of the file. For instance, if the name of the method is `$_items` and
 the file name is `foo.bar`, then the constant or variable will be available to
@@ -336,7 +336,7 @@ olives as `foo_items`.
 
 The `@ShesmuMethod` annotation also has a `description` property that will be
 shown in the definition page. In the description, `{instance}` and `{file}`
-will be replace with the instance name and configuration file path,
+will be replaced with the instance name and configuration file path,
 respectively.
 
 #### Using the Definer
@@ -533,7 +533,7 @@ will provide it with the functions it requires to manipulate that type.
 
 To deliver a database to olives using `PluginFileType` or `PluginFile`:
 
-1. Create a static method in `PluginFileType` or a virtual method in `PluginFile`, parameterized by `<T>`, that return _F_`<T>`. The returned type is used to discover parameters, so it must the be the correct subtype.
+1. Create a static method in `PluginFileType` or a virtual method in `PluginFile`, parameterized by `<T>`, that return _F_`<T>`. The returned type is used to discover parameters, so it must be the correct subtype.
 1. Annotate this method with [`@ShesmuRefill`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/refill/ShesmuRefill.html).
 1. Name this method with a Shesmu-compatible name or set the `name` property in
 	 the annotation.

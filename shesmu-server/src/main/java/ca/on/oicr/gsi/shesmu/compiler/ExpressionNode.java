@@ -958,7 +958,7 @@ public abstract class ExpressionNode implements Renderable {
       Parser parser,
       Consumer<ExpressionNode> output,
       Function<String, ExpressionNode> gangConstructor,
-      Function<List<ObjectElementNode>, ExpressionNode> objectContsructor,
+      Function<List<ObjectElementNode>, ExpressionNode> objectConstructor,
       Function<List<TupleElementNode>, ExpressionNode> tupleConstructor) {
     final var gangParser = parser.whitespace().symbol("@");
     if (gangParser.isGood()) {
@@ -1003,7 +1003,7 @@ public abstract class ExpressionNode implements Renderable {
     }
     objectResult = objectResult.symbol("}").whitespace();
     if (objectResult.isGood() && !fields.get().isEmpty()) {
-      output.accept(objectContsructor.apply(fields.get()));
+      output.accept(objectConstructor.apply(fields.get()));
       return objectResult;
     }
 

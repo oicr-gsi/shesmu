@@ -1,5 +1,5 @@
 # Static Actions
-While Shesmu is mostly about the olives, it _does_ runs actions and it can be
+While Shesmu is mostly about the olives, it _does_ run actions and it can be
 convenient to do that directly. These can be actions generated manually or
 using the olive simulator.
 
@@ -15,7 +15,7 @@ _Actions_ page can find all actions from that file.
 
 Files can contain different kinds of actions.
 
-The actions in the file are fixed. If they need to be updated in anyway, the
+The actions in the file are fixed. If they need to be updated in any way, the
 file can be replaced or edited to include new actions, but Shesmu will never
 modify the file.
 

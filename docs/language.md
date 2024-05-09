@@ -146,7 +146,7 @@ Terminals determine what an olive will do.
 - `Run` _action_ _tags_ `With` _param1_ `=` _expr1_[`,` _param2_ `=` _expr2_[`,` ...]]`;`
 
 Creates action to be scheduled and run. _action_ determines which action will
-be run what what parameters are available. Optional parameters can be
+be run and what parameters are available. Optional parameters can be
 conditionally assigned:
 
 _param_ `=` _expr_ `If` _condition_
@@ -186,7 +186,7 @@ this action.
 - `Tags` _expr_
 
 Adds the elements in the result of _expr_, which must be a list of strings, to
-the tags associated with this actions.
+the tags associated with this action.
 
 ## Clauses
 An olive can have many clauses that filter and reshape the data. All clauses
@@ -273,7 +273,7 @@ and outer key lists. Consider a situation where a process outputs several files
 and another process ingests a subset of them; a `IntersectionJoin` could be
 used to find output process that used some of the input.
 
-If an set-to-single value join is required, use `IntersectionJoin` and put the
+If a set-to-single value join is required, use `IntersectionJoin` and put the
 single element in a list.
 
 This reshapes the data.
@@ -314,7 +314,7 @@ process outputs several files and another process ingests a subset of them; a
 `LeftIntersectionJoin` could be used to find output process that used some of
 the input.
 
-If an set-to-single value join is required, use `LeftIntersectionJoin` and put
+If a set-to-single value join is required, use `LeftIntersectionJoin` and put
 the single element in a list.
 
 This reshapes the data.
@@ -523,7 +523,7 @@ _testexpr_ must be boolean and both _trueexpr_ and _falseexpr_ must have the sam
 Performs a conditional compilation. The _tests_ are a comma-separated list of
 constant names or `Function` + function names. If all of these items are
 defined, _trueexpr_ is used; otherwise, _falseexpr_ is used. It's important to
-note that, unlike `If`, this is a compile time decisions. Therefore, _trueexpr_
+note that, unlike `If`, this is a compile-time decision. Therefore, _trueexpr_
 and _falseexpr_ don't have to return the same type and the unused path can
 depend on constants and functions that are not defined.
 
@@ -666,7 +666,7 @@ End
 - _expr_ `As` _type_
 
 Convert a value to or from JSON. If _type_ is `json`, then the result from
-_expr_ will be convert to JSON in the Shesmu-standard way. If _type_ is any
+_expr_ will be converted to JSON in the Shesmu-standard way. If _type_ is any
 other type, then _expr_ must be a `json` value and it will be converted from
 JSON to the matching Shesmu type. Since the conversion from JSON to Shesmu
 cannot be guaranteed, it will return an optional of _type_. To create a JSON
@@ -1054,7 +1054,7 @@ Instead of _field_` = `_expr_, a `...`_expr_ can be used and this will copy all
 the elements in _expr_, which must be an object. If some fields are to be
 excluded, use the form: `...`_expr_ `Without` _field1_ _field2_ ...
 
-A field can also be created from a variable of the same name by placing the a
+A field can also be created from a variable of the same name by placing the 
 name after a `;`. For example `{ a = 1; b }` is short hand for `{ a = 1, b = b
 }`. Named fields can be ommited if there are none (_i.e._, `{; b, c}` is the
 short hand for `{b = b, c = c}`). If a gang is used here, this will create all
@@ -1094,7 +1094,7 @@ Specified a new string literal. A string may contain the following special items
 
 - `\\t` for a tab character
 - `\\n` for a new line character
-- `\\{` for a open brace character
+- `\\{` for an open brace character
 - `{`_expr_`}` for a string interpolation; the expression must be a string, integer, or date
 - `{`_expr_`:`_n_`}` for a zero-padded integer string interpolation; the expression must be an integer and _n_ is the number of digits to pad to
 - `{@`_name_`}` interpolate a name from a gang; the variables in the gang must be strings and integers
@@ -1239,7 +1239,7 @@ Returns the number of items in the list.
 
 Returns the first _expr_ in the list or an empty optional if no items are present.
 
-Since this returns optional, it maybe useful to chain with `Default`.
+Since this returns optional, it may be useful to chain with `Default`.
 
 For details on optional values, see [the Mandatory Guide to Optional
 Values](optionalguide.md).
@@ -1274,7 +1274,7 @@ Finds the minimum or maximum item in a list, based on the _sortexpr_,
 which must be an integer or date. If the list is empty, an empty optional is
 returned.
 
-Since this returns optional, it maybe useful to chain with `Default`.
+Since this returns optional, it may be useful to chain with `Default`.
 
 For details on optional values, see [the Mandatory Guide to Optional
 Values](optionalguide.md).
@@ -1319,7 +1319,7 @@ must return an integer or a floating-point number.
 #### Table
 - `Table` _name_ `=` _value_`,` ... `With` _format_
 
-This collects items into a table and formats that table as a string. This can be useful for creating HTML or Markdown tables for inserting into JIRA. The _name_, which must evaluate to a string, will the be name of the column, and _value_, which must also produce a string, will be the contents of that column for every item. The _format_ determines how the text is laid out. It is an object with the following properties:
+This collects items into a table and formats that table as a string. This can be useful for creating HTML or Markdown tables for inserting into JIRA. The _name_, which must evaluate to a string, will be the name of the column, and _value_, which must also produce a string, will be the contents of that column for every item. The _format_ determines how the text is laid out. It is an object with the following properties:
 
 - `data_start`: the leader for each row
 - `data_separator`: the text to place in between inner columns
@@ -1369,7 +1369,7 @@ Evaluates all _expr_ for each item in the list and returns it if all are the sam
 
 If they are different or there are no items, an empty optional is returned.
 
-Since this returns optional, it maybe useful to chain with `Default`.
+Since this returns optional, it may be useful to chain with `Default`.
 
 For details on optional values, see [the Mandatory Guide to Optional
 Values](optionalguide.md).

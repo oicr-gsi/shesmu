@@ -63,7 +63,7 @@ export interface MutableServerInfo<I, R> {
 /**
  * These are the request types for all the endpoints where JSON requests can be made to the server
  *
- * Null entires are GET requests; all others are treated as POST requests
+ * Null entries are GET requests; all others are treated as POST requests
  */
 export interface ShesmuRequestType {
   "action-ids": ActionFilter[];
@@ -184,7 +184,7 @@ export function fetchAsPromise<
 }
 
 /**
- * Create a model that acccepts an array and can store it for later iteration
+ * Create a model that accepts an array and can store it for later iteration
  */
 export function iterableModel<T>(): StatefulModel<T[]> & Iterable<T> {
   let state: T[] = [];

@@ -247,7 +247,7 @@ public final class EcmaScriptRenderer {
       public String json() {
         // This may not be right as it assumes that all keys are in the same order, but we have
         // endeavoured to make that true, so YOLO?
-        return String.format("(JSON.stringfiy(%s) == JSON.stringify(%s))", left, right);
+        return String.format("(JSON.stringify(%s) == JSON.stringify(%s))", left, right);
       }
 
       @Override

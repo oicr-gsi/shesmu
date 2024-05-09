@@ -5,7 +5,7 @@ ideas with a dissection of why.
 
 ## Selection of Multiple Output
 The goal here is to select the "best" output from a workflow. Older versions of
-the workflow produced one file in a unhelpful format. The new one produces two
+the workflow produced one file in an unhelpful format. The new one produces two
 files: a useful format and the historic unhelpful one. The goal is to pick the
 best format for newest run of this workflow.
 
@@ -262,7 +262,7 @@ This code takes each mask and does a `Flatten` on it. The mapping between old
 input masks is usually 1:1, but in the case where `Y`_n_ maps to `Y1N*`, it is
 1:2, so the `Flatten` will allow collecting the two. Again, this uses a
 `Switch` on a tuple. The tuple is the mask type (`Y`, `I`, `N`) and the ordinal
-(the number of this type appears in the sequence. So, `{"Y", 0}` is the first
+(the number of this type) appears in the sequence. So, `{"Y", 0}` is the first
 read, `{"I", 0}` is the first index, `{"I", 1}` is the second index, and `{"Y",
 1}` is the second read. This assumes a relatively normal read structure for the
 sequencer. If other reads or indices were common, it might make sense to have

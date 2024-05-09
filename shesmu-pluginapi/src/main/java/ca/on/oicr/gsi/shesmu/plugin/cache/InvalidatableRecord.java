@@ -9,7 +9,7 @@ import java.util.function.Predicate;
 public class InvalidatableRecord<V> implements Record<Optional<V>> {
   /**
    * Build a new cache record type that checks when a record is valid and does a clean up when the
-   * item is being replace
+   * item is being replaced
    *
    * @param isValid the predicate to check if the cached value is still valid
    * @param destructor the clean up procedure

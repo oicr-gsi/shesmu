@@ -1932,7 +1932,7 @@ public abstract class Imyhat {
   public abstract <R> R apply(ImyhatFunction<R> dispatcher, Object value);
 
   /**
-   * Transform this Shemsu type into a another representation
+   * Transform this Shesmu type into another representation
    *
    * @param transformer the converter for each type
    */

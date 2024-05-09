@@ -8,7 +8,7 @@ import java.util.Optional;
 /**
  * Provide data as a stream of JSON data
  *
- * <p>Shesmu will automatically use the standard streaming JSON unmarhsalling protocol to simplify
+ * <p>Shesmu will automatically use the standard streaming JSON unmarshalling protocol to simplify
  * data extraction
  */
 public interface JsonInputSource {

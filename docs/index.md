@@ -85,7 +85,7 @@ Once a plugin is configured, it can provide:
 - input formats: the data that olives can draw on using the `Input` declaration at the start of a file, or in `Join` or `LeftJoin` clauses
 - signers: special variables that are computed based on the current row being processed in the olive
 - source linker: once a Shesmu server is deployed, it can be useful to have links from the Shesmu dashboard to the original `.shesmu` sources, especially when they are stored in git or the like. A source linker knows how to convert a path on the local file system into a URL.
-- throttlers: when Shesmu has actions to perform, it will perform them as as quickly as possible. It may be useful to throttle Shesmu based on external criteria.
+- throttlers: when Shesmu has actions to perform, it will perform them as quickly as possible. It may be useful to throttle Shesmu based on external criteria.
 
 To view what olives may use, from the main Shesmu status page, use the
 `Definition` menu to view the available resources including documentation and

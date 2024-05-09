@@ -9,7 +9,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Make this method available to Shesmu olives as a function or a constant (if it take no
+ * Make this method available to Shesmu olives as a function or a constant (if it takes no
  * arguments).
  *
  * <p>This must be on static method in a subclass of {@link PluginFileType} or a virtual method on a

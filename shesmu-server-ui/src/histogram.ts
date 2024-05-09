@@ -25,7 +25,7 @@ export interface HistogramRow {
    */
   selectionDisplay(start: number, end: number): string;
   /**
-   * A callback inidcating that the user has selected this range of the histogram.
+   * A callback inidicating that the user has selected this range of the histogram.
    *
    * It is guaranteed that start will be less than end.
    */

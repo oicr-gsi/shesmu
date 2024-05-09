@@ -208,7 +208,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    *
    * <p>The results include a precedence of the result. This can be discarded if used directly. If
    * more concatenation is required, it can be used to determine if parentheses are necessary.
-   * Terminal expressions are 0, unary prefixes are 1, logical conjunction is 2, logical disjuncion
+   * Terminal expressions are 0, unary prefixes are 1, logical conjunction is 2, logical disjunction
    * is 3.
    */
   ActionFilterBuilder<Pair<String, Integer>, ActionState, String, Instant, Long> QUERY =

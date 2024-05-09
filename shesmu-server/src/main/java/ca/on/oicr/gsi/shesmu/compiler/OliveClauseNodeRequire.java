@@ -106,7 +106,7 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
       expression.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals);
       copySignatures = true;
     }
-    // All though we technically manipulate the stream, we're only adding, so we can pretend the
+    // Although we technically manipulate the stream, we're only adding, so we can pretend the
     // stream is still pure.
     return state;
   }

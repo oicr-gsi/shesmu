@@ -57,7 +57,7 @@ public abstract class ActionDefinition {
   /**
    * Write the bytecode to create a new instance of the action.
    *
-   * <p>This method should create an new instance of the action and leave it on the stack. If there
+   * <p>This method should create a new instance of the action and leave it on the stack. If there
    * is any hidden state (remote server addresses, workflow identifier), they must be handled at
    * this stage.
    *

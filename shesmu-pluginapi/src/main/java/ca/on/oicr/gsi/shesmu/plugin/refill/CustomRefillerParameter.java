@@ -21,7 +21,7 @@ public abstract class CustomRefillerParameter<F, T> {
    *
    * @param name the name of the parameter
    * @param store a callback to install the transformer function into the refiller object
-   * @param type the type being consume from Shesmu
+   * @param type the type being consumed from Shesmu
    * @param <F> the type of the refiller
    * @param <T> the type of the input row
    * @param <R> the type of the value from the olive

@@ -1,4 +1,4 @@
-# Understanding the Shemsu compiler
+# Understanding the Shesmu compiler
 This is a guide to understanding the Shesmu olive compiler. This is meant to
 explain the core components that get the language to Java bytecode.
 
@@ -290,7 +290,7 @@ This is the end of the example olive bytecode.
 
 ## Olive Design and Lambdas
 Every clause in an olive generates additional calls to methods in Java's
-`Stream` or methods in Shemu's `RuntimeSupport` to manipulate the stream. Those
+`Stream` or methods in Shesmu's `RuntimeSupport` to manipulate the stream. Those
 methods take parameters: some of which are simple values; others are method
 references/lambdas.
 

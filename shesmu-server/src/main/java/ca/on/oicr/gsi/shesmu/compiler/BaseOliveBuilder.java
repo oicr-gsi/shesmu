@@ -299,7 +299,7 @@ public abstract class BaseOliveBuilder {
   protected abstract void emitSigner(SignatureDefinition name, Renderer renderer);
 
   /**
-   * Create a “Where” clause in a olive.
+   * Create a “Where” clause in an olive.
    *
    * @param capturedVariables A collection of variables that must be available in the filter clause.
    *     These will be available in the resulting method
@@ -688,7 +688,7 @@ public abstract class BaseOliveBuilder {
    * @param max whether we are finding a maximum or a minimum
    * @param discriminators the stream variables over which the groups are constructed
    * @param capturedVariables any captures that are needed by the comparison expression
-   * @return a new method that must return a value to be compared for a input row
+   * @return a new method that must return a value to be compared for an input row
    */
   public Renderer pick(
       int line,

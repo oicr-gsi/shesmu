@@ -182,7 +182,7 @@ The grouping shown so far requires that the groups being produced are known
 ahead of time. In some situations, it isn't possible to know exactly which items
 belong in which groups until all the data is available. For these situations,
 _groupers_ are available that can do complex subgrouping. The groupers are
-plugins, so the groupers available can be seen on the running Shemsu server.
+plugins, so the groupers available can be seen on the running Shesmu server.
 
 The `always_include` grouper can put a row into every subgroup. Suppose a
 validation should be run for every workflow with the validation method
@@ -756,7 +756,7 @@ Since this is very confusing, as a general rule: one star a time.
 
 ## Variables Gangs
 When grouping, it can be useful for have predefined sets of variables to use in
-a `By` clause for any given input format. A input format can define a _gang_ that
+a `By` clause for any given input format. An input format can define a _gang_ that
 defines a short-hand name of a set of variables to used in grouping together.
 The gang can then be used in the `By` of either a `Group` or `Pick` operation:
 
@@ -792,7 +792,7 @@ it is possible to redefine the gangs in a nonsensical way.
 
 ## Identifiers
 All identifier is Shesmu, including olive definitions, function names, action
-names, and variables must begin with a lowercase letter a-z, followed by an
+names, and variables must begin with a lowercase letter a-z, followed by any
 number of underscores, lowercase letters a-z, and decimal digits.
 
 Olive definitions, function names, action names, and variables exist in different
@@ -812,7 +812,7 @@ or:
 ### Signature and Signable Variables
 Since Shesmu is designed to create repeatable actions, it's useful to know what
 data was read to create this data. If an input format has a unique ID for every
-record, the some values may be immutable for that ID, but other values may be
+record, then some values may be immutable for that ID, but other values may be
 (externally) changed. For instance, suppose there is a record of what was
 placed on a sequencer. A user may have incorrectly entered what kit was used to
 prepare this sample; if so, changing it might need to trigger a new action in

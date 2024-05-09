@@ -25,7 +25,7 @@ Languages that use algebraic data types, including Scala and Rust, typically att
 
 Elsewhere in the Rust program, `Foo::Something(some_string)` can be used to
 create a new value. For Shesmu, the same approach is taken where the different
-members in a algebraic type have names to help sort them out.
+members in an algebraic type have names to help sort them out.
 
 In many languages, including Java, types have a particular name that defines
 them. For instance, if we create these two classes:

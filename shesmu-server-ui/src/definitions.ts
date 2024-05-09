@@ -36,13 +36,13 @@ import * as valueParser from "./parser.js";
 import { combineModels, commonPathPrefix, mapModel } from "./util.js";
 
 export type Definition =
-  | ActionDefintion
+  | ActionDefinition
   | ConstantDefinition
   | FunctionDefinition
   | OliveDefinition
   | RefillerDefinition
   | SignatureDefinition;
-export interface ActionDefintion {
+export interface ActionDefinition {
   kind: "action";
   name: string;
   description: string;

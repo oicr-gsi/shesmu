@@ -1578,7 +1578,7 @@ export interface TableCell {
  */
 export interface TreePath {
   /**
-   * The "real" value associated with this segement. It will be used for comparisons against other leaves, but not displayed to the user.
+   * The "real" value associated with this segment. It will be used for comparisons against other leaves, but not displayed to the user.
    */
   value: string;
   /**
@@ -2941,7 +2941,7 @@ export function inputTextArea(
 }
 
 /**
- * A UI element that tiggers a regular update
+ * A UI element that triggers a regular update
  *
  * It keeps a counter and updates the counter every time it is triggered. If
  * the UI element is removed, the model will no longer be updated.
@@ -4247,7 +4247,7 @@ export function tableRow(
 /**
  * Create a tabbed area with multiple panes
  *
- * @param tabs each tab to display; each tabe has a name, contents, and an optional Ctrl-F handler. One tab may be marked as selected to be active by default
+ * @param tabs each tab to display; each tab has a name, contents, and an optional Ctrl-F handler. One tab may be marked as selected to be active by default
  */
 export function tabs(...tabs: Tab[]): UIElement {
   return tabsModel(0, ...tabs).ui;

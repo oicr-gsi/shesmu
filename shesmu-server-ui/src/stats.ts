@@ -478,7 +478,7 @@ function renderStat(
  * Produce a stats pane that can be fed filters to rebuild itself
  */
 export function actionStats(
-  addPropertySeach: AddPropertySearch,
+  addPropertySearch: AddPropertySearch,
   addRangeSearch: AddRangeSearch,
   filenameFormatter: FilenameFormatter,
   exportSearches: ExportSearchCommand[]
@@ -489,7 +489,7 @@ export function actionStats(
       const results = stats.map((stat) =>
         renderStat(
           stat,
-          addPropertySeach,
+          addPropertySearch,
           addRangeSearch,
           filenameFormatter,
           exportSearches,

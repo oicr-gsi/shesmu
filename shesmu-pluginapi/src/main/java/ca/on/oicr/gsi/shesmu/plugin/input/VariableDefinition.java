@@ -8,6 +8,6 @@ import java.util.List;
  *
  * @param type the Shesmu type for this variable
  * @param signable whether this variable should be included in signatures
- * @param gangs the gangs in this variables is part of
+ * @param gangs the gangs that this variable is part of
  */
 public record VariableDefinition(Imyhat type, boolean signable, List<GangDefinition> gangs) {}

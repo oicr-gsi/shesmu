@@ -539,7 +539,7 @@
       "AlertFilterAnd": {
         "properties": {
           "filters": {
-            "description": "the filters which must be all be satisified",
+            "description": "the filters which must be all be satisfied",
             "items": {
               "$ref": "#/components/schemas/AlertFilter"
             },
@@ -605,7 +605,7 @@
       "AlertFilterOr": {
         "properties": {
           "filters": {
-            "description": "the filters from which at least one must be satisified",
+            "description": "the filters from which at least one must be satisfied",
             "items": {
               "$ref": "#/components/schemas/AlertFilter"
             },

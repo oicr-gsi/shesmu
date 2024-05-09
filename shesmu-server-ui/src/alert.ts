@@ -74,7 +74,7 @@ export interface AlertFilterEq {
   type: "eq";
 }
 /**
- * An alert filter that checks for a certain lael to be present.
+ * An alert filter that checks for a certain label to be present.
  */
 export interface AlertFilterHas {
   label: string;

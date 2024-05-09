@@ -301,7 +301,7 @@ public abstract class GenericTypeGuarantee<T> {
    * @param first the type of the first element in the tuple
    * @param second the type of the second element in the tuple
    * @param third the type of the third element in the tuple
-   * @param <R> the type of value after convertion to a Java type
+   * @param <R> the type of value after conversion to a Java type
    * @param <T> the type of the first element of the tuple
    * @param <U> the type of the second element of the tuple
    * @param <V> the type of the third element of the tuple
@@ -358,7 +358,7 @@ public abstract class GenericTypeGuarantee<T> {
    * @param second the type of the second element in the tuple
    * @param third the type of the third element in the tuple
    * @param fourth the type of the third element in the tuple
-   * @param <R> the type of value after convertion to a Java type
+   * @param <R> the type of value after conversion to a Java type
    * @param <T> the type of the first element of the tuple
    * @param <U> the type of the second element of the tuple
    * @param <W> the type of the fourth element of the tuple

@@ -46,7 +46,7 @@ We have several types of automated testing:
 
 Please make sure to add or update the relevant tests for your changes. Testing
 plugins is difficult because they are often mostly integration code that has to
-communicate with a external services. We accept any level of testing on plugins
+communicate with external services. We accept any level of testing on plugins
 as long as it is fast and delegate any plugin bugs to plugin authors.
 
 ## Commits

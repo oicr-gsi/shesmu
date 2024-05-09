@@ -549,7 +549,7 @@ public final class RuntimeSupport {
    *
    * @param input the stream of input items
    * @param hashCode the hashing for the grouping of interest over the input type
-   * @param equals a equality for the grouping of interest over the input type
+   * @param equals an equality for the grouping of interest over the input type
    * @param comparator the sorting operating to be performed on the grouped input
    */
   @RuntimeInterop

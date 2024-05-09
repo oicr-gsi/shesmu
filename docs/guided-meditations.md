@@ -88,7 +88,7 @@ Invert the value of _X_ (_i.e._, if _X_ is true, then false)
 
 - `[` _L_ `] = *`
 Check that an alert has a label _L_ associated with it. If it is present with
-any value, including the empty string, the it will match. _L_ may be a valid
+any value, including the empty string, then it will match. _L_ may be a valid
 Shesmu identifier, any string quoted, or an expression surrounded by `{}`.
 
 - `[` _L_ `] =` _V_
@@ -99,7 +99,7 @@ surrounded by `{}`.
 - `[` _L_ `] ~ /`_pattern_`/`
 Check that an alert has a label _L_ and its value matches the regular
 expression _pattern_ . If it is present with any value, including the empty
-string, the it will match. _L_ may be a valid
+string, then it will match. _L_ may be a valid
 Shesmu identifier, any string quoted, or an expression surrounded by `{}`.
 
 - `LIVE`
@@ -219,9 +219,9 @@ Allows the user to choose between several options. _step_ is a list of displays 
 - `Form` _entry1_[`,` _entry2_ ...] `Then` _step_
 Allows collecting information from the user and then proceed to the next step
 with that information available. _step_ is a list of displays followed by
-another step. For details on the form entires, see the next section.
+another step. For details on the form entries, see the next section.
 
-#### Form Entires
+#### Form Entries
 To collect data from the user, a form entry will display a prompt that is stored in a variable.
 
 - _name_ `=` _type_ `With Label` _labelexpr_
@@ -406,7 +406,7 @@ following:
 
 ### Define and Go-to
 It can be useful to reuse steps in different contents. At the beginning of a
-file, a reuable step can be defined:
+file, a reusable step can be defined:
 
 - `Define` _name_ `(` _type1_ _name1_`,` ... `)` _step_ `;`
 
