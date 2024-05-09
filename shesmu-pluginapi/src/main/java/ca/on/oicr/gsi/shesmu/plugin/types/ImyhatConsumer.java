@@ -9,7 +9,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
- * Cpllect a value based on the provided information
+ * Collect a value based on the provided information
  *
  * <p>In some cases, a Shesmu value may be passed to Java as {@link Object} and an accompanying
  * {@link Imyhat}.

@@ -78,7 +78,7 @@ public abstract class BaseSimulateRequest {
   private static final Counter CACHE_REFRESH =
       Counter.build(
               "shesmu_simulate_refresh",
-              "The number of simulation requests and the cache freshess requested.")
+              "The number of simulation requests and the cache freshness requested.")
           .labelNames("mode", "format")
           .register();
 

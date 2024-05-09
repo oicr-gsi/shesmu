@@ -45,7 +45,7 @@ public class ExpressionNodeWdlPair extends ExpressionNode {
   public void render(Renderer renderer) {
     inner.render(renderer);
 
-    // Whether in the object or tuple form, Shemu's internal representation is a Tuple object and
+    // Whether in the object or tuple form, Shesmu's internal representation is a Tuple object and
     // since the fields are in the correct order, there is no need to do anything with the object.
     // This is zero cost.
   }

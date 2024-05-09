@@ -3,7 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition.AliasedConstantDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition.AliasedSignatureDefintion;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition.AliasedSignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorConsumer;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
@@ -288,7 +288,7 @@ public class ProgramNode {
 
           @Override
           public Stream<SignatureDefinition> signatures() {
-            return stripImport(signatures.get(), AliasedSignatureDefintion::new);
+            return stripImport(signatures.get(), AliasedSignatureDefinition::new);
           }
 
           @Override

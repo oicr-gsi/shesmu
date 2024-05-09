@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.compiler.CollectNodeConcatenate.ConcatentationType;
+import ca.on.oicr.gsi.shesmu.compiler.CollectNodeConcatenate.ConcatenationType;
 import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
@@ -190,7 +190,7 @@ public abstract class CollectNode {
             return result;
           });
     }
-    for (final var concatType : ConcatentationType.values()) {
+    for (final var concatType : ConcatenationType.values()) {
       DISPATCH.addKeyword(
           concatType.syntax(),
           (p, o) -> {

@@ -16,12 +16,12 @@ import org.objectweb.asm.commons.Method;
 
 public class CollectNodeConcatenate extends CollectNode {
 
-  public enum ConcatentationType {
+  public enum ConcatenationType {
     LEXICOGRAPHICAL("LexicalConcat"),
     PROVIDED("FixedConcat");
     private final String syntax;
 
-    ConcatentationType(String syntax) {
+    ConcatenationType(String syntax) {
       this.syntax = syntax;
     }
 
@@ -40,7 +40,7 @@ public class CollectNodeConcatenate extends CollectNode {
   private static final Method METHOD_STREAM__SORTED =
       new Method("sorted", A_STREAM_TYPE, new Type[] {});
 
-  private final ConcatentationType concatentation;
+  private final ConcatenationType concatenation;
   private final ExpressionNode delimiter;
   private final ExpressionNode getter;
 
@@ -49,11 +49,11 @@ public class CollectNodeConcatenate extends CollectNode {
   public CollectNodeConcatenate(
       int line,
       int column,
-      ConcatentationType concatentation,
+      ConcatenationType concatenation,
       ExpressionNode getter,
       ExpressionNode delimiter) {
     super(line, column);
-    this.concatentation = concatentation;
+    this.concatenation = concatenation;
     this.getter = getter;
     this.delimiter = delimiter;
   }
@@ -72,7 +72,7 @@ public class CollectNodeConcatenate extends CollectNode {
 
   @Override
   public final boolean orderingCheck(Ordering ordering, Consumer<String> errorHandler) {
-    switch (concatentation) {
+    switch (concatenation) {
       case LEXICOGRAPHICAL:
         needsSort = true;
         return true;

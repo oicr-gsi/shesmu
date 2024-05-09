@@ -64,7 +64,7 @@ public abstract class BaseHotloadingCompiler {
   }
 
   /**
-   * Create an instantiate a new instance of a just compiled class.
+   * Create and instantiate a new instance of a just compiled class.
    *
    * <p>This requires a zero-arguments constructor.
    *

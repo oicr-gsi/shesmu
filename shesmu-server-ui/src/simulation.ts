@@ -104,7 +104,7 @@ interface ExportDefine {
   parameters: string[];
   /** If true, the definition is returning an “unmodified” data stream.
    *
-   * The data stream may actaully be modified through a <tt>Flatten</tt> or <tt>Require</tt> operation, but it is close enough to the original format to still compute signatures on.
+   * The data stream may actually be modified through a <tt>Flatten</tt> or <tt>Require</tt> operation, but it is close enough to the original format to still compute signatures on.
    */
   isRoot: boolean;
 }
@@ -778,9 +778,9 @@ export function initialiseSimulationDashboard(
   const spot = spotCounter((c) => {
     switch (c) {
       case 0:
-        return "No local defintions";
+        return "No local definitions";
       case 1:
-        return "One local defintion.";
+        return "One local definition.";
       default:
         return `${c} local definitions`;
     }

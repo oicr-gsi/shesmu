@@ -165,7 +165,7 @@ public abstract class LabelledKeyValueCache<K, L, V>
     return records.entrySet().iterator();
   }
 
-  /** The the fixed label associated with the specified key */
+  /** The fixed label associated with the specified key */
   protected abstract L label(K key);
 
   @Override

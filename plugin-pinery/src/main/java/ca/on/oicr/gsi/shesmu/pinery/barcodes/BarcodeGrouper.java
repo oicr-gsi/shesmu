@@ -71,7 +71,7 @@ public class BarcodeGrouper<I, O> implements Grouper<I, O> {
         final BasesMask newMask =
             BarcodeAndBasesMask.calculateBasesMask(barcode, basesMasks.get(0));
         if (newMask == null) {
-          // If we've got an mess of a mask, (╯°□°)╯︵ ┻━┻
+          // If we've got a mess of a mask, (╯°□°)╯︵ ┻━┻
           gauge.set(1);
           return Stream.empty();
         }

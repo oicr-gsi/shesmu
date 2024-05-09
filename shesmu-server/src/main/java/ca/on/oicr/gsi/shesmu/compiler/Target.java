@@ -15,7 +15,7 @@ public interface Target {
     /**
      * A variable in a <code>For</code> operation
      *
-     * <p>May be be captured and should not be in scope to even worry about stream alteration
+     * <p>May be captured and should not be in scope to even worry about stream alteration
      */
     LAMBDA(false),
     /**
@@ -147,7 +147,7 @@ public interface Target {
   /** What category of variables this one belongs to */
   Flavour flavour();
 
-  /** The Shemsu name for this variable */
+  /** The Shesmu name for this variable */
   String name();
 
   /** Indicate that this variable is read */

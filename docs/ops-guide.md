@@ -50,7 +50,7 @@ instance:
 
 ![Histogram showing changed data](ops-histo-orphan.png)
 
-In this histogram there are a number of actions that haven not been generated
+In this histogram there are a number of actions that have not been generated
 by an olive recently. This likely means that the input data changed and these
 actions are now orphans and may be candidates to be purged. The larger the gap
 between now and the last time they were generated, the more likely it is that
@@ -343,7 +343,7 @@ The Vidarr actions also generates some useful tags:
 - `vidarr-workflow:`_name_[`/`_version_`]: The workflow that this action will
   run, both with and without the version.
 - `vidarr-state:`[`active`|`attempt`|`conflict`|`dead`|`finished`|`missing`]:
-	The action uses a state machine while its communicating with Vidarr. This is
+	The action uses a state machine while it's communicating with Vidarr. This is
   the current state of that machine.
 - `vidarr-attempt:`_count_`: The number of times this workflow run has been
   attempted.

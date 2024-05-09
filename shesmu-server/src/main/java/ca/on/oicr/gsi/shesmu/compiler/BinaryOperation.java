@@ -23,7 +23,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 /**
- * Describes how to perform an binary operation
+ * Describes how to perform a binary operation
  *
  * <p>The operation must be able to take exactly two arguments and know what to do based only on the
  * types of the operands.

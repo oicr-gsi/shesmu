@@ -14,10 +14,10 @@ import org.objectweb.asm.commons.GeneratorAdapter;
  * input
  */
 public abstract class SignatureDefinition implements Target {
-  public static class AliasedSignatureDefintion extends SignatureDefinition {
+  public static class AliasedSignatureDefinition extends SignatureDefinition {
     private final SignatureDefinition original;
 
-    public AliasedSignatureDefintion(SignatureDefinition original, String alias) {
+    public AliasedSignatureDefinition(SignatureDefinition original, String alias) {
       super(alias, original.storage(), original.type());
       this.original = original;
     }

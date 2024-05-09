@@ -4,10 +4,10 @@ This is intended for olive developers and operators.
 ## It's gone haywire!!!
 On the main status page, hit the _STOP ALL ACTIONS_ button. Also, that's not a question.
 
-## I don't see the alert on Shemu's Alerts page. What gives?
+## I don't see the alert on Shesmu's Alerts page. What gives?
 Shesmu, like most of other programs, feeds data into [Prometheus](https://prometheus.io/docs/introduction/overview/) and Prometheus sends alerts to AlertManager when the application is behaving badly. Shesmu also has `Alert` olives that create alerts about data in the system and send these directly to AlertManager. Only these data alerts will be displayed on the Shesmu _Alerts_ page.
 
-## What going on with these actions?
+## What is going on with these actions?
 Go to the Shesmu instance of interest, click on the _Actions_ tab. Here, you can find all the actions the server is trying to perform. If you click on the Stats button, you'll get some tables about the actions:
 
 - counts for each action state (failed, succeeded, ...)
@@ -32,7 +32,7 @@ If you've changed the olive/LIMS/run blacklist/whatever to exclude this action, 
 Have at look at the _Last Generated_ by an _Olive_ age. If this is over 2 hours, you can be very confident the olive is no longer creating this action
 
 ## I changed my olive but the actions are the same. What gives?
-Every time an olive runs, all the actions are generated and go into Shemu's scheduler. When the olive runs again, it regenerates all those actions and Shesmu needs to decide if two actions are the same. Actions get to decide if two actiosn are equivalent and that may not include all parameters. If you look at the actions, it will list the olives that generated and you will see two version of the same source file.
+Every time an olive runs, all the actions are generated and go into Shesmu's scheduler. When the olive runs again, it regenerates all those actions and Shesmu needs to decide if two actions are the same. Actions get to decide if two actions are equivalent and that may not include all parameters. If you look at the actions, it will list the olives that generated and you will see two version of the same source file.
 
 To get Shesmu to replace the actions, purge the old ones (either individually or in bulk). This will cause the new action to be in the scheduler.
 
@@ -61,4 +61,4 @@ No worries, this isn't much harder:
 You can click almost any cell header or value and then use the buttons at the bottom to act on the subset of actions. Use the _Add Filter_ button to slice and dice the actions displayed.
 
 ## Can I see how some data is propagating through this olive?
-Not quite, but if go to the _Olives_ page and select the olive, click _Edit in Simulator_ to have the source code for that file show up in the simulation dashboard. Add a _Where_ or _Dump_ clauses to filter the data of interest and simulate it to see what's going on.
+Not quite, but you can go to the _Olives_ page and select the olive, and click _Edit in Simulator_ to have the source code for that file show up in the simulation dashboard. Add a _Where_ or _Dump_ clauses to filter the data of interest and simulate it to see what's going on.

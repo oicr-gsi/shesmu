@@ -20,7 +20,7 @@ These functions are available on any instance:
 - `std::date::to_seconds`: get the number of seconds since the UNIX epoch for this date.
 - `std::float::is_infinite`: check if a floating-point number is infinite.
 - `std::float::is_nan`: check if a floating-point number is not-a-number.
-- `std::float::parse` Convert a string containing digits and a decimal point into an float.
+- `std::float::parse` Convert a string containing digits and a decimal point into a float.
 - `std::integer::parse` Convert a string containing digits into an integer.
 - `std::json::array_from_dict`: convert a dictionary to an array of arrays. If a dictionary has strings for keys, it will normally be encoded as a JSON object. For other key types, it will be encoded as a JSON array of two element arrays. This function forces conversion of a dictionary with string keys to the array-of-arrays JSON encoding. Shesmu will be able to convert either back to dictionary.
 - `std::json::object`: create a JSON object from fields.

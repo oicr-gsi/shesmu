@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
- * A only-if action in a “Group” clause
+ * An only-if action in a “Group” clause
  *
  * <p>Also usable as the variable definition for the result
  */

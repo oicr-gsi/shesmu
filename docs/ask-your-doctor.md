@@ -45,7 +45,7 @@ previously run.
 
 Although action was _run a workflow_ in our original conception, it has
 expanded beyond that. We have action that include _Open a JIRA ticket_. If this
-action is rerun, it doesn't always open a new ticket; it checks that JIRA has a
+action is rerun, it doesn't always open a new ticket; it checks that JIRA has an
 open ticket that matches certain criteria. Similarly, _run a workflow_ doesn't
 necessarily run a workflow; it checks the metadatabase to check if a workflow
 with matching parameters has been run.

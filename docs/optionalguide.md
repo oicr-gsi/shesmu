@@ -143,7 +143,7 @@ to notify the outside world appropriately.
 Sometimes, part of an olive needs to manipulate an optional value. That part may
 not be the best or easiest place to do a lowering, so it is desirable to simply
 manipulate the value, if there is one. This is where the `?` operator comes in.
-For example, :
+For example:
 
     `x? + 3`
 

@@ -258,7 +258,7 @@ interface BasicText {
   matchCase: boolean;
 }
 /**
- * Standard definitions to handle all the time manipulation gracefull
+ * Standard definitions to handle all the time manipulation gracefully
  */
 interface BasicQueryTimeAccessor {
   rangeType: TimeRangeType;
@@ -628,7 +628,7 @@ function addFilterDialog(
               true,
               "Entries like ",
               mono("foo.shesmu"),
-              " will match any action produced by any olive from that file. Entires like ",
+              " will match any action produced by any olive from that file. Entries like ",
               mono("foo.shesmu:5"),
               " and ",
               mono("foo.shesmu:5:3"),

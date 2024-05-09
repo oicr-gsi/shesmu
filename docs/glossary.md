@@ -54,7 +54,7 @@ strings, or converted into tuples.
 The data that is available to olives. This data is effectively tabular even
 though it is never really encoded that way. Each record/row gets processed by
 an olive where each column is available as a variable. Columns cannot be
-missing/null. Missing entires need to either be substituted with dummy values
+missing/null. Missing entries need to either be substituted with dummy values
 or optional values. If the schema is ragged, it can be expressed as a JSON
 value.
 
@@ -65,7 +65,7 @@ design to choice to prevent _matched_ lists where the indices mean something.
 Create a list of tuples in this case.
 
 ## Object
-Shemu's objects are not like Java's object. They are more like JSON objects or
+Shesmu's objects are not like Java's object. They are more like JSON objects or
 tuples with property names instead of indices.
 
 ## Olive
@@ -100,7 +100,7 @@ an entire table in a database.
 
 ## Search
 A filter with a name that allows the UI to quickly select an interesting set of
-actions. The can be used for debugging or as dashboards.
+actions. They can be used for debugging or as dashboards.
 
 ## Signature
 A fingerprint (hash or value) derived from the values of variables read by an olive.
@@ -113,7 +113,7 @@ should be rerun. The input format determines which variables should make it
 into the signature and which should be excluded.
 
 ## Throttler
-A method to stop actions from running. Since Shesmu may be talking to may
+A method to stop actions from running. Since Shesmu may be talking to many
 systems at once, throttlers provide a way to take some of those systems down
 for maintenance or limit Shesmu's traffic to them during an overload. Actions
 and olives check for permission to run from the throttlers and will quit early

@@ -99,7 +99,7 @@ public class StaticActions implements LoadedConfiguration {
   private static final Gauge processedCount =
       Gauge.build(
               "shesmu_static_actions_processed_count",
-              "The number of static actions defined in a file that were succsessfully added to the actions queue.")
+              "The number of static actions defined in a file that were successfully added to the actions queue.")
           .labelNames("filename")
           .register();
 

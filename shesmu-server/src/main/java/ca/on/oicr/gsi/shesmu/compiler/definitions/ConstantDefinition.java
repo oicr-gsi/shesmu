@@ -287,7 +287,7 @@ public abstract class ConstantDefinition implements Target {
    * Create a new constant
    *
    * @param name the name of the constant, which must be valid Shesmu identifier
-   * @param type the Shemsu type of the constant
+   * @param type the Shesmu type of the constant
    */
   public ConstantDefinition(String name, Imyhat type, String description, Path path) {
     super();

@@ -803,7 +803,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
     }
   }
 
-  /** Bind to a exported function. */
+  /** Bind to an exported function. */
   public static CallSite bootstrap(
       MethodHandles.Lookup lookup, String methodName, MethodType type, String fileName) {
     final CallSite result = FUNCTION_REGISTRY.get(new Pair<>(fileName, methodName));

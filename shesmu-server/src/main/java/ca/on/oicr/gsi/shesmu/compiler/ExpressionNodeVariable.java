@@ -54,7 +54,7 @@ public class ExpressionNodeVariable extends ExpressionNode {
       names.add(target.unaliasedName());
     }
     // We also need to get an accessor when in a Define olive and we need to lift the accessor
-    // along the way; in a other olives, this will just get ignored.
+    // along the way; in other olives, this will just get ignored.
     if (predicate.test(Flavour.CONSTANT)) {
       names.add(BaseOliveBuilder.SIGNER_ACCESSOR_NAME);
     }

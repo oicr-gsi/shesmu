@@ -49,7 +49,7 @@ public abstract class Compiler {
   private static final Method METHOD_SERVICES_REQUIRED =
       new Method("services", Type.getType(Stream.class), new Type[0]);
 
-  private static final Handle SERVICES_REQURED_BSM =
+  private static final Handle SERVICES_REQUIRED_BSM =
       new Handle(
           Opcodes.H_INVOKESTATIC,
           Type.getInternalName(RuntimeSupport.class),
@@ -187,7 +187,7 @@ public abstract class Compiler {
             methodGen.invokeDynamic(
                 "services",
                 Type.getMethodDescriptor(Type.getType(String[].class)),
-                SERVICES_REQURED_BSM,
+                SERVICES_REQUIRED_BSM,
                 pluginFilenames.stream().map(Path::toString).toArray());
             methodGen.invokeInterface(A_OLIVE_SERVICES, METHOD_OLIVE_SERVICES__IS_OVERLOADED_ARRAY);
           });
@@ -198,7 +198,7 @@ public abstract class Compiler {
       servicesMethodGen.invokeDynamic(
           "services",
           Type.getMethodDescriptor(Type.getType(String[].class)),
-          SERVICES_REQURED_BSM,
+          SERVICES_REQUIRED_BSM,
           pluginFilenames.stream().map(Path::toString).toArray());
       servicesMethodGen.invokeStatic(A_ARRAYS_TYPE, METHOD_ARRAYS__STREAM);
       servicesMethodGen.returnValue();

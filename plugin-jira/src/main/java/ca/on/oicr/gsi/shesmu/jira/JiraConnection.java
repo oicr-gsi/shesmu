@@ -112,8 +112,8 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   static final ObjectMapper MAPPER = new ObjectMapper();
 
   /**
-   * JIRA uses an Atlassian Document specification that is needlessly complicated for Shemu's needs,
-   * so we don't bother to understand the schema.
+   * JIRA uses an Atlassian Document specification that is needlessly complicated for Shesmu's
+   * needs, so we don't bother to understand the schema.
    *
    * @param jsonNode the node to dissect
    * @return any text found

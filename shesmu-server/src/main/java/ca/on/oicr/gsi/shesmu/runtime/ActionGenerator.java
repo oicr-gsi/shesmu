@@ -83,7 +83,7 @@ public abstract class ActionGenerator implements RequiredServices {
   /**
    * Add all Prometheus monitoring for this program.
    *
-   * <p>Only one Shemsu script may be active at any time, but multiple may be loaded in memory as
+   * <p>Only one Shesmu script may be active at any time, but multiple may be loaded in memory as
    * part of compilation. Since duplicate Prometheus metrics are not permitted, Shesmu will {@link
    * #unregister()} the old {@link ActionGenerator} to remove its monitoring output, then connect
    * the new one using {@link #register()}.

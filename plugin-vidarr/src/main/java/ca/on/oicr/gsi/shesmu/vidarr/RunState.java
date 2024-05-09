@@ -14,7 +14,7 @@ import java.util.OptionalInt;
 import java.util.stream.Stream;
 
 /**
- * As Shesmu communicates with Vidarr, the action needs to track whats going on. This class is
+ * As Shesmu communicates with Vidarr, the action needs to track what's going on. This class is
  * designed as a state machine where each implementation can determine what to do and returns a next
  * state.
  */

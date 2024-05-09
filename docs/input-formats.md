@@ -1,5 +1,5 @@
 # Configuring Input Formats
-A _input format_ is the type of data that Shesmu olives process--that is, the
+An _input format_ is the type of data that Shesmu olives process--that is, the
 variables that are available to Shesmu programs. The actual data comes from a
 matching _input data repository_ and many repositories can provide the same format.
 
