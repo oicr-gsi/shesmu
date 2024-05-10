@@ -1890,7 +1890,7 @@ public final class PluginManager
               callsite.dynamicInvoker().asType(MethodType.methodType(RequiredServices.class)));
     }
     // Now, we should have a method that's () → String[], which is what we wanted, so shove it in
-    // the
+    // the olive
     // olive
     return new ConstantCallSite(collector.asType(methodType));
   }
