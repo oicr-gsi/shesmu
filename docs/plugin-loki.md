@@ -13,3 +13,9 @@ ending `.loki` with the following:
 The `"url"` property is the URL of the Loki server to push logs into. The
 optional `"labels"` object will apply static labels to all values logged from
 this instance.
+
+## For Plugin Developers
+The PluginManager passes each `PluginFileType` an implementation of `Definer` which has
+a method `log(String, Map<String,String>)`. If the Loki plugin is installed, then the PluginManager will route log
+messages and labels to Loki.
+The PluginManager automatically includes the labels `plugin` and `plugin_type`. 
