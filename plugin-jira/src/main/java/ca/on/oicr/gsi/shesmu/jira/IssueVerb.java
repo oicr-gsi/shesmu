@@ -59,7 +59,6 @@ public abstract class IssueVerb {
                 .append("\nConnection: ")
                 .append(connection);
             Map<String, String> lokiLabels = new HashMap<>();
-            lokiLabels.put("type", "jira");
             lokiLabels.put("issue", issue.getKey());
             lokiLabels.put("verb", "close");
             ((Definer<JiraConnection>) definer).log(errorBuilder.toString(), lokiLabels);
