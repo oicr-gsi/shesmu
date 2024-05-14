@@ -144,7 +144,7 @@ public final class IssueAction extends Action {
       final var missingLabels = new TreeSet<String>();
       final var result =
           verb.perform(
-              current,
+              connection,
               issues,
               summary,
               labels,

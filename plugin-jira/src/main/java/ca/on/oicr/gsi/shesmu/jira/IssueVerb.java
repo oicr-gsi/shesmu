@@ -1,13 +1,12 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
+import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -38,13 +37,14 @@ public abstract class IssueVerb {
 
     @Override
     public ActionState perform(
-        JiraConnection connection,
+        Supplier<JiraConnection> definer,
         List<Issue> issues,
         String summary,
         Set<String> labels,
         String type,
         Consumer<Issue> bestMatch)
         throws URISyntaxException, IOException, InterruptedException {
+      JiraConnection connection = definer.get();
       for (final var issue : issues) {
         if (issue
             .extract(Issue.STATUS)
@@ -58,7 +58,11 @@ public abstract class IssueVerb {
                 .append(issue.getKey())
                 .append("\nConnection: ")
                 .append(connection);
-            System.err.println(errorBuilder);
+            Map<String, String> lokiLabels = new HashMap<>();
+            lokiLabels.put("type", "jira");
+            lokiLabels.put("issue", issue.getKey());
+            lokiLabels.put("verb", "close");
+            ((Definer<JiraConnection>) definer).log(errorBuilder.toString(), lokiLabels);
             return ActionState.FAILED;
           }
         }
@@ -113,13 +117,14 @@ public abstract class IssueVerb {
 
     @Override
     public ActionState perform(
-        JiraConnection connection,
+        Supplier<JiraConnection> definer,
         List<Issue> issues,
         String summary,
         Set<String> labels,
         String type,
         Consumer<Issue> bestMatch)
         throws URISyntaxException, IOException, InterruptedException {
+      JiraConnection connection = definer.get();
       if (issues.stream()
           .anyMatch(
               issue ->
@@ -177,7 +182,7 @@ public abstract class IssueVerb {
   }
 
   public abstract ActionState perform(
-      JiraConnection connection,
+      Supplier<JiraConnection> definer,
       List<Issue> issues,
       String summary,
       Set<String> labels,
