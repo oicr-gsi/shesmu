@@ -61,4 +61,4 @@ No worries, this isn't much harder:
 You can click almost any cell header or value and then use the buttons at the bottom to act on the subset of actions. Use the _Add Filter_ button to slice and dice the actions displayed.
 
 ## Can I see how some data is propagating through this olive?
-Not quite, but you can go to the _Olives_ page and select the olive, and click _Edit in Simulator_ to have the source code for that file show up in the simulation dashboard. Add a _Where_ or _Dump_ clauses to filter the data of interest and simulate it to see what's going on.
+Not quite, but you can go to the _Olives_ page and select the olive, and click _Edit in Simulator_ to have the source code for that file show up in the simulation dashboard. Add a _Where_ or _Dump_ clause to filter the data of interest and simulate it to see what's going on.
