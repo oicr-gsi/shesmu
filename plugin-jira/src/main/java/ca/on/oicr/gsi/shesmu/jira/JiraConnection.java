@@ -452,10 +452,9 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
               .append(transitions)
               .append("\nGot ")
               .append(result.body());
-          Map<String, String> labels = new HashMap<>();
-          labels.put("type", "jira");
-          labels.put("issue", issue.getKey());
-          ((Definer<JiraConnection>) definer).log(errorBuilder.toString(), labels);
+          Map<String, String> lokiLabels = new HashMap<>();
+          lokiLabels.put("issue", issue.getKey());
+          ((Definer<JiraConnection>) definer).log(errorBuilder.toString(), lokiLabels);
         }
         return isGood;
       }
