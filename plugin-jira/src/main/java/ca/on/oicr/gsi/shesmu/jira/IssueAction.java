@@ -120,7 +120,9 @@ public final class IssueAction extends Action {
   public ActionState perform(
       ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
     if (connection == null) {
-      System.err.println("JIRA Connection for " + issueUrl + " is null.");
+      // 'connection' is a bit of a misnomer - it's the Definer supplied by the PluginManager.
+      // It should never be null. Very bad things have happened if it's null
+      System.err.println("JIRA Connection Definer for " + issueUrl + " is null.");
       return ActionState.FAILED;
     }
     final var current = connection.get();
