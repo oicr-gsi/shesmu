@@ -393,7 +393,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
             .send(builder.GET().build(), new JsonBodyHandler<>(MAPPER, TransitionsResponse.class))
             .body()
             .get()
-            .getTransitions();
+            .transitions();
 
     for (final var transition : transitions) {
       if (matcher.apply(closedStatuses(), transition.getTo().getName()::equalsIgnoreCase)) {
