@@ -426,7 +426,9 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
               .append(issue.getKey())
               .append(" using any of ")
               .append(transitions)
-              .append(", server returned: ")
+              .append(", sent: ")
+              .append(request)
+              .append(", received: ")
               .append(transitionResult);
           System.err.println(errorBuilder);
           return false;
