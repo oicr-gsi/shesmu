@@ -428,6 +428,8 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
               .append(transitions)
               .append(", sent: ")
               .append(request)
+              .append(" which formatted to ")
+              .append(MAPPER.writeValueAsString(request))
               .append(", received: ")
               .append(transitionResult);
           System.err.println(errorBuilder);
