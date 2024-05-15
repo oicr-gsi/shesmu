@@ -399,7 +399,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       if (matcher.apply(closedStatuses(), transition.to().name()::equalsIgnoreCase)) {
         final var request = new TransitionRequest();
         for (final var field : transition.fields().entrySet()) {
-          if (field.getValue().isRequired() && !field.getValue().isHasDefaultValue()) {
+          if (field.getValue().required() && !field.getValue().hasDefaultValue()) {
             request.getFields().put(field.getKey(), defaultFieldValues.get(field.getKey()));
           }
         }
