@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Map;
 import java.util.TreeMap;
 
-// TODO: this could be a record if not for the default values?
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class TransitionRequest {
   private Map<String, JsonNode> fields = new TreeMap<>();
@@ -34,5 +33,18 @@ public final class TransitionRequest {
 
   public void setUpdate(Map<String, JsonNode> update) {
     this.update = update;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    builder
+        .append("TransitionRequest with fields: ")
+        .append(fields)
+        .append(", transition: ")
+        .append(transition)
+        .append(", update: ")
+        .append(update);
+    return builder.toString();
   }
 }
