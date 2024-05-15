@@ -33,13 +33,10 @@ jobs:
       uses: actions/upload-pages-artifact@v3
     - name: Build and Push Docker images
       if: ${{ github.event_name == 'release' }}
-      uses: docker/build-push-action@v1.1.0
+      uses: macbre/push-to-ghcr@master
       with:
-        repository: oicr-gsi/shesmu
-        tags: latest
-        tag_with_ref: true
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+        image_name: ${{ github.repository }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
   deploy:
     needs: build
     runs-on: ubuntu-latest
