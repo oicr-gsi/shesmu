@@ -283,7 +283,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                         .<Set<String>>map(
                             l -> Stream.of(l).collect(Collectors.toCollection(TreeSet::new)))
                         .orElse(Set.of()),
-                    issue.extract(Issue.STATUS).map(Status::getName).orElse("<missing>"),
+                    issue.extract(Issue.STATUS).map(Status::name).orElse("<missing>"),
                     issue.extract(Issue.SUMMARY).orElse("<missing>"),
                     issue.extract(Issue.UPDATED).map(Date::toInstant)))
         .collect(Collectors.toCollection(ISSUE_IMYHAT::newSet));
@@ -396,9 +396,9 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
             .transitions();
 
     for (final var transition : transitions) {
-      if (matcher.apply(closedStatuses(), transition.getTo().getName()::equalsIgnoreCase)) {
+      if (matcher.apply(closedStatuses(), transition.to().name()::equalsIgnoreCase)) {
         final var request = new TransitionRequest();
-        for (final var field : transition.getFields().entrySet()) {
+        for (final var field : transition.fields().entrySet()) {
           if (field.getValue().isRequired() && !field.getValue().isHasDefaultValue()) {
             request.getFields().put(field.getKey(), defaultFieldValues.get(field.getKey()));
           }

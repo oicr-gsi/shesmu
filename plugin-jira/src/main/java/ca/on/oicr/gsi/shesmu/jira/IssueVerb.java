@@ -48,7 +48,7 @@ public abstract class IssueVerb {
       for (final var issue : issues) {
         if (issue
             .extract(Issue.STATUS)
-            .map(s -> connection.closedStatuses().noneMatch(s.getName()::equalsIgnoreCase))
+            .map(s -> connection.closedStatuses().noneMatch(s.name()::equalsIgnoreCase))
             .orElse(false)) {
           bestMatch.accept(issue);
           if (!connection.transition(issue, Stream::anyMatch, comment)) {
@@ -134,7 +134,7 @@ public abstract class IssueVerb {
                             final var isOpen =
                                 connection
                                     .closedStatuses()
-                                    .noneMatch(status.getName()::equalsIgnoreCase);
+                                    .noneMatch(status.name()::equalsIgnoreCase);
                             if (isOpen) {
                               bestMatch.accept(issue);
                             }
