@@ -432,7 +432,9 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
               .append(MAPPER.writeValueAsString(request))
               .append(", received: ")
               .append(transitionResult.body());
-          System.err.println(errorBuilder);
+          Map<String, String> lokiLabels = new HashMap<>();
+          lokiLabels.put("issue", issue.getKey());
+          ((Definer<JiraConnection>) definer).log(errorBuilder.toString(), lokiLabels);
           return false;
         }
 
