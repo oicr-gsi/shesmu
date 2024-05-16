@@ -431,7 +431,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
               .append(" which formatted to ")
               .append(MAPPER.writeValueAsString(request))
               .append(", received: ")
-              .append(transitionResult);
+              .append(transitionResult.body());
           System.err.println(errorBuilder);
           return false;
         }
