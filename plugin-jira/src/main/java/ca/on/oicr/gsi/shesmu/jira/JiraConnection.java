@@ -400,7 +400,13 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
         final var request = new TransitionRequest();
         for (final var field : transition.fields().entrySet()) {
           if (field.getValue().required() && !field.getValue().hasDefaultValue()) {
-            request.getFields().put(field.getKey(), defaultFieldValues.get(field.getKey()));
+            request
+                .getFields()
+                .put(
+                    field.getKey(),
+                    MAPPER
+                        .createObjectNode()
+                        .put("name", defaultFieldValues.get(field.getKey()).asText()));
           }
         }
         request.setTransition(transition);
