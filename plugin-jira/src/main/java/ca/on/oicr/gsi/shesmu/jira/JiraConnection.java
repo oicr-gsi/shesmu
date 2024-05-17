@@ -398,18 +398,30 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
     for (final var transition : transitions) {
       if (matcher.apply(closedStatuses(), transition.to().name()::equalsIgnoreCase)) {
         final var request = new TransitionRequest();
+        /** "fields": { "assignee": { "name": "Will" }, "resolution": { "name": "Fixed" } } */
         for (final var field : transition.fields().entrySet()) {
           if (field.getValue().required() && !field.getValue().hasDefaultValue()) {
             request
                 .getFields()
                 .put(
                     field.getKey(),
-                    MAPPER
-                        .createObjectNode()
-                        .put("name", defaultFieldValues.get(field.getKey()).asText()));
+                    MAPPER.createObjectNode().set("name", defaultFieldValues.get(field.getKey())));
           }
         }
         request.setTransition(transition);
+
+        /** "update": { "comment": [ { "add": { "body": "Bug has been fixed." } } ] } */
+        Map<String, JsonNode> updateComment = new HashMap<>();
+        updateComment.put(
+            "comment",
+            MAPPER
+                .createArrayNode()
+                .add(
+                    MAPPER
+                        .createObjectNode()
+                        .set("add", MAPPER.createObjectNode().put("body", comment))));
+        request.setUpdate(updateComment);
+
         final var requestBuilder =
             HttpRequest.newBuilder(
                 new URI(
@@ -425,7 +437,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                     .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(request)))
                     .build(),
                 BodyHandlers.ofString());
-        if (transitionResult.statusCode() / 100 != 2) { // get 400 here
+        if (transitionResult.statusCode() / 100 != 2) {
           StringBuilder errorBuilder = new StringBuilder();
           errorBuilder
               .append("Unable to transition issue: ")
@@ -442,40 +454,9 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
           lokiLabels.put("issue", issue.getKey());
           ((Definer<JiraConnection>) definer).log(errorBuilder.toString(), lokiLabels);
           return false;
+        } else {
+          return true;
         }
-
-        final var updateComment = MAPPER.createObjectNode();
-        updateComment.set("body", version.createDocument(comment));
-        final var commentRequestBuilder =
-            HttpRequest.newBuilder(
-                new URI(
-                    String.format(
-                        "%s/rest/api/%s/issue/%s/comment", url, version.slug(), issue.getId())));
-        authenticationHeader.ifPresent(
-            header -> commentRequestBuilder.header("Authorization", header));
-
-        var commentResult =
-            CLIENT.send(
-                commentRequestBuilder
-                    .header("Content-Type", "application/json")
-                    .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(updateComment)))
-                    .build(),
-                BodyHandlers.ofString());
-        boolean isGood = commentResult.statusCode() / 100 == 2;
-        if (!isGood) {
-          StringBuilder errorBuilder = new StringBuilder();
-          errorBuilder
-              .append("Unable to comment on issue ")
-              .append(issue.getKey())
-              .append(" using comment ")
-              .append(comment)
-              .append("\nGot ")
-              .append(commentResult.body());
-          Map<String, String> lokiLabels = new HashMap<>();
-          lokiLabels.put("issue", issue.getKey());
-          ((Definer<JiraConnection>) definer).log(errorBuilder.toString(), lokiLabels);
-        }
-        return isGood;
       }
     }
     return false;
