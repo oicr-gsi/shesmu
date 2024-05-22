@@ -7,6 +7,22 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.33.0] - 2024-05-22
+
+### Added
+
+* Tag jira actions with their associated verb
+  
+
+### Fixed
+
+* Publish docker images to ghcr instead of docker.io
+  
+* Switch jira error logging to using loki plugin if available
+* Fix Jira transitions failing when a resolution is included in the transition
+  
+
+
 ## [1.32.8] - 2024-04-26
 
 ### Fixed
