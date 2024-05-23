@@ -419,7 +419,11 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                 .add(
                     MAPPER
                         .createObjectNode()
-                        .set("add", MAPPER.createObjectNode().put("body", comment))));
+                        .set(
+                            "add",
+                            MAPPER
+                                .createObjectNode()
+                                .set("body", version.createDocument(comment)))));
         request.setUpdate(updateComment);
 
         final var requestBuilder =
