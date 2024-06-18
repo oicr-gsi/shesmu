@@ -226,7 +226,8 @@ public final class SubmitAction extends Action {
                                         || query.matcher(v.getValue()).matches()))
         || checkJson(request.getArguments(), query)
         || checkJson(request.getMetadata(), query)
-        || checkJson(request.getEngineParameters(), query);
+        || checkJson(request.getEngineParameters(), query)
+        || state.search(query);
   }
 
   @ActionParameter(required = false)

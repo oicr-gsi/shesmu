@@ -10,9 +10,15 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 final class RunStateDead extends RunState {
+
+  @Override
+  public boolean search(Pattern query) {
+    return false;
+  }
 
   @Override
   public AvailableCommands commands() {

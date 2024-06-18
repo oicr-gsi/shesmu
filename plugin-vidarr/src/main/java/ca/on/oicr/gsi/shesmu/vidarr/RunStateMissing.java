@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,6 +33,11 @@ final class RunStateMissing extends RunState {
                                 "LIMS key %s/%s does not have a version that overlaps with LIMS key in Vidarr workflow run %s.",
                                 k.getProvider(), k.getId(), id)))
             .collect(Collectors.toList());
+  }
+
+  @Override
+  public boolean search(Pattern query) {
+    return query.matcher(id).matches();
   }
 
   @Override
