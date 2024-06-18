@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 final class RunStateMonitor extends RunState {
@@ -91,6 +92,11 @@ final class RunStateMonitor extends RunState {
     super();
     this.workflowRunUrl = workflowRunUrl;
     this.status = status;
+  }
+
+  @Override
+  public boolean search(Pattern query) {
+    return query.matcher(status.getId()).matches();
   }
 
   @Override

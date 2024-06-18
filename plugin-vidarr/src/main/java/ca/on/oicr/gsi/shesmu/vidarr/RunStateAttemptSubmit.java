@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /** State when we have no knowledge of what's going on in Vidarr */
@@ -34,6 +35,11 @@ final class RunStateAttemptSubmit extends RunState {
 
   public RunStateAttemptSubmit(int attempt) {
     this.attempt = attempt;
+  }
+
+  @Override
+  public boolean search(Pattern query) {
+    return false;
   }
 
   @Override

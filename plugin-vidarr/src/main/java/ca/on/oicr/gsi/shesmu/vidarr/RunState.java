@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -19,6 +20,8 @@ import java.util.stream.Stream;
  * state.
  */
 abstract class RunState {
+
+  public abstract boolean search(Pattern query);
 
   public static final class PerformResult {
     private final ActionState actionState;

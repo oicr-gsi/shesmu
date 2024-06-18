@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 final class RunStateConflicted extends RunState {
@@ -24,6 +25,11 @@ final class RunStateConflicted extends RunState {
         List.of(
             "Multiple possible Vidarr matches! Fix workflow runs in Vidarr and reset this action or change the olive and purge this action: "
                 + String.join(", ", ids));
+  }
+
+  @Override
+  public boolean search(Pattern query) {
+    return ids.stream().anyMatch(id -> query.matcher(id).matches());
   }
 
   @Override
