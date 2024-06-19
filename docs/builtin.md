@@ -80,9 +80,13 @@ To configure this, create a file ending in `.fakeactions` as follows:
     }
 
 where `url` is the Shesmu server to copy and `allow` is a regular expression of
-which actions to copy. An optional `prefix` can be applied to the names of all
-the actions.
+which action definitions to copy. An optional `prefix` can be applied to the names of all
+the action definitions.
 
 If the remote server is not accessible, download the `/actions` endpoint to a
 file ending in `.fakeactiondefs`. This will create a similar set of fake
-actions, though statically.
+action definitions, though statically.
+
+Then, use an olive and actnow file to generate corresponding actions using the
+fake action definitions.
+
