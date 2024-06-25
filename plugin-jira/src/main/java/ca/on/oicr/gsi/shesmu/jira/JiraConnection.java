@@ -410,22 +410,6 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
         }
         request.setTransition(transition);
 
-        /** "update": { "comment": [ { "add": { "body": "Bug has been fixed." } } ] } */
-        Map<String, JsonNode> updateComment = new HashMap<>();
-        updateComment.put(
-            "comment",
-            MAPPER
-                .createArrayNode()
-                .add(
-                    MAPPER
-                        .createObjectNode()
-                        .set(
-                            "add",
-                            MAPPER
-                                .createObjectNode()
-                                .set("body", version.createDocument(comment)))));
-        request.setUpdate(updateComment);
-
         final var requestBuilder =
             HttpRequest.newBuilder(
                 new URI(
@@ -458,9 +442,40 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
           lokiLabels.put("issue", issue.getKey());
           ((Definer<JiraConnection>) definer).log(errorBuilder.toString(), lokiLabels);
           return false;
-        } else {
-          return true;
         }
+
+        final var updateComment = MAPPER.createObjectNode();
+        updateComment.set("body", version.createDocument(comment));
+        final var commentRequestBuilder =
+            HttpRequest.newBuilder(
+                new URI(
+                    String.format(
+                        "%s/rest/api/%s/issue/%s/comment", url, version.slug(), issue.getId())));
+        authenticationHeader.ifPresent(
+            header -> commentRequestBuilder.header("Authorization", header));
+
+        var commentResult =
+            CLIENT.send(
+                commentRequestBuilder
+                    .header("Content-Type", "application/json")
+                    .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(updateComment)))
+                    .build(),
+                BodyHandlers.ofString());
+        boolean isGood = commentResult.statusCode() / 100 == 2;
+        if (!isGood) {
+          StringBuilder errorBuilder = new StringBuilder();
+          errorBuilder
+              .append("Unable to comment on issue ")
+              .append(issue.getKey())
+              .append(" using comment ")
+              .append(comment)
+              .append("\nGot ")
+              .append(commentResult.body());
+          Map<String, String> lokiLabels = new HashMap<>();
+          lokiLabels.put("issue", issue.getKey());
+          ((Definer<JiraConnection>) definer).log(errorBuilder.toString(), lokiLabels);
+        }
+        return isGood;
       }
     }
     return false;
