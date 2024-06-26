@@ -170,9 +170,10 @@ public abstract class PluginFileType<T extends PluginFile> {
    * service. To write logs, use {@link Definer#log(String, Map)}
    *
    * @param message the log message to write
+   * @param level the logging level of this message
    * @param attributes the labels associated with this message
    */
-  public void writeLog(String message, Map<String, String> attributes) {
+  public void writeLog(String message, LogLevel level, Map<String, String> attributes) {
     // Do nothing
   }
 }

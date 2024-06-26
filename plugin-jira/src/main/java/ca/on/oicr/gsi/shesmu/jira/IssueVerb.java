@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
+import ca.on.oicr.gsi.shesmu.plugin.LogLevel;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -61,7 +62,8 @@ public abstract class IssueVerb {
             Map<String, String> lokiLabels = new HashMap<>();
             lokiLabels.put("issue", issue.getKey());
             lokiLabels.put("verb", "close");
-            ((Definer<JiraConnection>) definer).log(errorBuilder.toString(), lokiLabels);
+            ((Definer<JiraConnection>) definer)
+                .log(errorBuilder.toString(), LogLevel.ERROR, lokiLabels);
             return ActionState.FAILED;
           }
         }

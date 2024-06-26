@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.loki;
 
+import ca.on.oicr.gsi.shesmu.plugin.LogLevel;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Map;
 
@@ -8,6 +9,7 @@ import java.util.Map;
 public class Configuration {
   private Map<String, String> labels = Map.of();
   private String url;
+  private LogLevel level;
 
   public Map<String, String> getLabels() {
     return labels;
@@ -23,5 +25,13 @@ public class Configuration {
 
   public void setUrl(String url) {
     this.url = url;
+  }
+
+  public LogLevel getLevel() {
+    return level;
+  }
+
+  public void setLevel(LogLevel level) {
+    this.level = level;
   }
 }
