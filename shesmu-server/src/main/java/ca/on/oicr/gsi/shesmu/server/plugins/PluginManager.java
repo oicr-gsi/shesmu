@@ -13,15 +13,8 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureVariableForDynamicSigner;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureVariableForStaticSigner;
-import ca.on.oicr.gsi.shesmu.plugin.Definer;
-import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
-import ca.on.oicr.gsi.shesmu.plugin.Parser;
-import ca.on.oicr.gsi.shesmu.plugin.PluginFile;
-import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
-import ca.on.oicr.gsi.shesmu.plugin.RequiredServices;
+import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLocationLinker;
-import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
-import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
@@ -851,11 +844,11 @@ public final class PluginManager
       }
 
       @Override
-      public void log(String message, Map<String, String> labels) {
+      public void log(String message, LogLevel level, Map<String, String> labels) {
         final Map<String, String> amendedLabels = new TreeMap<>(labels);
         amendedLabels.put("plugin", instance.fileName().toString());
         amendedLabels.put("plugin_type", FormatTypeWrapper.this.fileFormat.getClass().toString());
-        PluginManager.this.log(message, amendedLabels);
+        PluginManager.this.log(message, level, amendedLabels);
       }
 
       public Stream<RefillerDefinition> refillers() {
@@ -1210,12 +1203,12 @@ public final class PluginManager
       return configuration.stream().map(FileWrapper::configuration);
     }
 
-    public void log(String message, Map<String, String> attributes) {
-      fileFormat.writeLog(message, attributes);
+    public void log(String message, LogLevel level, Map<String, String> attributes) {
+      fileFormat.writeLog(message, level, attributes);
       for (final var reference : this.wrappers.values()) {
         final var wrapper = reference.get();
         if (wrapper != null) {
-          wrapper.instance.writeLog(message, attributes);
+          wrapper.instance.writeLog(message, level, attributes);
         }
       }
     }
@@ -2051,14 +2044,14 @@ public final class PluginManager
     return formatTypes.stream().flatMap(FormatTypeWrapper::listConfiguration);
   }
 
-  public void log(String message, Map<String, String> attributes) {
+  public void log(String message, LogLevel level, Map<String, String> attributes) {
     if (LOG_REENTRANT_CHECK.get()) {
       throw new IllegalStateException("Trying to log while logging.");
     }
     LOG_REENTRANT_CHECK.set(true);
     try {
       for (final var format : this.formatTypes) {
-        format.log(message, attributes);
+        format.log(message, level, attributes);
       }
     } finally {
       LOG_REENTRANT_CHECK.set(false);

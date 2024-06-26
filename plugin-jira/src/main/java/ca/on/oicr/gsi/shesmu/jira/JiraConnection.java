@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.jira.Issue.Field;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
+import ca.on.oicr.gsi.shesmu.plugin.LogLevel;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
@@ -440,7 +441,8 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
               .append(transitionResult.body());
           Map<String, String> lokiLabels = new HashMap<>();
           lokiLabels.put("issue", issue.getKey());
-          ((Definer<JiraConnection>) definer).log(errorBuilder.toString(), lokiLabels);
+          ((Definer<JiraConnection>) definer)
+              .log(errorBuilder.toString(), LogLevel.ERROR, lokiLabels);
           return false;
         }
 

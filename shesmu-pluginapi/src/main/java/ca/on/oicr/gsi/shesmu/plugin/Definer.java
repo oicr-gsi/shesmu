@@ -296,5 +296,5 @@ public interface Definer<T> extends Supplier<T> {
    * @param message the log message to write
    * @param labels the labels associated with this message
    */
-  void log(String message, Map<String, String> labels);
+  void log(String message, LogLevel level, Map<String, String> labels);
 }

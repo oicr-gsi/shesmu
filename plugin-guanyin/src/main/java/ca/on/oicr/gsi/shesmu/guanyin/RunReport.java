@@ -2,10 +2,7 @@ package ca.on.oicr.gsi.shesmu.guanyin;
 
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.cromwell.WorkflowIdAndStatus;
-import ca.on.oicr.gsi.shesmu.plugin.Definer;
-import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
-import ca.on.oicr.gsi.shesmu.plugin.MultiPartBodyPublisher;
-import ca.on.oicr.gsi.shesmu.plugin.Utils;
+import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
@@ -373,7 +370,7 @@ public class RunReport extends JsonParameterisedAction {
     final List<String> errors = new ArrayList<>();
     final Map<String, String> labels = new TreeMap<>();
     labels.put("url", url.getHost());
-    owner.log("HTTP error: " + response.statusCode(), labels);
+    owner.log("HTTP error: " + response.statusCode(), LogLevel.ERROR, labels);
     errors.add("HTTP error: " + response.statusCode());
     this.errors = errors;
   }

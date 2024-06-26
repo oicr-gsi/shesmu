@@ -21,6 +21,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
 import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
 import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
+import ca.on.oicr.gsi.shesmu.plugin.LogLevel;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
@@ -3137,7 +3138,7 @@ public final class Server implements ServerConfig, ActionServices {
     processor.start(executor, compiler);
     System.out.println("Starting scheduler...");
     master.start(executor);
-    pluginManager.log("Shesmu started.", Map.of());
+    pluginManager.log("Shesmu started.", LogLevel.INFO, Map.of());
   }
 
   private <L, V> void storeEntries(ObjectNode entries, LabelledKeyValueCache<?, ?, ?> cache) {

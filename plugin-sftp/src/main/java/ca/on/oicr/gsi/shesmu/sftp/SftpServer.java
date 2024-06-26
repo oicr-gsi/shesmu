@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
+import ca.on.oicr.gsi.shesmu.plugin.LogLevel;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
@@ -176,7 +177,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     labels.put("type", "refiller");
     labels.put("stream", stream);
     final var errorDrainThread =
-        new Thread(() -> errorReader.lines().forEach(l -> definer.log(l, labels)));
+        new Thread(() -> errorReader.lines().forEach(l -> definer.log(l, LogLevel.ERROR, labels)));
     errorDrainThread.start();
     return errorDrainThread;
   }
@@ -314,7 +315,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
             labels.put("command", command);
             labels.put("name", name);
             labels.put("type", "refiller");
-            definer.log("Expected OK or UPDATE, but got no output", labels);
+            definer.log("Expected OK or UPDATE, but got no output", LogLevel.ERROR, labels);
           } else {
             switch (response) {
               case "UPDATE":
@@ -355,7 +356,10 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                 labels.put("command", command);
                 labels.put("name", name);
                 labels.put("type", "refiller");
-                definer.log("Expected OK or UPDATE, but got invalid response: " + response, labels);
+                definer.log(
+                    "Expected OK or UPDATE, but got invalid response: " + response,
+                    LogLevel.ERROR,
+                    labels);
                 break;
             }
           }
@@ -509,7 +513,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                     labels.put("command", command);
                     labels.put("name", name);
                     labels.put("type", "function");
-                    errorReader.lines().forEach(l -> definer.log(l, labels));
+                    errorReader.lines().forEach(l -> definer.log(l, LogLevel.ERROR, labels));
                     process.join();
                     if (process.getExitStatus() == null || process.getExitStatus() != 0) {
                       return Optional.empty();

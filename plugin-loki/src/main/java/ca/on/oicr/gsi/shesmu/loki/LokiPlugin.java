@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.loki;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
+import ca.on.oicr.gsi.shesmu.plugin.LogLevel;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,6 +59,7 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
     configuration.ifPresent(
         configuration -> {
           renderer.link("Instance", configuration.getUrl(), configuration.getUrl());
+          renderer.line("Level", configuration.getLevel().toString());
           for (final var entry : configuration.getLabels().entrySet()) {
             renderer.line("Label: " + entry.getKey(), entry.getValue());
           }
@@ -160,9 +162,10 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
   }
 
   @Override
-  public synchronized void writeLog(String message, Map<String, String> attributes) {
+  public synchronized void writeLog(
+      String message, LogLevel level, Map<String, String> attributes) {
     final var now = Instant.now();
     buffer.computeIfAbsent(attributes, k -> new ArrayList<>()).add(new Pair<>(now, message));
-    flush(now);
+    if (level.compareTo(this.configuration.get().getLevel()) >= 0) flush(now);
   }
 }
