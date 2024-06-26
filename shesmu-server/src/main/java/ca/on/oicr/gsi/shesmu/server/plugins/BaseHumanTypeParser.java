@@ -33,8 +33,15 @@ public abstract class BaseHumanTypeParser implements TypeParser {
       return node.get()
           .render(
               new ExpressionCompilerServices() {
+                private final NameLoader<ActionDefinition> actions =
+                    new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
                 private final NameLoader<FunctionDefinition> functions =
                     new NameLoader<>(definitionRepository.functions(), FunctionDefinition::name);
+
+                @Override
+                public ActionDefinition action(String name) {
+                  return actions.get(name);
+                }
 
                 @Override
                 public FunctionDefinition function(String name) {

@@ -122,7 +122,43 @@ public abstract class InformationNode {
                   new InformationNodeRepeat(name, source, transforms, collectors.get()));
           return result;
         });
-
+    REPEAT_COLLECTOR.addKeyword(
+        "Run",
+        (input, output) -> {
+          final var actionName = new AtomicReference<String>();
+          final var variableTags = new AtomicReference<List<VariableTagNode>>();
+          final var arguments = new AtomicReference<List<OliveArgumentNode>>();
+          final var fileName = new AtomicReference<ExpressionNode>();
+          final var result =
+              input
+                  .whitespace()
+                  .qualifiedIdentifier(actionName::set)
+                  .whitespace()
+                  .list(variableTags::set, VariableTagNode::parse)
+                  .whitespace()
+                  .keyword("With")
+                  .whitespace()
+                  .list(arguments::set, OliveArgumentNode::parse, ',')
+                  .whitespace()
+                  .keyword("As")
+                  .whitespace()
+                  .then(ExpressionNode::parse, fileName::set);
+          if (result.isGood()) {
+            output.accept(
+                (name, source, transforms) ->
+                    new InformationNodeActNow(
+                        input.line(),
+                        input.column(),
+                        name,
+                        source,
+                        transforms,
+                        actionName.get(),
+                        variableTags.get(),
+                        arguments.get(),
+                        fileName.get()));
+          }
+          return result;
+        });
     DISPATCH.addKeyword(
         "Alerts",
         (p, o) -> {
