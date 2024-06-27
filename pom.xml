@@ -180,6 +180,7 @@
     <module>plugin-prometheus</module>
     <module>plugin-ratelimit</module>
     <module>plugin-sftp</module>
+    <module>plugin-stdout</module>
     <module>plugin-tsv</module>
     <module>plugin-vidarr</module>
     <module>maintenance-editor</module>
