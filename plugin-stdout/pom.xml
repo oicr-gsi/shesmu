@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>ca.on.oicr.gsi</groupId>
+        <artifactId>shesmu</artifactId>
+        <version>1.33.1-SNAPSHOT</version>
+    </parent>
+    <artifactId>shesmu-plugin-stdout</artifactId>
+    <packaging>jar</packaging>
+    <name>Shesmu Decision-Action Server - Standard Output Logger</name>
+    <url>https://github.com/oicr-gsi/shesmu</url>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>ca.on.oicr.gsi</groupId>
+            <artifactId>shesmu-pluginapi</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <finalName>shesmu-plugin-stdout</finalName>
+    </build>
+</project>
