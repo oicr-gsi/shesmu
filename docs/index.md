@@ -73,6 +73,7 @@ information about how to extend the system. The plugins available are:
 - [Token Bucket Throttling](plugin-ratelimit.md)
 - [Run Scanner](plugin-runscanner.md)
 - [SFTP servers](plugin-sftp.md)
+- [Standard Output Logger](plugin-stdout.md)
 - [Tab-separated files](plugin-tsv.md)
 - [Víðarr](plugin-vidarr.md)
 
