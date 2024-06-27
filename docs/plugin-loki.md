@@ -8,7 +8,7 @@ ending `.loki` with the following:
       "labels": {
         "environment": "foo"
       },
-      "level": INFO
+      "level": "INFO"
     }
 
 The `"url"` property is the URL of the Loki server to push logs into. The
