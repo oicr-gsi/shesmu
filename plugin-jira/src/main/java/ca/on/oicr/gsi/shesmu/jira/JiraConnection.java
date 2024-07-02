@@ -381,6 +381,15 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       Issue issue, BiFunction<Stream<String>, Predicate<String>, Boolean> matcher, String comment)
       throws URISyntaxException, IOException, InterruptedException {
     IssueAction.issueUpdates.labels(url, projectKey).inc();
+    ((Definer<JiraConnection>) definer)
+        .log(
+            new StringBuilder("Attempting to transition issue ")
+                .append(issue.getKey())
+                .append(" with comment ")
+                .append(comment)
+                .toString(),
+            LogLevel.DEBUG,
+            null);
     final var builder =
         HttpRequest.newBuilder(
             new URI(
@@ -395,8 +404,28 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
             .body()
             .get()
             .transitions();
+    ((Definer<JiraConnection>) definer)
+        .log(
+            new StringBuilder("Transitions available to ")
+                .append(issue.getKey())
+                .append(" are ")
+                .append(transitions)
+                .toString(),
+            LogLevel.DEBUG,
+            null);
 
     for (final var transition : transitions) {
+      ((Definer<JiraConnection>) definer)
+          .log(
+              new StringBuilder("Attempting to apply transition ")
+                  .append(transition)
+                  .append(" to issue ")
+                  .append(issue.getKey())
+                  .append(" by matching against ")
+                  .append(closedStatuses())
+                  .toString(),
+              LogLevel.DEBUG,
+              null);
       if (matcher.apply(closedStatuses(), transition.to().name()::equalsIgnoreCase)) {
         final var request = new TransitionRequest();
         /** "fields": { "assignee": { "name": "Will" }, "resolution": { "name": "Fixed" } } */
@@ -410,7 +439,18 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
           }
         }
         request.setTransition(transition);
-
+        ((Definer<JiraConnection>) definer)
+            .log(
+                new StringBuilder("Sending transition request ")
+                    .append(request)
+                    .append(" to ")
+                    .append(
+                        String.format(
+                            "%s/rest/api/%s/issue/%s/transitions",
+                            url, version.slug(), issue.getId()))
+                    .toString(),
+                LogLevel.DEBUG,
+                null);
         final var requestBuilder =
             HttpRequest.newBuilder(
                 new URI(
@@ -426,6 +466,11 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                     .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(request)))
                     .build(),
                 BodyHandlers.ofString());
+        ((Definer<JiraConnection>) definer)
+            .log(
+                new StringBuilder("Got response ").append(transitionResult).toString(),
+                LogLevel.DEBUG,
+                null);
         if (transitionResult.statusCode() / 100 != 2) {
           StringBuilder errorBuilder = new StringBuilder();
           errorBuilder
@@ -456,6 +501,17 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
         authenticationHeader.ifPresent(
             header -> commentRequestBuilder.header("Authorization", header));
 
+        ((Definer<JiraConnection>) definer)
+            .log(
+                new StringBuilder("Sending comment request ")
+                    .append(BodyPublishers.ofString(MAPPER.writeValueAsString(updateComment)))
+                    .append(" to ")
+                    .append(
+                        String.format(
+                            "%s/rest/api/%s/issue/%s/comment", url, version.slug(), issue.getId()))
+                    .toString(),
+                LogLevel.DEBUG,
+                null);
         var commentResult =
             CLIENT.send(
                 commentRequestBuilder
@@ -463,6 +519,11 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                     .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(updateComment)))
                     .build(),
                 BodyHandlers.ofString());
+        ((Definer<JiraConnection>) definer)
+            .log(
+                new StringBuilder("Got response ").append(commentResult).toString(),
+                LogLevel.DEBUG,
+                null);
         boolean isGood = commentResult.statusCode() / 100 == 2;
         if (!isGood) {
           StringBuilder errorBuilder = new StringBuilder();
