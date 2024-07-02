@@ -3,6 +3,8 @@ package ca.on.oicr.gsi.shesmu.jira;
 import ca.on.oicr.gsi.shesmu.jira.IssueVerb.Close;
 import ca.on.oicr.gsi.shesmu.jira.IssueVerb.Open;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
+import ca.on.oicr.gsi.shesmu.plugin.Definer;
+import ca.on.oicr.gsi.shesmu.plugin.LogLevel;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
@@ -122,10 +124,16 @@ public final class IssueAction extends Action {
     if (connection == null) {
       // 'connection' is a bit of a misnomer - it's the Definer supplied by the PluginManager.
       // It should never be null. Very bad things have happened if it's null
+      // We also can't log through the Definer if we have no Definer :(
       System.err.println("JIRA Connection Definer for " + issueUrl + " is null.");
       return ActionState.FAILED;
     }
     final var current = connection.get();
+    ((Definer<JiraConnection>) connection)
+        .log(
+            new StringBuilder("Performing jira updates with ").append(connection).toString(),
+            LogLevel.DEBUG,
+            null);
     requests.labels(current.url(), current.projectKey()).inc();
     try {
       final var issues =
@@ -141,6 +149,8 @@ public final class IssueAction extends Action {
                   Issue.TYPE.name(),
                   Issue.UPDATED.name()));
       this.issues = issues.stream().map(Issue::getKey).collect(Collectors.toSet());
+      ((Definer<JiraConnection>) connection)
+          .log(new StringBuilder("Got ").append(issues).toString(), LogLevel.DEBUG, null);
       final var missingLabels = new TreeSet<String>();
       final var result =
           verb.perform(
@@ -165,7 +175,7 @@ public final class IssueAction extends Action {
       return result;
     } catch (final Exception e) {
       failure.labels(connection.get().url(), connection.get().projectKey()).inc();
-      e.printStackTrace();
+      ((Definer<JiraConnection>) connection).log(e.toString(), LogLevel.ERROR, null);
       return ActionState.UNKNOWN;
     }
   }
