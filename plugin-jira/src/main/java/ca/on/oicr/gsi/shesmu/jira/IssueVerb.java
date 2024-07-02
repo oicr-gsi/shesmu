@@ -46,7 +46,25 @@ public abstract class IssueVerb {
         Consumer<Issue> bestMatch)
         throws URISyntaxException, IOException, InterruptedException {
       JiraConnection connection = definer.get();
+      ((Definer<JiraConnection>) definer)
+          .log(
+              new StringBuilder("Trying to close ")
+                  .append(issues)
+                  .append(" to one of ")
+                  .append(connection.closedStatuses())
+                  .toString(),
+              LogLevel.DEBUG,
+              null);
       for (final var issue : issues) {
+        ((Definer<JiraConnection>) definer)
+            .log(
+                new StringBuilder("Attempting to close ")
+                    .append(issue)
+                    .append(" whose status is ")
+                    .append(issue.extract(Issue.STATUS))
+                    .toString(),
+                LogLevel.DEBUG,
+                null);
         if (issue
             .extract(Issue.STATUS)
             .map(s -> connection.closedStatuses().noneMatch(s.name()::equalsIgnoreCase))
