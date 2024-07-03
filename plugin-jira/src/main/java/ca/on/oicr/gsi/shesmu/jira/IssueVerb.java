@@ -144,6 +144,15 @@ public abstract class IssueVerb {
         Consumer<Issue> bestMatch)
         throws URISyntaxException, IOException, InterruptedException {
       JiraConnection connection = definer.get();
+      ((Definer<JiraConnection>) definer)
+          .log(
+              new StringBuilder("Trying to open ")
+                  .append(issues)
+                  .append(" to something other than ")
+                  .append(connection.closedStatuses())
+                  .toString(),
+              LogLevel.DEBUG,
+              null);
       if (issues.stream()
           .anyMatch(
               issue ->
@@ -151,10 +160,27 @@ public abstract class IssueVerb {
                       .extract(Issue.STATUS)
                       .map(
                           status -> {
+                            ((Definer<JiraConnection>) definer)
+                                .log(
+                                    new StringBuilder(issue.getKey())
+                                        .append(" is of status ")
+                                        .append(issue.extract(Issue.STATUS))
+                                        .toString(),
+                                    LogLevel.DEBUG,
+                                    null);
                             final var isOpen =
                                 connection
                                     .closedStatuses()
                                     .noneMatch(status.name()::equalsIgnoreCase);
+                            ((Definer<JiraConnection>) definer)
+                                .log(
+                                    new StringBuilder("Issue ")
+                                        .append(issue.getKey())
+                                        .append(" is already open: ")
+                                        .append(isOpen)
+                                        .toString(),
+                                    LogLevel.DEBUG,
+                                    null);
                             if (isOpen) {
                               bestMatch.accept(issue);
                             }
@@ -165,11 +191,22 @@ public abstract class IssueVerb {
       }
 
       for (final var issue : issues) {
+        ((Definer<JiraConnection>) definer)
+            .log(
+                new StringBuilder("Attempting to open ")
+                    .append(issue)
+                    .append(" whose status is ")
+                    .append(issue.extract(Issue.STATUS))
+                    .toString(),
+                LogLevel.DEBUG,
+                null);
         if (connection.transition(issue, Stream::noneMatch, comment)) {
           bestMatch.accept(issue);
           return ActionState.SUCCEEDED;
         }
       }
+      ((Definer<JiraConnection>) definer)
+          .log("No other attempts worked, creating an issue...", LogLevel.DEBUG, null);
       bestMatch.accept(connection.createIssue(summary, description, assignee, labels, type));
 
       return ActionState.SUCCEEDED;

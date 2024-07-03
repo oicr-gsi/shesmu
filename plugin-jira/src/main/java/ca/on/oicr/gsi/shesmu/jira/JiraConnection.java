@@ -194,6 +194,17 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       throws URISyntaxException, IOException, InterruptedException {
     final var request = new Issue();
     final var project = new Project();
+
+    StringBuilder logmsg =
+        new StringBuilder("Attempting to create a new issue in ")
+            .append(projectKey)
+            .append(" with ")
+            .append(summary)
+            .append(", ")
+            .append(description);
+    assignee.ifPresent(s -> logmsg.append(", ").append(s));
+    ((Definer<JiraConnection>) definer).log(logmsg.toString(), LogLevel.DEBUG, null);
+
     project.setId(projectId);
     request.put(Issue.PROJECT, project);
     request.put(Issue.SUMMARY, summary);
@@ -214,6 +225,16 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
     issueType.setName(type);
     request.put(Issue.TYPE, issueType);
 
+    ((Definer<JiraConnection>) definer)
+        .log(
+            new StringBuilder("Sending request ")
+                .append(MAPPER.writeValueAsString(request))
+                .append(" to ")
+                .append(String.format("%s/rest/api/%s/issue", url, version.slug()))
+                .toString(),
+            LogLevel.DEBUG,
+            null);
+
     IssueAction.issueCreates.labels(url, projectKey).inc();
     final var builder =
         HttpRequest.newBuilder(new URI(String.format("%s/rest/api/%s/issue", url, version.slug())));
@@ -225,6 +246,10 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                 .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(request)))
                 .build(),
             BodyHandlers.ofString());
+
+    ((Definer<JiraConnection>) definer)
+        .log(new StringBuilder("Got result ").append(result).toString(), LogLevel.DEBUG, null);
+
     if (result.statusCode() / 100 != 2) {
       throw new RuntimeException(
           String.format(
