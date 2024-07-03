@@ -203,7 +203,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
             .append(", ")
             .append(description);
     assignee.ifPresent(s -> logmsg.append(", ").append(s));
-    ((Definer<JiraConnection>) definer).log(logmsg.toString(), LogLevel.DEBUG, null);
+    ((Definer<JiraConnection>) definer).log(logmsg.toString(), LogLevel.DEBUG, new TreeMap<>());
 
     project.setId(projectId);
     request.put(Issue.PROJECT, project);
@@ -233,7 +233,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                 .append(String.format("%s/rest/api/%s/issue", url, version.slug()))
                 .toString(),
             LogLevel.DEBUG,
-            null);
+            new TreeMap<>());
 
     IssueAction.issueCreates.labels(url, projectKey).inc();
     final var builder =
@@ -248,7 +248,10 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
             BodyHandlers.ofString());
 
     ((Definer<JiraConnection>) definer)
-        .log(new StringBuilder("Got result ").append(result).toString(), LogLevel.DEBUG, null);
+        .log(
+            new StringBuilder("Got result ").append(result).toString(),
+            LogLevel.DEBUG,
+            new TreeMap<>());
 
     if (result.statusCode() / 100 != 2) {
       throw new RuntimeException(
@@ -406,6 +409,8 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       Issue issue, BiFunction<Stream<String>, Predicate<String>, Boolean> matcher, String comment)
       throws URISyntaxException, IOException, InterruptedException {
     IssueAction.issueUpdates.labels(url, projectKey).inc();
+    Map<String, String> lokiLabels = new HashMap<>();
+    lokiLabels.put("issue", issue.getKey());
     ((Definer<JiraConnection>) definer)
         .log(
             new StringBuilder("Attempting to transition issue ")
@@ -414,7 +419,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                 .append(comment)
                 .toString(),
             LogLevel.DEBUG,
-            null);
+            lokiLabels);
     final var builder =
         HttpRequest.newBuilder(
             new URI(
@@ -437,7 +442,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                 .append(transitions)
                 .toString(),
             LogLevel.DEBUG,
-            null);
+            lokiLabels);
 
     for (final var transition : transitions) {
       ((Definer<JiraConnection>) definer)
@@ -450,7 +455,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                   .append(closedStatuses())
                   .toString(),
               LogLevel.DEBUG,
-              null);
+              lokiLabels);
       if (matcher.apply(closedStatuses(), transition.to().name()::equalsIgnoreCase)) {
         final var request = new TransitionRequest();
         /** "fields": { "assignee": { "name": "Will" }, "resolution": { "name": "Fixed" } } */
@@ -475,7 +480,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                             url, version.slug(), issue.getId()))
                     .toString(),
                 LogLevel.DEBUG,
-                null);
+                lokiLabels);
         final var requestBuilder =
             HttpRequest.newBuilder(
                 new URI(
@@ -495,7 +500,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
             .log(
                 new StringBuilder("Got response ").append(transitionResult).toString(),
                 LogLevel.DEBUG,
-                null);
+                lokiLabels);
         if (transitionResult.statusCode() / 100 != 2) {
           StringBuilder errorBuilder = new StringBuilder();
           errorBuilder
@@ -509,8 +514,6 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
               .append(MAPPER.writeValueAsString(request))
               .append(", received: ")
               .append(transitionResult.body());
-          Map<String, String> lokiLabels = new HashMap<>();
-          lokiLabels.put("issue", issue.getKey());
           ((Definer<JiraConnection>) definer)
               .log(errorBuilder.toString(), LogLevel.ERROR, lokiLabels);
           return false;
@@ -536,7 +539,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                             "%s/rest/api/%s/issue/%s/comment", url, version.slug(), issue.getId()))
                     .toString(),
                 LogLevel.DEBUG,
-                null);
+                lokiLabels);
         var commentResult =
             CLIENT.send(
                 commentRequestBuilder
@@ -548,7 +551,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
             .log(
                 new StringBuilder("Got response ").append(commentResult).toString(),
                 LogLevel.DEBUG,
-                null);
+                lokiLabels);
         boolean isGood = commentResult.statusCode() / 100 == 2;
         if (!isGood) {
           StringBuilder errorBuilder = new StringBuilder();
@@ -559,8 +562,6 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
               .append(comment)
               .append("\nGot ")
               .append(commentResult.body());
-          Map<String, String> lokiLabels = new HashMap<>();
-          lokiLabels.put("issue", issue.getKey());
           ((Definer<JiraConnection>) definer)
               .log(errorBuilder.toString(), LogLevel.ERROR, lokiLabels);
         }

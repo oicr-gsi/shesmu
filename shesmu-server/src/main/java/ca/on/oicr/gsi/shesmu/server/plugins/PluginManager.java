@@ -845,7 +845,8 @@ public final class PluginManager
 
       @Override
       public void log(String message, LogLevel level, Map<String, String> labels) {
-        final Map<String, String> amendedLabels = new TreeMap<>(labels);
+        final Map<String, String> amendedLabels =
+            labels == null ? new TreeMap<>() : new TreeMap<>(labels);
         amendedLabels.put("plugin", instance.fileName().toString());
         amendedLabels.put("plugin_type", FormatTypeWrapper.this.fileFormat.getClass().toString());
         PluginManager.this.log(message, level, amendedLabels);

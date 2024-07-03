@@ -133,7 +133,7 @@ public final class IssueAction extends Action {
         .log(
             new StringBuilder("Performing jira updates with ").append(connection).toString(),
             LogLevel.DEBUG,
-            null);
+            new TreeMap<>());
     requests.labels(current.url(), current.projectKey()).inc();
     try {
       final var issues =
@@ -150,7 +150,8 @@ public final class IssueAction extends Action {
                   Issue.UPDATED.name()));
       this.issues = issues.stream().map(Issue::getKey).collect(Collectors.toSet());
       ((Definer<JiraConnection>) connection)
-          .log(new StringBuilder("Got ").append(issues).toString(), LogLevel.DEBUG, null);
+          .log(
+              new StringBuilder("Got ").append(issues).toString(), LogLevel.DEBUG, new TreeMap<>());
       final var missingLabels = new TreeSet<String>();
       final var result =
           verb.perform(
@@ -175,7 +176,7 @@ public final class IssueAction extends Action {
       return result;
     } catch (final Exception e) {
       failure.labels(connection.get().url(), connection.get().projectKey()).inc();
-      ((Definer<JiraConnection>) connection).log(e.toString(), LogLevel.ERROR, null);
+      ((Definer<JiraConnection>) connection).log(e.toString(), LogLevel.ERROR, new TreeMap<>());
       return ActionState.UNKNOWN;
     }
   }

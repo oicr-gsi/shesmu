@@ -54,8 +54,11 @@ public abstract class IssueVerb {
                   .append(connection.closedStatuses())
                   .toString(),
               LogLevel.DEBUG,
-              null);
+              new TreeMap<>());
       for (final var issue : issues) {
+        Map<String, String> lokiLabels = new HashMap<>();
+        lokiLabels.put("issue", issue.getKey());
+        lokiLabels.put("verb", "close");
         ((Definer<JiraConnection>) definer)
             .log(
                 new StringBuilder("Attempting to close ")
@@ -64,7 +67,7 @@ public abstract class IssueVerb {
                     .append(issue.extract(Issue.STATUS))
                     .toString(),
                 LogLevel.DEBUG,
-                null);
+                lokiLabels);
         if (issue
             .extract(Issue.STATUS)
             .map(s -> connection.closedStatuses().noneMatch(s.name()::equalsIgnoreCase))
@@ -77,9 +80,6 @@ public abstract class IssueVerb {
                 .append(issue.getKey())
                 .append("\nConnection: ")
                 .append(connection);
-            Map<String, String> lokiLabels = new HashMap<>();
-            lokiLabels.put("issue", issue.getKey());
-            lokiLabels.put("verb", "close");
             ((Definer<JiraConnection>) definer)
                 .log(errorBuilder.toString(), LogLevel.ERROR, lokiLabels);
             return ActionState.FAILED;
@@ -152,7 +152,7 @@ public abstract class IssueVerb {
                   .append(connection.closedStatuses())
                   .toString(),
               LogLevel.DEBUG,
-              null);
+              new TreeMap<>());
       if (issues.stream()
           .anyMatch(
               issue ->
@@ -160,6 +160,9 @@ public abstract class IssueVerb {
                       .extract(Issue.STATUS)
                       .map(
                           status -> {
+                            Map<String, String> lokiLabels = new HashMap<>();
+                            lokiLabels.put("issue", issue.getKey());
+                            lokiLabels.put("verb", "open");
                             ((Definer<JiraConnection>) definer)
                                 .log(
                                     new StringBuilder(issue.getKey())
@@ -167,7 +170,7 @@ public abstract class IssueVerb {
                                         .append(issue.extract(Issue.STATUS))
                                         .toString(),
                                     LogLevel.DEBUG,
-                                    null);
+                                    lokiLabels);
                             final var isOpen =
                                 connection
                                     .closedStatuses()
@@ -180,7 +183,7 @@ public abstract class IssueVerb {
                                         .append(isOpen)
                                         .toString(),
                                     LogLevel.DEBUG,
-                                    null);
+                                    lokiLabels);
                             if (isOpen) {
                               bestMatch.accept(issue);
                             }
@@ -191,6 +194,9 @@ public abstract class IssueVerb {
       }
 
       for (final var issue : issues) {
+        Map<String, String> lokiLabels = new HashMap<>();
+        lokiLabels.put("issue", issue.getKey());
+        lokiLabels.put("verb", "open");
         ((Definer<JiraConnection>) definer)
             .log(
                 new StringBuilder("Attempting to open ")
@@ -199,14 +205,16 @@ public abstract class IssueVerb {
                     .append(issue.extract(Issue.STATUS))
                     .toString(),
                 LogLevel.DEBUG,
-                null);
+                lokiLabels);
         if (connection.transition(issue, Stream::noneMatch, comment)) {
           bestMatch.accept(issue);
           return ActionState.SUCCEEDED;
         }
       }
+      Map<String, String> lokiLabels = new HashMap<>();
+      lokiLabels.put("verb", "close");
       ((Definer<JiraConnection>) definer)
-          .log("No other attempts worked, creating an issue...", LogLevel.DEBUG, null);
+          .log("No other attempts worked, creating an issue...", LogLevel.DEBUG, lokiLabels);
       bestMatch.accept(connection.createIssue(summary, description, assignee, labels, type));
 
       return ActionState.SUCCEEDED;
