@@ -194,6 +194,8 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       throws URISyntaxException, IOException, InterruptedException {
     final var request = new Issue();
     final var project = new Project();
+    Map<String, String> lokiLabels = new HashMap<>();
+    lokiLabels.put("verb", "open");
 
     StringBuilder logmsg =
         new StringBuilder("Attempting to create a new issue in ")
@@ -203,7 +205,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
             .append(", ")
             .append(description);
     assignee.ifPresent(s -> logmsg.append(", ").append(s));
-    ((Definer<JiraConnection>) definer).log(logmsg.toString(), LogLevel.DEBUG, new TreeMap<>());
+    ((Definer<JiraConnection>) definer).log(logmsg.toString(), LogLevel.DEBUG, lokiLabels);
 
     project.setId(projectId);
     request.put(Issue.PROJECT, project);
@@ -233,7 +235,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                 .append(String.format("%s/rest/api/%s/issue", url, version.slug()))
                 .toString(),
             LogLevel.DEBUG,
-            new TreeMap<>());
+            lokiLabels);
 
     IssueAction.issueCreates.labels(url, projectKey).inc();
     final var builder =
@@ -249,9 +251,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
 
     ((Definer<JiraConnection>) definer)
         .log(
-            new StringBuilder("Got result ").append(result).toString(),
-            LogLevel.DEBUG,
-            new TreeMap<>());
+            new StringBuilder("Got result ").append(result).toString(), LogLevel.DEBUG, lokiLabels);
 
     if (result.statusCode() / 100 != 2) {
       throw new RuntimeException(
@@ -329,6 +329,11 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
     request.setFields(fields);
     request.setJql(jql);
 
+    ((Definer<JiraConnection>) definer)
+        .log(
+            new StringBuilder("Searching for ").append(request).toString(),
+            LogLevel.DEBUG,
+            new TreeMap<>());
     for (var page = 0; true; page++) {
       request.setStartAt(500 * page);
       final var builder =
@@ -346,6 +351,11 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
               .body()
               .get();
       buffer.addAll(results.getIssues());
+      ((Definer<JiraConnection>) definer)
+          .log(
+              new StringBuilder("Search returned ").append(results).toString(),
+              LogLevel.DEBUG,
+              new TreeMap<>());
       if (results.getIssues().isEmpty()) {
         break;
       }
@@ -560,7 +570,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
               .append(issue.getKey())
               .append(" using comment ")
               .append(comment)
-              .append("\nGot ")
+              .append(" and got ")
               .append(commentResult.body());
           ((Definer<JiraConnection>) definer)
               .log(errorBuilder.toString(), LogLevel.ERROR, lokiLabels);

@@ -23,4 +23,12 @@ public final class SearchResponse {
   public void setTotal(int total) {
     this.total = total;
   }
+
+  public String toString() {
+    return new StringBuilder("SearchResponse with issues = ")
+        .append(issues)
+        .append(", total = ")
+        .append(total)
+        .toString();
+  }
 }

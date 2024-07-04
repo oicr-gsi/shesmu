@@ -41,4 +41,16 @@ public final class SearchRequest {
   public void setStartAt(int startAt) {
     this.startAt = startAt;
   }
+
+  public String toString() {
+    return new StringBuilder("SearchRequest with fields = ")
+        .append(fields)
+        .append(", jql = ")
+        .append(jql)
+        .append(", maxResults = ")
+        .append(maxResults)
+        .append(", startAt = ")
+        .append(startAt)
+        .toString();
+  }
 }
