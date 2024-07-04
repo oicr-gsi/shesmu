@@ -88,4 +88,16 @@ public final class Issue {
   public void setSelf(String self) {
     this.self = self;
   }
+
+  public String toString() {
+    return new StringBuilder("Issue with fields = ")
+        .append(fields)
+        .append(", id = ")
+        .append(id)
+        .append(", key = ")
+        .append(key)
+        .append(", self = ")
+        .append(self)
+        .toString();
+  }
 }

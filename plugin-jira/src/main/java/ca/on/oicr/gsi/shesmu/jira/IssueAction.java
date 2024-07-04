@@ -131,7 +131,7 @@ public final class IssueAction extends Action {
     final var current = connection.get();
     ((Definer<JiraConnection>) connection)
         .log(
-            new StringBuilder("Performing jira updates with ").append(connection).toString(),
+            new StringBuilder("Performing jira updates with ").append(current).toString(),
             LogLevel.DEBUG,
             new TreeMap<>());
     requests.labels(current.url(), current.projectKey()).inc();
@@ -151,7 +151,9 @@ public final class IssueAction extends Action {
       this.issues = issues.stream().map(Issue::getKey).collect(Collectors.toSet());
       ((Definer<JiraConnection>) connection)
           .log(
-              new StringBuilder("Got ").append(issues).toString(), LogLevel.DEBUG, new TreeMap<>());
+              new StringBuilder("Got ").append(issues.isEmpty() ? "nothing" : issues).toString(),
+              LogLevel.DEBUG,
+              new TreeMap<>());
       final var missingLabels = new TreeSet<String>();
       final var result =
           verb.perform(
