@@ -7,6 +7,27 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.34.0] - 2024-07-08
+
+### Added
+
+* Logging level for Definer log infrastructure (eg Loki plugin)
+  
+* Add Standard Output Logger as debugging alternative to Loki plugin.
+  
+* Debug logging for jira issues
+  
+
+### Fixed
+
+* Fix comments not applying in some jira updates
+  
+* Fix compatibility with Jira V3 API
+  
+* Text search includes vidarr id
+  
+
+
 ## [1.33.0] - 2024-05-22
 
 ### Added
