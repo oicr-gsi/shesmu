@@ -7,6 +7,14 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.34.1] - 2024-07-08
+
+### Fixed
+
+* Fix bug that caused logging level to be ignored
+  
+
+
 ## [1.34.0] - 2024-07-08
 
 ### Added
