@@ -165,8 +165,9 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
   public synchronized void writeLog(
       String message, LogLevel level, Map<String, String> attributes) {
     final var now = Instant.now();
-    if (level.compareTo(this.configuration.get().getLevel()) >= 0)
+    if (level.compareTo(this.configuration.get().getLevel()) >= 0) {
       buffer.computeIfAbsent(attributes, k -> new ArrayList<>()).add(new Pair<>(now, message));
-    flush(now);
+      flush(now);
+    }
   }
 }
