@@ -136,11 +136,15 @@ public final class IssueAction extends Action {
             new TreeMap<>());
     requests.labels(current.url(), current.projectKey()).inc();
     try {
+      // summary needs to be wrapped in escaped quotes as an exact-search workaround
+      // https://community.atlassian.com/t5/Jira-questions/How-to-query-Summary-for-EXACT-match/qaq-p/588482
       final var issues =
           current.search(
               String.format(
-                  "summary ~ %s and project = %s and issuetype = %s",
-                  JiraConnection.MAPPER.writeValueAsString(summary),
+                  "summary ~ \"%s\" and project = %s and issuetype = %s",
+                  JiraConnection.MAPPER
+                      .writeValueAsString(summary)
+                      .replace("\"", "\\\""), // workaround
                   current.projectKey(),
                   JiraConnection.MAPPER.writeValueAsString(type)),
               Set.of(
