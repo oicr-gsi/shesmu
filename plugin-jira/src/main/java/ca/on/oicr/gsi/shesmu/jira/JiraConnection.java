@@ -462,7 +462,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                   .append(" to issue ")
                   .append(issue.getKey())
                   .append(" by matching against ")
-                  .append(closedStatuses())
+                  .append(closedStatuses().toList())
                   .toString(),
               LogLevel.DEBUG,
               lokiLabels);
