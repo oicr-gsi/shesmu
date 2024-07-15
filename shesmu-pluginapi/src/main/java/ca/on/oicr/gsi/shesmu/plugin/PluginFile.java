@@ -114,7 +114,7 @@ public abstract class PluginFile implements RequiredServices {
    *
    * <p>Do not use this message for logging! Shesmu will invoke this message when it wants to send
    * logging information to this service and this service should write those logs out to an external
-   * service. To write logs, use {@link Definer#log(String, Map)}
+   * service. To write logs, use {@link Definer#log(String, LogLevel, Map)}
    *
    * @param message the log message to write
    * @param level the logging level of this message
