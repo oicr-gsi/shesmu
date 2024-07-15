@@ -151,7 +151,8 @@ public final class IssueAction extends Action {
                   Issue.LABELS.name(),
                   Issue.STATUS.name(),
                   Issue.TYPE.name(),
-                  Issue.UPDATED.name()));
+                  Issue.UPDATED.name(),
+                  Issue.SUMMARY.name()));
       this.issues = issues.stream().map(Issue::getKey).collect(Collectors.toSet());
       ((Definer<JiraConnection>) connection)
           .log(
