@@ -7,6 +7,14 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.34.2] - 2024-07-15
+
+### Fixed
+
+* Workaround for jira matching 'close enough' tickets
+  
+
+
 ## [1.34.1] - 2024-07-08
 
 ### Fixed
