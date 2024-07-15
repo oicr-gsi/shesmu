@@ -138,6 +138,9 @@ public final class IssueAction extends Action {
     try {
       // summary needs to be wrapped in escaped quotes as an exact-search workaround
       // https://community.atlassian.com/t5/Jira-questions/How-to-query-Summary-for-EXACT-match/qaq-p/588482
+      // This unfortunately still matches on supersets, so if you have 'My Ticket' it won't match
+      // 'Ny Ticket'
+      // but it will match 'My Ticket 2'. We address that later.
       final var issues =
           current.search(
               String.format(
@@ -153,6 +156,7 @@ public final class IssueAction extends Action {
                   Issue.TYPE.name(),
                   Issue.UPDATED.name(),
                   Issue.SUMMARY.name()));
+      // Filter again by summary title for exact matching
       this.issues =
           issues.stream()
               .filter(i -> i.getFields().get("summary").asText().equals(summary))
