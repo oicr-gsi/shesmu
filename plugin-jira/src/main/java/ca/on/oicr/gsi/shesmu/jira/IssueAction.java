@@ -153,7 +153,11 @@ public final class IssueAction extends Action {
                   Issue.TYPE.name(),
                   Issue.UPDATED.name(),
                   Issue.SUMMARY.name()));
-      this.issues = issues.stream().map(Issue::getKey).collect(Collectors.toSet());
+      this.issues =
+          issues.stream()
+              .filter(i -> i.getFields().get("summary").asText().equals(summary))
+              .map(Issue::getKey)
+              .collect(Collectors.toSet());
       ((Definer<JiraConnection>) connection)
           .log(
               new StringBuilder("Got ").append(issues.isEmpty() ? "nothing" : issues).toString(),
