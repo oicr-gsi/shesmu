@@ -159,7 +159,7 @@ public final class IssueAction extends Action {
       // Filter again by summary title for exact matching
       this.issues =
           issues.stream()
-              .filter(i -> i.getFields().get("summary").asText().equals(summary))
+              .filter(i -> i.getFields().get(Issue.SUMMARY.name()).asText().equals(summary))
               .map(Issue::getKey)
               .collect(Collectors.toSet());
       ((Definer<JiraConnection>) connection)
