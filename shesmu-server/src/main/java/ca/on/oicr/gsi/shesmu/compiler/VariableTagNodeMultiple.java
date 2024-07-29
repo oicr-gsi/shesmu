@@ -25,6 +25,11 @@ public class VariableTagNodeMultiple extends VariableTagNode {
   }
 
   @Override
+  protected String decorateEcma(String data) {
+    return "..." + data;
+  }
+
+  @Override
   public Optional<IntConsumer> renderDynamicSize(Renderer renderer) {
     render(renderer);
     renderer.methodGen().dup();

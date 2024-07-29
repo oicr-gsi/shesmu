@@ -53,6 +53,20 @@ public final class OliveArgumentNodeOptional extends OliveArgumentNode {
     renderer.methodGen().mark(end);
   }
 
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    final var result = renderer.newLet("{}");
+    renderer.conditional(
+        condition.renderEcma(renderer),
+        ecmaScriptRenderer ->
+            ecmaScriptRenderer.statement(
+                String.format(
+                    "%s = { %s }",
+                    result,
+                    storeAll(ecmaScriptRenderer, expression.renderEcma(ecmaScriptRenderer)))));
+    return String.format("...%s", result);
+  }
+
   /** Resolve variables in the expression of this argument */
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
@@ -62,9 +76,9 @@ public final class OliveArgumentNodeOptional extends OliveArgumentNode {
   /** Resolve functions in this argument */
   @Override
   public boolean resolveExtraFunctions(
-      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    return expression.resolveDefinitions(oliveCompilerServices, errorHandler)
-        & condition.resolveDefinitions(oliveCompilerServices, errorHandler);
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return expression.resolveDefinitions(expressionCompilerServices, errorHandler)
+        & condition.resolveDefinitions(expressionCompilerServices, errorHandler);
   }
 
   @Override

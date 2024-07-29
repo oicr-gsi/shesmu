@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.shesmu.compiler.ExpressionCompilerServices;
 import ca.on.oicr.gsi.shesmu.compiler.NameDefinitions;
 import ca.on.oicr.gsi.shesmu.compiler.WizardDefineNode;
 import ca.on.oicr.gsi.shesmu.compiler.WizardNode;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
@@ -76,6 +77,8 @@ public class GuidedMeditation implements WatchedFileListener {
       final Map<String, WizardDefineNode> crossReferences = new TreeMap<>();
       final var expressionCompilerServices =
           new ExpressionCompilerServices() {
+            private final NameLoader<ActionDefinition> actions =
+                new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
             private final NameLoader<InputFormatDefinition> formats =
                 new NameLoader<>(
                     Stream.concat(
@@ -84,6 +87,11 @@ public class GuidedMeditation implements WatchedFileListener {
                     InputFormatDefinition::name);
             private final NameLoader<FunctionDefinition> functions =
                 new NameLoader<>(new StandardDefinitions().functions(), FunctionDefinition::name);
+
+            @Override
+            public ActionDefinition action(String name) {
+              return actions.get(name);
+            }
 
             @Override
             public FunctionDefinition function(String name) {

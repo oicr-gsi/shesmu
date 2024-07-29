@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -7,6 +8,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 public interface ExpressionCompilerServices {
+  ActionDefinition action(String name);
+
   default Optional<TargetWithContext> captureOptional(
       ExpressionNode expression, int line, int column, Consumer<String> errorHandler) {
     errorHandler.accept(
