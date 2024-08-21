@@ -418,9 +418,10 @@ public abstract class BaseOliveBuilder {
   public final JoinBuilder join(
       int line,
       int column,
-      boolean intersection,
+      JoinKind kind,
       JoinInputSource innerType,
-      Imyhat keyType,
+      Imyhat outerKeyType,
+      Imyhat innerKeyType,
       LoadableValue... capturedVariables) {
     final var className =
         String.format("%s/Join %d:%d", BaseHotloadingCompiler.PACKAGE_INTERNAL, line, column);
@@ -435,13 +436,13 @@ public abstract class BaseOliveBuilder {
         new LambdaBuilder(
             owner,
             String.format("Join %d:%d Outer 🔑", line, column),
-            LambdaBuilder.function(keyType, oldType),
+            LambdaBuilder.function(outerKeyType, oldType),
             capturedVariables);
     final var innerKeyLambda =
         new LambdaBuilder(
             owner,
             String.format("Join %d:%d Inner 🔑", line, column),
-            LambdaBuilder.function(keyType, innerType.type()),
+            LambdaBuilder.function(innerKeyType, innerType.type()),
             capturedVariables);
 
     steps.add(
@@ -450,7 +451,9 @@ public abstract class BaseOliveBuilder {
           innerType.render(renderer);
 
           outerKeyLambda.push(renderer);
+          kind.renderOuterKeyWrapper(renderer);
           innerKeyLambda.push(renderer);
+          kind.renderInnerKeyWrapper(renderer);
           LambdaBuilder.pushNew(
               renderer,
               LambdaBuilder.bifunction(newType, oldType, innerType.type()),
@@ -460,7 +463,7 @@ public abstract class BaseOliveBuilder {
               .methodGen()
               .invokeStatic(
                   A_RUNTIME_SUPPORT_TYPE,
-                  intersection
+                  kind.intersection()
                       ? METHOD_RUNTIME_SUPPORT__JOIN_INTERSECTION
                       : METHOD_RUNTIME_SUPPORT__JOIN);
         });
