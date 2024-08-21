@@ -800,6 +800,12 @@ public final class LambdaBuilder {
 
   /** Create a lambda that calls a static method. */
   public static void pushStatic(Renderer renderer, Type owner, String name, LambdaType lambda) {
+    pushStatic(renderer, owner, name, lambda, false);
+  }
+
+  /** Create a lambda that calls a static method. */
+  public static void pushStatic(
+      Renderer renderer, Type owner, String name, LambdaType lambda, boolean isInterface) {
     renderer
         .methodGen()
         .invokeDynamic(
@@ -816,7 +822,7 @@ public final class LambdaBuilder {
                 Type.getMethodDescriptor(
                     lambda.returnType(AccessMode.REAL),
                     lambda.parameterTypes(AccessMode.REAL).toArray(Type[]::new)),
-                false),
+                isInterface),
             Type.getMethodType(
                 lambda.returnType(AccessMode.BOXED),
                 lambda.parameterTypes(AccessMode.BOXED).toArray(Type[]::new)));

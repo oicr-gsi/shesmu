@@ -1,0 +1,8 @@
+Version 1;
+Input test;
+
+Olive
+ Let accession
+ IntersectionJoin True To inner_test [True]
+ Group By accession Into ls = List l
+ Run ok With ok = (For l In ls: Count) == 2;

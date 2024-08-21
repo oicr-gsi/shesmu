@@ -263,8 +263,8 @@ sources must not overlap. Rows are joined if _outerkey_ and _innerkey_ match:
 | Operation          | Outer Key | Inner Key | Behaviour |
 |--------------------|-----------|-----------|---|
 | `Join`             | _k_       | _i_       | Matches if _k_ = _i_. |
-| `IntersectionJoin` | _k_       | _i_       | Matches if `For x In `_k`_`: Any x In `_i_ |
-| `IntersectionJoin` | `[`_k_`]` | _i_       | Matches if _k`_` In `_i_ |
+| `IntersectionJoin` | _k_       | _i_       | Matches if `For x In `_k_`: Any x In `_i_ |
+| `IntersectionJoin` | `[`_k_`]` | _i_       | Matches if _k_` In `_i_ |
 | `IntersectionJoin` | _k_       | `[`_i_`]` | Matches if _i_` In `_k_ |
 
 In `Join`, keys are values that must match exactly. In `IntersectionJoin`, the

@@ -23,6 +23,7 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
   private final ExpressionNode innerKey;
   private List<? extends Target> innerVariables;
   private final List<Consumer<JoinBuilder>> joins = new ArrayList<>();
+  private JoinKind kind;
   private final Optional<String> label;
   private final int line;
   private final ExpressionNode outerKey;
@@ -89,8 +90,6 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
     return state == ClauseStreamOrder.PURE ? ClauseStreamOrder.TRANSFORMED : state;
   }
 
-  protected abstract boolean intersection();
-
   @Override
   public final int line() {
     return line;
@@ -119,9 +118,10 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
         oliveBuilder.join(
             line,
             column,
-            intersection(),
+            kind,
             inputSource,
             outerKey.type(),
+            innerKey.type(),
             oliveBuilder
                 .loadableValues()
                 .filter(value -> freeVariables.contains(value.name()))
@@ -204,21 +204,17 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
         outerKey.typeCheck(errorHandler)
             & innerKey.typeCheck(errorHandler)
             & source.typeCheck(errorHandler);
-    if (ok && !outerKey.type().isSame(innerKey.type())) {
-      innerKey.typeError(outerKey.type(), innerKey.type(), errorHandler);
-      ok = false;
+    if (ok) {
+      final var kind = typeCheckKeys(outerKey.type(), innerKey.type());
+      kind.ifPresentOrElse(
+          k -> this.kind = k,
+          () -> {
+            innerKey.typeError(outerKey.type(), innerKey.type(), errorHandler);
+          });
+      ok = kind.isPresent();
     }
-    ok =
-        ok
-            && typeCheckExtra(outerKey.type())
-                .map(
-                    requiredType -> {
-                      outerKey.typeError(requiredType, outerKey.type(), errorHandler);
-                      return false;
-                    })
-                .orElse(true);
     return ok;
   }
 
-  protected abstract Optional<Imyhat> typeCheckExtra(Imyhat type);
+  protected abstract Optional<JoinKind> typeCheckKeys(Imyhat outerKey, Imyhat innerKey);
 }

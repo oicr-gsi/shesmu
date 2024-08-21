@@ -17,17 +17,21 @@ public class OliveClauseNodeIntersectionJoin extends OliveClauseNodeBaseJoin {
   }
 
   @Override
-  protected boolean intersection() {
-    return true;
-  }
-
-  @Override
   public String syntax() {
     return "IntersectionJoin";
   }
 
   @Override
-  protected Optional<Imyhat> typeCheckExtra(Imyhat type) {
-    return type instanceof ListImyhat ? Optional.empty() : Optional.of(type.asList());
+  protected Optional<JoinKind> typeCheckKeys(Imyhat outerKey, Imyhat innerKey) {
+    if (innerKey.isSame(outerKey) && innerKey instanceof ListImyhat) {
+      return Optional.of(JoinKind.INTERSECTION);
+    }
+    if (innerKey.isSame(outerKey.asList()) && innerKey instanceof ListImyhat) {
+      return Optional.of(JoinKind.INTERSECTION_LIFT_OUTER);
+    }
+    if (innerKey.asList().isSame(outerKey) && outerKey instanceof ListImyhat) {
+      return Optional.of(JoinKind.INTERSECTION_LIFT_INNER);
+    }
+    return Optional.empty();
   }
 }

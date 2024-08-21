@@ -16,17 +16,12 @@ public class OliveClauseNodeJoin extends OliveClauseNodeBaseJoin {
   }
 
   @Override
-  protected boolean intersection() {
-    return false;
-  }
-
-  @Override
   public String syntax() {
     return "Join";
   }
 
   @Override
-  protected Optional<Imyhat> typeCheckExtra(Imyhat type) {
-    return Optional.empty();
+  protected Optional<JoinKind> typeCheckKeys(Imyhat outerKey, Imyhat innerKey) {
+    return innerKey.isSame(outerKey) ? Optional.of(JoinKind.DIRECT) : Optional.empty();
   }
 }
