@@ -60,6 +60,67 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
                           : Optional.of(ca.getWorkflowRunIdsForVidarrArchival())));
     }
 
+    //    private Stream<NabuCaseArchiveValue> newCaseArchive(String baseUrl, NabuCaseArchiveDto
+    // cArchive)
+    //        throws IOException, InterruptedException {
+    //
+    //      final var builder = HttpRequest.newBuilder(URI.create(baseUrl + "/case"));
+    //      final var wfrIdsForOffsiteArchiveString =
+    //          cArchive.getWorkflowRunIdsForOffsiteArchive().stream()
+    //              .collect(Collectors.joining("','", "'", "'"));
+    //      final var wfrIdsForVidarrArchivalString =
+    //          cArchive.getWorkflowRunIdsForVidarrArchival().stream()
+    //              .collect(Collectors.joining("','", "'", "'"));
+    //      final var request =
+    //          String.format(
+    //              "{ \"caseIdentifier\":%s, \"requisitionId\":%s,  \"limsIds\":%s,
+    // \"workflowRunIdsForOffsiteArchive\":[%s],"
+    //                  + " \"workflowRunIdsForVidarrArchival\":[%s]}",
+    //              cArchive.getCaseIdentifier(),
+    //              cArchive.getRequisitionId(),
+    //              cArchive.getLimsIds(),
+    //              wfrIdsForOffsiteArchiveString,
+    //              wfrIdsForVidarrArchivalString);
+    //      final var response =
+    //          HTTP_CLIENT.send(
+    //              builder
+    //                  .header("Content-Type", "application/json")
+    //                  .POST(BodyPublishers.ofString(request))
+    //                  .build(),
+    //              new JsonListBodyHandler<>(MAPPER, NabuCaseArchiveDto.class));
+    //      if (response.statusCode() / 100 != 2) {
+    //        return response
+    //            .body()
+    //            .get()
+    //            .map(
+    //                ca ->
+    //                    new NabuCaseArchiveValue(
+    //                        ca.getCaseFilesUnloaded() == null
+    //                            ? Optional.empty()
+    //                            : Optional.of(Instant.parse(ca.getCaseFilesUnloaded())),
+    //                        ca.getCaseIdentifier(),
+    //                        Optional.ofNullable(ca.getCommvaultBackupJobId()),
+    //                        Instant.parse(ca.getCreated()),
+    //                        ca.getFilesCopiedToOffsiteArchiveStagingDir() == null
+    //                            ? Optional.empty()
+    //                            : Optional.of(
+    //                                Instant.parse(ca.getFilesCopiedToOffsiteArchiveStagingDir())),
+    //                        ca.getFilesLoadedIntoVidarrArchival() == null
+    //                            ? Optional.empty()
+    //                            :
+    // Optional.of(Instant.parse(ca.getFilesLoadedIntoVidarrArchival())),
+    //                        ca.getLimsIds(),
+    //                        Instant.parse(ca.getModified()),
+    //                        ca.getRequisitionId(),
+    //                        ca.getWorkflowRunIdsForOffsiteArchive(),
+    //                        ca.getWorkflowRunIdsForVidarrArchival() == null
+    //                            ? Optional.empty()
+    //                            : Optional.of(ca.getWorkflowRunIdsForVidarrArchival())));
+    //      } else {
+    //        throw new IOException();
+    //      }
+    //    }
+
     @Override
     protected Stream<NabuCaseArchiveValue> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) {
@@ -150,5 +211,9 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
     fileQcCache.invalidate();
     caseArchiveCache.invalidate();
     return Optional.empty();
+  }
+
+  public String NabuUrl() {
+    return config.get().getUrl();
   }
 }
