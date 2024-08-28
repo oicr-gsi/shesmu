@@ -15,15 +15,13 @@ jobs:
     - name: Install NodeJS
       uses: actions/setup-node@v4
       with:
-        node-version: 16
-    - name: Install TypeScript Compiler
-      run: npm install -g typescript@3.9.9
+        node-version: latest
     - name: Setup Repo credentials
       uses: s4u/maven-settings-action@v3.0.0
     - name: Build Shesmu with Maven
       run: mvn -B package --file pom.xml
     - name: Build Shesmu JavaDoc with Maven
-      run: 'mvn javadoc:javadoc -pl shesmu-pluginapi --file pom.xml && mv shesmu-pluginapi/target/site/apidocs docs/javadoc'
+      run: 'mvn javadoc:javadoc -pl shesmu-pluginapi --file pom.xml && mv shesmu-pluginapi/target/reports/apidocs docs/javadoc'
     - name: Build Jekyll Documentation
       uses: actions/jekyll-build-pages@v1
       with:
