@@ -7,6 +7,19 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.35.0] - 2024-08-29
+
+### Removed
+
+* * Remove unused Grafana data source
+
+### Fixed
+
+* * Made `IntersectionJoin` match value/list keys instead of just list/list keys. This makes it match the docs.
+* Improved title matching for jira plugin
+  
+
+
 ## [1.34.2] - 2024-07-15
 
 ### Fixed
