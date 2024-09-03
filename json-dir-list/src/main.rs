@@ -40,10 +40,10 @@ fn write_record(
         (time as f64) + (time_ns as f64) / 1e9
     }
 
-    let Some(user) = users::get_user_by_uid(metadata.uid()) else {
+    let Some(user) = uzers::get_user_by_uid(metadata.uid()) else {
         return;
     };
-    let Some(group) = users::get_group_by_gid(metadata.gid()) else {
+    let Some(group) = uzers::get_group_by_gid(metadata.gid()) else {
         return;
     };
     output
