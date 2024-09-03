@@ -2,36 +2,36 @@ package ca.on.oicr.gsi.shesmu.nabu;
 
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.plugin.*;
-import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
-import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
-import ca.on.oicr.gsi.shesmu.plugin.action.JsonParameterisedAction;
+import ca.on.oicr.gsi.shesmu.plugin.action.*;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonListBodyHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublisher;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TreeMap;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public final class ArchiveCaseAction extends JsonParameterisedAction {
+public class ArchiveCaseAction extends JsonParameterisedAction {
 
-  static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
+  private final Definer<NabuPlugin> owner;
+  private final ObjectNode parameters;
+  private final ObjectNode rootParameters = MAPPER.createObjectNode();
   static final ObjectMapper MAPPER = new ObjectMapper();
+  private List<String> errors = List.of();
+  public String caseId;
+  public long requisitionId;
+  public Set<String> limsIds;
+  public Set<String> workflowRunIdsForOffsiteArchive;
+  public Set<String> workflowRunIdsForVidarrArchival;
+  static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
   private static final Counter NabuRequestErrors =
       Counter.build(
@@ -45,34 +45,40 @@ public final class ArchiveCaseAction extends JsonParameterisedAction {
           "The request time latency to launch a remote action.",
           "target");
 
-  private List<String> errors = List.of();
-  final Definer<NabuPlugin> owner;
-  private Optional<Instant> externalTimestamp = Optional.empty();
-  private int priority;
-  private String caseID;
-  private final ObjectNode parameters;
-  private final ObjectNode rootParameters = MAPPER.createObjectNode();
-  private boolean stale;
-
-  public ArchiveCaseAction(
-      Definer<NabuPlugin> owner, String targetName, String workflowName, String workflowVersion) {
-    super("nabu-run");
+  public ArchiveCaseAction(Definer<NabuPlugin> owner) {
+    super("nabu-plugin");
     this.owner = owner;
     parameters = rootParameters.putObject("parameters");
   }
 
+  @ActionParameter
+  public void caseId(String caseId) {
+    this.caseId = caseId;
+  }
+
+  @ActionParameter
+  public void requisitionId(long requisitionId) {
+    this.requisitionId = requisitionId;
+  }
+
+  @ActionParameter
+  public void workflowRunIdsForOffsiteArchive(Set<String> workflowRunIdsForOffsiteArchive) {
+    this.workflowRunIdsForOffsiteArchive = workflowRunIdsForOffsiteArchive;
+  }
+
+  @ActionParameter
+  public void workflowRunIdsForVidarrArchival(Set<String> workflowRunIdsForVidarrArchival) {
+    this.workflowRunIdsForVidarrArchival = workflowRunIdsForVidarrArchival;
+  }
+
+  @ActionParameter
+  public void limsIds(Set<String> limsIds) {
+    this.limsIds = limsIds;
+  }
+
+  @Override
   public ObjectNode parameters() {
-    //    final var request =
-    //            String.format(
-    //                    "{ \"caseIdentifier\":%s, \"requisitionId\":%s,  \"limsIds\":%s,
-    // \"workflowRunIdsForOffsiteArchive\":[%s],"
-    //                            + " \"workflowRunIdsForVidarrArchival\":[%s]}",
-    //                    cArchive.getCaseIdentifier(),
-    //                    cArchive.getRequisitionId(),
-    //                    cArchive.getLimsIds(),
-    //                    wfrIdsForOffsiteArchiveString,
-    //                    wfrIdsForVidarrArchivalString);
-    return parameters;
+    return null;
   }
 
   private ActionState actionStatusFromArchive(NabuCaseArchiveDto caseArchive) {
@@ -88,32 +94,93 @@ public final class ArchiveCaseAction extends JsonParameterisedAction {
     return ActionState.UNKNOWN;
   }
 
-  public ActionState perform(ActionServices services, String baseUrl, NabuCaseArchiveDto cArchive)
-      throws IOException {
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    final var other = (ArchiveCaseAction) obj;
+    if (requisitionId != other.requisitionId) {
+      return false;
+    } else if (!limsIds.equals(other.limsIds)) {
+      return false;
+    }
+    return caseId.equals(other.caseId);
+  }
 
+  @Override
+  public void generateUUID(Consumer<byte[]> digest) {
+    try {
+      digest.accept(MAPPER.writeValueAsBytes(owner));
+      digest.accept(new byte[] {0});
+      digest.accept(caseId.getBytes(StandardCharsets.UTF_8));
+      digest.accept(new byte[] {0});
+      digest.accept(Utils.toBytes(requisitionId));
+      digest.accept(MAPPER.writeValueAsBytes(limsIds));
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+    }
+  }
+
+  @Override
+  public int hashCode() {
+    final var prime = 31;
+    var result = 1;
+    result = prime * result + (owner == null ? 0 : owner.hashCode());
+    result = prime * result + (caseId == null ? 0 : caseId.hashCode());
+    result = prime * result + (limsIds == null ? 0 : limsIds.hashCode());
+    result = prime * result + Long.hashCode(requisitionId);
+    return result;
+  }
+
+  private String createRequestBody() {
+    var body =
+        "{ "
+            + "caseIdentifier: \""
+            + this.caseId
+            + "\","
+            + "requisitionId: \""
+            + this.requisitionId
+            + "\","
+            + "limsIds: ["
+            + String.join(",", limsIds)
+            + "],"
+            + "workflowRunIdsForOffsiteArchive: ["
+            + String.join(",", workflowRunIdsForOffsiteArchive)
+            + "],"
+            + "workflowRunIdsForVidarrArchival: ["
+            + String.join(",", workflowRunIdsForVidarrArchival)
+            + "],"
+            + "}";
+    return body;
+  }
+
+  @Override
+  public ActionState perform(
+      ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
     final var overloaded = services.isOverloaded("all", "nabu");
     if (!overloaded.isEmpty()) {
-      errors = Collections.singletonList("Overloaded services: " + String.join(", ", overloaded));
+      this.errors =
+          Collections.singletonList("Overloaded services: " + String.join(", ", overloaded));
       return ActionState.THROTTLED;
     }
 
-    BodyPublisher body;
+    HttpRequest.BodyPublisher body;
     try {
-      body = BodyPublishers.ofString(MAPPER.writeValueAsString(rootParameters));
+      body = HttpRequest.BodyPublishers.ofString(createRequestBody());
     } catch (final Exception e) {
       e.printStackTrace();
       this.errors = Collections.singletonList(e.getMessage());
       return ActionState.FAILED;
     }
+    var baseUrl = owner.get().NabuUrl();
 
-    final var builder = HttpRequest.newBuilder(URI.create(baseUrl + "/case"));
-    final var wfrIdsForOffsiteArchiveString =
-        cArchive.getWorkflowRunIdsForOffsiteArchive().stream()
-            .collect(Collectors.joining("','", "'", "'"));
-    final var wfrIdsForVidarrArchivalString =
-        cArchive.getWorkflowRunIdsForVidarrArchival().stream()
-            .collect(Collectors.joining("','", "'", "'"));
-    final var createRequest = builder.header("Content-Type", "application/json").POST(body).build();
+    // final var builder = HttpRequest.newBuilder(URI.create(baseUrl + "/case"));
+    // final var createRequest = builder.header("Content-Type",
+    // "application/json").POST(body).build();
     final var request =
         HttpRequest.newBuilder(URI.create(baseUrl + "/case"))
             .header("Content-type", "application/json")
@@ -123,67 +190,20 @@ public final class ArchiveCaseAction extends JsonParameterisedAction {
     try (var timer = NabuRequestTime.start(owner.get().NabuUrl())) {
       var response =
           HTTP_CLIENT.send(request, new JsonListBodyHandler<>(MAPPER, NabuCaseArchiveDto.class));
-      if (response.statusCode() / 100 != 2) {
-        showError(response, request.uri());
+      if (response.statusCode() == 409) {
+        return ActionState.HALP;
+      } else if (response.statusCode() / 100 != 2) {
         NabuRequestErrors.labels(owner.get().NabuUrl()).inc();
         return ActionState.FAILED;
       }
       final var results = response.body().get().collect(Collectors.toList());
-      //        final var archive =
-      //
-      // Stream.of(results).max(Comparator.comparing(NabuCaseArchiveDto::getGenerated)).get();
-      //        externalTimestamp =
-      // Optional.of(ZonedDateTime.parse(archive.getCreated()).toInstant());
       return actionStatusFromArchive(results.get(0));
-
     } catch (final Exception e) {
       e.printStackTrace();
       this.errors = Collections.singletonList(e.getMessage());
       NabuRequestErrors.labels(owner.get().NabuUrl()).inc();
       return ActionState.FAILED;
     }
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) {
-      return true;
-    }
-    if (obj == null) {
-      return false;
-    }
-    if (getClass() != obj.getClass()) {
-      return false;
-    }
-    final var other = (ArchiveCaseAction) obj;
-    return false;
-  }
-
-  @Override
-  public void generateUUID(Consumer<byte[]> digest) {
-    digest.accept(caseID.getBytes());
-    try {
-      digest.accept(MAPPER.writeValueAsBytes(parameters));
-    } catch (JsonProcessingException e) {
-      e.printStackTrace();
-    }
-    ;
-  }
-
-  @Override
-  public int hashCode() {
-    final var prime = 31;
-    var result = 1;
-    result = prime * result + (owner == null ? 0 : owner.hashCode());
-    result = prime * result + (parameters == null ? 0 : parameters.hashCode());
-    result = prime * result + (caseID == null ? 0 : caseID.hashCode());
-    return result;
-  }
-
-  @Override
-  public ActionState perform(
-      ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
-    return ActionState.FAILED;
   }
 
   @Override
@@ -196,19 +216,16 @@ public final class ArchiveCaseAction extends JsonParameterisedAction {
     return 1;
   }
 
-  private void showError(HttpResponse<?> response, URI url)
-      throws UnsupportedOperationException, IOException {
-    final List<String> errors = new ArrayList<>();
-    final Map<String, String> labels = new TreeMap<>();
-    labels.put("url", url.getHost());
-    owner.log("HTTP error: " + response.statusCode(), LogLevel.ERROR, labels);
-    errors.add("HTTP error: " + response.statusCode());
-    this.errors = errors;
-  }
-
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
     final var node = mapper.createObjectNode();
+    node.put("type", "nabu-archive");
+    node.put("caseId", caseId);
+    node.put("requisitionId", requisitionId);
+    limsIds.forEach(node.putArray("limsIds")::add);
+    workflowRunIdsForOffsiteArchive.forEach(node.putArray("workflowRunIdsForOffsiteArchive")::add);
+    workflowRunIdsForVidarrArchival.forEach(node.putArray("workflowRunIdsForVidarrArchival")::add);
+    node.set("parameters", parameters);
     return node;
   }
 }

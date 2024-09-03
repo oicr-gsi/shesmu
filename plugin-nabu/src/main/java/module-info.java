@@ -13,6 +13,7 @@ module ca.on.oicr.gsi.shesmu.plugin.nabu {
   requires com.fasterxml.jackson.databind;
   requires com.fasterxml.jackson.datatype.jsr310;
   requires java.net.http;
+  requires simpleclient;
 
   provides InputFormat with
       NabuCaseArchiveFormatDefinition,
