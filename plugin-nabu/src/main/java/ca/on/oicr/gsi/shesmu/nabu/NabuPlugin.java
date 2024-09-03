@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.nabu;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
+import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
@@ -187,6 +188,11 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
     this.definer = definer;
     fileQcCache = new FileQcCache(fileName);
     caseArchiveCache = new CaseArchiveCache(fileName);
+  }
+
+  @ShesmuAction(description = "send archving info for case to Nabu (completes when files archived)")
+  public ArchiveCaseAction archive() {
+    return new ArchiveCaseAction(definer);
   }
 
   @Override
