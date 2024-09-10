@@ -8,14 +8,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -139,23 +139,28 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   private String createRequestBody() {
     var body =
         "{ "
-            + "caseIdentifier: \""
+            + "\"caseIdentifier\": \""
             + this.caseId
-            + "\","
-            + "requisitionId: \""
+            + "\", "
+            + "\"requisitionId\": \""
             + this.requisitionId
-            + "\","
-            + "limsIds: ["
-            + String.join(",", limsIds)
-            + "],"
-            + "workflowRunIdsForOffsiteArchive: ["
-            + String.join(",", workflowRunIdsForOffsiteArchive)
-            + "],"
-            + "workflowRunIdsForVidarrArchival: ["
-            + String.join(",", workflowRunIdsForVidarrArchival)
-            + "],"
+            + "\", "
+            + "\"limsIds\": ["
+            + formatSetAsString(limsIds)
+            + "], "
+            + "\"workflowRunIdsForOffsiteArchive\": ["
+            + formatSetAsString(workflowRunIdsForOffsiteArchive)
+            + "], "
+            + "\"workflowRunIdsForVidarrArchival\": ["
+            + formatSetAsString(workflowRunIdsForVidarrArchival)
+            + "]"
             + "}";
     return body;
+  }
+
+  private String formatSetAsString(Set<String> set) {
+    return String.join(
+        ",", set.stream().map(name -> ("\"" + name + "\"")).collect(Collectors.toList()));
   }
 
   @Override
@@ -176,32 +181,37 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
       this.errors = Collections.singletonList(e.getMessage());
       return ActionState.FAILED;
     }
-    var baseUrl = owner.get().NabuUrl();
+    final var baseUrl = owner.get().NabuUrl();
 
-    // final var builder = HttpRequest.newBuilder(URI.create(baseUrl + "/case"));
-    // final var createRequest = builder.header("Content-Type",
-    // "application/json").POST(body).build();
     final var request =
         HttpRequest.newBuilder(URI.create(baseUrl + "/case"))
             .header("Content-type", "application/json")
             .header("Accept", "application/json")
             .POST(body)
             .build();
-    try (var timer = NabuRequestTime.start(owner.get().NabuUrl())) {
+
+    owner.log("NABU REQUEST: " + request, LogLevel.DEBUG, null);
+    try (var timer = NabuRequestTime.start(baseUrl)) {
       var response =
           HTTP_CLIENT.send(request, new JsonListBodyHandler<>(MAPPER, NabuCaseArchiveDto.class));
       if (response.statusCode() == 409) {
         return ActionState.HALP;
       } else if (response.statusCode() / 100 != 2) {
-        NabuRequestErrors.labels(owner.get().NabuUrl()).inc();
+        NabuRequestErrors.labels(baseUrl).inc();
+        showHTTPError(response, baseUrl);
+        return ActionState.FAILED;
+      } else if (response.statusCode() == 201) {
+        return ActionState.INFLIGHT;
+      } else if (response.statusCode() == 200) {
+        final var results = response.body().get().collect(Collectors.toList());
+        return actionStatusFromArchive(results.get(0));
+      } else {
         return ActionState.FAILED;
       }
-      final var results = response.body().get().collect(Collectors.toList());
-      return actionStatusFromArchive(results.get(0));
     } catch (final Exception e) {
       e.printStackTrace();
       this.errors = Collections.singletonList(e.getMessage());
-      NabuRequestErrors.labels(owner.get().NabuUrl()).inc();
+      NabuRequestErrors.labels(baseUrl).inc();
       return ActionState.FAILED;
     }
   }
@@ -213,7 +223,17 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
 
   @Override
   public long retryMinutes() {
-    return 1;
+    return 10;
+  }
+
+  private void showHTTPError(HttpResponse<?> response, String url)
+      throws UnsupportedOperationException, IOException {
+    final List<String> errors = new ArrayList<>();
+    final Map<String, String> labels = new TreeMap<>();
+    labels.put("url", url);
+    owner.log("HTTP error: " + response.statusCode(), LogLevel.ERROR, labels);
+    errors.add("HTTP error: " + response.statusCode());
+    this.errors = errors;
   }
 
   @Override
