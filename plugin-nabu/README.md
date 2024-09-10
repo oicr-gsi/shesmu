@@ -1,0 +1,1 @@
+./docs/plugin-nabu.md
