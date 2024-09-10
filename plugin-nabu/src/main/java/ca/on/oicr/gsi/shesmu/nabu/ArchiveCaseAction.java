@@ -156,8 +156,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   }
 
   private String formatSetAsString(Set<String> set) {
-    return String.join(
-        ",", set.stream().map(name -> ("\"" + name + "\"")).collect(Collectors.toList()));
+    return set.stream().map(name -> ("\"" + name + "\"")).collect(Collectors.joining(","));
   }
 
   @Override
