@@ -22,8 +22,6 @@ import java.util.stream.Collectors;
 public class ArchiveCaseAction extends JsonParameterisedAction {
 
   private final Definer<NabuPlugin> owner;
-  private final ObjectNode parameters;
-  private final ObjectNode rootParameters = MAPPER.createObjectNode();
   static final ObjectMapper MAPPER = new ObjectMapper();
   private List<String> errors = List.of();
   public String caseId;
@@ -48,7 +46,6 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   public ArchiveCaseAction(Definer<NabuPlugin> owner) {
     super("nabu-plugin");
     this.owner = owner;
-    parameters = rootParameters.putObject("parameters");
   }
 
   @ActionParameter
@@ -245,7 +242,6 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     limsIds.forEach(node.putArray("limsIds")::add);
     workflowRunIdsForOffsiteArchive.forEach(node.putArray("workflowRunIdsForOffsiteArchive")::add);
     workflowRunIdsForVidarrArchival.forEach(node.putArray("workflowRunIdsForVidarrArchival")::add);
-    node.set("parameters", parameters);
     return node;
   }
 }
