@@ -161,4 +161,12 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
   public String NabuUrl() {
     return config.get().getUrl();
   }
+
+  public String NabuToken() throws RuntimeException {
+    try {
+      return config.get().getAuthentication().prepareAuthentication();
+    } catch (IOException e) {
+      throw new RuntimeException("Unable to get authentication method");
+    }
+  }
 }

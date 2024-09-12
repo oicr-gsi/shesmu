@@ -9,14 +9,18 @@ import java.net.http.HttpRequest.Builder;
 @JsonSubTypes({
   @JsonSubTypes.Type(value = AuthenticationConfigurationBasic.class, name = "basic"),
   @JsonSubTypes.Type(value = AuthenticationConfigurationBearer.class, name = "bearer"),
+  @JsonSubTypes.Type(value = AuthenticationConfigurationAPIkey.class, name = "apikey"),
   @JsonSubTypes.Type(value = AuthenticationConfigurationFileBasic.class, name = "basic-file"),
-  @JsonSubTypes.Type(value = AuthenticationConfigurationFileBearer.class, name = "bearer-file")
+  @JsonSubTypes.Type(value = AuthenticationConfigurationFileBearer.class, name = "bearer-file"),
+  @JsonSubTypes.Type(value = AuthenticationConfigurationFileAPIkey.class, name = "apikey-file")
 })
 public abstract sealed class AuthenticationConfiguration
     permits AuthenticationConfigurationBasic,
         AuthenticationConfigurationBearer,
+        AuthenticationConfigurationAPIkey,
         AuthenticationConfigurationFileBasic,
-        AuthenticationConfigurationFileBearer {
+        AuthenticationConfigurationFileBearer,
+        AuthenticationConfigurationFileAPIkey {
 
   public static void addAuthenticationHeader(
       AuthenticationConfiguration authentication, Builder request) throws IOException {

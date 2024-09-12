@@ -32,6 +32,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private final ObjectNode parameters;
   private final ObjectNode rootParameters = MAPPER.createObjectNode();
+  private Optional<String> authenticationHeader = Optional.empty();
 
   private static final Counter NabuRequestErrors =
       Counter.build(
@@ -172,6 +173,9 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     HttpRequest.BodyPublisher body;
     try {
       body = HttpRequest.BodyPublishers.ofString(createRequestBody());
+      final var authentication = owner.get().NabuToken();
+      authenticationHeader =
+              authentication == null ? Optional.empty() : Optional.of(authentication);
     } catch (final Exception e) {
       e.printStackTrace();
       this.errors = Collections.singletonList(e.getMessage());
@@ -179,14 +183,19 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     }
     final var baseUrl = owner.get().NabuUrl();
 
+    final var builder = HttpRequest.newBuilder(URI.create(baseUrl + "/case"));
+
+    authenticationHeader.ifPresent(header -> builder.header("X-API-KEY", header));
+
     final var request =
-        HttpRequest.newBuilder(URI.create(baseUrl + "/case"))
-            .header("Content-type", "application/json")
-            .header("Accept", "application/json")
-            .POST(body)
-            .build();
+            builder
+                    .header("Content-type", "application/json")
+                    .header("Accept", "application/json")
+                    .POST(body)
+                    .build();
 
     owner.log("NABU REQUEST: " + request, LogLevel.DEBUG, null);
+
     try (var timer = NabuRequestTime.start(baseUrl)) {
       var response =
           HTTP_CLIENT.send(request, new JsonListBodyHandler<>(MAPPER, NabuCaseArchiveDto.class));
