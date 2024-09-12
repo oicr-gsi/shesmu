@@ -129,7 +129,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
     caseArchiveCache = new CaseArchiveCache(fileName);
   }
 
-  @ShesmuAction(description = "send archving info for case to Nabu (completes when files archived)")
+  @ShesmuAction(description = "send archiving info for case to Nabu (completes when files archived)")
   public ArchiveCaseAction archive() {
     return new ArchiveCaseAction(definer);
   }
