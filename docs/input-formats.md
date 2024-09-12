@@ -83,3 +83,27 @@ or it can be stored separately using `bearer-file`:
        "url": "http://some.url/format/endpoint",
        "ttl": 10
     }
+
+## API Key Authentication
+API key authentication sends a single token to the remote server. The
+token can be stored in the configuration file like this:
+
+    {
+       "authentication": {
+         "type": "apikey",
+         "tokenFile": "01234567890ABCDEF"
+       },
+       "url": "http://some.url/format/endpoint",
+       "ttl": 10
+    }
+
+or it can be stored separately using `apikey-file`:
+
+    {
+       "authentication": {
+         "type": "apikey-file",
+         "tokenFile": "/home/shesmu/secret-token"
+       },
+       "url": "http://some.url/format/endpoint",
+       "ttl": 10
+    }
