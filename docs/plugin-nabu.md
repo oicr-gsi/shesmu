@@ -6,15 +6,6 @@ The Nabu plugin provides two input formats:
 * `nabu_file_qc` contains file QC information
 * `case_archive` contains information about a case archive's archiving status
 
-## Write Nabu Archive Case actions
-A Nabu Case Archive requires five inputs:
-* `caseIdentifier` (String)
-* `limsIds` (Set)
-* `requisitionId` (Int)
-* `workflowRunIdsForOffsiteArchive` (Set)
-* `workflowRunIdsForVidarrArchival` (Set)
-These values make up the archive instance which is stored in Nabu.
-
 To configure a Nabu source, create a JSON file ending in `.nabu` as follows:
 
    ```
