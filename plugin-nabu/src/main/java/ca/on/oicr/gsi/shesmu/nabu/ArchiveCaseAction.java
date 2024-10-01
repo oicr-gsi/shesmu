@@ -175,7 +175,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
       body = HttpRequest.BodyPublishers.ofString(createRequestBody());
       final var authentication = owner.get().NabuToken();
       authenticationHeader =
-              authentication == null ? Optional.empty() : Optional.of(authentication);
+          authentication == null ? Optional.empty() : Optional.of(authentication);
     } catch (final Exception e) {
       e.printStackTrace();
       this.errors = Collections.singletonList(e.getMessage());
@@ -188,11 +188,11 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     authenticationHeader.ifPresent(header -> builder.header("X-API-KEY", header));
 
     final var request =
-            builder
-                    .header("Content-type", "application/json")
-                    .header("Accept", "application/json")
-                    .POST(body)
-                    .build();
+        builder
+            .header("Content-type", "application/json")
+            .header("Accept", "application/json")
+            .POST(body)
+            .build();
 
     owner.log("NABU REQUEST: " + request, LogLevel.DEBUG, null);
 
