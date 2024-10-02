@@ -28,7 +28,7 @@ public class SampleCerberusFileProvenanceRecord
 
   @Override
   public Set<String> batches() {
-    return limsAttr("batches")
+    return limsAttr("batchIds")
         .<Set<String>>map(
             s -> COMMA.splitAsStream(s).collect(Collectors.toCollection(TreeSet::new)))
         .orElse(Set.of());
