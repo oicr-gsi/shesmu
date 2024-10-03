@@ -141,7 +141,7 @@ public final class IssueAction extends Action {
       // This unfortunately still matches on supersets, so if you have 'My Ticket' it won't match
       // 'Ny Ticket'
       // but it will match 'My Ticket 2'. We address that later.
-      var issues =
+      var searchedIssues =
           current.search(
               String.format(
                   "summary ~ \"%s\" and project = %s and issuetype = %s",
@@ -157,21 +157,23 @@ public final class IssueAction extends Action {
                   Issue.UPDATED.name(),
                   Issue.SUMMARY.name()));
       // Filter again by summary title for exact matching
-      issues =
-          issues.stream()
+      searchedIssues =
+          searchedIssues.stream()
               .filter(i -> i.getFields().get(Issue.SUMMARY.name()).asText().equals(summary))
               .toList();
-      this.issues = issues.stream().map(Issue::getKey).collect(Collectors.toSet());
+      this.issues = searchedIssues.stream().map(Issue::getKey).collect(Collectors.toSet());
       ((Definer<JiraConnection>) connection)
           .log(
-              new StringBuilder("Got ").append(issues.isEmpty() ? "nothing" : issues).toString(),
+              new StringBuilder("Got ")
+                  .append(searchedIssues.isEmpty() ? "nothing" : searchedIssues)
+                  .toString(),
               LogLevel.DEBUG,
               new TreeMap<>());
       final var missingLabels = new TreeSet<String>();
       final var result =
           verb.perform(
               connection,
-              issues,
+              searchedIssues,
               summary,
               labels,
               type,
