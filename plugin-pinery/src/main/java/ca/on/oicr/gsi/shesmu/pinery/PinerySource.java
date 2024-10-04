@@ -232,7 +232,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     new PineryIUSForAnalysisValue(
                         limsAttr(sp, "barcode_kit", badSetInRecord::add, false),
                         run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
-                        new HashSet<>(sp.getBatchIds()),
+                        sp.getBatchIds() == null
+                            ? new HashSet<>()
+                            : new HashSet<>(sp.getBatchIds()),
                         limsAttr(sp, "cell_viability", badSetInRecord::add, false)
                             .map(Double::parseDouble),
                         Optional.ofNullable(sp.getCreatedDate()).map(ZonedDateTime::toInstant),
@@ -502,7 +504,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     new PineryIUSIncludeSkippedValue(
                         limsAttr(sp, "barcode_kit", badSetInRecord::add, false),
                         run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
-                        new HashSet<>(sp.getBatchIds()),
+                        sp.getBatchIds() == null
+                            ? new HashSet<>()
+                            : new HashSet<>(sp.getBatchIds()),
                         limsAttr(sp, "cell_viability", badSetInRecord::add, false)
                             .map(Double::parseDouble),
                         Optional.ofNullable(sp.getCreatedDate()).map(ZonedDateTime::toInstant),
