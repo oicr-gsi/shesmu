@@ -7,6 +7,16 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.36.1] - 2024-10-09
+
+### Fixed
+
+* Fix previous jira bugfix which did filter but didn't actually apply it
+  
+* Fix batchIds fetching in pinery plugin
+  
+
+
 ## [1.36.0] - 2024-10-02
 
 ### Added
