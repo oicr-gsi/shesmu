@@ -4,7 +4,7 @@
   <parent>
     <groupId>ca.on.oicr.gsi</groupId>
     <artifactId>shesmu</artifactId>
-    <version>1.35.1-SNAPSHOT</version>
+    <version>1.36.2-SNAPSHOT</version>
   </parent>
   <artifactId>shesmu-plugin-pinery</artifactId>
   <packaging>jar</packaging>
@@ -12,7 +12,7 @@
   <url>https://github.com/oicr-gsi/shesmu</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <pinery-version>2.19.0</pinery-version>
+    <pinery-version>2.36.0</pinery-version>
   </properties>
   <dependencies>
     <dependency>

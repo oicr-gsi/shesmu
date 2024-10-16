@@ -4,12 +4,8 @@ import ca.on.oicr.gsi.cerberus.fileprovenance.ProvenanceRecord;
 import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.ws.dto.SampleProvenanceDto;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class SampleCerberusFileProvenanceRecord
     extends BaseCerberusFileProvenanceRecord<SampleProvenanceDto> {
@@ -28,10 +24,9 @@ public class SampleCerberusFileProvenanceRecord
 
   @Override
   public Set<String> batches() {
-    return limsAttr("batches")
-        .<Set<String>>map(
-            s -> COMMA.splitAsStream(s).collect(Collectors.toCollection(TreeSet::new)))
-        .orElse(Set.of());
+    List<String> potentialBatchIds = provenanceRecord.lims().getBatchIds();
+    if (potentialBatchIds == null || potentialBatchIds.isEmpty()) return new HashSet<>();
+    return new HashSet<>(potentialBatchIds);
   }
 
   @Override

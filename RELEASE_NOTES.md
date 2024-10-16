@@ -7,6 +7,29 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.36.1] - 2024-10-09
+
+### Fixed
+
+* Fix previous jira bugfix which did filter but didn't actually apply it
+  
+* Fix batchIds fetching in pinery plugin
+  
+
+
+## [1.36.0] - 2024-10-02
+
+### Added
+
+* Support for API Key as an authentication method
+  Use of API Key in plugin-nabu archive function
+* Archiving Action as part of the Nabu plugin
+
+### Fixed
+
+* * Update deprecated dependencies for `json-dir-list`
+
+
 ## [1.35.0] - 2024-08-29
 
 ### Removed
