@@ -10,18 +10,16 @@ public class SequencingTestValue {
   private final String test;
   private final String type;
   private final Set<Tuple> limsIds;
-  private final boolean isComplete;
+  private final boolean complete;
 
   public SequencingTestValue(
-      String test, String type, Stream<LimsSequencingInfo> limsIds, boolean isComplete) {
+      String test, String type, Stream<LimsSequencingInfo> limsIds, boolean complete) {
     super();
     this.test = test;
     this.type = type;
     this.limsIds =
-        limsIds
-            .map(info -> new Tuple(info.limsId(), info.supplemental()))
-            .collect(Collectors.toSet());
-    this.isComplete = isComplete;
+        limsIds.map(info -> new Tuple(info.id(), info.supplemental())).collect(Collectors.toSet());
+    this.complete = complete;
   }
 
   @ShesmuVariable
@@ -40,7 +38,7 @@ public class SequencingTestValue {
   }
 
   @ShesmuVariable
-  public boolean isComplete() {
-    return isComplete;
+  public boolean complete() {
+    return complete;
   }
 }
