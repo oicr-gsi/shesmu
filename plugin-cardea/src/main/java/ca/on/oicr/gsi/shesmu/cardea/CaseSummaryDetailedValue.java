@@ -26,9 +26,9 @@ public class CaseSummaryDetailedValue {
       String caseIdentifier,
       String caseStatus,
       Optional<Instant> completedDate,
-      Stream<SequencingTestValue> sequencingTestValueStream,
       long requisitionId,
       String requisitionName,
+      Stream<SequencingTestValue> sequencingTestValueStream,
       boolean stopped,
       boolean paused) {
     super();
@@ -44,8 +44,8 @@ public class CaseSummaryDetailedValue {
                     new Tuple(
                         sequencingTest.test(),
                         sequencingTest.type(),
-                        sequencingTest.isComplete(),
-                        sequencingTest.limsIds()))
+                        sequencingTest.limsIds(),
+                        sequencingTest.complete()))
             .collect(Collectors.toSet());
     this.requisitionId = requisitionId;
     this.requisitionName = requisitionName;
@@ -54,42 +54,42 @@ public class CaseSummaryDetailedValue {
   }
 
   @ShesmuVariable
-  public String assay_name() {
+  public String assayName() {
     return assayName;
   }
 
   @ShesmuVariable
-  public String assay_version() {
+  public String assayVersion() {
     return assayVersion;
   }
 
   @ShesmuVariable
-  public String case_identifier() {
+  public String caseIdentifier() {
     return caseIdentifier;
   }
 
   @ShesmuVariable
-  public String case_status() {
+  public String caseStatus() {
     return caseStatus;
   }
 
   @ShesmuVariable
-  public Optional<Instant> completed_date() {
+  public Optional<Instant> completedDate() {
     return completedDate;
   }
 
-  @ShesmuVariable(type = "ao4test$stype$sis_complete$blims_ids$ao2lims_id$ssupplemental$b")
+  @ShesmuVariable(type = "ao4test$stype$scomplete$blimsIds$ao2id$ssupplemental$b")
   public Set<Tuple> sequencing() {
     return sequencing;
   }
 
   @ShesmuVariable
-  public long requisition_id() {
+  public long requisitionId() {
     return requisitionId;
   }
 
   @ShesmuVariable
-  public String requisition_name() {
+  public String requisitionName() {
     return requisitionName;
   }
 

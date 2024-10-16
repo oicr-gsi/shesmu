@@ -3,18 +3,18 @@ package ca.on.oicr.gsi.shesmu.cardea;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 
 public class LimsSequencingInfo {
-  private final String limsId;
+  private final String id;
   private final boolean supplemental;
 
-  public LimsSequencingInfo(String limsId, boolean supplemental) {
+  public LimsSequencingInfo(String id, boolean supplemental) {
     super();
-    this.limsId = limsId;
+    this.id = id;
     this.supplemental = supplemental;
   }
 
   @ShesmuVariable
-  public String limsId() {
-    return limsId;
+  public String id() {
+    return id;
   }
 
   @ShesmuVariable
