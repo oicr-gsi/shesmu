@@ -252,6 +252,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     node.put("case_id", caseId);
     node.put("requisition_id", requisitionId);
     node.set("parameters", parameters);
+    errors.forEach(node.putArray("errors")::add);
     limsIds.forEach(node.putArray("lims_ids")::add);
     workflowRunIdsForOffsiteArchive.forEach(
         node.putArray("workflow_run_ids_for_offsite_archive")::add);
