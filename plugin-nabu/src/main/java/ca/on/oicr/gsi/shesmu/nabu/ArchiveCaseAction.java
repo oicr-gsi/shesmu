@@ -3,7 +3,7 @@ package ca.on.oicr.gsi.shesmu.nabu;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
-import ca.on.oicr.gsi.shesmu.plugin.json.JsonListBodyHandler;
+import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -198,7 +198,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
 
     try (var timer = NabuRequestTime.start(baseUrl)) {
       var response =
-          HTTP_CLIENT.send(request, new JsonListBodyHandler<>(MAPPER, NabuCaseArchiveDto.class));
+          HTTP_CLIENT.send(request, new JsonBodyHandler<>(MAPPER, NabuCaseArchiveDto.class));
       if (response.statusCode() == 409) {
         return ActionState.HALP;
       } else if (response.statusCode() / 100 != 2) {
@@ -208,8 +208,8 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
       } else if (response.statusCode() == 201) {
         return ActionState.INFLIGHT;
       } else if (response.statusCode() == 200) {
-        final var results = response.body().get().collect(Collectors.toList());
-        return actionStatusFromArchive(results.get(0));
+        final var results = response.body().get();
+        return actionStatusFromArchive(results);
       } else {
         return ActionState.UNKNOWN;
       }
