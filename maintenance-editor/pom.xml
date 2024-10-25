@@ -4,7 +4,7 @@
   <parent>
     <groupId>ca.on.oicr.gsi</groupId>
     <artifactId>shesmu</artifactId>
-    <version>1.36.2-SNAPSHOT</version>
+    <version>1.37.0</version>
   </parent>
   <artifactId>maintenance-schedule</artifactId>
   <packaging>jar</packaging>
