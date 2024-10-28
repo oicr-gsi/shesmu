@@ -11,7 +11,7 @@ For unreleased changes, see [changes](changes).
 
 ### Added
 
-
+* Cardea input format for detailed case summaries
 
 ## [1.36.1] - 2024-10-09
 
