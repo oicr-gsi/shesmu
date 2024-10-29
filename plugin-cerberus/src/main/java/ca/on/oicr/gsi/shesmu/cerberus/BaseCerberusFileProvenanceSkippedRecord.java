@@ -90,8 +90,13 @@ abstract class BaseCerberusFileProvenanceSkippedRecord<T extends LimsProvenance>
   }
 
   @Override
-  public final String md5() {
-    return provenanceRecord.record().getMd5();
+  public final String checksum() {
+    return provenanceRecord.record().getChecksum();
+  }
+
+  @Override
+  public final String checksum_type() {
+    return provenanceRecord.record().getChecksumType();
   }
 
   @Override

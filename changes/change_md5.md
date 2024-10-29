@@ -1,0 +1,1 @@
+Cerberus md5 column is now 'checksum'
