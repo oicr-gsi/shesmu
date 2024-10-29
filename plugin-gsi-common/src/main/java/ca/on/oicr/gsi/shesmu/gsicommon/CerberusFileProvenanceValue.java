@@ -96,7 +96,10 @@ public interface CerberusFileProvenanceValue {
   Tuple lims();
 
   @ShesmuVariable
-  String md5();
+  String checksum();
+
+  @ShesmuVariable
+  String checksum_type();
 
   @ShesmuVariable
   String metatype();
