@@ -1,0 +1,1 @@
+qcFailed field to the case_detailed_summary input format

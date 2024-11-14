@@ -18,7 +18,9 @@ public class SequencingTestValue {
     this.test = test;
     this.type = type;
     this.limsIds =
-        limsIds.map(info -> new Tuple(info.id(), info.supplemental())).collect(Collectors.toSet());
+        limsIds
+            .map(info -> new Tuple(info.id(), info.supplemental(), info.qcFailed()))
+            .collect(Collectors.toSet());
     this.complete = complete;
   }
 
