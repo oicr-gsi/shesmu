@@ -35,7 +35,7 @@
     <dependency>
       <groupId>ca.on.oicr.gsi.cerberus</groupId>
       <artifactId>cerberus-core</artifactId>
-      <version>0.5.2-SNAPSHOT</version>
+      <version>0.6.0</version>
     </dependency>
   </dependencies>
   <build>
