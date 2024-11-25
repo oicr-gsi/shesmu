@@ -78,7 +78,7 @@ public class CaseSummaryDetailedValue {
     return completedDate;
   }
 
-  @ShesmuVariable(type = "ao4test$stype$scomplete$blimsIds$ao2id$ssupplemental$b")
+  @ShesmuVariable(type = "ao4test$stype$scomplete$blimsIds$ao3id$sqcFailed$bsupplemental$b")
   public Set<Tuple> sequencing() {
     return sequencing;
   }
