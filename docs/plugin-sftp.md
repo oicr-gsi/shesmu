@@ -13,7 +13,8 @@ To configure an SFTP server, create a file ending in `.sftp` as follows:
       "fileRoots": [],
       "fileRootsTtl": null,
       "functions": {},
-      "refillers": {}
+      "refillers": {},
+      "refillerTimeout": 600
     }
 
 Shesmu uses passwordless public key authentication on the remote server. An
@@ -73,7 +74,8 @@ olive. To create one, add an entry in the `"refillers"` section as follows:
       "parameters": {
         "count": "i",
         "value": "s"
-      }
+      },
+      "timeout": 600
     }
 
 This will create `example` as a refiller available to olives. It will take
@@ -81,7 +83,8 @@ parameters as defined in the `"parameters"` block; the value of each parameter
 is a JSON-enhanced Shesmu type descriptors (see [types in the language
 description](language.md#types) for details).  When the olive is ready,
 Shesmu will compute an order-independent hash from the data. Then, over SSH,
-`"command"` will be run with the hash (as a hexadecimal string) after it.
+`"command"` will be run with the hash (as a hexadecimal string) in the
+environment variable `SHESMU_REFILLER_HASH`.
 
 This program can then decide if the hash matches the last version it has
 consumed. If so, it should print: `OK` and exit 0. If it has stale data, it
@@ -95,7 +98,12 @@ If the program exits non-zero, Shesmu will retry with the same data until
 success or the data is updated.
 
 The program should run in a reasonable amount of time. Long-running programs
-will have serious performance implications for Shesmu.
+will have serious performance implications for Shesmu. A maximum timeout, in
+seconds can be specified for the runtime of a refiller. If specified,
+`"timeout"` can be set for each refiller, or the top-level `"refillerTimeout"`
+can set the default if none is specified per refiller. If both are absent or
+`null` a default of 38 minutes is used. This is implemented using the `timeout`
+command, which is present on UNIX systems.
 
 As an example, this shell script read the data and places it in a file (in the
 same directory):
@@ -103,13 +111,13 @@ same directory):
 
     #!/bin/sh
     cd $(dirname $0)
-    if [ -f current_hash ] && [ "${1}" = "$(cat current_hash)" ]; then
+    if [ -f current_hash ] && [ "${SHESMU_REFILLER_HASH}" = "$(cat current_hash)" ]; then
       echo OK
       exit 0
     fi
     echo UPDATE
     cat >current_data
-    echo "${1}" >current_hash
+    echo "${SHESMU_REFILLER_HASH}" >current_hash
 
 A more sophisticated version of this script is provided as
 `shesmu-json-refiller` if it suits your needs.
