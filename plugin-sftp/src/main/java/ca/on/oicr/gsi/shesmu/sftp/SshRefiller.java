@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
+import static org.apache.commons.text.StringEscapeUtils.ESCAPE_XSI;
+
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,12 +18,14 @@ public class SshRefiller<T> extends Refiller<T> {
   private final Supplier<SftpServer> server;
   private final String command;
   private final String name;
+  private final int timeout;
   private String lastHash = "";
 
-  public SshRefiller(Supplier<SftpServer> server, String name, String command) {
+  public SshRefiller(Supplier<SftpServer> server, String name, String command, int timeout) {
     this.server = server;
     this.command = command;
     this.name = name;
+    this.timeout = timeout;
   }
 
   @Override
@@ -67,7 +71,14 @@ public class SshRefiller<T> extends Refiller<T> {
       if (totalHash.equals(lastHash)) {
         return;
       }
-      if (server.get().refill(name, command + " " + totalHash, output)) {
+      if (server
+          .get()
+          .refill(
+              name,
+              String.format(
+                  "export SHESMU_REFILLER_HASH=%s; timeout %ds sh -c %s",
+                  totalHash, timeout, ESCAPE_XSI.translate(command)),
+              output)) {
         lastHash = totalHash;
       }
 

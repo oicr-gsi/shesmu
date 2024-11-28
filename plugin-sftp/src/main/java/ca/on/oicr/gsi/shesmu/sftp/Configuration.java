@@ -11,6 +11,7 @@ public class Configuration {
   private List<JsonDataSource> jsonSources = List.of();
   private String listCommand;
   private int port;
+  private Integer refillerTimeout;
   private Map<String, RefillerConfig> refillers = Map.of();
   private String user;
 
@@ -40,6 +41,10 @@ public class Configuration {
 
   public int getPort() {
     return port;
+  }
+
+  public Integer getRefillerTimeout() {
+    return refillerTimeout;
   }
 
   public Map<String, RefillerConfig> getRefillers() {
@@ -76,6 +81,10 @@ public class Configuration {
 
   public void setPort(int port) {
     this.port = port;
+  }
+
+  public void setRefillerTimeout(Integer refillerTimeout) {
+    this.refillerTimeout = refillerTimeout;
   }
 
   public void setRefillers(Map<String, RefillerConfig> refillers) {
