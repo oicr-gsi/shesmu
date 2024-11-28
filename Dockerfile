@@ -1,19 +1,17 @@
-FROM debian:bullseye
+FROM debian:bookworm
 
 USER root
 RUN apt-get update -m && \
     apt-get install -y maven openjdk-17-jdk nodejs npm
-RUN npm install -g typescript@4.3.2
 RUN mkdir /build
 COPY . /build/
-RUN --mount=type=cache,target=/root/.m2 cd /build && \
-    tsc -p shesmu-server-ui && \
-    mvn -Dsurefire.useFile=false -DskipIT=true clean install && \
-    VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout) && \
+RUN cd /build && \
+    mvn -B install && \
+    mvn help:evaluate -Dexpression=project.version -Doutput=version && \
     mkdir /usr/share/shesmu && \
     cp install-pom.xml /usr/share/shesmu/pom.xml && \
     cd /usr/share/shesmu && \
-    mvn -DVERSION=${VERSION} dependency:copy-dependencies && \
+    mvn -B -DVERSION=$(cat /build/version) dependency:copy-dependencies && \
     rm pom.xml
 
 FROM openjdk:17
