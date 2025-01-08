@@ -183,6 +183,7 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
                                 entry.getKey(),
                                 entry.getValue().getUrl(),
                                 entry.getValue().getVersions()))));
+    final List<String> ignoreVersions = configuration.getIgnore();
     final var versions =
         configuration.getPinery().values().stream()
             .flatMap(pc -> pc.getVersions().stream())
@@ -191,7 +192,10 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
     vidarrData =
         JoinSource.all(
             configuration.getVidarr().entrySet().stream()
-                .map(e -> VidarrWorkflowRunSource.of(e.getKey(), e.getValue(), versions)));
+                .map(
+                    e ->
+                        VidarrWorkflowRunSource.of(
+                            e.getKey(), e.getValue(), versions, ignoreVersions)));
     return Optional.empty();
   }
 }
