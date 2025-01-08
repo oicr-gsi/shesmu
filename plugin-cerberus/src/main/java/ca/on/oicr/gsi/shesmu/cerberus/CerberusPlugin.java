@@ -191,7 +191,7 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
     vidarrData =
         JoinSource.all(
             configuration.getVidarr().entrySet().stream()
-                .map(e -> VidarrWorkflowRunSource.of(e.getKey(), e.getValue(), versions)));
+                .map(e -> VidarrWorkflowRunSource.of(e.getKey(), e.getValue(), versions, null)));
     return Optional.empty();
   }
 }
