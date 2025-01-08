@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -183,7 +184,8 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
                                 entry.getKey(),
                                 entry.getValue().getUrl(),
                                 entry.getValue().getVersions()))));
-    final List<String> ignoreVersions = configuration.getIgnore();
+    final List<String> ignoreVersions =
+        Objects.requireNonNullElse(configuration.getIgnore(), new ArrayList<>());
     final var versions =
         configuration.getPinery().values().stream()
             .flatMap(pc -> pc.getVersions().stream())
