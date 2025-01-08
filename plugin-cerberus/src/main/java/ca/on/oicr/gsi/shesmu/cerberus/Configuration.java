@@ -17,16 +17,16 @@ public class Configuration {
     return vidarr;
   }
 
+  public List<String> getIgnore() {
+    return ignore;
+  }
+
   public void setPinery(Map<String, PineryConfiguration> pinery) {
     this.pinery = pinery;
   }
 
   public void setVidarr(Map<String, String> vidarr) {
     this.vidarr = vidarr;
-  }
-
-  public List<String> getIgnore() {
-    return ignore;
   }
 
   public void setVidarr(List<String> ignore) {
