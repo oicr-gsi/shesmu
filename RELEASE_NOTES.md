@@ -7,6 +7,17 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.40.0] - 2025-01-09
+
+### Added
+
+* Support for new cerberus version which includes an "ignore" field
+
+### Fixed
+
+* * Fix Docker container build
+
+
 ## [1.39.1] - 2024-11-25
 
 ### Fixed
