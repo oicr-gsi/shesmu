@@ -29,7 +29,7 @@ public class Configuration {
     this.vidarr = vidarr;
   }
 
-  public void setVidarr(List<String> ignore) {
+  public void setIgnore(List<String> ignore) {
     this.ignore = ignore;
   }
 }
