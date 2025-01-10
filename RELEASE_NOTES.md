@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.40.1] - 2025-01-10
+
+### Fixed
+
+* incorrectly named function in cerberus plugin config
+
+
 ## [1.40.0] - 2025-01-09
 
 ### Added
