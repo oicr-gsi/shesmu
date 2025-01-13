@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.40.2] - 2025-01-13
+
+### Fixed
+
+* cargo; upgraded to a version which uses github support macOS version by default
+
+
 ## [1.40.1] - 2025-01-10
 
 ### Fixed
