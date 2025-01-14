@@ -92,8 +92,6 @@ git push origin v${NEW_VERSION}
 git checkout v${NEW_VERSION}
 mvn deploy
 git checkout master
-# Trigger GitHub Actions to build the Maven project and build the Docker image
-github-release -v release -s ${GITHUB_TOKEN} -u oicr-gsi -r shesmu -t v${NEW_VERSION} -d "[Release Notes](https://github.com/oicr-gsi/shesmu/blob/master/RELEASE_NOTES.md#$(echo "${NEW_VERSION}" | sed s/\.//g))" | grep BODY: | cut -f 2- -d: | jq -r .html_url
 
 set +x
 
