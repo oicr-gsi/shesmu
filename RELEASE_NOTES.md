@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.40.3] - 2025-01-14
+
+### Fixed
+
+* release.yaml, applying changes from new version of cargo dist
+
+
 ## [1.40.2] - 2025-01-13
 
 ### Fixed
