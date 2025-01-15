@@ -2,6 +2,8 @@ package ca.on.oicr.gsi.shesmu.pinery;
 
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import ca.on.oicr.ws.dto.SampleProjectDto;
+import java.util.Optional;
+import java.util.Set;
 
 public class PineryProjectValue {
   private final SampleProjectDto backing;
@@ -15,6 +17,11 @@ public class PineryProjectValue {
   @ShesmuVariable
   public boolean active() {
     return backing.isActive();
+  }
+
+  @ShesmuVariable
+  public Optional<Set<String>> deliverables() {
+    return Optional.ofNullable(backing.getDeliverables());
   }
 
   @ShesmuVariable
