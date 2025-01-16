@@ -7,6 +7,16 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.41.0] - 2025-01-16
+
+### Changed
+
+
+### Removed
+
+* conflicting github-action release call
+
+
 ## [1.40.3] - 2025-01-14
 
 ### Fixed

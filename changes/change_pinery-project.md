@@ -1,1 +1,0 @@
-Add deliverables to pinery_project
