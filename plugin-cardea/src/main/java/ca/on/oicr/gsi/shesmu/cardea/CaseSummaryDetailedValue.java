@@ -14,6 +14,7 @@ public class CaseSummaryDetailedValue {
   private final String caseIdentifier;
   private final String caseStatus;
   private final Optional<Instant> completedDate;
+  private final Optional<Instant> clinicalCompletedDate;
   private final Set<Tuple> sequencing;
   private final long requisitionId;
   private final String requisitionName;
@@ -26,6 +27,7 @@ public class CaseSummaryDetailedValue {
       String caseIdentifier,
       String caseStatus,
       Optional<Instant> completedDate,
+      Optional<Instant> clinicalCompletedDate,
       long requisitionId,
       String requisitionName,
       Stream<SequencingTestValue> sequencingTestValueStream,
@@ -37,6 +39,7 @@ public class CaseSummaryDetailedValue {
     this.caseIdentifier = caseIdentifier;
     this.caseStatus = caseStatus;
     this.completedDate = completedDate;
+    this.clinicalCompletedDate = clinicalCompletedDate;
     this.sequencing =
         sequencingTestValueStream
             .map(
@@ -75,6 +78,11 @@ public class CaseSummaryDetailedValue {
 
   @ShesmuVariable
   public Optional<Instant> completedDate() {
+    return completedDate;
+  }
+
+  @ShesmuVariable
+  public Optional<Instant> clinicalCompletedDate() {
     return completedDate;
   }
 
