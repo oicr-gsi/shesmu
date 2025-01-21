@@ -1,0 +1,1 @@
+new date field clinicalCompletedDate to cardea detailed case summary
