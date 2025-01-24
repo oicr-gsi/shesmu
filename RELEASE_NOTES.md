@@ -11,12 +11,13 @@ For unreleased changes, see [changes](changes).
 
 ### Added
 
-
+* new date field clinicalCompletedDate to cardea detailed case summary
 
 ## [1.41.0] - 2025-01-16
 
 ### Changed
 
+* Add deliverables to pinery_project
 
 ### Removed
 
@@ -59,22 +60,23 @@ For unreleased changes, see [changes](changes).
 
 ### Fixed
 
-
+* Sequencing definition should contain the qcFailed field
 
 ## [1.39.0] - 2024-11-21
 
 ### Added
 
-
+* qcFailed field to the case_detailed_summary input format
 
 ## [1.38.0] - 2024-11-19
 
 ### Added
 
+* Cerberus checksum_type column
 
 ### Changed
 
-
+* Cerberus md5 column is now 'checksum'
 
 ## [1.37.0] - 2024-10-25
 
