@@ -1,13 +1,16 @@
 package ca.on.oicr.gsi.shesmu.vidarr;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
+import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.SimpleRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
+import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.json.AsJsonNode;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
@@ -18,12 +21,9 @@ import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.gsi.vidarr.BasicType;
 import ca.on.oicr.gsi.vidarr.BasicType.Visitor;
 import ca.on.oicr.gsi.vidarr.JsonBodyHandler;
-import ca.on.oicr.gsi.vidarr.api.ExternalMultiVersionKey;
-import ca.on.oicr.gsi.vidarr.api.MaxInFlightDeclaration;
-import ca.on.oicr.gsi.vidarr.api.ProvenanceWorkflowRun;
-import ca.on.oicr.gsi.vidarr.api.TargetDeclaration;
-import ca.on.oicr.gsi.vidarr.api.WorkflowDeclaration;
+import ca.on.oicr.gsi.vidarr.api.*;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
@@ -31,6 +31,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -42,6 +43,104 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class VidarrPlugin extends JsonPluginFile<Configuration> {
+
+  private class AnalysisCache extends ValueCache<Stream<VidarrAnalysisValue>> {
+    public AnalysisCache(Path fileName) {
+      super("vidarr-analysis " + fileName.toString(), 30, ReplacingRecord::new);
+    }
+
+    private String createVidarrProvenanceRequestBody(
+        List<AnalysisOutputType> analysisTypes, List<String> versionTypes) {
+      return "{"
+          + "\"analysisTypes\": ["
+          + analysisTypes.stream()
+              .map(name -> ("\"" + name.toString() + "\""))
+              .collect(Collectors.joining(","))
+          + "],"
+          + "\"epoch\": 0,"
+          + "\"includeParameters\": false,"
+          + "\"timestamp\": 0,"
+          + "\"versionPolicy\": \"LATEST\","
+          + "\"versionTypes\": ["
+          + versionTypes.stream().map(name -> ("\"" + name + "\"")).collect(Collectors.joining(","))
+          + "]}";
+    }
+
+    protected Stream<VidarrAnalysisValue> analysisArchive(String baseUrl) throws Exception {
+
+      final var results =
+          HTTP_CLIENT.send(
+              HttpRequest.newBuilder(URI.create(baseUrl + "/api/provenance"))
+                  .header("Content-type", "application/json")
+                  .timeout(Duration.ofMinutes(10))
+                  .POST(
+                      HttpRequest.BodyPublishers.ofString(
+                          createVidarrProvenanceRequestBody(
+                              configuration.get().getAnalysisTypes(),
+                              configuration.get().getVersionTypes())))
+                  .build(),
+              new JsonBodyHandler<>(
+                  MAPPER, new TypeReference<AnalysisProvenanceResponse<ExternalKey>>() {}));
+
+      if (results.statusCode() != 200) {
+        return new ErrorableStream<>(Stream.empty(), false);
+      }
+
+      final var body = results.body().get();
+      return body.getResults().stream()
+          .map(
+              ca ->
+                  new VidarrAnalysisValue(
+                      ca.getCompleted() == null
+                          ? Optional.empty()
+                          : Optional.of(ca.getCompleted().toInstant()),
+                      ca.getAnalysis() == null
+                          ? new HashSet<>()
+                          : ca.getAnalysis().stream()
+                              .map(
+                                  analysisRecord ->
+                                      new Tuple(
+                                          analysisRecord.getChecksum(),
+                                          analysisRecord.getChecksumType(),
+                                          analysisRecord.getExternalKeys().stream()
+                                              .map(
+                                                  externalId ->
+                                                      new Tuple(
+                                                          externalId.getId(),
+                                                          externalId.getProvider()))
+                                              .collect(Collectors.toSet()),
+                                          analysisRecord.getLabels(),
+                                          analysisRecord.getSize(),
+                                          analysisRecord.getId(),
+                                          analysisRecord.getMetatype(),
+                                          analysisRecord.getPath()))
+                              .collect(Collectors.toSet()),
+                      ca.getExternalKeys().stream()
+                          .map(
+                              eKey ->
+                                  new Tuple(
+                                      eKey.getId(),
+                                      eKey.getProvider(),
+                                      eKey.getVersions() == null ? Map.of() : eKey.getVersions()))
+                          .collect(Collectors.toSet()),
+                      new HashSet<>(ca.getInputFiles()),
+                      ca.getWorkflowName(),
+                      ca.getWorkflowName() + "/" + ca.getWorkflowVersion(),
+                      "vidarr:" + ca.getInstanceName() + "/run/" + ca.getId(),
+                      MAPPER.convertValue(
+                          ca.getLabels(), new TypeReference<Map<String, JsonNode>>() {}),
+                      IUSUtils.parseWorkflowVersion(ca.getWorkflowVersion())
+                          .orElse(IUSUtils.UNKNOWN_VERSION)));
+    }
+
+    @Override
+    protected Stream<VidarrAnalysisValue> fetch(Instant lastUpdated) throws Exception {
+      if (configuration.isEmpty() || configuration.get().getAnalysisTypes().isEmpty()) {
+        return new ErrorableStream<>(Stream.empty(), false);
+      }
+      return analysisArchive(configuration.get().getUrl());
+    }
+  }
 
   private class MaxInFlightCache extends ValueCache<Optional<MaxInFlightDeclaration>> {
 
@@ -209,12 +308,15 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   private Optional<URI> url = Optional.empty();
   private SubmissionPolicy submissionPolicy = SubmissionPolicy.ALWAYS;
   private final WorkflowRunInformationCache workflowRunInfo;
+  private Optional<Configuration> configuration = Optional.empty();
+  private final AnalysisCache analysisCache;
 
   public VidarrPlugin(Path fileName, String instanceName, Definer<VidarrPlugin> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);
     this.definer = definer;
     mifCache = new MaxInFlightCache(instanceName);
     workflowRunInfo = new WorkflowRunInformationCache(instanceName);
+    analysisCache = new AnalysisCache(fileName);
   }
 
   @Override
@@ -226,6 +328,8 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   public SubmissionPolicy defaultSubmissionPolicy() {
     return submissionPolicy;
   }
+
+  static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
   @ShesmuMethod(
       type =
@@ -263,8 +367,14 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
     return new UnloadWorkflowRunsAction(definer);
   }
 
+  @ShesmuInputSource
+  public Stream<VidarrAnalysisValue> streamVidarrProvenance(boolean readStale) {
+    return readStale ? analysisCache.getStale() : analysisCache.get();
+  }
+
   @Override
   protected Optional<Integer> update(Configuration value) {
+    configuration = Optional.of(value);
     try {
       if (value.getDefaultMaxSubmissionDelay() == null) {
         submissionPolicy = SubmissionPolicy.ALWAYS;
