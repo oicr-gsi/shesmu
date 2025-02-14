@@ -96,59 +96,53 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
         return new ErrorableStream<>(Stream.empty(), false);
       }
 
-      try {
-        final var body = results.body().get();
-        return body.getResults().stream()
-            .map(
-                ca ->
-                    new VidarrAnalysisValue(
-                        ca.getCompleted() == null
-                            ? Optional.empty()
-                            : Optional.of(ca.getCompleted().toInstant()),
-                        ca.getAnalysis().stream()
-                            .map(
-                                analysisRecord ->
-                                    new Tuple(
-                                        analysisRecord.getChecksum(),
-                                        analysisRecord.getChecksumType(),
-                                        analysisRecord.getExternalKeys().stream()
-                                            .map(
-                                                externalId ->
-                                                    new Tuple(
-                                                        externalId.getId(),
-                                                        externalId.getProvider()))
-                                            .collect(Collectors.toSet()),
-                                        analysisRecord.getLabels(),
-                                        analysisRecord.getSize(),
-                                        analysisRecord.getId(),
-                                        analysisRecord.getMetatype(),
-                                        analysisRecord.getPath()))
-                            .collect(Collectors.toSet()),
-                        ca.getExternalKeys().stream()
-                            .map(
-                                eKey ->
-                                    new Tuple(
-                                        eKey.getId(),
-                                        eKey.getProvider(),
-                                        eKey.getVersions() == null ? Map.of() : eKey.getVersions()))
-                            .collect(Collectors.toSet()),
-                        new HashSet<>(ca.getInputFiles()),
-                        ca.getWorkflowName(),
-                        ca.getWorkflowName() + "/" + ca.getWorkflowVersion(),
-                        "vidarr:" + ca.getInstanceName() + "/run/" + ca.getId(),
-                        MAPPER.convertValue(
-                            ca.getLabels(), new TypeReference<Map<String, JsonNode>>() {}),
-                        IUSUtils.parseWorkflowVersion(ca.getWorkflowVersion())
-                            .orElse(IUSUtils.UNKNOWN_VERSION)));
-      } catch (Exception e) {
-        e.toString();
-      }
-      return new ErrorableStream<>(Stream.empty(), false);
+      final var body = results.body().get();
+      return body.getResults().stream()
+          .map(
+              ca ->
+                  new VidarrAnalysisValue(
+                      ca.getCompleted() == null
+                          ? Optional.empty()
+                          : Optional.of(ca.getCompleted().toInstant()),
+                      ca.getAnalysis().stream()
+                          .map(
+                              analysisRecord ->
+                                  new Tuple(
+                                      analysisRecord.getChecksum(),
+                                      analysisRecord.getChecksumType(),
+                                      analysisRecord.getExternalKeys().stream()
+                                          .map(
+                                              externalId ->
+                                                  new Tuple(
+                                                      externalId.getId(), externalId.getProvider()))
+                                          .collect(Collectors.toSet()),
+                                      analysisRecord.getLabels(),
+                                      analysisRecord.getSize(),
+                                      analysisRecord.getId(),
+                                      analysisRecord.getMetatype(),
+                                      analysisRecord.getPath()))
+                          .collect(Collectors.toSet()),
+                      ca.getExternalKeys().stream()
+                          .map(
+                              eKey ->
+                                  new Tuple(
+                                      eKey.getId(),
+                                      eKey.getProvider(),
+                                      eKey.getVersions() == null ? Map.of() : eKey.getVersions()))
+                          .collect(Collectors.toSet()),
+                      new HashSet<>(ca.getInputFiles()),
+                      ca.getWorkflowName(),
+                      ca.getWorkflowName() + "/" + ca.getWorkflowVersion(),
+                      "vidarr:" + ca.getInstanceName() + "/run/" + ca.getId(),
+                      MAPPER.convertValue(
+                          ca.getLabels(), new TypeReference<Map<String, JsonNode>>() {}),
+                      IUSUtils.parseWorkflowVersion(ca.getWorkflowVersion())
+                          .orElse(IUSUtils.UNKNOWN_VERSION)));
     }
 
     @Override
     protected Stream<VidarrAnalysisValue> fetch(Instant lastUpdated) throws Exception {
-      if (configuration.isEmpty()) {
+      if (configuration.isEmpty() || configuration.get().getAnalysisTypes().isEmpty()) {
         return new ErrorableStream<>(Stream.empty(), false);
       }
       return analysisArchive(configuration.get().getUrl());

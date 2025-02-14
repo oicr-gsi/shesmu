@@ -23,7 +23,7 @@ window is exceeded, they will be run as dry-run.
 
 The Vidarr plugin provides an input format: `vidarr_analysis` which provides the file type analyis provenance data.
 
-The `"analysisTypes"` specifies the type of analysis desired. The default is only files.
+The `"analysisTypes"` specifies the type of analysis desired. For excepted values reference the [Vidarr docs](https://github.com/oicr-gsi/vidarr/blob/757cdb311109aefa6bd650172bd78fed04507fb7/vidarr-pluginapi/src/main/java/ca/on/oicr/gsi/vidarr/api/AnalysisOutputType.java).
 
 The `"versionTypes"` specifies the [version keys](https://github.com/oicr-gsi/vidarr/blob/master/architecture.md#external-identifier-versions) that should be returned; if empty, 
 all version keys are allowed.
