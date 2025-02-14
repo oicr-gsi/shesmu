@@ -59,23 +59,24 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
       super("vidarr-analysis " + fileName.toString(), 30, ReplacingRecord::new);
     }
 
-    private String createVidarrProvenanceRequestBody(List<String> versionTypes) {
+    private String createVidarrProvenanceRequestBody(
+        List<String> analysisTypes, List<String> versionTypes) {
       return "{"
-          + "\"analysisTypes\": [\"FILE\"],"
+          + "\"analysisTypes\": ["
+          + analysisTypes.stream()
+              .map(name -> ("\"" + name + "\""))
+              .collect(Collectors.joining(","))
+          + "],"
           + "\"epoch\": 0,"
           + "\"includeParameters\": false,"
           + "\"timestamp\": 0,"
           + "\"versionPolicy\": \"LATEST\","
           + "\"versionTypes\": ["
           + versionTypes.stream().map(name -> ("\"" + name + "\"")).collect(Collectors.joining(","))
-          + "  ]}";
+          + "]}";
     }
 
     protected Stream<VidarrAnalysisValue> analysisArchive(String baseUrl) throws Exception {
-
-      if (configuration.isEmpty()) {
-        return new ErrorableStream<>(Stream.empty(), false);
-      }
 
       final var results =
           HTTP_CLIENT.send(
@@ -84,7 +85,9 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                   .timeout(Duration.ofMinutes(10))
                   .POST(
                       HttpRequest.BodyPublishers.ofString(
-                          createVidarrProvenanceRequestBody(configuration.get().getVersionTypes())))
+                          createVidarrProvenanceRequestBody(
+                              configuration.get().getAnalysisTypes(),
+                              configuration.get().getVersionTypes())))
                   .build(),
               new JsonBodyHandler<>(
                   MAPPER, new TypeReference<AnalysisProvenanceResponse<ExternalKey>>() {}));
@@ -93,45 +96,54 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
         return new ErrorableStream<>(Stream.empty(), false);
       }
 
-      final var body = results.body().get();
-      return body.getResults().stream()
-          .map(
-              ca ->
-                  new VidarrAnalysisValue(
-                      ca.getCompleted() == null
-                          ? Optional.empty()
-                          : Optional.of(ca.getCompleted().toInstant()),
-                      ca.getAnalysis().stream()
-                          .map(
-                              analysisRecord ->
-                                  new Tuple(
-                                      analysisRecord.getChecksum(),
-                                      analysisRecord.getChecksumType(),
-                                      analysisRecord.getExternalKeys().stream()
-                                          .map(
-                                              externalId ->
-                                                  new Tuple(
-                                                      externalId.getId(), externalId.getProvider()))
-                                          .collect(Collectors.toSet()),
-                                      analysisRecord.getLabels(),
-                                      analysisRecord.getSize(),
-                                      analysisRecord.getId(),
-                                      analysisRecord.getMetatype(),
-                                      analysisRecord.getPath()))
-                          .collect(Collectors.toSet()),
-                      ca.getExternalKeys().stream()
-                          .map(
-                              eKey ->
-                                  new Tuple(eKey.getId(), eKey.getProvider(), eKey.getVersions()))
-                          .collect(Collectors.toSet()),
-                      new HashSet<>(ca.getInputFiles()),
-                      ca.getWorkflowName(),
-                      ca.getWorkflowName() + "/" + ca.getWorkflowVersion(),
-                      "vidarr:" + ca.getInstanceName() + "/run/" + ca.getId(),
-                      MAPPER.convertValue(
-                          ca.getLabels(), new TypeReference<Map<String, JsonNode>>() {}),
-                      IUSUtils.parseWorkflowVersion(ca.getWorkflowVersion())
-                          .orElse(IUSUtils.UNKNOWN_VERSION)));
+      try {
+        final var body = results.body().get();
+        return body.getResults().stream()
+            .map(
+                ca ->
+                    new VidarrAnalysisValue(
+                        ca.getCompleted() == null
+                            ? Optional.empty()
+                            : Optional.of(ca.getCompleted().toInstant()),
+                        ca.getAnalysis().stream()
+                            .map(
+                                analysisRecord ->
+                                    new Tuple(
+                                        analysisRecord.getChecksum(),
+                                        analysisRecord.getChecksumType(),
+                                        analysisRecord.getExternalKeys().stream()
+                                            .map(
+                                                externalId ->
+                                                    new Tuple(
+                                                        externalId.getId(),
+                                                        externalId.getProvider()))
+                                            .collect(Collectors.toSet()),
+                                        analysisRecord.getLabels(),
+                                        analysisRecord.getSize(),
+                                        analysisRecord.getId(),
+                                        analysisRecord.getMetatype(),
+                                        analysisRecord.getPath()))
+                            .collect(Collectors.toSet()),
+                        ca.getExternalKeys().stream()
+                            .map(
+                                eKey ->
+                                    new Tuple(
+                                        eKey.getId(),
+                                        eKey.getProvider(),
+                                        eKey.getVersions() == null ? Map.of() : eKey.getVersions()))
+                            .collect(Collectors.toSet()),
+                        new HashSet<>(ca.getInputFiles()),
+                        ca.getWorkflowName(),
+                        ca.getWorkflowName() + "/" + ca.getWorkflowVersion(),
+                        "vidarr:" + ca.getInstanceName() + "/run/" + ca.getId(),
+                        MAPPER.convertValue(
+                            ca.getLabels(), new TypeReference<Map<String, JsonNode>>() {}),
+                        IUSUtils.parseWorkflowVersion(ca.getWorkflowVersion())
+                            .orElse(IUSUtils.UNKNOWN_VERSION)));
+      } catch (Exception e) {
+        e.toString();
+      }
+      return new ErrorableStream<>(Stream.empty(), false);
     }
 
     @Override
@@ -190,13 +202,15 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
               new Tuple(
                   externalKey.getId(),
                   externalKey.getProvider(),
-                  externalKey.getVersions().entrySet().stream()
-                      .collect(
-                          Collectors.toMap(
-                              Entry::getKey,
-                              e -> new TreeSet<>(e.getValue()),
-                              (a, b) -> a,
-                              TreeMap::new))));
+                  externalKey.getVersions().isEmpty()
+                      ? Map.of()
+                      : externalKey.getVersions().entrySet().stream()
+                          .collect(
+                              Collectors.toMap(
+                                  Entry::getKey,
+                                  e -> new TreeSet<>(e.getValue()),
+                                  (a, b) -> a,
+                                  TreeMap::new))));
         }
         return Optional.of(
             new Tuple(
