@@ -8,6 +8,7 @@ To integrate Shesmu with a Vidarr server, create a configuration file ending in
     {
       "defaultMaxSubmissionDelay": null,
       "url": "http://vidarr:8000",
+      "analysisTypes": ["FILE"]
       "versionTypes": []
     }
 
@@ -21,6 +22,8 @@ If a number, in seconds, is given, then the action must have been
 window is exceeded, they will be run as dry-run.
 
 The Vidarr plugin provides an input format: `vidarr_analysis` which provides the file type analyis provenance data.
+
+The `"analysisTypes"` specifies the type of analysis desired. The default is only files.
 
 The `"versionTypes"` specifies the [version keys](https://github.com/oicr-gsi/vidarr/blob/master/architecture.md#external-identifier-versions) that should be returned; if empty, 
 all version keys are allowed.
