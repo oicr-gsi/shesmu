@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-public class VidarrProvenanceValue {
+public class VidarrAnalysisValue {
   private final Optional<Instant> completed_date;
   private final Set<Tuple> output_files;
   private final Set<Tuple> workflow_run_external_keys;
@@ -19,7 +19,7 @@ public class VidarrProvenanceValue {
   private final Map<String, JsonNode> workflow_run_labels;
   private final Tuple workflow_version;
 
-  public VidarrProvenanceValue(
+  public VidarrAnalysisValue(
       Optional<Instant> completed_date,
       Set<Tuple> output_files,
       Set<Tuple> workflow_run_external_keys,

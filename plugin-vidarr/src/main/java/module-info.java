@@ -1,7 +1,7 @@
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import ca.on.oicr.gsi.shesmu.plugin.input.InputFormat;
+import ca.on.oicr.gsi.shesmu.vidarr.VidarrAnalysisFormatDefinition;
 import ca.on.oicr.gsi.shesmu.vidarr.VidarrPluginType;
-import ca.on.oicr.gsi.shesmu.vidarr.VidarrProvenanceDefinition;
 
 module ca.on.oicr.gsi.shesmu.plugin.vidarr {
   exports ca.on.oicr.gsi.shesmu.vidarr;
@@ -14,7 +14,7 @@ module ca.on.oicr.gsi.shesmu.plugin.vidarr {
   requires java.net.http;
 
   provides InputFormat with
-      VidarrProvenanceDefinition;
+      VidarrAnalysisFormatDefinition;
   provides PluginFileType with
       VidarrPluginType;
 }

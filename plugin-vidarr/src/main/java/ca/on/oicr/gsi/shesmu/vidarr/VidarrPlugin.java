@@ -54,13 +54,9 @@ import java.util.stream.Stream;
 
 public class VidarrPlugin extends JsonPluginFile<Configuration> {
 
-  private class ProvenanceCache extends ValueCache<Stream<VidarrProvenanceValue>> {
-    public ProvenanceCache(Path fileName) {
-      super("vidarr-provenance " + fileName.toString(), 30, ReplacingRecord::new);
-    }
-
-    private String formatListAsString(List<String> list) {
-      return list.stream().map(name -> ("\"" + name + "\"")).collect(Collectors.joining(","));
+  private class AnalysisCache extends ValueCache<Stream<VidarrAnalysisValue>> {
+    public AnalysisCache(Path fileName) {
+      super("vidarr-analysis " + fileName.toString(), 30, ReplacingRecord::new);
     }
 
     private String createVidarrProvenanceRequestBody(List<String> versionTypes) {
@@ -75,7 +71,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
           + "  ]}";
     }
 
-    protected Stream<VidarrProvenanceValue> provenanceArchive(String baseUrl) throws Exception {
+    protected Stream<VidarrAnalysisValue> analysisArchive(String baseUrl) throws Exception {
 
       if (configuration.isEmpty()) {
         return new ErrorableStream<>(Stream.empty(), false);
@@ -101,7 +97,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
       return body.getResults().stream()
           .map(
               ca ->
-                  new VidarrProvenanceValue(
+                  new VidarrAnalysisValue(
                       ca.getCompleted() == null
                           ? Optional.empty()
                           : Optional.of(ca.getCompleted().toInstant()),
@@ -139,11 +135,11 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
     }
 
     @Override
-    protected Stream<VidarrProvenanceValue> fetch(Instant lastUpdated) throws Exception {
+    protected Stream<VidarrAnalysisValue> fetch(Instant lastUpdated) throws Exception {
       if (configuration.isEmpty()) {
         return new ErrorableStream<>(Stream.empty(), false);
       }
-      return provenanceArchive(configuration.get().getUrl());
+      return analysisArchive(configuration.get().getUrl());
     }
   }
 
@@ -314,14 +310,14 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   private SubmissionPolicy submissionPolicy = SubmissionPolicy.ALWAYS;
   private final WorkflowRunInformationCache workflowRunInfo;
   private Optional<Configuration> configuration = Optional.empty();
-  private final ProvenanceCache provenanceCache;
+  private final AnalysisCache analysisCache;
 
   public VidarrPlugin(Path fileName, String instanceName, Definer<VidarrPlugin> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);
     this.definer = definer;
     mifCache = new MaxInFlightCache(instanceName);
     workflowRunInfo = new WorkflowRunInformationCache(instanceName);
-    provenanceCache = new ProvenanceCache(fileName);
+    analysisCache = new AnalysisCache(fileName);
   }
 
   @Override
@@ -373,8 +369,8 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   }
 
   @ShesmuInputSource
-  public Stream<VidarrProvenanceValue> streamVidarrProvenance(boolean readStale) {
-    return readStale ? provenanceCache.getStale() : provenanceCache.get();
+  public Stream<VidarrAnalysisValue> streamVidarrProvenance(boolean readStale) {
+    return readStale ? analysisCache.getStale() : analysisCache.get();
   }
 
   @Override
