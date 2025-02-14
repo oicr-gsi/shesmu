@@ -98,24 +98,27 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                       ca.getCompleted() == null
                           ? Optional.empty()
                           : Optional.of(ca.getCompleted().toInstant()),
-                      ca.getAnalysis().stream()
-                          .map(
-                              analysisRecord ->
-                                  new Tuple(
-                                      analysisRecord.getChecksum(),
-                                      analysisRecord.getChecksumType(),
-                                      analysisRecord.getExternalKeys().stream()
-                                          .map(
-                                              externalId ->
-                                                  new Tuple(
-                                                      externalId.getId(), externalId.getProvider()))
-                                          .collect(Collectors.toSet()),
-                                      analysisRecord.getLabels(),
-                                      analysisRecord.getSize(),
-                                      analysisRecord.getId(),
-                                      analysisRecord.getMetatype(),
-                                      analysisRecord.getPath()))
-                          .collect(Collectors.toSet()),
+                      ca.getAnalysis() == null
+                          ? new HashSet<>()
+                          : ca.getAnalysis().stream()
+                              .map(
+                                  analysisRecord ->
+                                      new Tuple(
+                                          analysisRecord.getChecksum(),
+                                          analysisRecord.getChecksumType(),
+                                          analysisRecord.getExternalKeys().stream()
+                                              .map(
+                                                  externalId ->
+                                                      new Tuple(
+                                                          externalId.getId(),
+                                                          externalId.getProvider()))
+                                              .collect(Collectors.toSet()),
+                                          analysisRecord.getLabels(),
+                                          analysisRecord.getSize(),
+                                          analysisRecord.getId(),
+                                          analysisRecord.getMetatype(),
+                                          analysisRecord.getPath()))
+                              .collect(Collectors.toSet()),
                       ca.getExternalKeys().stream()
                           .map(
                               eKey ->
