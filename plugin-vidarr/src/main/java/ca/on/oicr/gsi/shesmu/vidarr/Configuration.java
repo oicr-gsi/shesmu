@@ -1,11 +1,12 @@
 package ca.on.oicr.gsi.shesmu.vidarr;
 
+import ca.on.oicr.gsi.vidarr.api.AnalysisOutputType;
 import java.util.List;
 
 public class Configuration {
   private Long defaultMaxSubmissionDelay;
   private String url;
-  private List<String> analysisTypes;
+  private List<AnalysisOutputType> analysisTypes;
   private List<String> versionTypes;
 
   public Long getDefaultMaxSubmissionDelay() {
@@ -16,7 +17,7 @@ public class Configuration {
     return url;
   }
 
-  public List<String> getAnalysisTypes() {
+  public List<AnalysisOutputType> getAnalysisTypes() {
     return analysisTypes;
   }
 
@@ -32,7 +33,7 @@ public class Configuration {
     this.url = url;
   }
 
-  public void setAnalysisTypes(List<String> analysisTypes) {
+  public void setAnalysisTypes(List<AnalysisOutputType> analysisTypes) {
     this.analysisTypes = analysisTypes;
   }
 

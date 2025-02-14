@@ -25,13 +25,7 @@ import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.gsi.vidarr.BasicType;
 import ca.on.oicr.gsi.vidarr.BasicType.Visitor;
 import ca.on.oicr.gsi.vidarr.JsonBodyHandler;
-import ca.on.oicr.gsi.vidarr.api.AnalysisProvenanceResponse;
-import ca.on.oicr.gsi.vidarr.api.ExternalKey;
-import ca.on.oicr.gsi.vidarr.api.ExternalMultiVersionKey;
-import ca.on.oicr.gsi.vidarr.api.MaxInFlightDeclaration;
-import ca.on.oicr.gsi.vidarr.api.ProvenanceWorkflowRun;
-import ca.on.oicr.gsi.vidarr.api.TargetDeclaration;
-import ca.on.oicr.gsi.vidarr.api.WorkflowDeclaration;
+import ca.on.oicr.gsi.vidarr.api.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -60,11 +54,11 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
     }
 
     private String createVidarrProvenanceRequestBody(
-        List<String> analysisTypes, List<String> versionTypes) {
+        List<AnalysisOutputType> analysisTypes, List<String> versionTypes) {
       return "{"
           + "\"analysisTypes\": ["
           + analysisTypes.stream()
-              .map(name -> ("\"" + name + "\""))
+              .map(name -> ("\"" + name.toString() + "\""))
               .collect(Collectors.joining(","))
           + "],"
           + "\"epoch\": 0,"
