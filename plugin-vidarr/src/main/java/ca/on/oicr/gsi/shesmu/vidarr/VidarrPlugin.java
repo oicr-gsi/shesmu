@@ -1,10 +1,7 @@
 package ca.on.oicr.gsi.shesmu.vidarr;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.plugin.Definer;
-import ca.on.oicr.gsi.shesmu.plugin.Parser;
-import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
-import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
@@ -36,12 +33,8 @@ import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -421,6 +414,12 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
           }
         }
         return Optional.of(10);
+      } else if (workflowsResult.statusCode() == 301) {
+        value.setUrl(Utils.get301LocationUrl(workflowsResult, definer));
+        return update(value);
+      } else if (targetsResult.statusCode() == 301) {
+        value.setUrl(Utils.get301LocationUrl(targetsResult, definer));
+        return update(value);
       } else {
         return Optional.of(2);
       }

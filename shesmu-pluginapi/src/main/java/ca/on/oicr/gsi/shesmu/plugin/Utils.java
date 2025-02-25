@@ -1,10 +1,11 @@
 package ca.on.oicr.gsi.shesmu.plugin;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
-import java.util.Iterator;
-import java.util.Optional;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -63,4 +64,24 @@ public class Utils {
   private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 
   private Utils() {}
+
+  public static String get301LocationUrl(HttpResponse httpResponse, Definer definer) {
+    HttpHeaders headers = httpResponse.headers();
+    try {
+      URI urlFrom301 = new URI(headers.map().get("location").get(0));
+      String newUrl = new URI(urlFrom301.getScheme() + "://" + urlFrom301.getHost()).toString();
+      definer.log(
+          "Got 301 when configuring plugin, updating URL to " + newUrl,
+          LogLevel.WARN,
+          new TreeMap<>());
+      return newUrl;
+    } catch (URISyntaxException use) {
+      definer.log(
+          "Got 301 when configuring plugin, HTTP location header invalid: "
+              + headers.map().get("location").get(0),
+          LogLevel.ERROR,
+          new TreeMap<>());
+      return null;
+    }
+  }
 }
