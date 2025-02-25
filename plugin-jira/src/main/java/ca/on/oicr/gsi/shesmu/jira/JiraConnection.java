@@ -4,10 +4,7 @@ import static ca.on.oicr.gsi.shesmu.jira.IssueAction.STANDARD_LABELS;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.jira.Issue.Field;
-import ca.on.oicr.gsi.shesmu.plugin.Definer;
-import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
-import ca.on.oicr.gsi.shesmu.plugin.LogLevel;
-import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
@@ -38,7 +35,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -138,7 +134,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   private Optional<String> authenticationHeader = Optional.empty();
   private List<String> closedStatuses = List.of();
   private Map<String, JsonNode> defaultFieldValues = Map.of();
-  private final Supplier<JiraConnection> definer;
+  private final Definer<JiraConnection> definer;
   private String issueTypeId;
   private String issueTypeName;
   private final IssueCache issues;
@@ -603,21 +599,25 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                       "%s/rest/api/%s/project/%s",
                       url, version.slug(), URLEncoder.encode(projectKey, StandardCharsets.UTF_8))));
       authenticationHeader.ifPresent(header -> builder.header("Authorization", header));
-      final var project =
-          CLIENT
-              .send(builder.GET().build(), new JsonBodyHandler<>(MAPPER, Project.class))
-              .body()
-              .get();
-      projectId = Objects.requireNonNull(project.getId());
-      issueTypeId = null;
-      issueTypeName = null;
-      if (config.getIssueType() != null) {
-        for (final var issueType : project.getIssueTypes()) {
-          if (issueType.getName().equals(config.getIssueType())) {
-            issueTypeId = issueType.getId();
-            issueTypeName = issueType.getName();
+      final var response =
+          CLIENT.send(builder.GET().build(), new JsonBodyHandler<>(MAPPER, Project.class));
+      if (response.statusCode() == 200) {
+        final var project = response.body().get();
+        projectId = Objects.requireNonNull(project.getId());
+        issueTypeId = null;
+        issueTypeName = null;
+        if (config.getIssueType() != null) {
+          for (final var issueType : project.getIssueTypes()) {
+            if (issueType.getName().equals(config.getIssueType())) {
+              issueTypeId = issueType.getId();
+              issueTypeName = issueType.getName();
+            }
           }
         }
+      } else if (response.statusCode() == 301) {
+        config.setUrl(Utils.get301LocationUrl(response, definer));
+      } else {
+        return Optional.of(10);
       }
     } catch (final Exception e) {
       e.printStackTrace();

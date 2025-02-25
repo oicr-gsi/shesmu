@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.guanyin;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
+import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
@@ -118,37 +119,45 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
                   .build(),
               new JsonBodyHandler<>(RunReport.MAPPER, ReportDto[].class));
       definer.clearActions();
-      for (final var report : response.body().get()) {
-        if (!report.isValid()) {
-          continue;
+      if (response.statusCode() == 200) {
+        for (final var report : response.body().get()) {
+          if (!report.isValid()) {
+            continue;
+          }
+          final var reportId = report.getId();
+          final var actionName =
+              report.getName() + "_" + report.getVersion().replaceAll("[^A-Za-z0-9_]", "_");
+          final var description =
+              String.format(
+                  "Runs report %s-%s (%d) on Guanyin instance defined in %s.",
+                  report.getName(), report.getVersion(), report.getId(), fileName());
+          final var reportName =
+              String.format(
+                  "%s %s[%s]", report.getName(), report.getVersion(), report.getCategory());
+          definer.defineAction(
+              actionName,
+              description,
+              RunReport.class,
+              () -> new RunReport(definer, reportId, reportName), //
+              report
+                  .getPermittedParameters() //
+                  .entrySet()
+                  .stream() //
+                  .map(
+                      e ->
+                          new JsonParameter<>(
+                              e.getKey(),
+                              e.getValue().isRequired(),
+                              Imyhat.parse(e.getValue().getType()))));
         }
-        final var reportId = report.getId();
-        final var actionName =
-            report.getName() + "_" + report.getVersion().replaceAll("[^A-Za-z0-9_]", "_");
-        final var description =
-            String.format(
-                "Runs report %s-%s (%d) on Guanyin instance defined in %s.",
-                report.getName(), report.getVersion(), report.getId(), fileName());
-        final var reportName =
-            String.format("%s %s[%s]", report.getName(), report.getVersion(), report.getCategory());
-        definer.defineAction(
-            actionName,
-            description,
-            RunReport.class,
-            () -> new RunReport(definer, reportId, reportName), //
-            report
-                .getPermittedParameters() //
-                .entrySet()
-                .stream() //
-                .map(
-                    e ->
-                        new JsonParameter<>(
-                            e.getKey(),
-                            e.getValue().isRequired(),
-                            Imyhat.parse(e.getValue().getType()))));
+        this.configuration = Optional.of(configuration);
+        return Optional.of(60);
+      } else if (response.statusCode() == 301) {
+        configuration.setGuanyin(Utils.get301LocationUrl(response, definer));
+        return update(configuration);
+      } else {
+        return Optional.of(5);
       }
-      this.configuration = Optional.of(configuration);
-      return Optional.of(60);
     } catch (final IOException | InterruptedException e) {
       e.printStackTrace();
       return Optional.of(5);
