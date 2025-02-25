@@ -47,21 +47,26 @@ public class RemoteInstance extends JsonPluginFile<Configuration> {
       var response =
           HTTP_CLIENT.send(
               request, new JsonBodyHandler<>(RuntimeSupport.MAPPER, ObjectNode[].class));
-      for (final var obj : response.body().get()) {
-        var name = obj.get("name").asText();
-        if (name.equals("nothing") || !allow.matcher(name).matches()) continue;
-        definer.defineAction(
-            configuration.getPrefix() + name,
-            "Fake version of: " + obj.get("description").asText(),
-            FakeAction.class,
-            () -> new FakeAction(name),
-            Utils.stream(obj.get("parameters").elements())
-                .map(
-                    p ->
-                        new JsonParameter<>(
-                            p.get("name").asText(),
-                            p.get("required").asBoolean(),
-                            Imyhat.parse(p.get("type").asText()))));
+      if (response.statusCode() == 200) {
+        for (final var obj : response.body().get()) {
+          var name = obj.get("name").asText();
+          if (name.equals("nothing") || !allow.matcher(name).matches()) continue;
+          definer.defineAction(
+              configuration.getPrefix() + name,
+              "Fake version of: " + obj.get("description").asText(),
+              FakeAction.class,
+              () -> new FakeAction(name),
+              Utils.stream(obj.get("parameters").elements())
+                  .map(
+                      p ->
+                          new JsonParameter<>(
+                              p.get("name").asText(),
+                              p.get("required").asBoolean(),
+                              Imyhat.parse(p.get("type").asText()))));
+        }
+      } else if (response.statusCode() == 301) {
+        configuration.setUrl(Utils.get301LocationUrl(response, definer));
+        update(configuration);
       }
     } catch (Exception e) {
       e.printStackTrace();
