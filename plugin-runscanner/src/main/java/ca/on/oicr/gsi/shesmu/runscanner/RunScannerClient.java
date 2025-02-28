@@ -1,10 +1,10 @@
 package ca.on.oicr.gsi.shesmu.runscanner;
 
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
-import ca.on.oicr.gsi.runscanner.dto.IlluminaNotificationDto;
-import ca.on.oicr.gsi.runscanner.dto.NotificationDto;
-import ca.on.oicr.gsi.runscanner.dto.ProgressiveRequestDto;
-import ca.on.oicr.gsi.runscanner.dto.ProgressiveResponseDto;
+import ca.on.oicr.gsi.runscanner.dto.*;
+import ca.on.oicr.gsi.runscanner.dto.dragen.DragenAnalysisUnit;
+import ca.on.oicr.gsi.runscanner.dto.dragen.DragenPipelineRun;
+import ca.on.oicr.gsi.runscanner.dto.dragen.DragenWorkflowRun;
 import ca.on.oicr.gsi.runscanner.dto.type.IlluminaChemistry;
 import ca.on.oicr.gsi.shesmu.plugin.cache.InitialCachePopulationException;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
@@ -12,6 +12,7 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.prometheus.client.Gauge;
@@ -22,9 +23,7 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
@@ -63,6 +62,8 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
     private final int lanes;
     private final Optional<Long> readEnds;
     private final String serialNumber;
+    private final Optional<PipelineRun> pipelineRun;
+    private final Instant startTime;
 
     private RunInformation(NotificationDto run, int epoch) {
       lanes = run.getLaneCount();
@@ -75,7 +76,22 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
           run instanceof IlluminaNotificationDto
               ? Optional.of((long) ((IlluminaNotificationDto) run).getScoreCycle())
               : Optional.empty();
+
+      if (run instanceof IlluminaNotificationDto) {
+        List<PipelineRun> sortedPipelineRuns = ((IlluminaNotificationDto) run).getPipelineRuns();
+        if (sortedPipelineRuns.isEmpty()) {
+          pipelineRun = Optional.empty();
+        } else {
+          // Plugin only serves the latest analysis
+          sortedPipelineRuns.sort(Comparator.comparingInt(PipelineRun::getAttempt));
+          pipelineRun = Optional.of(sortedPipelineRuns.get(sortedPipelineRuns.size() - 1));
+        }
+      } else {
+        pipelineRun = Optional.empty();
+      }
+
       serialNumber = run.getContainerSerialNumber();
+      startTime = run.getStartDate();
       this.epoch = epoch;
     }
 
@@ -97,6 +113,14 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
 
     public String serialNumber() {
       return serialNumber;
+    }
+
+    public Optional<PipelineRun> pipelineRun() {
+      return pipelineRun;
+    }
+
+    public Instant startTime() {
+      return startTime;
     }
   }
 
@@ -149,6 +173,58 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   public void configuration(SectionRenderer renderer) {
     renderer.line("Filename", fileName().toString());
     url.ifPresent(u -> renderer.link("URL", u, u));
+  }
+
+  @ShesmuMethod(description = "Get the started time for a run")
+  public Instant start_time(@ShesmuParameter(description = "name of run") String run) {
+    try {
+      Optional<RunInformation> theRun = getRun(run);
+      return theRun.map(RunInformation::startTime).orElse(null);
+    } catch (InitialCachePopulationException e) {
+      return null;
+    }
+  }
+
+  @ShesmuMethod(description = "Get the bclconvert files for an ius")
+  public Optional<JsonNode> dragen_bclconvert(
+      @ShesmuParameter(description = "name of run") String run,
+      @ShesmuParameter(description = "lane") long lane,
+      @ShesmuParameter(description = "barcode, formatted like AAAAAAAA-TTTTTTTT") String barcode) {
+    try {
+      // Get the analysis for this run. If there is no run, or no analysis for this run, return
+      Optional<RunInformation> theRun = getRun(run);
+      if (theRun.isEmpty()) return Optional.empty();
+      RunInformation runInfo = theRun.get();
+      if (runInfo.pipelineRun().isEmpty()) return Optional.empty();
+
+      DragenPipelineRun dragenPipelineRun = (DragenPipelineRun) runInfo.pipelineRun().get();
+      DragenWorkflowRun bclConvert = dragenPipelineRun.get("BCLConvert");
+      if (bclConvert != null) {
+        String[] barcodes = barcode.split("-");
+
+        if (barcodes.length == 1) {
+          for (DragenAnalysisUnit unit : bclConvert.getAnalysisOutputs()) {
+            if (unit.getLane() == lane && unit.getIndex1().equals(barcodes[0])) {
+              // Ensure looking for only 1 barcode doesn't just get the first partial match
+              if (unit.getIndex2() != null) continue;
+              return Optional.ofNullable(MAPPER.valueToTree(unit.getFiles()));
+            }
+          }
+
+        } else if (barcodes.length == 2) {
+          for (DragenAnalysisUnit unit : bclConvert.getAnalysisOutputs()) {
+            if (unit.getLane() == lane
+                && unit.getIndex1().equals(barcodes[0])
+                && unit.getIndex2().equals(barcodes[1])) {
+              return Optional.ofNullable(MAPPER.valueToTree(unit.getFiles()));
+            }
+          }
+        }
+      }
+      return Optional.empty();
+    } catch (ClassCastException | InitialCachePopulationException e) {
+      return Optional.empty();
+    }
   }
 
   @ShesmuMethod(
