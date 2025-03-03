@@ -4,64 +4,65 @@
 #
 # This does no processing to the data and therefore can be used with any format.
 
-NEW_CHECKSUM=MISSING
 HELP=false
 NAME=refiller
 TARGET_DIR=.
-
+if [ "x${SHESMU_REFILLER_HASH}" = "x" ]; then
+	HELP=true
+fi
 set -eu
 
-TEMP=`getopt c:d:hn: "$@"`
+TEMP=$(getopt d:hn: "$@")
 
-if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
-
-eval set -- "$TEMP"
-
-while true ; do
-	case "$1" in
-		-c)
-			NEW_CHECKSUM="$2"
-			shift 2
-			;;
-		-d)
-			TARGET_DIR="$2"
-			shift 2
-			;;
-		-h)
-			HELP=true
-      shift
-			;;
-		-n)
-			NAME="$2"
-			shift 2
-			;;
-		--)
-			shift
-			break
-			;;
-		*) echo "Internal error!" ; exit 1 ;;
-	esac
-done
-
-if $HELP || [ $# -ne 0 ] || [ "${NEW_CHECKSUM}" = "MISSING" ]
-then
-	echo $0 '-c checksum [-d outputdir] [-n name]'
-	echo '  -c  The checksum provided by Shesmu'
-	echo '  -d  Directory to place output in (default is current directory)'
-	echo '  -h  Display help'
-	echo '  -n  The prefix of the output file (default is refiller)'
+if [ $? != 0 ]; then
+	echo "Terminating..." >&2
 	exit 1
 fi
 
+eval set -- "$TEMP"
+
+while true; do
+	case "$1" in
+	-d)
+		TARGET_DIR="$2"
+		shift 2
+		;;
+	-h)
+		HELP=true
+		shift
+		;;
+	-n)
+		NAME="$2"
+		shift 2
+		;;
+	--)
+		shift
+		break
+		;;
+	*)
+		echo "Internal error!"
+		exit 1
+		;;
+	esac
+done
+
+if $HELP || [ $# -ne 0 ]; then
+	echo $0 '[-d outputdir] [-n name]'
+	echo '  -d  Directory to place output in (default is current directory)'
+	echo '  -h  Display help'
+	echo '  -n  The prefix of the output file (default is refiller)'
+	echo 'SHESMU_REFILLER_HASH must also be set'
+	exit 1
+fi
 
 cd "${TARGET_DIR}"
 if [ -f "${NAME}.checksum" ]; then
 	EXISTING_CHECKSUM="$(cat "${NAME}.checksum")"
-	if [ "${NEW_CHECKSUM}" = "${EXISTING_CHECKSUM}" ]; then
+	if [ "${SHESMU_REFILLER_HASH}" = "${EXISTING_CHECKSUM}" ]; then
 		echo OK
 		exit 0
 	fi
 fi
 echo UPDATE
 cat >"${NAME}.json"
-echo "${NEW_CHECKSUM}" >"${NAME}.checksum"
+echo "${SHESMU_REFILLER_HASH}" >"${NAME}.checksum"
