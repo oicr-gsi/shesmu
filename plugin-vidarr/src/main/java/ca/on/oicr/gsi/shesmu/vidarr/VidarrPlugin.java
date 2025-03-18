@@ -135,8 +135,12 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
 
     @Override
     protected Stream<VidarrAnalysisValue> fetch(Instant lastUpdated) throws Exception {
-      if (configuration.isEmpty() || configuration.get().getAnalysisTypes().isEmpty()) {
+      if (configuration.isEmpty()) {
         return new ErrorableStream<>(Stream.empty(), false);
+      }
+      if (configuration.get().getAnalysisTypes() == null
+          || configuration.get().getAnalysisTypes().isEmpty()) {
+        return new ErrorableStream<>(Stream.empty(), true);
       }
       return analysisArchive(configuration.get().getUrl());
     }
@@ -309,7 +313,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   private SubmissionPolicy submissionPolicy = SubmissionPolicy.ALWAYS;
   private final WorkflowRunInformationCache workflowRunInfo;
   private Optional<Configuration> configuration = Optional.empty();
-  private final AnalysisCache analysisCache;
+  private AnalysisCache analysisCache;
 
   public VidarrPlugin(Path fileName, String instanceName, Definer<VidarrPlugin> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);

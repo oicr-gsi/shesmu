@@ -7,9 +7,7 @@ To integrate Shesmu with a Vidarr server, create a configuration file ending in
 
     {
       "defaultMaxSubmissionDelay": null,
-      "url": "http://vidarr:8000",
-      "analysisTypes": ["FILE"]
-      "versionTypes": []
+      "url": "http://vidarr:8000"
     }
 
 This will populate Shesmu with target + workflow combinations from the Vidarr
@@ -22,9 +20,13 @@ If a number, in seconds, is given, then the action must have been
 window is exceeded, they will be run as dry-run.
 
 The Vidarr plugin provides an input format: `vidarr_analysis` which provides the analysis
-provenance data.
+provenance data. To use this input format add the fields to the configuration file as follows:
 
-The `"analysisTypes"` specifies the type of analysis desired. For expected values reference
+      "analysisTypes": ["FILE"],
+      "versionTypes": []
+
+The `"analysisTypes"` specifies the type of analysis desired. If no analysisTypes are specified the 
+input format will be empty. For expected values reference
 the [Vidarr AnalysisOutputType class](https://github.com/oicr-gsi/vidarr/blob/master/vidarr-pluginapi/src/main/java/ca/on/oicr/gsi/vidarr/api/AnalysisOutputType.java).
 
 The `"versionTypes"` specifies
