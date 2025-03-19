@@ -1,0 +1,33 @@
+Version 1;
+Input case_detailed_summary;
+
+Olive
+
+## Demonstrate needed_for_case calculation 
+# Data manip for demo's sake
+Where assayName ~ /.*RUO WGTS.*/
+Let assayName = "WGTS", 
+caseIdentifier
+
+Let assayName,
+caseIdentifier,
+
+## apparently getting the real deliverables list is a double join,
+# so for the demo I'll just write it as a string literal
+varscan2_needed = configmaster::demo::needed_for_case(assayName, ["Clinical Report"], "varscan2"),
+rsem_needed = configmaster::demo::needed_for_case(assayName, ["Clinical Report"], "rsem")
+
+Dump All To varscan_rsem_neededness
+
+## Demonstrate djerba_requirements
+Dump assayName, 
+caseIdentifier, 
+configmaster::demo::djerba_requirements(assayName, ["Clinical Report"])
+To djerba_reqs
+
+
+## Demonstrate using neededness for filtering
+Where configmaster::demo::needed_for_case(assayName, ["Clinical Report"], "rsem")
+Dump All To nothing_needs_rsem
+
+Run std::nothing With value = "hello";

@@ -119,6 +119,11 @@
       <artifactId>shesmu-plugin-vidarr</artifactId>
       <version>${VERSION}</version>
     </dependency>
+    <dependency>
+      <groupId>ca.on.oicr.gsi</groupId>
+      <artifactId>shesmu-plugin-configmaster</artifactId>
+      <version>${VERSION}</version>
+    </dependency>
   </dependencies>
   <build>
     <directory>.</directory>

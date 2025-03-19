@@ -1,0 +1,25 @@
+{
+	"djerba":"/dummy/path/to/djerba",
+	"dare":"/dummy/path/to/dare",
+	"qcMapping":"/dummy/path/to/qc/mapping/system",
+	"pipelines":[
+		{"WGTS": [
+			{"inputs":["bcl"], "name":"bcl2fastq", "outputs":["fastq"]},
+			{"inputs":["fastq"], "name":"bwaMem", "outputs":["bam"]},
+			{"inputs":["fastq"], "name":"fastqc", "outputs":["metrics"]},
+			{"inputs":["fastq"], "name":"star", "outputs":["bam"]},
+			{"inputs":["bam"], "name":"rnaseqqc", "outputs":["metrics"]},
+			{"inputs":["bam"], "name":"bamqc", "outputs":["metrics"]},
+			{"inputs":["bam"], "name":"bamMergePreprocess", "outputs":["call-ready-bam"]},
+			{"inputs":["bam"], "name":"rsem", "outputs":["expression calls"]},
+			{"inputs":["bam"], "name":"arriba", "outputs":["fusion calls"]},
+			{"inputs":["call-ready-bam"], "name":"haplotypeCaller", "outputs":["gvcf"]},
+			{"inputs":["call-ready-bam"], "name":"mutect2", "outputs":["vcf"]},
+			{"inputs":["call-ready-bam"], "name":"varscan2", "outputs":["variants snp/indels","variants copy number"]},
+			{"inputs":["call-ready-bam"], "name":"delly", "outputs":["vcf-structural"]},
+			{"inputs":["bam","call-ready-bam","vcf-structural","fusion calls"], "name":"mavis2", "outputs":["SV/fusion tables"]},
+			{"inputs":["vcf"], "name":"vep", "outputs":["maf"]},
+			{"inputs":["variants snp/indels","variants copy number"], "name":"sequenza", "outputs":["seg"]}
+		]}
+	]
+}
