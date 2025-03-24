@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
+import static org.apache.commons.text.StringEscapeUtils.ESCAPE_XSI;
+
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
@@ -24,7 +26,6 @@ import ca.on.oicr.gsi.shesmu.plugin.refill.CustomRefillerParameter;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.prometheus.client.Counter;
@@ -37,6 +38,7 @@ import java.io.OutputStream;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Consumer;
@@ -191,14 +193,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
             c -> {
               final var roots =
                   c.getFileRoots().stream()
-                      .map(
-                          p -> {
-                            try {
-                              return MAPPER.writeValueAsString(p);
-                            } catch (JsonProcessingException e) {
-                              throw new RuntimeException(e);
-                            }
-                          })
+                      .map(ESCAPE_XSI::translate)
                       .collect(Collectors.joining(" "));
               return new SshJsonInputSource(
                   connections,
@@ -427,7 +422,12 @@ public class SftpServer extends JsonPluginFile<Configuration> {
         configuration.getHost(), configuration.getPort(), configuration.getUser());
     fileAttributes.invalidateAll();
     definer.clearRefillers();
+    final var defaultRefillerTimeout =
+        Objects.requireNonNullElse(configuration.getRefillerTimeout(), 38 * 60);
     for (final var entry : configuration.getRefillers().entrySet()) {
+      final var timeout =
+          Math.max(
+              Objects.requireNonNullElse(entry.getValue().getTimeout(), defaultRefillerTimeout), 1);
       definer.defineRefiller(
           entry.getKey(),
           String.format(
@@ -436,10 +436,12 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           new Definer.RefillDefiner() {
             @Override
             public <I> Definer.RefillInfo<I, SshRefiller<I>> info(Class<I> rowType) {
+
               return new Definer.RefillInfo<>() {
                 @Override
                 public SshRefiller<I> create() {
-                  return new SshRefiller<>(definer, entry.getKey(), entry.getValue().getCommand());
+                  return new SshRefiller<>(
+                      definer, entry.getKey(), entry.getValue().getCommand(), timeout);
                 }
 
                 @Override
