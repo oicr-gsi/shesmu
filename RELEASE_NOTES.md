@@ -11,9 +11,13 @@ For unreleased changes, see [changes](changes).
 
 ### Added
 
+* bclconvert function for runscanner plugin
+* start_time function for runscanner plugin
+* vidarr_analysis input format to the vidarr-plugin
 
 ### Fixed
 
+* Follow location header when 301 received on initial plugin configuration
 
 
 ## [1.42.0] - 2025-01-23
@@ -98,9 +102,9 @@ For unreleased changes, see [changes](changes).
 ### Fixed
 
 * Fix previous jira bugfix which did filter but didn't actually apply it
-  
+
 * Fix batchIds fetching in pinery plugin
-  
+
 
 
 ## [1.36.0] - 2024-10-02
@@ -126,7 +130,7 @@ For unreleased changes, see [changes](changes).
 
 * * Made `IntersectionJoin` match value/list keys instead of just list/list keys. This makes it match the docs.
 * Improved title matching for jira plugin
-  
+
 
 
 ## [1.34.2] - 2024-07-15
@@ -134,7 +138,7 @@ For unreleased changes, see [changes](changes).
 ### Fixed
 
 * Workaround for jira matching 'close enough' tickets
-  
+
 
 
 ## [1.34.1] - 2024-07-08
@@ -142,7 +146,7 @@ For unreleased changes, see [changes](changes).
 ### Fixed
 
 * Fix bug that caused logging level to be ignored
-  
+
 
 
 ## [1.34.0] - 2024-07-08
@@ -150,20 +154,20 @@ For unreleased changes, see [changes](changes).
 ### Added
 
 * Logging level for Definer log infrastructure (eg Loki plugin)
-  
+
 * Add Standard Output Logger as debugging alternative to Loki plugin.
-  
+
 * Debug logging for jira issues
-  
+
 
 ### Fixed
 
 * Fix comments not applying in some jira updates
-  
+
 * Fix compatibility with Jira V3 API
-  
+
 * Text search includes vidarr id
-  
+
 
 
 ## [1.33.0] - 2024-05-22
@@ -171,15 +175,15 @@ For unreleased changes, see [changes](changes).
 ### Added
 
 * Tag jira actions with their associated verb
-  
+
 
 ### Fixed
 
 * Publish docker images to ghcr instead of docker.io
-  
+
 * Switch jira error logging to using loki plugin if available
 * Fix Jira transitions failing when a resolution is included in the transition
-  
+
 
 
 ## [1.32.8] - 2024-04-26
@@ -209,7 +213,7 @@ For unreleased changes, see [changes](changes).
 
 * * Fix authentication using ShAWK client
 * Additional server logging for jira errors
-  
+
 * * Fix build issue with json-dir-list on Windows and MacOS
 
 
@@ -218,7 +222,7 @@ For unreleased changes, see [changes](changes).
 ### Fixed
 
 * Add fix for building rust projects in github actions
-  
+
 
 
 ## [1.32.3] - 2024-04-05
@@ -226,7 +230,7 @@ For unreleased changes, see [changes](changes).
 ### Fixed
 
 * Fix jira tickets not closing if open was once generated, and vice versa
-  
+
 
 
 ## [1.32.2] - 2024-03-27
@@ -234,7 +238,7 @@ For unreleased changes, see [changes](changes).
 ### Fixed
 
 * Fix module exports in guanyin plugin
-  
+
 * * Upgrade and fix logging infrastructure for sshj
 * Explicitly include bouncycastle to clear SSL errors
 
@@ -244,7 +248,7 @@ For unreleased changes, see [changes](changes).
 ### Fixed
 
 * Fix modular access errors
-  
+
 
 
 ## [1.32.0] - 2024-03-21
@@ -275,7 +279,7 @@ For unreleased changes, see [changes](changes).
 ### Fixed
 
 * Fixes 'Cannot cast Optional to Set' error; reinstates new Grouping logic
-  
+
 
 
 ## [1.31.0] - 2024-03-04
