@@ -1,1 +1,0 @@
-bclconvert function for runscanner plugin

@@ -1,1 +1,0 @@
-start_time function for runscanner plugin
