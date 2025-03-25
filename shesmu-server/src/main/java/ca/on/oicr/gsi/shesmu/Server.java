@@ -97,10 +97,7 @@ import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.common.TextFormat;
 import io.prometheus.client.hotspot.DefaultExports;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.Writer;
+import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -1599,7 +1596,7 @@ public final class Server implements ServerConfig, ActionServices {
           t.getResponseHeaders().set("Content-type", TextFormat.CONTENT_TYPE_004);
           t.sendResponseHeaders(200, 0);
           try (var os = t.getResponseBody();
-              Writer writer = new PrintWriter(os)) {
+              Writer writer = new OutputStreamWriter(os)) {
             TextFormat.write004(writer, CollectorRegistry.defaultRegistry.metricFamilySamples());
           }
         });
