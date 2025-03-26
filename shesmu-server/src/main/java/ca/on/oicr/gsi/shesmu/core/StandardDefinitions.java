@@ -488,6 +488,18 @@ public final class StandardDefinitions implements DefinitionRepository {
             new FunctionParameter("major", Imyhat.INTEGER),
             new FunctionParameter("minor", Imyhat.INTEGER),
             new FunctionParameter("patch", Imyhat.INTEGER)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "version_less_than"),
+            StandardDefinitions.class,
+            "version_less_than",
+            "Checks whether the supplied version tuple is less than version numbers provided.",
+            "$runtime.versionLessThan(%s, %s, %s, %s)",
+            Imyhat.BOOLEAN,
+            new FunctionParameter(
+                "version", Imyhat.tuple(Imyhat.INTEGER, Imyhat.INTEGER, Imyhat.INTEGER)),
+            new FunctionParameter("major", Imyhat.INTEGER),
+            new FunctionParameter("minor", Imyhat.INTEGER),
+            new FunctionParameter("patch", Imyhat.INTEGER)),
         FunctionDefinition.virtualMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "trim"),
             "trim",
@@ -904,6 +916,21 @@ public final class StandardDefinitions implements DefinitionRepository {
       return false;
     }
     return (Long) version.get(2) >= patch;
+  }
+
+  @RuntimeInterop
+  public static boolean version_less_than(Tuple version, long major, long minor, long patch) {
+    if ((Long) version.get(0) > major) {
+      return false;
+    }
+    if ((Long) version.get(0) == major) {
+      if ((Long) version.get(1) > minor) {
+        return false;
+      } else if ((Long) version.get(1) == minor) {
+        return (Long) version.get(2) < patch;
+      }
+    }
+    return true;
   }
 
   @Override
