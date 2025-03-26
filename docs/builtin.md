@@ -38,6 +38,7 @@ These functions are available on any instance:
 - `std::url::decode`: Convert a URL-encoded string back to a normal string.
 - `std::url::encode`: Convert a string to a URL-encoded string (also escaping `*`, even though that is not standard).
 - `std::version_at_least`: Checks whether the supplied version tuple is the same or greater than version numbers provided.
+- `std::version_less_than`: Checks whether the supplied version tuple is less than version numbers provided.
 
 Note that paths can be joined with the `+` operator and strings can be joined using interpolation (_e.g._, `"{x}{y}"`).
 
