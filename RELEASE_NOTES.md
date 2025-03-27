@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.44.0] - 2025-03-27
+
+### Added
+
+* `std::version_less_than` function
+
+
 ## [1.43.0] - 2025-03-24
 
 ### Added
