@@ -74,7 +74,9 @@ const vidarrStateRenderer = {
   monitor: (a) => [
     table(
       [
-        ["Vidarr ID", link(a.workflowRunUrl, a.info.id)],
+        ["Vidarr ID", link(
+		(a.info.completed ? a.workflowRunUrl.replace("status", "run") : a.workflowRunUrl), 
+		a.info.id)],
         ["Modified", timespan(a.modified)],
         ["Created", timespan(a.info.created)],
         ["Started", timespan(a.info.started)],
