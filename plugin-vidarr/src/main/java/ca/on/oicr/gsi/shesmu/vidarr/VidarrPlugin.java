@@ -111,7 +111,9 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                               .collect(Collectors.toSet()),
                                           analysisRecord.getLabels(),
                                           analysisRecord.getSize(),
-                                          analysisRecord.getId(),
+                                          String.format(
+                                              "vidarr:%s/file/%s",
+                                              ca.getInstanceName(), analysisRecord.getId()),
                                           analysisRecord.getMetatype(),
                                           analysisRecord.getPath()))
                               .collect(Collectors.toSet()),
@@ -126,7 +128,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                       new HashSet<>(ca.getInputFiles()),
                       ca.getWorkflowName(),
                       ca.getWorkflowName() + "/" + ca.getWorkflowVersion(),
-                      "vidarr:" + ca.getInstanceName() + "/run/" + ca.getId(),
+                      String.format("vidarr:%s/run/%s", ca.getInstanceName(), ca.getId()),
                       MAPPER.convertValue(
                           ca.getLabels(), new TypeReference<Map<String, JsonNode>>() {}),
                       IUSUtils.parseWorkflowVersion(ca.getWorkflowVersion())
