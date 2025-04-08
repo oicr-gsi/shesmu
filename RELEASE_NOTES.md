@@ -7,6 +7,17 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.45.0] - 2025-04-08
+
+### Changed
+
+* On Vidarr action card, if run is completed, link to run's `/run/<id>` page. If run is not completed, continue to link to run's `/status/<id>` page.
+
+### Fixed
+
+* Serve file `accession` in `vidarr_analysis` input format's `output_files` field (in place of file `id`)
+
+
 ## [1.44.0] - 2025-03-27
 
 ### Added
