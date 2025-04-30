@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.nabu;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Set;
 
 /** This class allows for proper deserialization of JSON data */
@@ -14,6 +15,7 @@ public class NabuCaseArchiveDto {
   private String filesCopiedToOffsiteArchiveStagingDir;
   private String filesLoadedIntoVidarrArchival;
   private Set<String> limsIds;
+  private ObjectNode metadata;
   private String modified;
   private long requisitionId;
   private Set<String> workflowRunIdsForOffsiteArchive;
@@ -45,6 +47,10 @@ public class NabuCaseArchiveDto {
 
   public Set<String> getLimsIds() {
     return limsIds;
+  }
+
+  public ObjectNode getMetadata() {
+    return metadata;
   }
 
   public String getModified() {
@@ -90,6 +96,10 @@ public class NabuCaseArchiveDto {
 
   public void setLimsIds(Set<String> limsIds) {
     this.limsIds = limsIds;
+  }
+
+  public void setMetadata(ObjectNode metadata) {
+    this.metadata = metadata;
   }
 
   public void setModified(String modified) {

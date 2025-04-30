@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.nabu;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
@@ -9,6 +10,7 @@ import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonListBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
@@ -53,12 +55,36 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
                           ? Optional.empty()
                           : Optional.of(Instant.parse(ca.getFilesLoadedIntoVidarrArchival())),
                       ca.getLimsIds(),
+                      deserializeMetadata(ca.getMetadata()),
                       Instant.parse(ca.getModified()),
                       ca.getRequisitionId(),
                       ca.getWorkflowRunIdsForOffsiteArchive(),
                       ca.getWorkflowRunIdsForVidarrArchival() == null
                           ? Optional.empty()
                           : Optional.of(ca.getWorkflowRunIdsForVidarrArchival())));
+    }
+
+    private Tuple deserializeMetadata(JsonNode metadata) {
+      if (metadata == null) {
+        return new Tuple();
+      } else {
+        return new Tuple(
+            metadata.findValue("case_total_size") == null
+                ? Optional.empty()
+                : metadata.get("case_total_size"),
+            metadata.findValue("offsite_archive_size") == null
+                ? Optional.empty()
+                : metadata.get("offsite_archive_size"),
+            metadata.findValue("onsite_archive_size") == null
+                ? Optional.empty()
+                : metadata.get("onsite_archive_size"),
+            metadata.findValue("assay_name") == null
+                ? Optional.empty()
+                : metadata.get("assay_name"),
+            metadata.findValue("assay_version") == null
+                ? Optional.empty()
+                : metadata.get("assay_version"));
+      }
     }
 
     @Override
@@ -131,7 +157,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
 
   @ShesmuAction(
       description = "send archiving info for case to Nabu (completes when files archived)")
-  public ArchiveCaseAction archive() {
+  public ArchiveCaseAction archive_case() {
     return new ArchiveCaseAction(definer);
   }
 
