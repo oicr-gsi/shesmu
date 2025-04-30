@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
@@ -27,6 +28,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   public String caseId;
   public long requisitionId;
   public Set<String> limsIds;
+  public Tuple metadata;
   public Set<String> workflowRunIdsForOffsiteArchive;
   public Set<String> workflowRunIdsForVidarrArchival;
   static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
@@ -57,6 +59,20 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     this.caseId = caseId;
   }
 
+  @ActionParameter(name = "lims_ids")
+  public void limsIds(Set<String> limsIds) {
+    this.limsIds = limsIds;
+  }
+
+  @ActionParameter(
+      name = "metadata",
+      type =
+          "o5case_total_size$qioffsite_archive_size$qionsite_archive_size$qiassay_name$qsassay_version$qs")
+  // If this object's size changes, the serialization code needs to change as well
+  public void metadata(Tuple metadata) {
+    this.metadata = metadata;
+  }
+
   @ActionParameter(name = "requisition_id")
   public void requisitionId(long requisitionId) {
     this.requisitionId = requisitionId;
@@ -70,11 +86,6 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   @ActionParameter(name = "workflow_run_ids_for_vidarr_archival")
   public void workflowRunIdsForVidarrArchival(Set<String> workflowRunIdsForVidarrArchival) {
     this.workflowRunIdsForVidarrArchival = workflowRunIdsForVidarrArchival;
-  }
-
-  @ActionParameter(name = "lims_ids")
-  public void limsIds(Set<String> limsIds) {
-    this.limsIds = limsIds;
   }
 
   @Override
@@ -101,6 +112,9 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
       return true;
     }
     if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
       return false;
     }
     final var other = (ArchiveCaseAction) obj;
@@ -131,29 +145,29 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
 
   @Override
   public int hashCode() {
-    return Objects.hash(owner, parameters, caseId, limsIds, requisitionId);
+    return Objects.hash(owner, parameters, caseId, limsIds, requisitionId, metadata);
   }
 
-  private String createRequestBody() {
-    var body =
-        "{ "
-            + "\"caseIdentifier\": \""
-            + this.caseId
-            + "\", "
-            + "\"requisitionId\": \""
-            + this.requisitionId
-            + "\", "
-            + "\"limsIds\": ["
-            + formatSetAsString(limsIds)
-            + "], "
-            + "\"workflowRunIdsForOffsiteArchive\": ["
-            + formatSetAsString(workflowRunIdsForOffsiteArchive)
-            + "], "
-            + "\"workflowRunIdsForVidarrArchival\": ["
-            + formatSetAsString(workflowRunIdsForVidarrArchival)
-            + "]"
-            + "}";
-    return body;
+  private String createRequestBody() throws JsonProcessingException {
+    return "{ "
+        + "\"caseIdentifier\": \""
+        + this.caseId
+        + "\", "
+        + "\"requisitionId\": \""
+        + this.requisitionId
+        + "\", "
+        + "\"limsIds\": ["
+        + formatSetAsString(limsIds)
+        + "], "
+        + "\"workflowRunIdsForOffsiteArchive\": ["
+        + formatSetAsString(workflowRunIdsForOffsiteArchive)
+        + "], "
+        + "\"workflowRunIdsForVidarrArchival\": ["
+        + formatSetAsString(workflowRunIdsForVidarrArchival)
+        + "], "
+        + "\"metadata\": "
+        + MAPPER.writeValueAsString(metadata.toString())
+        + "}";
   }
 
   private String formatSetAsString(Set<String> set) {
@@ -208,7 +222,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
       } else if (response.statusCode() == 201) {
         return ActionState.INFLIGHT;
       } else if (response.statusCode() == 200) {
-        final var results = response.body().get();
+        final NabuCaseArchiveDto results = response.body().get();
         return actionStatusFromArchive(results);
       } else {
         return ActionState.UNKNOWN;
@@ -247,7 +261,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
 
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
-    final var node = mapper.createObjectNode();
+    final ObjectNode node = mapper.createObjectNode();
     node.put("type", "nabu-archive");
     node.put("case_id", caseId);
     node.put("requisition_id", requisitionId);
@@ -258,6 +272,17 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
         node.putArray("workflow_run_ids_for_offsite_archive")::add);
     workflowRunIdsForVidarrArchival.forEach(
         node.putArray("workflow_run_ids_for_vidarr_archival")::add);
+    node.set("metadata", metadataToJson(mapper, metadata));
+    return node;
+  }
+
+  private JsonNode metadataToJson(ObjectMapper mapper, Tuple metadata) {
+    final ObjectNode node = mapper.createObjectNode();
+    node.put("case_total_size", metadata.get(0) == null ? null : ((Integer) metadata.get(0)));
+    node.put("offsite_archive_size", metadata.get(1) == null ? null : ((Integer) metadata.get(1)));
+    node.put("onsite_archive_size", metadata.get(2) == null ? null : ((Integer) metadata.get(2)));
+    node.put("assay_name", metadata.get(3) == null ? null : ((String) metadata.get(3)));
+    node.put("assay_version", metadata.get(4) == null ? null : ((String) metadata.get(4)));
     return node;
   }
 }

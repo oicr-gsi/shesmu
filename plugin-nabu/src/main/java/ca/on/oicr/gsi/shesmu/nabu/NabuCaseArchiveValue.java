@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.nabu;
 
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import java.time.Instant;
 import java.util.Objects;
@@ -15,6 +16,7 @@ public class NabuCaseArchiveValue {
   private final Optional<Instant> files_copied_to_offsite_archive_staging_dir;
   private final Optional<Instant> files_loaded_into_vidarr_archival;
   private final Set<String> lims_ids;
+  private final Tuple metadata;
   private final Instant modified;
   private final long requisition_id;
   private final Set<String> workflow_run_ids_for_offsite_archive;
@@ -28,6 +30,7 @@ public class NabuCaseArchiveValue {
       Optional<Instant> files_copied_to_offsite_archive_staging_dir,
       Optional<Instant> files_loaded_into_vidarr_archival,
       Set<String> lims_ids,
+      Tuple metadata,
       Instant modified,
       long requisition_id,
       Set<String> workflow_run_ids_for_offsite_archive,
@@ -40,6 +43,7 @@ public class NabuCaseArchiveValue {
     this.files_copied_to_offsite_archive_staging_dir = files_copied_to_offsite_archive_staging_dir;
     this.files_loaded_into_vidarr_archival = files_loaded_into_vidarr_archival;
     this.lims_ids = lims_ids;
+    this.metadata = metadata;
     this.modified = modified;
     this.requisition_id = requisition_id;
     this.workflow_run_ids_for_offsite_archive = workflow_run_ids_for_offsite_archive;
@@ -83,6 +87,7 @@ public class NabuCaseArchiveValue {
             == that.files_copied_to_offiste_archive_staging_dir()
         && files_loaded_into_vidarr_archival == that.files_loaded_into_vidarr_archival()
         && lims_ids.equals(that.lims_ids())
+        && metadata.equals(that.metadata())
         && modified.equals(that.modified())
         && requisition_id == that.requisition_id()
         && workflow_run_ids_for_offsite_archive.equals(that.workflow_run_ids_for_offsite_archive())
@@ -109,6 +114,7 @@ public class NabuCaseArchiveValue {
         files_copied_to_offsite_archive_staging_dir,
         files_loaded_into_vidarr_archival,
         lims_ids,
+        metadata,
         modified,
         requisition_id,
         workflow_run_ids_for_offsite_archive,
@@ -118,6 +124,14 @@ public class NabuCaseArchiveValue {
   @ShesmuVariable
   public Set<String> lims_ids() {
     return lims_ids;
+  }
+
+  @ShesmuVariable(
+      type =
+          "o5case_total_size$qioffsite_archive_size$qionsite_archive_size$qiassay_name$qsassay_version$qs")
+  // If this object's size changes, the deserialization code needs to change as well
+  public Tuple metadata() {
+    return metadata;
   }
 
   @ShesmuVariable
