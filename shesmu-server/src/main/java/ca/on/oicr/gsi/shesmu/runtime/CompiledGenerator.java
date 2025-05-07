@@ -792,6 +792,11 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
           .labelNames("filename")
           .register();
 
+  private static final Integer OLIVE_THREADS =
+      Optional.ofNullable(System.getenv("OLIVE_THREADS"))
+          .map(Integer::parseInt)
+          .orElse(Runtime.getRuntime().availableProcessors() / 2 + 1);
+
   static {
     try {
       final var lookup = MethodHandles.lookup();
@@ -905,8 +910,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
   private Optional<AutoUpdatingDirectory<Script>> scripts = Optional.empty();
   private final ExecutorService workExecutor =
       Executors.newFixedThreadPool(
-          Runtime.getRuntime().availableProcessors() / 2 + 1,
-          new ShesmuThreadFactory("olive", Thread.MIN_PRIORITY));
+          OLIVE_THREADS, new ShesmuThreadFactory("olive", Thread.MIN_PRIORITY));
 
   public CompiledGenerator(
       ScheduledExecutorService executor,

@@ -98,6 +98,7 @@ On a Linux server, create a systemd configuration in `/lib/systemd/system/shesmu
     Description=Shesmu decision-action server
 
     [Service]
+    Environment=SHESMU_INSTANCE="Instance Name"
     Environment=SHESMU_DATA=/srv/shesmu
     ExecStart=/usr/bin/java -p /srv/shesmu -m ca.on.oicr.gsi.shesmu.server/ca.on.oicr.gsi.shesmu.Server
     KillMode=process
@@ -123,3 +124,17 @@ lookups available to the script and the provenance variables and their types.
 To start doing something, write some olives. A description for olives is found
 in [the tutorial](tutorial.md). The [builtin](builtin.md) features won't get
 you too far, so also add some [plugins](index.md#plugins).
+
+## Performance Tuning
+
+Shesmu offers a number of tuning options depending on the workload and use case for your server.
+
+These options are provided as environment variables which will be defined in your Dockerfile or systemd service file.
+
+| Environment Variable | Type | Description                                                                    | Default                                  |
+|----------------------|------|--------------------------------------------------------------------------------|------------------------------------------|
+| WWW_THREADS          | int  | Number of threads dedicated to serving the front end.                          | Calculated based on number of CPU cores. | 
+| HOUSEKEEPING_THREADS | int  | Number of threads dedicated to scheduling server tasks.                        | Calculated based on number of CPU cores. |
+| DOWNLOAD_THREADS     | int  | Number of threads dedicated to serving input format data to federated servers. | Calculated based on number of CPU cores. |
+| OLIVE_THREADS        | int  | Number of threads dedicated to olive compilation and execution.                | Calculated based on number of CPU cores. |
+| ACTION_THREADS       | int  | Number of threads dedicated to executing actions.                              | Calculated based on number of CPU cores. |

@@ -170,6 +170,7 @@ public final class Server implements ServerConfig, ActionServices {
   private static final Pattern EQUAL = Pattern.compile("=");
   public static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private static final Map<String, Instant> INFLIGHT = new ConcurrentSkipListMap<>();
+
   private static final Gauge inflightCount =
       Gauge.build("shesmu_inflight_count", "The number of inflight processes.").register();
   private static final Gauge inflightOldest =
@@ -177,10 +178,6 @@ public final class Server implements ServerConfig, ActionServices {
               "shesmu_inflight_oldest_time",
               "The start time of the longest-running server process.")
           .register();
-  private static final String instanceName =
-      Optional.ofNullable(System.getenv("SHESMU_INSTANCE"))
-          .map("Shesmu - "::concat)
-          .orElse("Shesmu");
   private static final LatencyHistogram responseTime =
       new LatencyHistogram(
           "shesmu_http_request_time", "The time to respond to an HTTP request.", "url");
@@ -191,6 +188,23 @@ public final class Server implements ServerConfig, ActionServices {
       Counter.build("shesmu_version", "The Shesmu git commit version")
           .labelNames("version")
           .register();
+
+  private static final String instanceName =
+      Optional.ofNullable(System.getenv("SHESMU_INSTANCE"))
+          .map("Shesmu - "::concat)
+          .orElse("Shesmu");
+  private static final Integer WWW_THREADS =
+      Optional.ofNullable(System.getenv("WWW_THREADS"))
+          .map(Integer::parseInt)
+          .orElse(Runtime.getRuntime().availableProcessors());
+  private static final Integer HOUSEKEEPING_THREADS =
+      Optional.ofNullable(System.getenv("HOUSEKEEPING_THREADS"))
+          .map(Integer::parseInt)
+          .orElse(Runtime.getRuntime().availableProcessors());
+  private static final Integer DOWNLOAD_THREADS =
+      Optional.ofNullable(System.getenv("DOWNLOAD_THREADS"))
+          .map(Integer::parseInt)
+          .orElse(Math.min(Runtime.getRuntime().availableProcessors() / 2, 1));
 
   public static Map<String, String> getParameters(HttpExchange t) {
     return Optional.ofNullable(t.getRequestURI().getQuery())
@@ -261,13 +275,12 @@ public final class Server implements ServerConfig, ActionServices {
   // loads are  to happen here.
   private final ScheduledExecutorService executor =
       new ScheduledThreadPoolExecutor(
-          Runtime.getRuntime().availableProcessors(),
+          HOUSEKEEPING_THREADS,
           new ShesmuThreadFactory("server-housekeeping", Thread.NORM_PRIORITY));
   private final FileWatcher fileWatcher;
   private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
   private final AutoUpdatingDirectory<GuidedMeditation> guidedMeditations;
-  private final Semaphore inputDownloadSemaphore =
-      new Semaphore(Math.min(Runtime.getRuntime().availableProcessors() / 2, 1));
+  private final Semaphore inputDownloadSemaphore = new Semaphore(DOWNLOAD_THREADS);
   private final Map<String, String> jsonDumpers = new ConcurrentHashMap<>();
   private final MasterRunner master;
   private final ThreadLocal<Boolean> overloadState = ThreadLocal.withInitial(() -> false);
@@ -280,11 +293,11 @@ public final class Server implements ServerConfig, ActionServices {
   public final String version;
   private final Executor wwwExecutor =
       new ThreadPoolExecutor(
-          Runtime.getRuntime().availableProcessors(),
-          4 * Runtime.getRuntime().availableProcessors(),
+          WWW_THREADS,
+          4 * WWW_THREADS,
           1,
           TimeUnit.HOURS,
-          new ArrayBlockingQueue<>(10 * Runtime.getRuntime().availableProcessors()),
+          new ArrayBlockingQueue<>(10 * WWW_THREADS),
           new ShesmuThreadFactory("www-requests", Thread.MAX_PRIORITY),
           (runnable, threadPoolExecutor) -> {
             overloadState.set(true);

@@ -265,8 +265,6 @@ public final class ActionProcessor
     protected abstract Optional<Instant> get(Action action, Information info);
   }
 
-  public static final int ACTION_PERFORM_THREADS =
-      Math.max(1, Runtime.getRuntime().availableProcessors() / 2 + 1);
   private static final BinMember<Instant> ADDED =
       new BinMember<>() {
 
@@ -632,9 +630,15 @@ public final class ActionProcessor
   private final Set<SourceLocation> sourceLocations = ConcurrentHashMap.newKeySet();
   private final ScheduledExecutorService timeoutExecutor =
       Executors.newSingleThreadScheduledExecutor();
+
+  private static final Integer ACTION_THREADS =
+      Optional.ofNullable(System.getenv("ACTION_THREADS"))
+          .map(Integer::parseInt)
+          .orElse(Math.max(1, Runtime.getRuntime().availableProcessors() / 2 + 1));
+
   private final ExecutorService workExecutor =
       Executors.newFixedThreadPool(
-          ACTION_PERFORM_THREADS, new ShesmuThreadFactory("actions", Thread.MIN_PRIORITY));
+          ACTION_THREADS, new ShesmuThreadFactory("actions", Thread.MIN_PRIORITY));
 
   public ActionProcessor(URI baseUri, PluginManager manager, ActionServices actionServices) {
     super();
@@ -1759,7 +1763,7 @@ public final class ActionProcessor
                                 / 600)
                     .thenComparingInt(e -> e.getKey().priority()))
             .sorted(Map.Entry.comparingByValue())
-            .limit(1000L * ACTION_PERFORM_THREADS - currentRunningActions.get())
+            .limit(1000L * ACTION_THREADS - currentRunningActions.get())
             .collect(Collectors.toList());
     currentRunningActionsGauge.set(currentRunningActions.addAndGet(candidates.size()));
 
