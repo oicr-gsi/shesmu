@@ -11,7 +11,7 @@ For unreleased changes, see [changes](changes).
 
 ### Added
 
-
+* Environment variables for tuning thread pools
 
 ## [1.45.0] - 2025-04-08
 
