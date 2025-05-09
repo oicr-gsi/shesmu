@@ -67,7 +67,8 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   @ActionParameter(
       name = "metadata",
       type =
-          "o5case_total_size$qioffsite_archive_size$qionsite_archive_size$qiassay_name$qsassay_version$qs")
+          "o5assay_name$qsassay_version$qscase_total_size$qioffsite_archive_size$qionsite_archive_size$qi")
+  // Attributes must be listed alphabetically!!
   // If this object's size changes, the serialization code needs to change as well
   public void metadata(Tuple metadata) {
     this.metadata = metadata;
@@ -104,7 +105,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final var other = (ArchiveCaseAction) obj;
+    final ArchiveCaseAction other = (ArchiveCaseAction) obj;
     if (requisitionId != other.requisitionId) {
       return false;
     } else if (!limsIds.equals(other.limsIds)) {
@@ -132,29 +133,32 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
 
   @Override
   public int hashCode() {
-    return Objects.hash(owner, parameters, caseId, limsIds, requisitionId, metadata);
+    return Objects.hash(owner, parameters, caseId, limsIds, requisitionId);
   }
 
   private String createRequestBody() throws JsonProcessingException {
-    return "{ "
-        + "\"caseIdentifier\": \""
-        + this.caseId
-        + "\", "
-        + "\"requisitionId\": \""
-        + this.requisitionId
-        + "\", "
-        + "\"limsIds\": ["
-        + formatSetAsString(limsIds)
-        + "], "
-        + "\"workflowRunIdsForOffsiteArchive\": ["
-        + formatSetAsString(workflowRunIdsForOffsiteArchive)
-        + "], "
-        + "\"workflowRunIdsForVidarrArchival\": ["
-        + formatSetAsString(workflowRunIdsForVidarrArchival)
-        + "], "
-        + "\"metadata\": "
-        + MAPPER.writeValueAsString(metadata.toString())
-        + "}";
+    String body =
+        "{ "
+            + "\"caseIdentifier\": \""
+            + this.caseId
+            + "\", "
+            + "\"requisitionId\": "
+            + this.requisitionId
+            + ", "
+            + "\"limsIds\": ["
+            + formatSetAsString(limsIds)
+            + "], "
+            + "\"workflowRunIdsForOffsiteArchive\": ["
+            + formatSetAsString(workflowRunIdsForOffsiteArchive)
+            + "], "
+            + "\"workflowRunIdsForVidarrArchival\": ["
+            + formatSetAsString(workflowRunIdsForVidarrArchival)
+            + "], "
+            + "\"metadata\": "
+            + metadataToJson(MAPPER.createObjectNode(), metadata)
+                .toString() // call toString here to ensure the quotation marks are preserved
+            + "}";
+    return body;
   }
 
   private String formatSetAsString(Set<String> set) {
@@ -164,7 +168,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   @Override
   public ActionState perform(
       ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
-    final var overloaded = services.isOverloaded("all", "nabu");
+    final Set<String> overloaded = services.isOverloaded("all", "nabu");
     if (!overloaded.isEmpty()) {
       this.errors =
           Collections.singletonList("Overloaded services: " + String.join(", ", overloaded));
@@ -174,7 +178,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     HttpRequest.BodyPublisher body;
     try {
       body = HttpRequest.BodyPublishers.ofString(createRequestBody());
-      final var authentication = owner.get().NabuToken();
+      final String authentication = owner.get().NabuToken();
       authenticationHeader =
           authentication == null ? Optional.empty() : Optional.of(authentication);
     } catch (final Exception e) {
@@ -182,13 +186,13 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
       this.errors = Collections.singletonList(e.getMessage());
       return ActionState.FAILED;
     }
-    final var baseUrl = owner.get().NabuUrl();
+    final String baseUrl = owner.get().NabuUrl();
 
-    final var builder = HttpRequest.newBuilder(URI.create(baseUrl + "/case"));
+    final HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl + "/case"));
 
     authenticationHeader.ifPresent(header -> builder.header("X-API-KEY", header));
 
-    final var request =
+    final HttpRequest request =
         builder
             .header("Content-type", "application/json")
             .header("Accept", "application/json")
@@ -201,8 +205,12 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
       var response =
           HTTP_CLIENT.send(request, new JsonBodyHandler<>(MAPPER, NabuCaseArchiveDto.class));
       if (response.statusCode() == 409) {
+        owner.log(
+            "Attempted to resubmit case archive with conflicting data for case " + this.caseId,
+            LogLevel.ERROR,
+            new TreeMap<>());
         return ActionState.HALP;
-      } else if (response.statusCode() / 100 > 4) {
+      } else if (response.statusCode() >= 400) {
         NabuRequestErrors.labels(baseUrl).inc();
         showHTTPError(response, baseUrl);
         return ActionState.FAILED;
@@ -212,6 +220,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
         return ActionState.UNKNOWN;
       }
     } catch (final Exception e) {
+      e.printStackTrace();
       final Map<String, String> labels = new TreeMap<>();
       labels.put("url", baseUrl);
       owner.log(
@@ -256,17 +265,32 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
         node.putArray("workflow_run_ids_for_offsite_archive")::add);
     workflowRunIdsForVidarrArchival.forEach(
         node.putArray("workflow_run_ids_for_vidarr_archival")::add);
-    node.set("metadata", metadataToJson(mapper, metadata));
+    node.set("metadata", metadataToJson(mapper.createObjectNode(), metadata));
     return node;
   }
 
-  private JsonNode metadataToJson(ObjectMapper mapper, Tuple metadata) {
-    final ObjectNode node = mapper.createObjectNode();
-    node.put("case_total_size", metadata.get(0) == null ? null : ((Integer) metadata.get(0)));
-    node.put("offsite_archive_size", metadata.get(1) == null ? null : ((Integer) metadata.get(1)));
-    node.put("onsite_archive_size", metadata.get(2) == null ? null : ((Integer) metadata.get(2)));
-    node.put("assay_name", metadata.get(3) == null ? null : ((String) metadata.get(3)));
-    node.put("assay_version", metadata.get(4) == null ? null : ((String) metadata.get(4)));
+  private JsonNode metadataToJson(ObjectNode node, Tuple metadata) {
+    node.put("assay_name", unwrapString(metadata, 0));
+    node.put("assay_version", unwrapString(metadata, 1));
+    node.put("case_total_size", unwrapLong(metadata, 2));
+    node.put("offsite_archive_size", unwrapLong(metadata, 3));
+    node.put("onsite_archive_size", unwrapLong(metadata, 4));
     return node;
+  }
+
+  private Long unwrapLong(Tuple metadata, Integer index) {
+    if (metadata.get(index) == null) {
+      return null;
+    }
+    Optional<Long> maybeItem = (Optional<Long>) metadata.get(index);
+    return maybeItem.orElse(null);
+  }
+
+  private String unwrapString(Tuple metadata, Integer index) {
+    if (metadata.get(index) == null) {
+      return null;
+    }
+    Optional<String> maybeItem = (Optional<String>) metadata.get(index);
+    return maybeItem.orElse(null);
   }
 }

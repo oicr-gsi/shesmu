@@ -69,21 +69,21 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
         return new Tuple();
       } else {
         return new Tuple(
-            metadata.findValue("case_total_size") == null
-                ? Optional.empty()
-                : metadata.get("case_total_size"),
-            metadata.findValue("offsite_archive_size") == null
-                ? Optional.empty()
-                : metadata.get("offsite_archive_size"),
-            metadata.findValue("onsite_archive_size") == null
-                ? Optional.empty()
-                : metadata.get("onsite_archive_size"),
             metadata.findValue("assay_name") == null
                 ? Optional.empty()
-                : metadata.get("assay_name"),
+                : Optional.of(metadata.get("assay_name").textValue()),
             metadata.findValue("assay_version") == null
                 ? Optional.empty()
-                : metadata.get("assay_version"));
+                : Optional.of(metadata.get("assay_version").textValue()),
+            metadata.findValue("case_total_size") == null
+                ? Optional.empty()
+                : Optional.of(metadata.get("case_total_size").longValue()),
+            metadata.findValue("offsite_archive_size") == null
+                ? Optional.empty()
+                : Optional.of(metadata.get("offsite_archive_size").longValue()),
+            metadata.findValue("onsite_archive_size") == null
+                ? Optional.empty()
+                : Optional.of(metadata.get("onsite_archive_size").longValue()));
       }
     }
 
