@@ -128,7 +128,7 @@ public class NabuCaseArchiveValue {
 
   @ShesmuVariable(
       type =
-          "o5case_total_size$qioffsite_archive_size$qionsite_archive_size$qiassay_name$qsassay_version$qs")
+          "o5assay_name$qsassay_version$qscase_total_size$qioffsite_archive_size$qionsite_archive_size$qi")
   // If this object's size changes, the deserialization code needs to change as well
   public Tuple metadata() {
     return metadata;
