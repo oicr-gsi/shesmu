@@ -93,19 +93,6 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     return parameters;
   }
 
-  private ActionState actionStatusFromArchive(NabuCaseArchiveDto caseArchive) {
-    if (caseArchive.getCreated() != null) {
-      if (caseArchive.getCommvaultBackupJobId() != null
-          && caseArchive.getFilesCopiedToOffsiteArchiveStagingDir() != null
-          && caseArchive.getFilesLoadedIntoVidarrArchival() != null) {
-        return ActionState.SUCCEEDED;
-      } else {
-        return ActionState.INFLIGHT;
-      }
-    }
-    return ActionState.UNKNOWN;
-  }
-
   @Override
   public boolean equals(Object obj) {
     if (this == obj) {
@@ -215,15 +202,12 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
           HTTP_CLIENT.send(request, new JsonBodyHandler<>(MAPPER, NabuCaseArchiveDto.class));
       if (response.statusCode() == 409) {
         return ActionState.HALP;
-      } else if (response.statusCode() / 100 != 2) {
+      } else if (response.statusCode() / 100 > 4) {
         NabuRequestErrors.labels(baseUrl).inc();
         showHTTPError(response, baseUrl);
         return ActionState.FAILED;
-      } else if (response.statusCode() == 201) {
-        return ActionState.INFLIGHT;
-      } else if (response.statusCode() == 200) {
-        final NabuCaseArchiveDto results = response.body().get();
-        return actionStatusFromArchive(results);
+      } else if (response.statusCode() / 100 == 2) {
+        return ActionState.SUCCEEDED;
       } else {
         return ActionState.UNKNOWN;
       }
