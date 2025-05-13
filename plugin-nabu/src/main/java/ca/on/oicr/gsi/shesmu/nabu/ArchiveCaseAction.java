@@ -154,6 +154,19 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     return Objects.hash(owner, parameters, caseId, limsIds, requisitionId);
   }
 
+  private ActionState actionStatusFromArchive(NabuCaseArchiveDto caseArchive) {
+    if (caseArchive.getCreated() != null) {
+      if (caseArchive.getCommvaultBackupJobId() != null
+          && caseArchive.getFilesCopiedToOffsiteArchiveStagingDir() != null
+          && caseArchive.getFilesLoadedIntoVidarrArchival() != null) {
+        return ActionState.SUCCEEDED;
+      } else {
+        return ActionState.INFLIGHT;
+      }
+    }
+    return ActionState.UNKNOWN;
+  }
+
   private String createRequestBody() {
     String body =
         "{ "
@@ -247,10 +260,14 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
         } else {
           return (sendArchiveCaseActionRequest(HTTP_CLIENT, redirectLocation));
         }
-      } else if (response.statusCode() / 100 == 2) {
-        return ActionState.SUCCEEDED;
+      } else if (response.statusCode() == 201) {
+        return ActionState.INFLIGHT;
+      } else if (response.statusCode() == 200) {
+        final var results = response.body().get();
+        return actionStatusFromArchive(results);
+      } else {
+        return ActionState.UNKNOWN;
       }
-      return ActionState.UNKNOWN;
     } catch (Exception e) {
       e.printStackTrace();
       final Map<String, String> labels = new TreeMap<>();
