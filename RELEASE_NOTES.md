@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.47.0] - 2025-05-14
+
+### Added
+
+* Add metadata to Nabu archive_case action
+
+
 ## [1.46.0] - 2025-05-08
 
 ### Added
