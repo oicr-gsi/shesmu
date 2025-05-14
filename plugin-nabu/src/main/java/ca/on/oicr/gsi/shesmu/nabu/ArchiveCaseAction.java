@@ -5,10 +5,10 @@ import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -24,7 +24,12 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   private final Definer<NabuPlugin> owner;
   static final ObjectMapper MAPPER = new ObjectMapper();
   private List<String> errors = List.of();
+  public String assayName;
+  public String assayVersion;
   public String caseId;
+  public Long caseTotalSize;
+  public Long offsiteArchiveSize;
+  public Long onsiteArchiveSize;
   public long requisitionId;
   public Set<String> limsIds;
   public Set<String> workflowRunIdsForOffsiteArchive;
@@ -52,9 +57,39 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     parameters = rootParameters.putObject("parameters");
   }
 
+  @ActionParameter(name = "assay_name")
+  public void assayName(String assayName) {
+    this.assayName = assayName;
+  }
+
+  @ActionParameter(name = "assay_version")
+  public void assayVersion(String assayVersion) {
+    this.assayVersion = assayVersion;
+  }
+
   @ActionParameter(name = "case_identifier")
   public void caseId(String caseId) {
     this.caseId = caseId;
+  }
+
+  @ActionParameter(name = "case_total_size")
+  public void caseTotalSize(Long caseTotalSize) {
+    this.caseTotalSize = caseTotalSize;
+  }
+
+  @ActionParameter(name = "lims_ids")
+  public void limsIds(Set<String> limsIds) {
+    this.limsIds = limsIds;
+  }
+
+  @ActionParameter(name = "offsite_archive_size")
+  public void offsiteArchiveSize(Long offsiteArchiveSize) {
+    this.offsiteArchiveSize = offsiteArchiveSize;
+  }
+
+  @ActionParameter(name = "onsite_archive_size")
+  public void onsiteArchiveSize(Long onsiteArchiveSize) {
+    this.onsiteArchiveSize = onsiteArchiveSize;
   }
 
   @ActionParameter(name = "requisition_id")
@@ -72,27 +107,9 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     this.workflowRunIdsForVidarrArchival = workflowRunIdsForVidarrArchival;
   }
 
-  @ActionParameter(name = "lims_ids")
-  public void limsIds(Set<String> limsIds) {
-    this.limsIds = limsIds;
-  }
-
   @Override
   public ObjectNode parameters() {
     return parameters;
-  }
-
-  private ActionState actionStatusFromArchive(NabuCaseArchiveDto caseArchive) {
-    if (caseArchive.getCreated() != null) {
-      if (caseArchive.getCommvaultBackupJobId() != null
-          && caseArchive.getFilesCopiedToOffsiteArchiveStagingDir() != null
-          && caseArchive.getFilesLoadedIntoVidarrArchival() != null) {
-        return ActionState.SUCCEEDED;
-      } else {
-        return ActionState.INFLIGHT;
-      }
-    }
-    return ActionState.UNKNOWN;
   }
 
   @Override
@@ -103,7 +120,10 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     if (obj == null) {
       return false;
     }
-    final var other = (ArchiveCaseAction) obj;
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    final ArchiveCaseAction other = (ArchiveCaseAction) obj;
     if (requisitionId != other.requisitionId) {
       return false;
     } else if (!limsIds.equals(other.limsIds)) {
@@ -134,15 +154,28 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     return Objects.hash(owner, parameters, caseId, limsIds, requisitionId);
   }
 
+  private ActionState actionStatusFromArchive(NabuCaseArchiveDto caseArchive) {
+    if (caseArchive.getCreated() != null) {
+      if (caseArchive.getCommvaultBackupJobId() != null
+          && caseArchive.getFilesCopiedToOffsiteArchiveStagingDir() != null
+          && caseArchive.getFilesLoadedIntoVidarrArchival() != null) {
+        return ActionState.SUCCEEDED;
+      } else {
+        return ActionState.INFLIGHT;
+      }
+    }
+    return ActionState.UNKNOWN;
+  }
+
   private String createRequestBody() {
-    var body =
+    String body =
         "{ "
             + "\"caseIdentifier\": \""
             + this.caseId
             + "\", "
-            + "\"requisitionId\": \""
+            + "\"requisitionId\": "
             + this.requisitionId
-            + "\", "
+            + ", "
             + "\"limsIds\": ["
             + formatSetAsString(limsIds)
             + "], "
@@ -151,8 +184,16 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
             + "], "
             + "\"workflowRunIdsForVidarrArchival\": ["
             + formatSetAsString(workflowRunIdsForVidarrArchival)
-            + "]"
-            + "}";
+            + "], "
+            + "\"metadata\": "
+            + metadataToJson(
+                MAPPER,
+                assayName,
+                assayVersion,
+                caseTotalSize,
+                offsiteArchiveSize,
+                onsiteArchiveSize)
+            + " }";
     return body;
   }
 
@@ -163,48 +204,62 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   @Override
   public ActionState perform(
       ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
-    final var overloaded = services.isOverloaded("all", "nabu");
+    final Set<String> overloaded = services.isOverloaded("all", "nabu");
     if (!overloaded.isEmpty()) {
       this.errors =
           Collections.singletonList("Overloaded services: " + String.join(", ", overloaded));
       return ActionState.THROTTLED;
     }
 
-    HttpRequest.BodyPublisher body;
+    String baseUrl = owner.get().NabuUrl();
+    return sendArchiveCaseActionRequest(HTTP_CLIENT, baseUrl);
+  }
+
+  private HttpRequest buildRequest(String baseUrl) throws JsonProcessingException {
+    HttpRequest.BodyPublisher body = HttpRequest.BodyPublishers.ofString(createRequestBody());
+    final String authentication = owner.get().NabuToken();
+    authenticationHeader = authentication == null ? Optional.empty() : Optional.of(authentication);
+
+    final HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl + "/case"));
+
+    authenticationHeader.ifPresent(header -> builder.header("X-API-KEY", header));
+
+    return builder
+        .header("Content-type", "application/json")
+        .header("Accept", "application/json")
+        .POST(body)
+        .build();
+  }
+
+  private ActionState sendArchiveCaseActionRequest(HttpClient HTTP_CLIENT, String baseUrl) {
+    HttpRequest request;
     try {
-      body = HttpRequest.BodyPublishers.ofString(createRequestBody());
-      final var authentication = owner.get().NabuToken();
-      authenticationHeader =
-          authentication == null ? Optional.empty() : Optional.of(authentication);
-    } catch (final Exception e) {
+      request = buildRequest(baseUrl);
+    } catch (JsonProcessingException e) {
       e.printStackTrace();
       this.errors = Collections.singletonList(e.getMessage());
       return ActionState.FAILED;
     }
-    final var baseUrl = owner.get().NabuUrl();
-
-    final var builder = HttpRequest.newBuilder(URI.create(baseUrl + "/case"));
-
-    authenticationHeader.ifPresent(header -> builder.header("X-API-KEY", header));
-
-    final var request =
-        builder
-            .header("Content-type", "application/json")
-            .header("Accept", "application/json")
-            .POST(body)
-            .build();
-
-    owner.log("NABU REQUEST: " + request, LogLevel.DEBUG, null);
-
     try (var timer = NabuRequestTime.start(baseUrl)) {
       var response =
           HTTP_CLIENT.send(request, new JsonBodyHandler<>(MAPPER, NabuCaseArchiveDto.class));
       if (response.statusCode() == 409) {
+        owner.log(
+            "Attempted to resubmit case archive with conflicting data for case " + this.caseId,
+            LogLevel.ERROR,
+            new TreeMap<>());
         return ActionState.HALP;
-      } else if (response.statusCode() / 100 != 2) {
+      } else if (response.statusCode() >= 400) {
         NabuRequestErrors.labels(baseUrl).inc();
-        showHTTPError(response, baseUrl);
+        this.showHTTPError(response, baseUrl);
         return ActionState.FAILED;
+      } else if (response.statusCode() / 100 == 3) {
+        String redirectLocation = response.headers().firstValue("Location").orElse(null);
+        if (redirectLocation == null) {
+          return ActionState.UNKNOWN;
+        } else {
+          return (sendArchiveCaseActionRequest(HTTP_CLIENT, redirectLocation));
+        }
       } else if (response.statusCode() == 201) {
         return ActionState.INFLIGHT;
       } else if (response.statusCode() == 200) {
@@ -213,7 +268,8 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
       } else {
         return ActionState.UNKNOWN;
       }
-    } catch (final Exception e) {
+    } catch (Exception e) {
+      e.printStackTrace();
       final Map<String, String> labels = new TreeMap<>();
       labels.put("url", baseUrl);
       owner.log(
@@ -235,19 +291,23 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   }
 
   private void showHTTPError(HttpResponse<?> response, String url)
-      throws UnsupportedOperationException, IOException {
+      throws UnsupportedOperationException {
     final List<String> errors = new ArrayList<>();
     final Map<String, String> labels = new TreeMap<>();
     labels.put("url", url);
     owner.log("HTTP error: " + response.statusCode(), LogLevel.ERROR, labels);
     errors.add("HTTP error: " + response.statusCode());
+    if (response.body() != null && !response.body().toString().isEmpty()) {
+      owner.log("  error: " + response.body().toString(), LogLevel.ERROR, labels);
+      errors.add("Error: " + response.body().toString());
+    }
     NabuRequestErrors.labels(url).inc();
     this.errors = errors;
   }
 
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
-    final var node = mapper.createObjectNode();
+    final ObjectNode node = mapper.createObjectNode();
     node.put("type", "nabu-archive");
     node.put("case_id", caseId);
     node.put("requisition_id", requisitionId);
@@ -258,6 +318,26 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
         node.putArray("workflow_run_ids_for_offsite_archive")::add);
     workflowRunIdsForVidarrArchival.forEach(
         node.putArray("workflow_run_ids_for_vidarr_archival")::add);
+    node.set(
+        "metadata",
+        metadataToJson(
+            mapper, assayName, assayVersion, caseTotalSize, offsiteArchiveSize, onsiteArchiveSize));
+    return node;
+  }
+
+  private JsonNode metadataToJson(
+      ObjectMapper mapper,
+      String assayName,
+      String assayVersion,
+      Long caseTotalSize,
+      Long offsiteArchiveSize,
+      Long onsiteArchiveSize) {
+    ObjectNode node = mapper.createObjectNode();
+    node.put("assay_name", assayName);
+    node.put("assay_version", assayVersion);
+    node.put("case_total_size", caseTotalSize);
+    node.put("offsite_archive_size", offsiteArchiveSize);
+    node.put("onsite_archive_size", onsiteArchiveSize);
     return node;
   }
 }
