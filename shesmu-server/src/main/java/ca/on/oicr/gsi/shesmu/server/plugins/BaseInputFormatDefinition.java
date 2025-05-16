@@ -49,6 +49,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -74,6 +75,7 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
   public static final class Configuration {
     private AuthenticationConfiguration authentication;
     private int ttl;
+    private int timeout;
     private String url;
 
     public AuthenticationConfiguration getAuthentication() {
@@ -98,6 +100,14 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
 
     public void setUrl(String url) {
       this.url = url;
+    }
+
+    public int getTimeout() {
+      return timeout;
+    }
+
+    public void setTimeout(int timeout) {
+      this.timeout = timeout;
     }
   }
 
@@ -289,8 +299,14 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
       protected Stream<Object> fetch(Instant lastUpdated) throws Exception {
         if (config.isEmpty()) return new ErrorableStream<>(Stream.empty(), false);
         final String url = config.get().getUrl();
-        final HttpRequest.Builder request =
+        HttpRequest.Builder request =
             HttpRequest.newBuilder(URI.create(url)).GET().version(Version.HTTP_1_1);
+
+        // Docs: "A `timeout` of `-1` will cause requests to download indefinitely."
+        // Check for >= 0 in case some prankster tries -2
+        if (config.get().getTimeout() >= 0)
+          request = request.timeout(Duration.ofMinutes(config.get().getTimeout()));
+
         AuthenticationConfiguration.addAuthenticationHeader(
             config.get().getAuthentication(), request);
         HttpResponse<InputStream> response =
