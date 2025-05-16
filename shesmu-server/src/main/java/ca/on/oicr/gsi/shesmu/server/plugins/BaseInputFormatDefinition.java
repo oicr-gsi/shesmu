@@ -30,10 +30,12 @@ import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.gsi.status.TableRowWriter;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
@@ -44,6 +46,7 @@ import java.lang.invoke.MethodType;
 import java.net.URI;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -108,8 +111,9 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
             @Override
             protected Stream<Object> fetch(Object key, String label, Instant lastUpdated)
                 throws Exception {
-              try (final var input = source.fetch(key);
-                  final var parser = RuntimeSupport.MAPPER.getFactory().createParser(input)) {
+              try (final InputStream input = source.fetch(key);
+                  final JsonParser parser =
+                      RuntimeSupport.MAPPER.getFactory().createParser(input)) {
                 final List<Object> results = new ArrayList<>();
                 if (parser.nextToken() != JsonToken.START_ARRAY) {
                   throw new IllegalStateException("Expected an array");
@@ -151,8 +155,9 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
             @Override
             protected Stream<Object> fetch(Instant lastUpdated) throws Exception {
               source.ttl().ifPresent(cache::ttl);
-              try (final var input = source.fetch();
-                  final var parser = RuntimeSupport.MAPPER.getFactory().createParser(input)) {
+              try (final InputStream input = source.fetch();
+                  final JsonParser parser =
+                      RuntimeSupport.MAPPER.getFactory().createParser(input)) {
                 final List<Object> results = new ArrayList<>();
                 if (parser.nextToken() != JsonToken.START_ARRAY) {
                   throw new IllegalStateException("Expected an array");
@@ -283,12 +288,14 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
       @Override
       protected Stream<Object> fetch(Instant lastUpdated) throws Exception {
         if (config.isEmpty()) return new ErrorableStream<>(Stream.empty(), false);
-        final var url = config.get().getUrl();
-        final var request = HttpRequest.newBuilder(URI.create(url)).GET().version(Version.HTTP_1_1);
+        final String url = config.get().getUrl();
+        final HttpRequest.Builder request =
+            HttpRequest.newBuilder(URI.create(url)).GET().version(Version.HTTP_1_1);
         AuthenticationConfiguration.addAuthenticationHeader(
             config.get().getAuthentication(), request);
-        var response = Server.HTTP_CLIENT.send(request.build(), BodyHandlers.ofInputStream());
-        try (var parser = RuntimeSupport.MAPPER.getFactory().createParser(response.body())) {
+        HttpResponse<InputStream> response =
+            Server.HTTP_CLIENT.send(request.build(), BodyHandlers.ofInputStream());
+        try (JsonParser parser = RuntimeSupport.MAPPER.getFactory().createParser(response.body())) {
           if (response.statusCode() != 200) return new ErrorableStream<>(Stream.empty(), false);
           final List<Object> results = new ArrayList<>();
           if (parser.nextToken() != JsonToken.START_ARRAY) {
@@ -482,7 +489,7 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
                                     .handle()
                                     .asType(MethodType.methodType(Object.class, Object.class))))))
             .toList();
-    for (final var variable : variables) {
+    for (final InputVariableDefinition variable : variables) {
       INPUT_VARIABLES_REGISTRY.put(
           new Pair<>(name, variable.name()), new ConstantCallSite(variable.handle()));
     }
@@ -535,8 +542,8 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
   }
 
   private Tuple readJson(ObjectNode node) {
-    final var values = new Object[variables.size()];
-    for (var i = 0; i < values.length; i++) {
+    final Object[] values = new Object[variables.size()];
+    for (int i = 0; i < values.length; i++) {
       values[i] = variables.get(i).read(node);
     }
     return new Tuple(values);
@@ -560,7 +567,7 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
         value -> {
           try {
             generator.writeStartObject();
-            for (var fieldWriter : fieldWriters) {
+            for (Pair<String, JsonFieldWriter> fieldWriter : fieldWriters) {
               generator.writeFieldName(fieldWriter.first());
               fieldWriter.second().write(generator, value);
             }
