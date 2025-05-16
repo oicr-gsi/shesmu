@@ -25,11 +25,14 @@ To access data remotely, create a file ending in `.`_format_`-remote` as follows
     {
        "authentication": null,
        "url": "http://some.url/format/endpoint",
-       "ttl": 10
+       "ttl": 10,
+       "timeout": 20
     }
 
-where `url` is the URL to download the data and `ttl` is the number of minutes
-to cache the data for. If no authentication is required, `null` can be used for
+where `url` is the URL to download the data, `ttl` is the number of minutes
+to cache the data for, and `timeout` is the number of minutes to permit the download to continue. 
+A `timeout` of `-1` will cause requests to download indefinitely. 
+If no authentication is required, `null` can be used for
 `"authentication"`. Alternatively, it can be one of the following
 authentication methods.
 
