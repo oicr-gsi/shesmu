@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [v1.2.3] - 2025-05-21
+
+### Added
+
+* timeout field for remote json input formats
+
+
 ## [1.48.0] - 2025-05-16
 
 ### Added
