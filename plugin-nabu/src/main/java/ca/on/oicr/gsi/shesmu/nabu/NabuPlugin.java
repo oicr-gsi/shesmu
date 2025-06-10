@@ -41,6 +41,11 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
           .map(
               ca ->
                   new NabuCaseArchiveValue(
+                      (ca.getArchiveNote() == null
+                          ? Optional.empty()
+                          : Optional.of(ca.getArchiveNote())),
+                      ca.getArchiveTarget(),
+                      ca.getArchiveWith(),
                       ca.getCaseFilesUnloaded() == null
                           ? Optional.empty()
                           : Optional.of(Instant.parse(ca.getCaseFilesUnloaded())),
@@ -69,21 +74,11 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
         return new Tuple();
       } else {
         return new Tuple(
-            metadata.findValue("assay_name") == null
-                ? Optional.empty()
-                : Optional.of(metadata.get("assay_name").textValue()),
-            metadata.findValue("assay_version") == null
-                ? Optional.empty()
-                : Optional.of(metadata.get("assay_version").textValue()),
-            metadata.findValue("case_total_size") == null
-                ? Optional.empty()
-                : Optional.of(metadata.get("case_total_size").longValue()),
-            metadata.findValue("offsite_archive_size") == null
-                ? Optional.empty()
-                : Optional.of(metadata.get("offsite_archive_size").longValue()),
-            metadata.findValue("onsite_archive_size") == null
-                ? Optional.empty()
-                : Optional.of(metadata.get("onsite_archive_size").longValue()));
+            findMetadataTextValue(metadata, "assayName", "assay_name"),
+            findMetadataTextValue(metadata, "assayVersion", "assay_version"),
+            findMetadataLongValue(metadata, "caseTotalSize", "case_total_size"),
+            findMetadataLongValue(metadata, "offsiteArchiveSize", "offsite_archive_size"),
+            findMetadataLongValue(metadata, "onsiteArchiveSize", "onsite_archive_size"));
       }
     }
 
@@ -195,5 +190,29 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
     } catch (IOException e) {
       throw new RuntimeException("Unable to get authentication method");
     }
+  }
+
+  private Optional<String> findMetadataTextValue(
+      JsonNode metadata, String bestKey, String backupKey) {
+    // metadata for earlier case archives were submitted with snake case keys
+    if (metadata.findValue(bestKey) != null) {
+      return Optional.of(metadata.findValue(bestKey).textValue());
+    }
+    if (metadata.findValue(backupKey) != null) {
+      return Optional.of(metadata.findValue(backupKey).textValue());
+    }
+    return Optional.empty();
+  }
+
+  private Optional<Long> findMetadataLongValue(
+      JsonNode metadata, String bestKey, String backupKey) {
+    // metadata for earlier case archives were submitted with snake case keys
+    if (metadata.findValue(bestKey) != null) {
+      return Optional.of(metadata.findValue(bestKey).longValue());
+    }
+    if (metadata.findValue(backupKey) != null) {
+      return Optional.of(metadata.findValue(backupKey).longValue());
+    }
+    return Optional.empty();
   }
 }

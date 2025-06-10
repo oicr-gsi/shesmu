@@ -8,6 +8,9 @@ import java.util.Set;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class NabuCaseArchiveDto {
 
+  private String archiveNote;
+  private String archiveTarget;
+  private Set<String> archiveWith;
   private String caseFilesUnloaded;
   private String caseIdentifier;
   private String commvaultBackupJobId;
@@ -20,6 +23,18 @@ public class NabuCaseArchiveDto {
   private long requisitionId;
   private Set<String> workflowRunIdsForOffsiteArchive;
   private Set<String> workflowRunIdsForVidarrArchival;
+
+  public String getArchiveNote() {
+    return archiveNote;
+  }
+
+  public String getArchiveTarget() {
+    return archiveTarget;
+  }
+
+  public Set<String> getArchiveWith() {
+    return archiveWith;
+  }
 
   public String getCaseFilesUnloaded() {
     return caseFilesUnloaded;
@@ -67,6 +82,18 @@ public class NabuCaseArchiveDto {
 
   public Set<String> getWorkflowRunIdsForVidarrArchival() {
     return workflowRunIdsForVidarrArchival;
+  }
+
+  public void setArchiveNote(String archiveNote) {
+    this.archiveNote = archiveNote;
+  }
+
+  public void setArchiveTarget(String archiveTarget) {
+    this.archiveTarget = archiveTarget;
+  }
+
+  public void setArchiveWith(Set<String> archiveWith) {
+    this.archiveWith = archiveWith;
   }
 
   public void setCaseFilesUnloaded(String caseFilesUnloaded) {

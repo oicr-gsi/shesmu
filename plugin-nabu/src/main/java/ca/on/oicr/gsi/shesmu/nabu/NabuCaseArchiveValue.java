@@ -9,6 +9,9 @@ import java.util.Set;
 
 public class NabuCaseArchiveValue {
 
+  private final Optional<String> archive_note;
+  private final String archive_target;
+  private final Set<String> archive_with;
   private final Optional<Instant> case_files_unloaded;
   private final String case_identifier;
   private final Optional<String> commvault_backup_job_id;
@@ -23,6 +26,9 @@ public class NabuCaseArchiveValue {
   private final Optional<Set<String>> workflow_run_ids_for_vidarr_archival;
 
   public NabuCaseArchiveValue(
+      Optional<String> archive_note,
+      String archive_target,
+      Set<String> archive_with,
       Optional<Instant> case_files_unloaded,
       String case_identifier,
       Optional<String> commvault_backup_job_id,
@@ -36,6 +42,9 @@ public class NabuCaseArchiveValue {
       Set<String> workflow_run_ids_for_offsite_archive,
       Optional<Set<String>> workflow_run_ids_for_vidarr_archival) {
     super();
+    this.archive_note = archive_note;
+    this.archive_target = archive_target;
+    this.archive_with = archive_with;
     this.case_files_unloaded = case_files_unloaded;
     this.case_identifier = case_identifier;
     this.commvault_backup_job_id = commvault_backup_job_id;
@@ -48,6 +57,21 @@ public class NabuCaseArchiveValue {
     this.requisition_id = requisition_id;
     this.workflow_run_ids_for_offsite_archive = workflow_run_ids_for_offsite_archive;
     this.workflow_run_ids_for_vidarr_archival = workflow_run_ids_for_vidarr_archival;
+  }
+
+  @ShesmuVariable
+  public Optional<String> archive_note() {
+    return archive_note;
+  }
+
+  @ShesmuVariable
+  public String archive_target() {
+    return archive_target;
+  }
+
+  @ShesmuVariable
+  public Set<String> archive_with() {
+    return archive_with;
   }
 
   @ShesmuVariable
@@ -79,7 +103,9 @@ public class NabuCaseArchiveValue {
       return false;
     }
     NabuCaseArchiveValue that = (NabuCaseArchiveValue) o;
-    return case_files_unloaded == that.case_files_unloaded()
+    return archive_target.equals(that.archive_target())
+        && archive_with.equals(that.archive_with())
+        && case_files_unloaded == that.case_files_unloaded()
         && case_identifier.equals(that.case_identifier())
         && commvault_backup_job_id.equals(that.commvault_backup_job_id())
         && created.equals(that.created())
@@ -107,6 +133,8 @@ public class NabuCaseArchiveValue {
   @Override
   public int hashCode() {
     return Objects.hash(
+        archive_target,
+        archive_with,
         case_files_unloaded,
         case_identifier,
         commvault_backup_job_id,

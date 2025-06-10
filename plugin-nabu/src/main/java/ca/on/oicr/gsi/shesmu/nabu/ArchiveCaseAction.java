@@ -24,9 +24,12 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   private final Definer<NabuPlugin> owner;
   static final ObjectMapper MAPPER = new ObjectMapper();
   private List<String> errors = List.of();
+  public Optional<String> archiveNote;
+  public String archiveTarget;
+  public Set<String> archiveWith;
   public String assayName;
   public String assayVersion;
-  public String caseId;
+  public String caseIdentifier;
   public Long caseTotalSize;
   public Long offsiteArchiveSize;
   public Long onsiteArchiveSize;
@@ -67,9 +70,24 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     this.assayVersion = assayVersion;
   }
 
+  @ActionParameter(name = "archive_note")
+  public void archiveNote(Optional<String> archiveNote) {
+    this.archiveNote = archiveNote;
+  }
+
+  @ActionParameter(name = "archive_target")
+  public void archiveTarget(String archiveTarget) {
+    this.archiveTarget = archiveTarget;
+  }
+
+  @ActionParameter(name = "archive_with")
+  public void archiveWith(Set<String> archiveWith) {
+    this.archiveWith = archiveWith;
+  }
+
   @ActionParameter(name = "case_identifier")
   public void caseId(String caseId) {
-    this.caseId = caseId;
+    this.caseIdentifier = caseId;
   }
 
   @ActionParameter(name = "case_total_size")
@@ -131,7 +149,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     } else if (!parameters.equals(other.parameters)) {
       return false;
     }
-    return caseId.equals(other.caseId);
+    return caseIdentifier.equals(other.caseIdentifier);
   }
 
   @Override
@@ -139,7 +157,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     try {
       digest.accept(MAPPER.writeValueAsBytes(owner));
       digest.accept(new byte[] {0});
-      digest.accept(caseId.getBytes(StandardCharsets.UTF_8));
+      digest.accept(caseIdentifier.getBytes(StandardCharsets.UTF_8));
       digest.accept(new byte[] {0});
       digest.accept(Utils.toBytes(requisitionId));
       digest.accept(MAPPER.writeValueAsBytes(limsIds));
@@ -151,7 +169,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
 
   @Override
   public int hashCode() {
-    return Objects.hash(owner, parameters, caseId, limsIds, requisitionId);
+    return Objects.hash(owner, parameters, caseIdentifier, limsIds, requisitionId);
   }
 
   private ActionState actionStatusFromArchive(NabuCaseArchiveDto caseArchive) {
@@ -170,8 +188,17 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   private String createRequestBody() {
     String body =
         "{ "
+            + "\"archiveNote\": "
+            + (this.archiveNote.map(s -> String.format("\"%s\"", s)).orElse(null))
+            + ", "
+            + "\"archiveTarget\": \""
+            + this.archiveTarget
+            + ", "
+            + "\"archiveWith\": ["
+            + formatSetAsString(this.archiveWith)
+            + "], "
             + "\"caseIdentifier\": \""
-            + this.caseId
+            + this.caseIdentifier
             + "\", "
             + "\"requisitionId\": "
             + this.requisitionId
@@ -245,13 +272,18 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
           HTTP_CLIENT.send(request, new JsonBodyHandler<>(MAPPER, NabuCaseArchiveDto.class));
       if (response.statusCode() == 409) {
         owner.log(
-            "Attempted to resubmit case archive with conflicting data for case " + this.caseId,
+            "Attempted to resubmit case archive with conflicting data for case "
+                + this.caseIdentifier,
             LogLevel.ERROR,
             new TreeMap<>());
         return ActionState.HALP;
       } else if (response.statusCode() >= 400) {
         NabuRequestErrors.labels(baseUrl).inc();
-        this.showHTTPError(response, baseUrl);
+        try {
+          this.showHTTPError(response, baseUrl);
+        } catch (JsonProcessingException e) {
+          this.errors.add("Additional error decoding Nabu response");
+        }
         return ActionState.FAILED;
       } else if (response.statusCode() / 100 == 3) {
         String redirectLocation = response.headers().firstValue("Location").orElse(null);
@@ -291,7 +323,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   }
 
   private void showHTTPError(HttpResponse<?> response, String url)
-      throws UnsupportedOperationException {
+      throws UnsupportedOperationException, JsonProcessingException {
     final List<String> errors = new ArrayList<>();
     final Map<String, String> labels = new TreeMap<>();
     labels.put("url", url);
@@ -299,7 +331,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     errors.add("HTTP error: " + response.statusCode());
     if (response.body() != null && !response.body().toString().isEmpty()) {
       owner.log("  error: " + response.body().toString(), LogLevel.ERROR, labels);
-      errors.add("Error: " + response.body().toString());
+      errors.add("Error: " + MAPPER.writeValueAsString(response.body()));
     }
     NabuRequestErrors.labels(url).inc();
     this.errors = errors;
@@ -309,15 +341,16 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   public ObjectNode toJson(ObjectMapper mapper) {
     final ObjectNode node = mapper.createObjectNode();
     node.put("type", "nabu-archive");
-    node.put("case_id", caseId);
-    node.put("requisition_id", requisitionId);
+    node.put("archiveNote", archiveNote.orElse(null));
+    node.put("archiveTarget", archiveTarget);
+    archiveWith.forEach(node.putArray("archiveWith")::add);
+    node.put("caseIdentifier", caseIdentifier);
+    node.put("requisitionId", requisitionId);
     node.set("parameters", parameters);
     errors.forEach(node.putArray("errors")::add);
-    limsIds.forEach(node.putArray("lims_ids")::add);
-    workflowRunIdsForOffsiteArchive.forEach(
-        node.putArray("workflow_run_ids_for_offsite_archive")::add);
-    workflowRunIdsForVidarrArchival.forEach(
-        node.putArray("workflow_run_ids_for_vidarr_archival")::add);
+    limsIds.forEach(node.putArray("limsIds")::add);
+    workflowRunIdsForOffsiteArchive.forEach(node.putArray("workflowRunIdsForOffsiteArchive")::add);
+    workflowRunIdsForVidarrArchival.forEach(node.putArray("workflowRunIdsForVidarrArchival")::add);
     node.set(
         "metadata",
         metadataToJson(
@@ -333,11 +366,11 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
       Long offsiteArchiveSize,
       Long onsiteArchiveSize) {
     ObjectNode node = mapper.createObjectNode();
-    node.put("assay_name", assayName);
-    node.put("assay_version", assayVersion);
-    node.put("case_total_size", caseTotalSize);
-    node.put("offsite_archive_size", offsiteArchiveSize);
-    node.put("onsite_archive_size", onsiteArchiveSize);
+    node.put("assayName", assayName);
+    node.put("assayVersion", assayVersion);
+    node.put("caseTotalSize", caseTotalSize);
+    node.put("offsiteArchiveSize", offsiteArchiveSize);
+    node.put("onsiteArchiveSize", onsiteArchiveSize);
     return node;
   }
 }
