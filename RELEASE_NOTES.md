@@ -31,13 +31,14 @@ For unreleased changes, see [changes](changes).
 
 ### Added
 
-* * Nabu v3.12.0: add Nabu ArchiveCaseAction fields `archiveNote`, `archiveTarget`, `archiveWith`
+* Nabu v3.12.0: add Nabu ArchiveCaseAction fields `archiveNote`, `archiveTarget`, `archiveWith`
 
 
 ## [1.48.0] - 2025-05-16
 
 ### Added
 
+* Timeout field for remote json input formats
 
 
 ## [1.47.0] - 2025-05-14
@@ -52,6 +53,7 @@ For unreleased changes, see [changes](changes).
 ### Added
 
 * Environment variables for tuning thread pools
+
 
 ## [1.45.0] - 2025-04-08
 
