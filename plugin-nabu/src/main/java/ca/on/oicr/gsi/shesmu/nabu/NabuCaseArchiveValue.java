@@ -9,7 +9,6 @@ import java.util.Set;
 
 public class NabuCaseArchiveValue {
 
-  private final Optional<String> archive_note;
   private final String archive_target;
   private final Set<String> archive_with;
   private final Optional<Instant> case_files_unloaded;
@@ -26,7 +25,6 @@ public class NabuCaseArchiveValue {
   private final Optional<Set<String>> workflow_run_ids_for_vidarr_archival;
 
   public NabuCaseArchiveValue(
-      Optional<String> archive_note,
       String archive_target,
       Set<String> archive_with,
       Optional<Instant> case_files_unloaded,
@@ -42,7 +40,6 @@ public class NabuCaseArchiveValue {
       Set<String> workflow_run_ids_for_offsite_archive,
       Optional<Set<String>> workflow_run_ids_for_vidarr_archival) {
     super();
-    this.archive_note = archive_note;
     this.archive_target = archive_target;
     this.archive_with = archive_with;
     this.case_files_unloaded = case_files_unloaded;
@@ -57,11 +54,6 @@ public class NabuCaseArchiveValue {
     this.requisition_id = requisition_id;
     this.workflow_run_ids_for_offsite_archive = workflow_run_ids_for_offsite_archive;
     this.workflow_run_ids_for_vidarr_archival = workflow_run_ids_for_vidarr_archival;
-  }
-
-  @ShesmuVariable
-  public Optional<String> archive_note() {
-    return archive_note;
   }
 
   @ShesmuVariable
@@ -156,7 +148,7 @@ public class NabuCaseArchiveValue {
 
   @ShesmuVariable(
       type =
-          "o5assay_name$qsassay_version$qscase_total_size$qioffsite_archive_size$qionsite_archive_size$qi")
+          "o6archive_note$qsassay_name$qsassay_version$qscase_total_size$qioffsite_archive_size$qionsite_archive_size$qi")
   // If this object's size changes, the deserialization code needs to change as well
   public Tuple metadata() {
     return metadata;

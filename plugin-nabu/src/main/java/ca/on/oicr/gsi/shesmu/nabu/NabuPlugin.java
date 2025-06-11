@@ -41,9 +41,6 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
           .map(
               ca ->
                   new NabuCaseArchiveValue(
-                      (ca.getArchiveNote() == null
-                          ? Optional.empty()
-                          : Optional.of(ca.getArchiveNote())),
                       ca.getArchiveTarget(),
                       ca.getArchiveWith(),
                       ca.getCaseFilesUnloaded() == null
@@ -74,6 +71,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
         return new Tuple();
       } else {
         return new Tuple(
+            findMetadataTextValue(metadata, "archiveNote", "archive_note"),
             findMetadataTextValue(metadata, "assayName", "assay_name"),
             findMetadataTextValue(metadata, "assayVersion", "assay_version"),
             findMetadataLongValue(metadata, "caseTotalSize", "case_total_size"),
