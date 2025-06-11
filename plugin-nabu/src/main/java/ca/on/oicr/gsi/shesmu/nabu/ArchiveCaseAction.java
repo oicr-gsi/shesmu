@@ -42,7 +42,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   private final ObjectNode rootParameters = MAPPER.createObjectNode();
   private Optional<String> authenticationHeader = Optional.empty();
 
-  private static final Counter NabuRequestErrors =
+  private static final Counter nabuRequestErrors =
       Counter.build(
               "shesmu_nabu_request_errors",
               "The number of errors trying to countact the Nabu web service.")
@@ -188,12 +188,9 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   private String createRequestBody() {
     String body =
         "{ "
-            + "\"archiveNote\": "
-            + (this.archiveNote.map(s -> String.format("\"%s\"", s)).orElse(null))
-            + ", "
             + "\"archiveTarget\": \""
             + this.archiveTarget
-            + ", "
+            + "\", "
             + "\"archiveWith\": ["
             + formatSetAsString(this.archiveWith)
             + "], "
@@ -215,6 +212,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
             + "\"metadata\": "
             + metadataToJson(
                 MAPPER,
+                archiveNote,
                 assayName,
                 assayVersion,
                 caseTotalSize,
@@ -278,7 +276,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
             new TreeMap<>());
         return ActionState.HALP;
       } else if (response.statusCode() >= 400) {
-        NabuRequestErrors.labels(baseUrl).inc();
+        nabuRequestErrors.labels(baseUrl).inc();
         try {
           this.showHTTPError(response, baseUrl);
         } catch (JsonProcessingException e) {
@@ -307,7 +305,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
       owner.log(
           "Error performing case archiving action: " + e.getMessage(), LogLevel.ERROR, labels);
       this.errors = Collections.singletonList(e.getMessage());
-      NabuRequestErrors.labels(baseUrl).inc();
+      nabuRequestErrors.labels(baseUrl).inc();
       return ActionState.FAILED;
     }
   }
@@ -333,7 +331,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
       owner.log("  error: " + response.body().toString(), LogLevel.ERROR, labels);
       errors.add("Error: " + MAPPER.writeValueAsString(response.body()));
     }
-    NabuRequestErrors.labels(url).inc();
+    nabuRequestErrors.labels(url).inc();
     this.errors = errors;
   }
 
@@ -341,7 +339,6 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   public ObjectNode toJson(ObjectMapper mapper) {
     final ObjectNode node = mapper.createObjectNode();
     node.put("type", "nabu-archive");
-    node.put("archiveNote", archiveNote.orElse(null));
     node.put("archiveTarget", archiveTarget);
     archiveWith.forEach(node.putArray("archiveWith")::add);
     node.put("caseIdentifier", caseIdentifier);
@@ -354,18 +351,26 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     node.set(
         "metadata",
         metadataToJson(
-            mapper, assayName, assayVersion, caseTotalSize, offsiteArchiveSize, onsiteArchiveSize));
+            mapper,
+            archiveNote,
+            assayName,
+            assayVersion,
+            caseTotalSize,
+            offsiteArchiveSize,
+            onsiteArchiveSize));
     return node;
   }
 
   private JsonNode metadataToJson(
       ObjectMapper mapper,
+      Optional<String> archiveNote,
       String assayName,
       String assayVersion,
       Long caseTotalSize,
       Long offsiteArchiveSize,
       Long onsiteArchiveSize) {
     ObjectNode node = mapper.createObjectNode();
+    node.put("archiveNote", archiveNote.orElse(null));
     node.put("assayName", assayName);
     node.put("assayVersion", assayVersion);
     node.put("caseTotalSize", caseTotalSize);
