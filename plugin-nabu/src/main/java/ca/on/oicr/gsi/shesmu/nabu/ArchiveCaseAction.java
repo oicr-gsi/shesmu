@@ -174,9 +174,12 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
 
   private ActionState actionStatusFromArchive(NabuCaseArchiveDto caseArchive) {
     if (caseArchive.getCreated() != null) {
-      if (caseArchive.getCommvaultBackupJobId() != null
-          && caseArchive.getFilesCopiedToOffsiteArchiveStagingDir() != null
-          && caseArchive.getFilesLoadedIntoVidarrArchival() != null) {
+      if (caseArchive.getFilesLoadedIntoVidarrArchival() == null
+          && caseArchive.getFilesCopiedToOffsiteArchiveStagingDir() == null) {
+        return ActionState.WAITING;
+      } else if (caseArchive.getCommvaultBackupJobId() != null
+          // files copied to offsite staging dir is a prereq to a commvaultBackupJobId
+          && caseArchive.getFilesCopiedToOffsiteArchiveStagingDir() != null) {
         return ActionState.SUCCEEDED;
       } else {
         return ActionState.INFLIGHT;
@@ -267,7 +270,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     }
     try (var timer = NabuRequestTime.start(baseUrl)) {
       var response =
-          HTTP_CLIENT.send(request, new JsonBodyHandler<>(MAPPER, NabuCaseArchiveDto.class));
+          HTTP_CLIENT.send(request, new JsonBodyHandler<>(MAPPER, NabuCaseArchiveDto[].class));
       if (response.statusCode() == 409) {
         owner.log(
             "Attempted to resubmit case archive with conflicting data for case "
@@ -293,8 +296,8 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
       } else if (response.statusCode() == 201) {
         return ActionState.INFLIGHT;
       } else if (response.statusCode() == 200) {
-        final var results = response.body().get();
-        return actionStatusFromArchive(results);
+        final NabuCaseArchiveDto[] results = response.body().get();
+        return actionStatusFromArchive(Arrays.stream(results).findFirst().get());
       } else {
         return ActionState.UNKNOWN;
       }
