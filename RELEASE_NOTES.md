@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.49.0] - 2025-06-11
+
+### Added
+
+* * Nabu v3.12.0: add Nabu ArchiveCaseAction fields `archiveNote`, `archiveTarget`, `archiveWith`
+
+
 ## [1.48.0] - 2025-05-16
 
 ### Added
