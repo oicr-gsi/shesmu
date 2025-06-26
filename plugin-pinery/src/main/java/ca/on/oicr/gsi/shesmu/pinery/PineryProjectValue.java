@@ -1,9 +1,11 @@
 package ca.on.oicr.gsi.shesmu.pinery;
 
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
+import ca.on.oicr.ws.dto.DeliverableDto;
 import ca.on.oicr.ws.dto.SampleProjectDto;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class PineryProjectValue {
   private final SampleProjectDto backing;
@@ -21,7 +23,10 @@ public class PineryProjectValue {
 
   @ShesmuVariable
   public Optional<Set<String>> deliverables() {
-    return Optional.ofNullable(backing.getDeliverables());
+    Set<String> names =
+        backing.getDeliverables().stream().map(DeliverableDto::getName).collect(Collectors.toSet());
+    if (names.isEmpty()) return Optional.empty();
+    return Optional.of(names);
   }
 
   @ShesmuVariable
