@@ -12,7 +12,7 @@
   <url>https://github.com/oicr-gsi/shesmu</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <pinery-version>3.0.2-SNAPSHOT</pinery-version>
+    <pinery-version>3.1.0</pinery-version>
   </properties>
   <dependencies>
     <dependency>
