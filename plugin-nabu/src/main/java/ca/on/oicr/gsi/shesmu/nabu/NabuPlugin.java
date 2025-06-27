@@ -193,11 +193,11 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
   private Optional<String> findMetadataTextValue(
       JsonNode metadata, String bestKey, String backupKey) {
     // metadata for earlier case archives were submitted with snake case keys
-    if (metadata.findValue(bestKey) != null && !metadata.findValue(bestKey).equals("null")) {
-      return Optional.of(metadata.findValue(bestKey).textValue());
+    if (metadata.findValue(bestKey) != null) {
+      return Optional.ofNullable(metadata.findValue(bestKey).textValue());
     }
-    if (metadata.findValue(backupKey) != null && !metadata.findValue(bestKey).equals("null")) {
-      return Optional.of(metadata.findValue(backupKey).textValue());
+    if (metadata.findValue(backupKey) != null) {
+      return Optional.ofNullable(metadata.findValue(backupKey).textValue());
     }
     return Optional.empty();
   }
