@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.49.1] - 2025-06-30
+
+### Fixed
+
+* Fix pinery_project deliverables to support Pinery 3.0.2
+
+
 ## [1.49.0] - 2025-06-11
 
 ### Added
