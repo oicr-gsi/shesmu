@@ -11,7 +11,7 @@ For unreleased changes, see [changes](changes).
 
 ### Fixed
 
-
+* the case_archiving input format so that it correctly handles null values in the metadata field
 
 ## [1.49.1] - 2025-06-30
 
