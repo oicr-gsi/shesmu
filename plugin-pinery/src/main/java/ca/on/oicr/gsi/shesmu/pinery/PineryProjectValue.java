@@ -23,9 +23,10 @@ public class PineryProjectValue {
 
   @ShesmuVariable
   public Optional<Set<String>> deliverables() {
+    Set<DeliverableDto> deliverables = backing.getDeliverables();
+    if (null == deliverables) return Optional.empty();
     Set<String> names =
-        backing.getDeliverables().stream().map(DeliverableDto::getName).collect(Collectors.toSet());
-    if (names.isEmpty()) return Optional.empty();
+        deliverables.stream().map(DeliverableDto::getName).collect(Collectors.toSet());
     return Optional.of(names);
   }
 
