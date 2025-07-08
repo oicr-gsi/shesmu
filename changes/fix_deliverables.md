@@ -1,1 +1,0 @@
-NullPointerException when pinery_project deliverables were empty

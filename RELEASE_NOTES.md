@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.49.3] - 2025-07-08
+
+### Fixed
+
+* NullPointerException when pinery_project deliverables were empty
+
+
 ## [1.49.2] - 2025-07-02
 
 ### Fixed
