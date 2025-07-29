@@ -83,7 +83,7 @@ public class CaseSummaryDetailedValue {
 
   @ShesmuVariable
   public Optional<Instant> clinicalCompletedDate() {
-    return completedDate;
+    return clinicalCompletedDate;
   }
 
   @ShesmuVariable(type = "ao4test$stype$scomplete$blimsIds$ao3id$sqcFailed$bsupplemental$b")
