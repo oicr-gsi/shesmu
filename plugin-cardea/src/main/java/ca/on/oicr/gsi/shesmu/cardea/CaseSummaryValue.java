@@ -20,7 +20,7 @@ public class CaseSummaryValue {
       String assayVersion,
       String caseIdentifier,
       String caseStatus,
-      Optional<Instant> completedDate,
+      Instant completedDate,
       Set<String> limsIds,
       long requisitionId,
       String requisitionName) {
@@ -29,10 +29,30 @@ public class CaseSummaryValue {
     this.assayVersion = assayVersion;
     this.caseIdentifier = caseIdentifier;
     this.caseStatus = caseStatus;
-    this.completedDate = completedDate;
+    this.completedDate = completedDate == null ? Optional.empty() : Optional.of(completedDate);
     this.limsIds = limsIds;
     this.requisitionId = requisitionId;
     this.requisitionName = requisitionName;
+  }
+
+  public CaseSummaryValue(
+      String assayName,
+      String assayVersion,
+      String caseIdentifier,
+      String caseStatus,
+      String completedDate,
+      Set<String> limsIds,
+      long requisitionId,
+      String requisitionName) {
+    this(
+        assayName,
+        assayVersion,
+        caseIdentifier,
+        caseStatus,
+        (completedDate == null ? null : Instant.parse(completedDate)),
+        limsIds,
+        requisitionId,
+        requisitionName);
   }
 
   @ShesmuVariable
