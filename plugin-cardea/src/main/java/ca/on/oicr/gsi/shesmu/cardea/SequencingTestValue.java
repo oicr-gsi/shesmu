@@ -13,15 +13,27 @@ public class SequencingTestValue {
   private final boolean complete;
 
   public SequencingTestValue(
-      String test, String type, Stream<LimsSequencingInfo> limsIds, boolean complete) {
+      String test, String type, boolean complete, Stream<LimsSequencingInfo> limsIds) {
     super();
     this.test = test;
     this.type = type;
+    this.complete = complete;
     this.limsIds =
         limsIds
             .map(info -> new Tuple(info.id(), info.supplemental(), info.qcFailed()))
             .collect(Collectors.toSet());
-    this.complete = complete;
+  }
+
+  public SequencingTestValue(String test, String type, Set<LimsIdDto> limsIds, boolean complete) {
+    this(
+        test,
+        type,
+        complete,
+        limsIds.stream()
+            .map(
+                info ->
+                    new LimsSequencingInfo(
+                        info.getId(), info.isSupplemental(), info.isQcFailed())));
   }
 
   @ShesmuVariable
