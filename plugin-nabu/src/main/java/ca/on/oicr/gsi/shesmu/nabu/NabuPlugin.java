@@ -139,7 +139,6 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
   private Optional<NabuConfiguration> config = Optional.empty();
   private final Definer<NabuPlugin> definer;
   private final FileQcCache fileQcCache;
-  private Optional<URI> url = Optional.empty();
 
   public NabuPlugin(Path fileName, String instanceName, Definer<NabuPlugin> definer) {
     super(fileName, instanceName, MAPPER, NabuConfiguration.class);
@@ -156,8 +155,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
 
   @Override
   public void configuration(SectionRenderer renderer) {
-    final Optional<String> u = config.map(NabuConfiguration::getUrl);
-    u.ifPresent(uri -> renderer.link("URL", uri.toString(), uri.toString()));
+    config.map(NabuConfiguration::getUrl).ifPresent(uri -> renderer.link("URL", uri, uri));
   }
 
   @ShesmuInputSource
