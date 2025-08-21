@@ -1,15 +1,14 @@
 # Cardea
-[Cardea](https://github.com/oicr-gsi/cardea) is an API server that serves QC Gate ETL data.
-The Cardea plugin for Shesmu can set Cardea up as a Shesmu input source for case data.
+[Cardea](https://github.com/oicr-gsi/cardea) is an API server that serves QC Gate ETL data, and provides case data.
 
-The Cardea API matches Shesmu's remote JSON source, so input formats can be set up as follows:
+The Cardea plugin provides two input formats:
+  * `case_summary`
+  * `case_detailed_summary`
 
-## Case Summary:
+To configure a Cardea source, create a JSON file ending in `.cardea` as follows:
 
-Configuration file named `myserver.case_summary-remote` contains:
-
+   ```
     {
-      "url": "https://cardea-server/shesmu-cases",
-      "ttl": 30
+      "url": "http://cardea.url",
     }
-
+   ```
