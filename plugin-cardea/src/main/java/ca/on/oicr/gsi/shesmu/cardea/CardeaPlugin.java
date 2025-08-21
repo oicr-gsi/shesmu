@@ -25,7 +25,6 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
   private final Definer<CardeaPlugin> definer;
   private final CaseDetailedSummaryCache caseDetailedSummaryCache;
   private final CaseSummaryCache caseSummaryCache;
-  private Optional<String> url = Optional.empty();
 
   static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   static final ObjectMapper MAPPER = new ObjectMapper();
@@ -43,8 +42,7 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
 
   @Override
   public void configuration(SectionRenderer renderer) {
-    this.url = config.map(CardeaConfiguration::getUrl);
-    this.url.ifPresent(uri -> renderer.link("URL", this.url.get(), this.url.get()));
+    config.map(CardeaConfiguration::getUrl).ifPresent(uri -> renderer.link("URL", uri, uri));
   }
 
   @Override
