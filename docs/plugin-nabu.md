@@ -9,7 +9,7 @@ The Nabu plugin provides two input formats:
 To configure a Nabu source, create a JSON file ending in `.nabu` as follows.
 The configuration requires two values:
   * `url`: Nabu URL
-  * `authentication`: AuthenticationConfiguration for the type of authentication that Nabu requires. The example below uses `apikey-file` AuthenticationConfiguration.
+  * `authentication`: AuthenticationConfiguration for the type of authentication that Nabu requires. The example below uses `apikey-file` authentication; other types of authentication configuration are described in [the input formats guide.](input-formats.md)
 
    ```
     {
