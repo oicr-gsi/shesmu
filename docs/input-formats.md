@@ -94,7 +94,7 @@ token can be stored in the configuration file like this:
     {
        "authentication": {
          "type": "apikey",
-         "tokenFile": "01234567890ABCDEF"
+         "apikey": "01234567890ABCDEF"
        },
        "url": "http://some.url/format/endpoint",
        "ttl": 10
@@ -105,7 +105,7 @@ or it can be stored separately using `apikey-file`:
     {
        "authentication": {
          "type": "apikey-file",
-         "tokenFile": "/home/shesmu/secret-token"
+         "apikeyFile": "/home/shesmu/secret-token"
        },
        "url": "http://some.url/format/endpoint",
        "ttl": 10
