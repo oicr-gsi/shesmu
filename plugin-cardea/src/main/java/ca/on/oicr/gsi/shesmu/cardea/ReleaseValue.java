@@ -22,18 +22,22 @@ public class ReleaseValue {
     this(deliverable, (qcDate == null ? null : Instant.parse(qcDate)), qcStatus, qcUser);
   }
 
+  public ReleaseValue(ReleaseDto r) {
+    this(r.getDeliverable(), r.getQcDate(), r.getQcStatus(), r.getQcUser());
+  }
+
   @ShesmuVariable
   public String deliverable() {
     return deliverable;
   }
 
   @ShesmuVariable
-  public Optional<Instant> qcDate() {
+  public Optional<Instant> qc_date() {
     return qcDate;
   }
 
   @ShesmuVariable
-  public Optional<String> qcStatus() {
+  public Optional<String> qc_status() {
     return qcStatus;
   }
 
