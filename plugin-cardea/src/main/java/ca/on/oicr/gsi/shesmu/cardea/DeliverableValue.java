@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DeliverableValue {
+  private final String caseIdentifier;
   private final String deliverableCategory;
   private final boolean analysisReviewSkipped;
   private final Optional<Instant> analysisReviewQcDate;
@@ -20,16 +21,18 @@ public class DeliverableValue {
   private final Set<Tuple> releases;
 
   public DeliverableValue(
+      String caseIdentifier,
       String deliverableCategory,
       boolean analysisReviewSkipped,
       Instant analysisReviewQcDate,
       String analysisReviewQcStatus,
-      String analysisReviweQcUser,
+      String analysisReviewQcUser,
       Instant releaseApprovalQcDate,
       String releaseApprovalQcStatus,
       String releaseApprovalQcUser,
       Set<ReleaseValue> releaseValues) {
     super();
+    this.caseIdentifier = caseIdentifier;
     this.deliverableCategory = deliverableCategory;
     this.analysisReviewSkipped = analysisReviewSkipped;
     this.analysisReviewQcDate =
@@ -37,7 +40,7 @@ public class DeliverableValue {
     this.analysisReviewQcStatus =
         analysisReviewQcStatus == null ? Optional.empty() : Optional.of(analysisReviewQcStatus);
     this.analysisReviewQcUser =
-        analysisReviweQcUser == null ? Optional.empty() : Optional.of(analysisReviweQcUser);
+        analysisReviewQcUser == null ? Optional.empty() : Optional.of(analysisReviewQcUser);
     this.releaseApprovalQcDate =
         releaseApprovalQcDate == null ? Optional.empty() : Optional.of(releaseApprovalQcDate);
     this.releaseApprovalQcStatus =
@@ -50,13 +53,14 @@ public class DeliverableValue {
                 release ->
                     new Tuple(
                         release.deliverable(),
-                        release.qcDate(),
-                        release.qcStatus(),
+                        release.qc_date(),
+                        release.qc_status(),
                         release.qcUser()))
             .collect(Collectors.toSet());
   }
 
   public DeliverableValue(
+      String caseIdentifier,
       String deliverableCategory,
       boolean analysisReviewSkipped,
       String analysisReviewQcDate,
@@ -67,6 +71,7 @@ public class DeliverableValue {
       String releaseApprovalQcUser,
       Stream<ReleaseDto> releasesDtosStream) {
     this(
+        caseIdentifier,
         deliverableCategory,
         analysisReviewSkipped,
         analysisReviewQcDate == null ? null : Instant.parse(analysisReviewQcDate),
@@ -81,6 +86,11 @@ public class DeliverableValue {
                     new ReleaseValue(
                         r.getDeliverable(), r.getQcDate(), r.getQcStatus(), r.getQcUser()))
             .collect(Collectors.toUnmodifiableSet()));
+  }
+
+  @ShesmuVariable
+  public String caseIdentifier() {
+    return caseIdentifier;
   }
 
   @ShesmuVariable
@@ -123,7 +133,7 @@ public class DeliverableValue {
     return releaseApprovalQcUser;
   }
 
-  @ShesmuVariable(type = "ao4deliverable$sqcDate$qiqcStatus$qsqcUser$qs")
+  @ShesmuVariable(type = "ao4deliverable$sqc_date$qiqc_status$qsqc_user$qs")
   public Set<Tuple> releases() {
     return releases;
   }

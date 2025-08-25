@@ -16,6 +16,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -23,6 +24,7 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
 
   private Optional<CardeaConfiguration> config = Optional.empty();
   private final Definer<CardeaPlugin> definer;
+  private final CaseDeliverablesCache caseDeliverablesCache;
   private final CaseDetailedSummaryCache caseDetailedSummaryCache;
   private final CaseSummaryCache caseSummaryCache;
 
@@ -36,6 +38,7 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
   public CardeaPlugin(Path fileName, String instanceName, Definer<CardeaPlugin> definer) {
     super(fileName, instanceName, MAPPER, CardeaConfiguration.class);
     this.definer = definer;
+    caseDeliverablesCache = new CaseDeliverablesCache(fileName);
     caseDetailedSummaryCache = new CaseDetailedSummaryCache(fileName);
     caseSummaryCache = new CaseSummaryCache(fileName);
   }
@@ -48,9 +51,54 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
   @Override
   protected Optional<Integer> update(CardeaConfiguration value) {
     config = Optional.of(value);
+    caseDeliverablesCache.invalidate();
     caseSummaryCache.invalidate();
     caseDetailedSummaryCache.invalidate();
     return Optional.empty();
+  }
+
+  private final class CaseDeliverablesCache extends ValueCache<Stream<DeliverableValue>> {
+    private CaseDeliverablesCache(Path fileName) {
+      super("case_deliverables " + fileName.toString(), 30, ReplacingRecord::new);
+    }
+
+    private Stream<DeliverableValue> deliverables(String baseUrl)
+        throws IOException, InterruptedException {
+      return HTTP_CLIENT
+          .send(
+              HttpRequest.newBuilder(URI.create(baseUrl + "/shesmu-detailed-cases")).GET().build(),
+              new JsonListBodyHandler<>(MAPPER, CaseDetailedSummaryDto.class))
+          .body()
+          .get()
+          .map(cds -> Collections.singletonMap(cds.getCaseIdentifier(), cds.getDeliverables()))
+          .flatMap(
+              id_and_d ->
+                  id_and_d.entrySet().stream()
+                      .flatMap(
+                          entry ->
+                              entry.getValue().stream()
+                                  .map(
+                                      d ->
+                                          new DeliverableValue(
+                                              entry.getKey(),
+                                              d.getDeliverableCategory(),
+                                              d.isAnalysisReviewSkipped(),
+                                              d.getAnalysisReviewQcDate(),
+                                              d.getAnalysisReviewQcStatus(),
+                                              d.getAnalysisReviewQcUser(),
+                                              d.getReleaseApprovalQcDate(),
+                                              d.getReleaseApprovalQcStatus(),
+                                              d.getReleaseApprovalQcUser(),
+                                              d.getReleases().stream()))));
+    }
+
+    @Override
+    protected Stream<DeliverableValue> fetch(Instant lastUpdated) throws Exception {
+      if (config.isEmpty()) {
+        return new ErrorableStream<>(Stream.empty(), false);
+      }
+      return deliverables(config.get().getUrl());
+    }
   }
 
   private final class CaseDetailedSummaryCache
@@ -77,7 +125,6 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
                       cds.getCaseStatus(),
                       cds.getCompletedDate(),
                       cds.getClinicalCompletedDate(),
-                      cds.getDeliverables().stream(),
                       cds.getRequisitionId(),
                       cds.getRequisitionName(),
                       cds.getSequencing().stream(),
@@ -128,6 +175,11 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
       }
       return caseSummary(config.get().getUrl());
     }
+  }
+
+  @ShesmuInputSource
+  public Stream<DeliverableValue> streamCaseDeliverableValues(boolean readStale) {
+    return readStale ? caseDeliverablesCache.getStale() : caseDeliverablesCache.get();
   }
 
   @ShesmuInputSource

@@ -15,7 +15,6 @@ public class CaseDetailedSummaryValue {
   private final String caseStatus;
   private final Optional<Instant> completedDate;
   private final Optional<Instant> clinicalCompletedDate;
-  private final Set<Tuple> deliverables;
   private final Set<Tuple> sequencing;
   private final long requisitionId;
   private final String requisitionName;
@@ -29,7 +28,6 @@ public class CaseDetailedSummaryValue {
       String caseStatus,
       Instant completedDate,
       Instant clinicalCompletedDate,
-      Set<DeliverableValue> deliverableValues,
       long requisitionId,
       String requisitionName,
       Set<SequencingTestValue> sequencingTestValues,
@@ -43,21 +41,6 @@ public class CaseDetailedSummaryValue {
     this.completedDate = completedDate == null ? Optional.empty() : Optional.of(completedDate);
     this.clinicalCompletedDate =
         clinicalCompletedDate == null ? Optional.empty() : Optional.of(clinicalCompletedDate);
-    this.deliverables =
-        deliverableValues.stream()
-            .map(
-                deliverable ->
-                    new Tuple(
-                        deliverable.deliverableCategory(),
-                        deliverable.analysisReviewSkipped(),
-                        deliverable.analysisReviewQcDate(),
-                        deliverable.analysisReviewQcStatus(),
-                        deliverable.analysisReviewQcUser(),
-                        deliverable.releaseApprovalQcDate(),
-                        deliverable.releaseApprovalQcStatus(),
-                        deliverable.releaseApprovalQcUser(),
-                        deliverable.releases()))
-            .collect(Collectors.toSet());
     this.sequencing =
         sequencingTestValues.stream()
             .map(
@@ -81,7 +64,6 @@ public class CaseDetailedSummaryValue {
       String caseStatus,
       Instant completedDate,
       Instant clinicalCompletedDate,
-      Stream<DeliverableDto> deliverableDtosStream,
       long requisitionId,
       String requisitionName,
       Stream<SequencingTestDto> sequencingTestDtosStream,
@@ -94,20 +76,6 @@ public class CaseDetailedSummaryValue {
         caseStatus,
         completedDate,
         clinicalCompletedDate,
-        deliverableDtosStream
-            .map(
-                d ->
-                    new DeliverableValue(
-                        d.getDeliverableCategory(),
-                        d.isAnalysisReviewSkipped(),
-                        d.getAnalysisReviewQcDate(),
-                        d.getAnalysisReviewQcStatus(),
-                        d.getAnalysisReviewQcUser(),
-                        d.getReleaseApprovalQcDate(),
-                        d.getReleaseApprovalQcStatus(),
-                        d.getReleaseApprovalQcUser(),
-                        d.getReleases().stream()))
-            .collect(Collectors.toUnmodifiableSet()),
         requisitionId,
         requisitionName,
         sequencingTestDtosStream
@@ -148,13 +116,6 @@ public class CaseDetailedSummaryValue {
   @ShesmuVariable
   public Optional<Instant> clinicalCompletedDate() {
     return clinicalCompletedDate;
-  }
-
-  @ShesmuVariable(
-      type =
-          "ao9deliverableCategory$sanalysisReviewSkipped$banalysisReviewQcDate$qianalysisReviewQcStatus$qsanalysisReviewQcUser$qsreleaseApprovalQcDate$qireleaseApprovalQcStatus$qsreleaseApprovalQcUser$qsreleases$ao4deliverable$sqcDate$qiqcStatus$qsqcUser$qs")
-  public Set<Tuple> deliverables() {
-    return deliverables;
   }
 
   @ShesmuVariable(type = "ao4test$stype$scomplete$blimsIds$ao3id$sqcFailed$bsupplemental$b")
