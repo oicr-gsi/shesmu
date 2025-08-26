@@ -6,21 +6,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class SequencingTestValue {
-  private final String caseIdentifier;
+public class SequencingTestValueToBeDeprecated {
   private final String test;
   private final String type;
   private final Set<Tuple> limsIds;
   private final boolean complete;
 
-  public SequencingTestValue(
-      String caseIdentifier,
-      String test,
-      String type,
-      boolean complete,
-      Stream<LimsSequencingInfo> limsIds) {
+  public SequencingTestValueToBeDeprecated(
+      String test, String type, boolean complete, Stream<LimsSequencingInfo> limsIds) {
     super();
-    this.caseIdentifier = caseIdentifier;
     this.test = test;
     this.type = type;
     this.complete = complete;
@@ -30,10 +24,9 @@ public class SequencingTestValue {
             .collect(Collectors.toSet());
   }
 
-  public SequencingTestValue(
-      String caseIdentifier, String test, String type, boolean complete, Set<LimsIdDto> limsIds) {
+  public SequencingTestValueToBeDeprecated(
+      String test, String type, Set<LimsIdDto> limsIds, boolean complete) {
     this(
-        caseIdentifier,
         test,
         type,
         complete,
@@ -42,11 +35,6 @@ public class SequencingTestValue {
                 info ->
                     new LimsSequencingInfo(
                         info.getId(), info.isSupplemental(), info.isQcFailed())));
-  }
-
-  @ShesmuVariable
-  public String caseIdentifier() {
-    return caseIdentifier;
   }
 
   @ShesmuVariable

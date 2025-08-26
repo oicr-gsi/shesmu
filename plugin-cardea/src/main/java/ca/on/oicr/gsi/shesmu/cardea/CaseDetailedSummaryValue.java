@@ -30,7 +30,7 @@ public class CaseDetailedSummaryValue {
       Instant clinicalCompletedDate,
       long requisitionId,
       String requisitionName,
-      Set<SequencingTestValue> sequencingTestValues,
+      Set<SequencingTestValueToBeDeprecated> sequencingTestValues,
       boolean stopped,
       boolean paused) {
     super();
@@ -81,7 +81,7 @@ public class CaseDetailedSummaryValue {
         sequencingTestDtosStream
             .map(
                 st ->
-                    new SequencingTestValue(
+                    new SequencingTestValueToBeDeprecated(
                         st.getTest(), st.getType(), st.getLimsIds(), st.isComplete()))
             .collect(Collectors.toUnmodifiableSet()),
         stopped,

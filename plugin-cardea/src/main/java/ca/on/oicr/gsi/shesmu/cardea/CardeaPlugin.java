@@ -26,6 +26,7 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
   private final Definer<CardeaPlugin> definer;
   private final CaseDeliverablesCache caseDeliverablesCache;
   private final CaseDetailedSummaryCache caseDetailedSummaryCache;
+  private final CaseSequencingTestCache caseSequencingTestCache;
   private final CaseSummaryCache caseSummaryCache;
 
   static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
@@ -40,6 +41,7 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
     this.definer = definer;
     caseDeliverablesCache = new CaseDeliverablesCache(fileName);
     caseDetailedSummaryCache = new CaseDetailedSummaryCache(fileName);
+    caseSequencingTestCache = new CaseSequencingTestCache(fileName);
     caseSummaryCache = new CaseSummaryCache(fileName);
   }
 
@@ -52,8 +54,9 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
   protected Optional<Integer> update(CardeaConfiguration value) {
     config = Optional.of(value);
     caseDeliverablesCache.invalidate();
-    caseSummaryCache.invalidate();
     caseDetailedSummaryCache.invalidate();
+    caseSequencingTestCache.invalidate();
+    caseSummaryCache.invalidate();
     return Optional.empty();
   }
 
@@ -177,6 +180,45 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
     }
   }
 
+  private final class CaseSequencingTestCache extends ValueCache<Stream<SequencingTestValue>> {
+    private CaseSequencingTestCache(Path fileName) {
+      super("case_sequencing_test " + fileName.toString(), 30, ReplacingRecord::new);
+    }
+
+    private Stream<SequencingTestValue> sequencingTest(String baseUrl)
+        throws IOException, InterruptedException {
+      return HTTP_CLIENT
+          .send(
+              HttpRequest.newBuilder(URI.create(baseUrl + "/shesmu-detailed-cases")).GET().build(),
+              new JsonListBodyHandler<>(MAPPER, CaseDetailedSummaryDto.class))
+          .body()
+          .get()
+          .map(cds -> Collections.singletonMap(cds.getCaseIdentifier(), cds.getSequencing()))
+          .flatMap(
+              id_and_st ->
+                  id_and_st.entrySet().stream()
+                      .flatMap(
+                          entry ->
+                              entry.getValue().stream()
+                                  .map(
+                                      st ->
+                                          new SequencingTestValue(
+                                              entry.getKey(),
+                                              st.getTest(),
+                                              st.getType(),
+                                              st.isComplete(),
+                                              st.getLimsIds()))));
+    }
+
+    @Override
+    protected Stream<SequencingTestValue> fetch(Instant lastUpdated) throws Exception {
+      if (config.isEmpty()) {
+        return new ErrorableStream<>(Stream.empty(), false);
+      }
+      return sequencingTest(config.get().getUrl());
+    }
+  }
+
   @ShesmuInputSource
   public Stream<DeliverableValue> streamCaseDeliverableValues(boolean readStale) {
     return readStale ? caseDeliverablesCache.getStale() : caseDeliverablesCache.get();
@@ -185,6 +227,11 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
   @ShesmuInputSource
   public Stream<CaseDetailedSummaryValue> streamCaseDetailedSummaryValues(boolean readStale) {
     return readStale ? caseDetailedSummaryCache.getStale() : caseDetailedSummaryCache.get();
+  }
+
+  @ShesmuInputSource
+  public Stream<SequencingTestValue> streamCaseSequencingTestValues(boolean readStale) {
+    return readStale ? caseSequencingTestCache.getStale() : caseSequencingTestCache.get();
   }
 
   @ShesmuInputSource
