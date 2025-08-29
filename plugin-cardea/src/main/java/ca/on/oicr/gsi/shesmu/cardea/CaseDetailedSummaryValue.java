@@ -8,7 +8,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class CaseSummaryDetailedValue {
+public class CaseDetailedSummaryValue {
   private final String assayName;
   private final String assayVersion;
   private final String caseIdentifier;
@@ -21,16 +21,16 @@ public class CaseSummaryDetailedValue {
   private final boolean stopped;
   private final boolean paused;
 
-  public CaseSummaryDetailedValue(
+  public CaseDetailedSummaryValue(
       String assayName,
       String assayVersion,
       String caseIdentifier,
       String caseStatus,
-      Optional<Instant> completedDate,
-      Optional<Instant> clinicalCompletedDate,
+      Instant completedDate,
+      Instant clinicalCompletedDate,
       long requisitionId,
       String requisitionName,
-      Stream<SequencingTestValue> sequencingTestValueStream,
+      Set<SequencingTestValueToBeDeprecated> sequencingTestValues,
       boolean stopped,
       boolean paused) {
     super();
@@ -38,22 +38,56 @@ public class CaseSummaryDetailedValue {
     this.assayVersion = assayVersion;
     this.caseIdentifier = caseIdentifier;
     this.caseStatus = caseStatus;
-    this.completedDate = completedDate;
-    this.clinicalCompletedDate = clinicalCompletedDate;
+    this.completedDate = completedDate == null ? Optional.empty() : Optional.of(completedDate);
+    this.clinicalCompletedDate =
+        clinicalCompletedDate == null ? Optional.empty() : Optional.of(clinicalCompletedDate);
     this.sequencing =
-        sequencingTestValueStream
+        sequencingTestValues.stream()
             .map(
                 sequencingTest ->
+                    // Note: DO NOT change the order of these fields as Shesmu is not honouring
+                    // insertion order
                     new Tuple(
-                        sequencingTest.test(),
-                        sequencingTest.type(),
+                        sequencingTest.complete(),
                         sequencingTest.limsIds(),
-                        sequencingTest.complete()))
+                        sequencingTest.test(),
+                        sequencingTest.type()))
             .collect(Collectors.toSet());
     this.requisitionId = requisitionId;
     this.requisitionName = requisitionName;
     this.stopped = stopped;
     this.paused = paused;
+  }
+
+  public CaseDetailedSummaryValue(
+      String assayName,
+      String assayVersion,
+      String caseIdentifier,
+      String caseStatus,
+      Instant completedDate,
+      Instant clinicalCompletedDate,
+      long requisitionId,
+      String requisitionName,
+      Stream<SequencingTestDto> sequencingTestDtosStream,
+      boolean stopped,
+      boolean paused) {
+    this(
+        assayName,
+        assayVersion,
+        caseIdentifier,
+        caseStatus,
+        completedDate,
+        clinicalCompletedDate,
+        requisitionId,
+        requisitionName,
+        sequencingTestDtosStream
+            .map(
+                st ->
+                    new SequencingTestValueToBeDeprecated(
+                        st.getTest(), st.getType(), st.isComplete(), st.getLimsIds()))
+            .collect(Collectors.toUnmodifiableSet()),
+        stopped,
+        paused);
   }
 
   @ShesmuVariable
@@ -83,10 +117,11 @@ public class CaseSummaryDetailedValue {
 
   @ShesmuVariable
   public Optional<Instant> clinicalCompletedDate() {
-    return completedDate;
+    return clinicalCompletedDate;
   }
 
-  @ShesmuVariable(type = "ao4test$stype$scomplete$blimsIds$ao3id$sqcFailed$bsupplemental$b")
+  // Note: DO NOT change the order of these fields as Shesmu is not honouring insertion order
+  @ShesmuVariable(type = "ao4complete$blimsIds$ao3id$sqcFailed$bsupplemental$btest$stype$s")
   public Set<Tuple> sequencing() {
     return sequencing;
   }

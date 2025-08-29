@@ -6,36 +6,27 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class SequencingTestValue {
-  private final String caseIdentifier;
+public class SequencingTestValueToBeDeprecated {
   private final String test;
   private final String type;
   private final Set<Tuple> limsIds;
   private final boolean complete;
 
-  public SequencingTestValue(
-      String caseIdentifier,
-      String test,
-      String type,
-      boolean complete,
-      Stream<LimsSequencingInfo> limsIds) {
+  public SequencingTestValueToBeDeprecated(
+      String test, String type, boolean complete, Stream<LimsSequencingInfo> limsIds) {
     super();
-    this.caseIdentifier = caseIdentifier;
     this.test = test;
     this.type = type;
     this.complete = complete;
     this.limsIds =
         limsIds
-            // Note: DO NOT change the order of these fields as Shesmu is not honouring insertion
-            // order
-            .map(info -> new Tuple(info.id(), info.qcFailed(), info.supplemental()))
+            .map(info -> new Tuple(info.id(), info.supplemental(), info.qcFailed()))
             .collect(Collectors.toSet());
   }
 
-  public SequencingTestValue(
-      String caseIdentifier, String test, String type, boolean complete, Set<LimsIdDto> limsIds) {
+  public SequencingTestValueToBeDeprecated(
+      String test, String type, boolean complete, Set<LimsIdDto> limsIds) {
     this(
-        caseIdentifier,
         test,
         type,
         complete,
@@ -43,12 +34,7 @@ public class SequencingTestValue {
             .map(
                 info ->
                     new LimsSequencingInfo(
-                        info.getId(), info.isSupplemental(), info.isQcFailed())));
-  }
-
-  @ShesmuVariable
-  public String caseIdentifier() {
-    return caseIdentifier;
+                        info.getId(), info.isQcFailed(), info.isSupplemental())));
   }
 
   @ShesmuVariable
@@ -61,7 +47,6 @@ public class SequencingTestValue {
     return type;
   }
 
-  // Note: DO NOT change the order of the fields as Shesmu is not honouring insertion order
   @ShesmuVariable(type = "ao3id$sqcFailed$bsupplemental$b")
   public Set<Tuple> limsIds() {
     return limsIds;
