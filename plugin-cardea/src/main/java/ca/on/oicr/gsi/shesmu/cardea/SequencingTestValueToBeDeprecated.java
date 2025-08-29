@@ -25,7 +25,7 @@ public class SequencingTestValueToBeDeprecated {
   }
 
   public SequencingTestValueToBeDeprecated(
-      String test, String type, Set<LimsIdDto> limsIds, boolean complete) {
+      String test, String type, boolean complete, Set<LimsIdDto> limsIds) {
     this(
         test,
         type,
@@ -34,7 +34,7 @@ public class SequencingTestValueToBeDeprecated {
             .map(
                 info ->
                     new LimsSequencingInfo(
-                        info.getId(), info.isSupplemental(), info.isQcFailed())));
+                        info.getId(), info.isQcFailed(), info.isSupplemental())));
   }
 
   @ShesmuVariable
@@ -47,7 +47,7 @@ public class SequencingTestValueToBeDeprecated {
     return type;
   }
 
-  @ShesmuVariable
+  @ShesmuVariable(type = "ao3id$sqcFailed$bsupplemental$b")
   public Set<Tuple> limsIds() {
     return limsIds;
   }

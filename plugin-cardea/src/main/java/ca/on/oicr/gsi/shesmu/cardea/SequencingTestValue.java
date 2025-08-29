@@ -26,7 +26,9 @@ public class SequencingTestValue {
     this.complete = complete;
     this.limsIds =
         limsIds
-            .map(info -> new Tuple(info.id(), info.supplemental(), info.qcFailed()))
+            // Note: DO NOT change the order of these fields as Shesmu is not honouring insertion
+            // order
+            .map(info -> new Tuple(info.id(), info.qcFailed(), info.supplemental()))
             .collect(Collectors.toSet());
   }
 
@@ -59,7 +61,8 @@ public class SequencingTestValue {
     return type;
   }
 
-  @ShesmuVariable
+  // Note: DO NOT change the order of the fields as Shesmu is not honouring insertion order
+  @ShesmuVariable(type = "ao3id$sqcFailed$bsupplemental$b")
   public Set<Tuple> limsIds() {
     return limsIds;
   }

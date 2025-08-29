@@ -45,11 +45,13 @@ public class CaseDetailedSummaryValue {
         sequencingTestValues.stream()
             .map(
                 sequencingTest ->
+                    // Note: DO NOT change the order of these fields as Shesmu is not honouring
+                    // insertion order
                     new Tuple(
-                        sequencingTest.test(),
-                        sequencingTest.type(),
+                        sequencingTest.complete(),
                         sequencingTest.limsIds(),
-                        sequencingTest.complete()))
+                        sequencingTest.test(),
+                        sequencingTest.type()))
             .collect(Collectors.toSet());
     this.requisitionId = requisitionId;
     this.requisitionName = requisitionName;
@@ -82,7 +84,7 @@ public class CaseDetailedSummaryValue {
             .map(
                 st ->
                     new SequencingTestValueToBeDeprecated(
-                        st.getTest(), st.getType(), st.getLimsIds(), st.isComplete()))
+                        st.getTest(), st.getType(), st.isComplete(), st.getLimsIds()))
             .collect(Collectors.toUnmodifiableSet()),
         stopped,
         paused);
@@ -118,7 +120,8 @@ public class CaseDetailedSummaryValue {
     return clinicalCompletedDate;
   }
 
-  @ShesmuVariable(type = "ao4test$stype$scomplete$blimsIds$ao3id$sqcFailed$bsupplemental$b")
+  // Note: DO NOT change the order of these fields as Shesmu is not honouring insertion order
+  @ShesmuVariable(type = "ao4complete$blimsIds$ao3id$sqcFailed$bsupplemental$btest$stype$s")
   public Set<Tuple> sequencing() {
     return sequencing;
   }

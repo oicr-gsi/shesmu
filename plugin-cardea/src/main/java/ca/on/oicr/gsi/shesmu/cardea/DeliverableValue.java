@@ -133,7 +133,7 @@ public class DeliverableValue {
     return releaseApprovalQcUser;
   }
 
-  @ShesmuVariable(type = "ao4deliverable$sqc_date$qiqc_status$qsqc_user$qs")
+  @ShesmuVariable(type = "ao4deliverable$sqc_date$qdqc_status$qsqc_user$qs")
   public Set<Tuple> releases() {
     return releases;
   }
