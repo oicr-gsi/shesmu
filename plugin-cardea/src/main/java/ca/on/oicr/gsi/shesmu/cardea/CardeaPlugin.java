@@ -16,7 +16,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Collections;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -74,11 +74,18 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
           .body()
           .get()
           .flatMap(
-              cds ->
-                  cds.getDeliverables().stream()
+              cds -> {
+                if (cds.getDeliverables() == null || cds.getDeliverables().isEmpty()) {
+                  // project's deliverables are not configured
+                  return null;
+                } else {
+                  return cds.getDeliverables().stream()
                       .flatMap(
-                          d ->
-                              d.getReleases().stream()
+                          d -> {
+                            if (d.getReleases() == null || d.getReleases().isEmpty()) {
+                              return null;
+                            } else {
+                              return d.getReleases().stream()
                                   .map(
                                       r ->
                                           new DeliverableValue(
@@ -94,7 +101,12 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
                                               r.getDeliverable(),
                                               r.getQcDate(),
                                               r.getQcStatus(),
-                                              r.getQcUser()))));
+                                              r.getQcUser()));
+                            }
+                          });
+                }
+              })
+          .filter(Objects::nonNull);
     }
 
     @Override
@@ -195,21 +207,23 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
               new JsonListBodyHandler<>(MAPPER, CaseDetailedSummaryDto.class))
           .body()
           .get()
-          .map(cds -> Collections.singletonMap(cds.getCaseIdentifier(), cds.getSequencing()))
           .flatMap(
-              id_and_st ->
-                  id_and_st.entrySet().stream()
-                      .flatMap(
-                          entry ->
-                              entry.getValue().stream()
-                                  .map(
-                                      st ->
-                                          new SequencingTestValue(
-                                              entry.getKey(),
-                                              st.getTest(),
-                                              st.getType(),
-                                              st.isComplete(),
-                                              st.getLimsIds()))));
+              cds -> {
+                if (cds.getSequencing() == null || cds.getSequencing().isEmpty()) {
+                  // no sequencing yet
+                  return null;
+                } else {
+                  return cds.getSequencing().stream()
+                      .map(
+                          st ->
+                              new SequencingTestValue(
+                                  cds.getCaseIdentifier(),
+                                  st.getTest(),
+                                  st.getType(),
+                                  st.isComplete(),
+                                  st.getLimsIds()));
+                }
+              });
     }
 
     @Override
