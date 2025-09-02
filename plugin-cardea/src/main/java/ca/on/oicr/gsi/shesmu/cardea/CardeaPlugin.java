@@ -73,17 +73,16 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
               new JsonListBodyHandler<>(MAPPER, CaseDetailedSummaryDto.class))
           .body()
           .get()
-          .map(cds -> Collections.singletonMap(cds.getCaseIdentifier(), cds.getDeliverables()))
           .flatMap(
-              id_and_d ->
-                  id_and_d.entrySet().stream()
+              cds ->
+                  cds.getDeliverables().stream()
                       .flatMap(
-                          entry ->
-                              entry.getValue().stream()
+                          d ->
+                              d.getReleases().stream()
                                   .map(
-                                      d ->
+                                      r ->
                                           new DeliverableValue(
-                                              entry.getKey(),
+                                              cds.getCaseIdentifier(),
                                               d.getDeliverableCategory(),
                                               d.isAnalysisReviewSkipped(),
                                               d.getAnalysisReviewQcDate(),
@@ -92,7 +91,10 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
                                               d.getReleaseApprovalQcDate(),
                                               d.getReleaseApprovalQcStatus(),
                                               d.getReleaseApprovalQcUser(),
-                                              d.getReleases().stream()))));
+                                              r.getDeliverable(),
+                                              r.getQcDate(),
+                                              r.getQcStatus(),
+                                              r.getQcUser()))));
     }
 
     @Override
