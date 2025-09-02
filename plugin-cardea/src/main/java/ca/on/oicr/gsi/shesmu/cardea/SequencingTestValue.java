@@ -47,7 +47,7 @@ public class SequencingTestValue {
   }
 
   @ShesmuVariable
-  public String caseIdentifier() {
+  public String case_identifier() {
     return caseIdentifier;
   }
 
@@ -62,8 +62,8 @@ public class SequencingTestValue {
   }
 
   // Note: DO NOT change the order of the fields as Shesmu is not honouring insertion order
-  @ShesmuVariable(type = "ao3id$sqcFailed$bsupplemental$b")
-  public Set<Tuple> limsIds() {
+  @ShesmuVariable(type = "ao3id$sqc_failed$bsupplemental$b")
+  public Set<Tuple> lims_ids() {
     return limsIds;
   }
 
