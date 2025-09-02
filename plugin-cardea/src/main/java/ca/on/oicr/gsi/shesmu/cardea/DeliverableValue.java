@@ -1,12 +1,8 @@
 package ca.on.oicr.gsi.shesmu.cardea;
 
-import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class DeliverableValue {
   private final String caseIdentifier;
@@ -18,46 +14,10 @@ public class DeliverableValue {
   private final Optional<Instant> releaseApprovalQcDate;
   private final Optional<String> releaseApprovalQcStatus;
   private final Optional<String> releaseApprovalQcUser;
-  private final Set<Tuple> releases;
-
-  public DeliverableValue(
-      String caseIdentifier,
-      String deliverableCategory,
-      boolean analysisReviewSkipped,
-      Instant analysisReviewQcDate,
-      String analysisReviewQcStatus,
-      String analysisReviewQcUser,
-      Instant releaseApprovalQcDate,
-      String releaseApprovalQcStatus,
-      String releaseApprovalQcUser,
-      Set<ReleaseValue> releaseValues) {
-    super();
-    this.caseIdentifier = caseIdentifier;
-    this.deliverableCategory = deliverableCategory;
-    this.analysisReviewSkipped = analysisReviewSkipped;
-    this.analysisReviewQcDate =
-        analysisReviewQcDate == null ? Optional.empty() : Optional.of(analysisReviewQcDate);
-    this.analysisReviewQcStatus =
-        analysisReviewQcStatus == null ? Optional.empty() : Optional.of(analysisReviewQcStatus);
-    this.analysisReviewQcUser =
-        analysisReviewQcUser == null ? Optional.empty() : Optional.of(analysisReviewQcUser);
-    this.releaseApprovalQcDate =
-        releaseApprovalQcDate == null ? Optional.empty() : Optional.of(releaseApprovalQcDate);
-    this.releaseApprovalQcStatus =
-        releaseApprovalQcStatus == null ? Optional.empty() : Optional.of(releaseApprovalQcStatus);
-    this.releaseApprovalQcUser =
-        releaseApprovalQcUser == null ? Optional.empty() : Optional.of(releaseApprovalQcUser);
-    this.releases =
-        releaseValues.stream()
-            .map(
-                release ->
-                    new Tuple(
-                        release.deliverable(),
-                        release.qc_date(),
-                        release.qc_status(),
-                        release.qcUser()))
-            .collect(Collectors.toSet());
-  }
+  private final String deliverable;
+  private final Optional<Instant> releaseQcDate;
+  private final Optional<String> releaseQcStatus;
+  private final Optional<String> releaseQcUser;
 
   public DeliverableValue(
       String caseIdentifier,
@@ -65,27 +25,40 @@ public class DeliverableValue {
       boolean analysisReviewSkipped,
       String analysisReviewQcDate,
       String analysisReviewQcStatus,
-      String analysisReviweQcUser,
+      String analysisReviewQcUser,
       String releaseApprovalQcDate,
       String releaseApprovalQcStatus,
       String releaseApprovalQcUser,
-      Stream<ReleaseDto> releasesDtosStream) {
-    this(
-        caseIdentifier,
-        deliverableCategory,
-        analysisReviewSkipped,
-        analysisReviewQcDate == null ? null : Instant.parse(analysisReviewQcDate),
-        analysisReviewQcStatus,
-        analysisReviweQcUser,
-        releaseApprovalQcDate == null ? null : Instant.parse(releaseApprovalQcDate),
-        releaseApprovalQcStatus,
-        releaseApprovalQcUser,
-        releasesDtosStream
-            .map(
-                r ->
-                    new ReleaseValue(
-                        r.getDeliverable(), r.getQcDate(), r.getQcStatus(), r.getQcUser()))
-            .collect(Collectors.toUnmodifiableSet()));
+      String deliverable,
+      String releaseQcDate,
+      String releaseQcStatus,
+      String releaseQcUser) {
+    super();
+    this.caseIdentifier = caseIdentifier;
+    this.deliverableCategory = deliverableCategory;
+    this.analysisReviewSkipped = analysisReviewSkipped;
+    this.analysisReviewQcDate =
+        analysisReviewQcDate == null
+            ? Optional.empty()
+            : Optional.of(Instant.parse(analysisReviewQcDate));
+    this.analysisReviewQcStatus =
+        analysisReviewQcStatus == null ? Optional.empty() : Optional.of(analysisReviewQcStatus);
+    this.analysisReviewQcUser =
+        analysisReviewQcUser == null ? Optional.empty() : Optional.of(analysisReviewQcUser);
+    this.releaseApprovalQcDate =
+        releaseApprovalQcDate == null
+            ? Optional.empty()
+            : Optional.of(Instant.parse(releaseApprovalQcDate));
+    this.releaseApprovalQcStatus =
+        releaseApprovalQcStatus == null ? Optional.empty() : Optional.of(releaseApprovalQcStatus);
+    this.releaseApprovalQcUser =
+        releaseApprovalQcUser == null ? Optional.empty() : Optional.of(releaseApprovalQcUser);
+    this.deliverable = deliverable;
+    this.releaseQcDate =
+        releaseQcDate == null ? Optional.empty() : Optional.of(Instant.parse(releaseQcDate));
+    this.releaseQcStatus =
+        releaseQcStatus == null ? Optional.empty() : Optional.of(releaseQcStatus);
+    this.releaseQcUser = releaseQcUser == null ? Optional.empty() : Optional.of(releaseQcUser);
   }
 
   @ShesmuVariable
@@ -133,8 +106,23 @@ public class DeliverableValue {
     return releaseApprovalQcUser;
   }
 
-  @ShesmuVariable(type = "ao4deliverable$sqc_date$qdqc_status$qsqc_user$qs")
-  public Set<Tuple> releases() {
-    return releases;
+  @ShesmuVariable
+  public String deliverable() {
+    return deliverable;
+  }
+
+  @ShesmuVariable
+  public Optional<Instant> releaseQcDate() {
+    return releaseQcDate;
+  }
+
+  @ShesmuVariable
+  public Optional<String> releaseQcStatus() {
+    return releaseQcStatus;
+  }
+
+  @ShesmuVariable
+  public Optional<String> releaseQcUser() {
+    return releaseQcUser;
   }
 }
