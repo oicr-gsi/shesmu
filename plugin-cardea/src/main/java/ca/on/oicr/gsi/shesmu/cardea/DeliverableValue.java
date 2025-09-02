@@ -62,47 +62,47 @@ public class DeliverableValue {
   }
 
   @ShesmuVariable
-  public String caseIdentifier() {
+  public String case_identifier() {
     return caseIdentifier;
   }
 
   @ShesmuVariable
-  public String deliverableCategory() {
+  public String deliverable_category() {
     return deliverableCategory;
   }
 
   @ShesmuVariable
-  public boolean analysisReviewSkipped() {
+  public boolean analysis_review_skipped() {
     return analysisReviewSkipped;
   }
 
   @ShesmuVariable
-  public Optional<Instant> analysisReviewQcDate() {
+  public Optional<Instant> analysis_review_qc_date() {
     return analysisReviewQcDate;
   }
 
   @ShesmuVariable
-  public Optional<String> analysisReviewQcStatus() {
+  public Optional<String> analysis_review_qc_status() {
     return analysisReviewQcStatus;
   }
 
   @ShesmuVariable
-  public Optional<String> analysisReviewQcUser() {
+  public Optional<String> analysis_review_qc_user() {
     return analysisReviewQcUser;
   }
 
   @ShesmuVariable
-  public Optional<Instant> releaseApprovalQcDate() {
+  public Optional<Instant> release_approval_qc_date() {
     return releaseApprovalQcDate;
   }
 
   @ShesmuVariable
-  public Optional<String> releaseApprovalQcStatus() {
+  public Optional<String> release_approval_qc_status() {
     return releaseApprovalQcStatus;
   }
 
   @ShesmuVariable
-  public Optional<String> releaseApprovalQcUser() {
+  public Optional<String> release_approval_qc_user() {
     return releaseApprovalQcUser;
   }
 
@@ -112,17 +112,17 @@ public class DeliverableValue {
   }
 
   @ShesmuVariable
-  public Optional<Instant> releaseQcDate() {
+  public Optional<Instant> release_qc_date() {
     return releaseQcDate;
   }
 
   @ShesmuVariable
-  public Optional<String> releaseQcStatus() {
+  public Optional<String> release_qc_status() {
     return releaseQcStatus;
   }
 
   @ShesmuVariable
-  public Optional<String> releaseQcUser() {
+  public Optional<String> release_qc_user() {
     return releaseQcUser;
   }
 }
