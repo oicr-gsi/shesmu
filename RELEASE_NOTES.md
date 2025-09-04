@@ -7,6 +7,20 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.50.0] - 2025-09-04
+
+### Added
+
+* * `case_deliverables` input format
+  * `case_sequencing_test` input format
+
+### Changed
+
+* Cardea plugin now constructs its own input formats instead of simply reading from Cardea remote-json source
+* Removed "Performed command" log line in action command handling, as this is covered by monitoring
+* input format `case_detailed_summary` field `sequencing` will be deprecated in the future
+
+
 ## [1.49.3] - 2025-07-08
 
 ### Fixed
