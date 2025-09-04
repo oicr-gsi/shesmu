@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Server;
 import ca.on.oicr.gsi.shesmu.core.input.shesmu.ShesmuIntrospectionValue;
-import ca.on.oicr.gsi.shesmu.plugin.LogLevel;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLocationLinker;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
@@ -774,8 +773,6 @@ public final class ActionProcessor
                                             @Override
                                             public Boolean accepted() {
                                               labels.put("command", c.command());
-                                              pluginManager.log(
-                                                  "Performed command", LogLevel.INFO, labels);
                                               return true;
                                             }
 
@@ -793,8 +790,6 @@ public final class ActionProcessor
                                             @Override
                                             public Boolean purge() {
                                               labels.put("command", c.command());
-                                              pluginManager.log(
-                                                  "Performed command", LogLevel.INFO, labels);
                                               purge.add(e.getKey());
                                               stateCount
                                                   .labels(
@@ -807,8 +802,6 @@ public final class ActionProcessor
                                             @Override
                                             public Boolean reset() {
                                               labels.put("command", c.command());
-                                              pluginManager.log(
-                                                  "Performed command", LogLevel.INFO, labels);
                                               if (e.getValue().lastState != ActionState.UNKNOWN) {
                                                 stateCount
                                                     .labels(
