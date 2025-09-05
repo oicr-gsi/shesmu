@@ -355,4 +355,9 @@ public abstract class ConstantDefinition implements Target {
   public final Imyhat type() {
     return type;
   }
+
+  @Override
+  public String toString() {
+    return filename().toString();
+  }
 }

@@ -375,6 +375,11 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
         }
         return supplier.map(s -> s.get().collect(Collectors.toList())).collect(Collectors.toList());
       }
+
+      @Override
+      public String toString() {
+        return fileName.toString();
+      }
     }
 
     class ExportedFunctionDefinition implements FunctionDefinition {
@@ -449,6 +454,11 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
       @Override
       public Imyhat returnType() {
         return returnType;
+      }
+
+      @Override
+      public String toString() {
+        return fileName.toString();
       }
     }
 
@@ -686,6 +696,11 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
         e.printStackTrace();
         return Optional.of(2);
       }
+    }
+
+    @Override
+    public String toString() {
+      return fileName.toString();
     }
   }
 
