@@ -132,6 +132,11 @@ public final class PluginManager
       public SupplementaryInformation supplementaryInformation() {
         return information;
       }
+
+      @Override
+      public String toString() {
+        return filename().toString();
+      }
     }
 
     private final class ArbitraryConstantDefinition extends ConstantDefinition {
@@ -161,6 +166,11 @@ public final class PluginManager
       public String load() {
         throw new UnsupportedOperationException(
             "Plugun-provided constants cannot be exported to ECMAScript");
+      }
+
+      @Override
+      public String toString() {
+        return filename().toString();
       }
     }
 
@@ -192,6 +202,11 @@ public final class PluginManager
             fixedName,
             Type.getMethodDescriptor(Type.getType(DynamicSigner.class)),
             BSM_HANDLE_ARBITRARY);
+      }
+
+      @Override
+      public String toString() {
+        return fileName.toString();
       }
     }
 
@@ -273,6 +288,11 @@ public final class PluginManager
       public Imyhat returnType() {
         return returnType;
       }
+
+      @Override
+      public String toString() {
+        return filename().toString();
+      }
     }
 
     private final class ArbitraryRefillerDefinition implements RefillerDefinition {
@@ -335,6 +355,11 @@ public final class PluginManager
       public SupplementaryInformation supplementaryInformation() {
         return information;
       }
+
+      @Override
+      public String toString() {
+        return fileName.toString();
+      }
     }
 
     private final class ArbitraryStaticSignatureDefintion extends SignatureVariableForStaticSigner {
@@ -364,6 +389,11 @@ public final class PluginManager
             fixedName,
             Type.getMethodDescriptor(Type.getType(StaticSigner.class)),
             BSM_HANDLE_ARBITRARY);
+      }
+
+      @Override
+      public String toString() {
+        return fileName.toString();
       }
     }
 
@@ -887,6 +917,11 @@ public final class PluginManager
       @Override
       public Optional<Integer> update() {
         return instance.update();
+      }
+
+      @Override
+      public String toString() {
+        return instance.fileName().toString();
       }
     }
 
