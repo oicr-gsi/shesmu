@@ -358,6 +358,6 @@ public abstract class ConstantDefinition implements Target {
 
   @Override
   public String toString() {
-    return filename().toString();
+    return null == filename() ? description() : filename().toString();
   }
 }
