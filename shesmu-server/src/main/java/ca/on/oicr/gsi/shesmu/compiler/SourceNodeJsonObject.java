@@ -76,7 +76,7 @@ public class SourceNodeJsonObject extends SourceNode {
         streamType(),
         lifted
             ? String.format(
-                "$runtime.mapNullOrDefault(%s, $v => Object.entires(v), [])",
+                "$runtime.mapNullOrDefault(%s, $v => Object.entries(v), [])",
                 expression.renderEcma(renderer))
             : String.format("Object.entries(%s)", expression.renderEcma(renderer)));
   }
