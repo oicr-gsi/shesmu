@@ -7,6 +7,21 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.51.0] - 2025-09-30
+
+### Added
+
+* shesmu_name_conflict metric for alerting on name loading conflicts
+  
+* `created_date` to `vidarr_analysis` input format
+
+### Fixed
+
+* Fix typo in ECMAScript code
+* Memory addresses displaying in name loading conflicts. Now shows file paths
+  
+
+
 ## [1.50.0] - 2025-09-04
 
 ### Added
