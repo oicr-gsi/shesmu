@@ -5,11 +5,10 @@ import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 public class VidarrAnalysisValue {
-  private final Optional<Instant> completed_date;
+  private final Instant completed_date;
   private final Instant created_date;
   private final Set<Tuple> output_files;
   private final Set<Tuple> workflow_run_external_keys;
@@ -21,7 +20,7 @@ public class VidarrAnalysisValue {
   private final Tuple workflow_version;
 
   public VidarrAnalysisValue(
-      Optional<Instant> completed_date,
+      Instant completed_date,
       Instant created_date,
       Set<Tuple> output_files,
       Set<Tuple> workflow_run_external_keys,
@@ -45,7 +44,7 @@ public class VidarrAnalysisValue {
   }
 
   @ShesmuVariable
-  public Optional<Instant> completed_date() {
+  public Instant completed_date() {
     return completed_date;
   }
 
