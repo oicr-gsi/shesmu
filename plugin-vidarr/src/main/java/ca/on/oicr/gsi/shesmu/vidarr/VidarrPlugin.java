@@ -91,9 +91,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
           .map(
               ca ->
                   new VidarrAnalysisValue(
-                      ca.getCompleted() == null
-                          ? Optional.empty()
-                          : Optional.of(ca.getCompleted().toInstant()),
+                      ca.getCompleted().toInstant(),
                       ca.getCreated().toInstant(),
                       ca.getAnalysis() == null
                           ? new HashSet<>()
