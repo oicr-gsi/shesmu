@@ -694,7 +694,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
         return result.isPresent() ? Optional.empty() : Optional.of(2);
       } catch (final Exception e) {
         e.printStackTrace();
-        errors.add(e.getMessage());
+        errors = List.of(e.getMessage());
         sourceValid.labels(fileName.toString()).set(0);
         return Optional.of(2);
       }
