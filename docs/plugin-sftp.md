@@ -102,7 +102,7 @@ will have serious performance implications for Shesmu. A maximum timeout, in
 seconds can be specified for the runtime of a refiller. If specified,
 `"timeout"` can be set for each refiller, or the top-level `"refillerTimeout"`
 can set the default if none is specified per refiller. If both are absent or
-`null` a default of 38 minutes is used. This is implemented using the `timeout`
+`null` a default of 15 minutes is used. This is implemented using the `timeout`
 command, which is present on UNIX systems.
 
 As an example, this shell script read the data and places it in a file (in the

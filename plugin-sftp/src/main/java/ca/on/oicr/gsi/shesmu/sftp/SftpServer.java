@@ -423,7 +423,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     fileAttributes.invalidateAll();
     definer.clearRefillers();
     final var defaultRefillerTimeout =
-        Objects.requireNonNullElse(configuration.getRefillerTimeout(), 38 * 60);
+        Objects.requireNonNullElse(configuration.getRefillerTimeout(), 15 * 60);
     for (final var entry : configuration.getRefillers().entrySet()) {
       final var timeout =
           Math.max(
