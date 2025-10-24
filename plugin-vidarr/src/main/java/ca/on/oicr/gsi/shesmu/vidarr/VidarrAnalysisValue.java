@@ -10,6 +10,7 @@ import java.util.Set;
 public class VidarrAnalysisValue {
   private final Instant completed_date;
   private final Instant created_date;
+  private final Instant last_accessed;
   private final Set<Tuple> output_files;
   private final Set<Tuple> workflow_run_external_keys;
   private final Set<String> input_files;
@@ -22,6 +23,7 @@ public class VidarrAnalysisValue {
   public VidarrAnalysisValue(
       Instant completed_date,
       Instant created_date,
+      Instant last_accessed,
       Set<Tuple> output_files,
       Set<Tuple> workflow_run_external_keys,
       Set<String> input_files,
@@ -33,6 +35,7 @@ public class VidarrAnalysisValue {
     super();
     this.completed_date = completed_date;
     this.created_date = created_date;
+    this.last_accessed = last_accessed;
     this.output_files = output_files;
     this.input_files = input_files;
     this.workflow = workflow;
@@ -51,6 +54,11 @@ public class VidarrAnalysisValue {
   @ShesmuVariable
   public Instant created_date() {
     return created_date;
+  }
+
+  @ShesmuVariable
+  public Instant last_accessed() {
+    return last_accessed;
   }
 
   @ShesmuVariable
