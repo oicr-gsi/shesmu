@@ -1,0 +1,1 @@
+`timeout` required for Loki plugin configuration
