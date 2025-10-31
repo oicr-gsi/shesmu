@@ -32,6 +32,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -59,7 +60,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       final PineryConfiguration cfg = config.get();
       final Map<String, Integer> badSetCounts = new TreeMap<>();
       final Map<String, RunDto> allRuns =
-          HTTP_CLIENT
+          httpClient()
               .send(
                   HttpRequest.newBuilder(URI.create(cfg.getUrl() + "/sequencerruns")).GET().build(),
                   new JsonListBodyHandler<>(MAPPER, RunDto.class))
@@ -109,7 +110,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         Map<String, RunDto> allRuns,
         BiConsumer<String, String> addLane)
         throws IOException, InterruptedException {
-      return HTTP_CLIENT
+      return httpClient()
           .send(
               HttpRequest.newBuilder(
                       URI.create(baseUrl + "/provenance/v" + version + "/lane-provenance"))
@@ -207,7 +208,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         Map<String, RunDto> allRuns,
         BiPredicate<String, String> hasLane)
         throws IOException, InterruptedException {
-      return HTTP_CLIENT
+      return httpClient()
           .send(
               HttpRequest.newBuilder(
                       URI.create(baseUrl + "/provenance/v" + version + "/sample-provenance"))
@@ -334,7 +335,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       final PineryConfiguration cfg = config.get();
       final Map<String, Integer> badSetCounts = new TreeMap<>();
       final Map<String, RunDto> allRuns =
-          HTTP_CLIENT
+          httpClient()
               .send(
                   HttpRequest.newBuilder(URI.create(cfg.getUrl() + "/sequencerruns")).GET().build(),
                   new JsonListBodyHandler<>(MAPPER, RunDto.class))
@@ -384,7 +385,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         Map<String, RunDto> allRuns,
         BiConsumer<String, String> addLane)
         throws IOException, InterruptedException {
-      return HTTP_CLIENT
+      return httpClient()
           .send(
               HttpRequest.newBuilder(
                       URI.create(baseUrl + "/provenance/v" + version + "/lane-provenance"))
@@ -480,7 +481,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         Map<String, RunDto> allRuns,
         BiPredicate<String, String> hasLane)
         throws IOException, InterruptedException {
-      return HTTP_CLIENT
+      return httpClient()
           .send(
               HttpRequest.newBuilder(
                       URI.create(baseUrl + "/provenance/v" + version + "/sample-provenance"))
@@ -604,9 +605,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       }
       final PineryConfiguration cfg = config.get();
       return Optional.of(
-          HTTP_CLIENT
+          httpClient()
               .send(
-                  HttpRequest.newBuilder(URI.create(config.get().getUrl() + "/instrumentmodels"))
+                  HttpRequest.newBuilder(URI.create(cfg.getUrl() + "/instrumentmodels"))
                       .GET()
                       .build(),
                   new JsonListBodyHandler<>(MAPPER, InstrumentModelDto.class))
@@ -630,7 +631,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     @Override
     protected Stream<SampleProjectDto> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) return new ErrorableStream<>(Stream.empty(), false);
-      return HTTP_CLIENT
+      return httpClient()
           .send(
               HttpRequest.newBuilder(URI.create(config.get().getUrl() + "/sample/projects"))
                   .GET()
@@ -642,8 +643,6 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   private static final Pattern COMMA = Pattern.compile(",");
-
-  private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final Gauge badSetMap =
       Gauge.build(
@@ -693,6 +692,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   private Optional<PineryConfiguration> config = Optional.empty();
   private final PlatformCache platforms;
   private final ProjectCache projects;
+  private HttpClient httpClient = null;
 
   public PinerySource(Path fileName, String instanceName) {
     super(fileName, instanceName, MAPPER, PineryConfiguration.class);
@@ -700,6 +700,17 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     cache = new AnalysisItemCache(fileName);
     includeSkippedCache = new IncludeSkippedItemCache(fileName);
     platforms = new PlatformCache(fileName);
+  }
+
+  private HttpClient httpClient() {
+    if (null == httpClient) {
+      HttpClient.Builder builder = HttpClient.newBuilder();
+      if (config.isPresent()) {
+        builder.connectTimeout(Duration.ofMinutes(config.get().getTimeout()));
+      }
+      httpClient = builder.build();
+    }
+    return httpClient;
   }
 
   @ShesmuMethod(
@@ -857,6 +868,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     projects.invalidate();
     cache.invalidate();
     includeSkippedCache.invalidate();
+    httpClient = null;
     return Optional.empty();
   }
 }
