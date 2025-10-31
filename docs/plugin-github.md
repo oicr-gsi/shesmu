@@ -25,7 +25,10 @@ The current state of GitHub branch information can be used as an input format. C
 
     {
        "repo": "myrepo",
-       "owner": "myorg"
+       "owner": "myorg",
+       "timeout": 10
     }
 
 The `owner` is the GitHub user or organisation that owns the repository. Now, olives can use `Input github_branches;` to access the current state of all branches in the repository. Note that this uses the heavily rate-limited unauthenticated public API.
+`timeout` defines the HTTP connection timeout for fetching
+input information from GitHub, in minutes.

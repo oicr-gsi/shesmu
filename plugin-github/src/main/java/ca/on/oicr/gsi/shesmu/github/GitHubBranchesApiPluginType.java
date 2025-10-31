@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -32,15 +33,16 @@ public class GitHubBranchesApiPluginType
         if (configuration.isEmpty()) return Stream.empty();
         final var c = configuration.get();
         var response =
-            HTTP_CLIENT.send(
-                HttpRequest.newBuilder(
-                        URI.create(
-                            String.format(
-                                "https://api.github.com/repos/%s/%s/branches",
-                                c.getOwner(), c.getRepo())))
-                    .GET()
-                    .build(),
-                new JsonBodyHandler<>(MAPPER, BranchResponse[].class));
+            httpClient()
+                .send(
+                    HttpRequest.newBuilder(
+                            URI.create(
+                                String.format(
+                                    "https://api.github.com/repos/%s/%s/branches",
+                                    c.getOwner(), c.getRepo())))
+                        .GET()
+                        .build(),
+                    new JsonBodyHandler<>(MAPPER, BranchResponse[].class));
         // TODO: If this input format comes into use, convert to use ErrorableStream
         return Stream.of(response.body().get()) //
             .map(
@@ -70,6 +72,19 @@ public class GitHubBranchesApiPluginType
       }
     }
 
+    private HttpClient httpClient = null;
+
+    protected HttpClient httpClient() {
+      if (null == httpClient) {
+        HttpClient.Builder builder = HttpClient.newBuilder();
+        if (configuration.isPresent()) {
+          builder.connectTimeout(Duration.ofMinutes(configuration.get().getTimeout()));
+        }
+        httpClient = builder.build();
+      }
+      return httpClient;
+    }
+
     public void configuration(SectionRenderer renderer) {
       configuration.ifPresent(
           c -> {
@@ -87,6 +102,7 @@ public class GitHubBranchesApiPluginType
     public Optional<Integer> update(Configuration value) {
       configuration = Optional.of(value);
       cache.invalidate();
+      httpClient = null;
       return Optional.empty();
     }
 
@@ -99,7 +115,6 @@ public class GitHubBranchesApiPluginType
     }
   }
 
-  public static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Override

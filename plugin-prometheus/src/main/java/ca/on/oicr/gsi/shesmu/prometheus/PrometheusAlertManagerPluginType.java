@@ -17,6 +17,7 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -60,11 +61,12 @@ public class PrometheusAlertManagerPluginType
           return Stream.empty();
         }
         var response =
-            HTTP_CLIENT.send(
-                HttpRequest.newBuilder(URI.create(String.format("%s/api/v1/alerts", url)))
-                    .GET()
-                    .build(),
-                new JsonBodyHandler<>(MAPPER, AlertResultDto.class));
+            httpClient()
+                .send(
+                    HttpRequest.newBuilder(URI.create(String.format("%s/api/v1/alerts", url)))
+                        .GET()
+                        .build(),
+                    new JsonBodyHandler<>(MAPPER, AlertResultDto.class));
         final var result = response.body().get();
         if (result == null || result.getData() == null) {
           return Stream.empty();
@@ -75,6 +77,18 @@ public class PrometheusAlertManagerPluginType
 
     private final AlertCache cache;
     private Optional<Configuration> configuration = Optional.empty();
+    private HttpClient httpClient;
+
+    private HttpClient httpClient() {
+      if (null == httpClient) {
+        HttpClient.Builder builder = HttpClient.newBuilder();
+        if (configuration.isPresent()) {
+          builder.connectTimeout(Duration.ofMinutes(configuration.get().getTimeout()));
+        }
+        httpClient = builder.build();
+      }
+      return httpClient;
+    }
 
     public AlertManagerEndpoint(Path fileName, String instanceName) {
       super(fileName, instanceName, MAPPER, Configuration.class);
@@ -103,7 +117,7 @@ public class PrometheusAlertManagerPluginType
                     .POST(BodyPublishers.ofString(alertJson, StandardCharsets.UTF_8))
                     .build();
             try {
-              final var response = HTTP_CLIENT.send(request, BodyHandlers.discarding());
+              final var response = httpClient().send(request, BodyHandlers.discarding());
               var ok = response.statusCode() != 200;
               if (ok) {
                 System.err.printf(
@@ -134,11 +148,10 @@ public class PrometheusAlertManagerPluginType
     protected Optional<Integer> update(Configuration value) {
       configuration = Optional.of(value);
       cache.invalidate();
+      httpClient = null;
       return Optional.empty();
     }
   }
-
-  private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
   public PrometheusAlertManagerPluginType() {
     super(MethodHandles.lookup(), AlertManagerEndpoint.class, ".alertman", "prometheus");

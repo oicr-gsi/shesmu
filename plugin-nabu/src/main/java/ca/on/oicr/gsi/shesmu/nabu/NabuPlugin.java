@@ -18,6 +18,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -32,7 +33,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
 
     private Stream<NabuCaseArchiveValue> caseArchives(String baseUrl)
         throws IOException, InterruptedException {
-      return HTTP_CLIENT
+      return httpClient()
           .send(
               HttpRequest.newBuilder(URI.create(baseUrl + "/cases")).GET().build(),
               new JsonListBodyHandler<>(MAPPER, NabuCaseArchiveDto.class))
@@ -105,7 +106,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
 
     private Stream<NabuFileQcValue> fileQcs(String baseUrl)
         throws IOException, InterruptedException {
-      return HTTP_CLIENT
+      return httpClient()
           .send(
               HttpRequest.newBuilder(URI.create(baseUrl + "/fileqcs-only")).GET().build(),
               new JsonListBodyHandler<>(MAPPER, NabuFileQcDto.class))
@@ -128,7 +129,6 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
     }
   }
 
-  static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   static final ObjectMapper MAPPER = new ObjectMapper();
 
   static {
@@ -139,6 +139,18 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
   private Optional<NabuConfiguration> config = Optional.empty();
   private final Definer<NabuPlugin> definer;
   private final FileQcCache fileQcCache;
+  private HttpClient httpClient = null;
+
+  private HttpClient httpClient() {
+    if (null == httpClient) {
+      HttpClient.Builder builder = HttpClient.newBuilder();
+      if (config.isPresent()) {
+        builder.connectTimeout(Duration.ofMinutes(config.get().getTimeout()));
+      }
+      httpClient = builder.build();
+    }
+    return httpClient;
+  }
 
   public NabuPlugin(Path fileName, String instanceName, Definer<NabuPlugin> definer) {
     super(fileName, instanceName, MAPPER, NabuConfiguration.class);
@@ -150,7 +162,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
   @ShesmuAction(
       description = "send archiving info for case to Nabu (completes when files archived)")
   public ArchiveCaseAction archive_case() {
-    return new ArchiveCaseAction(definer);
+    return new ArchiveCaseAction(definer, httpClient());
   }
 
   @Override
@@ -173,6 +185,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
     config = Optional.of(value);
     fileQcCache.invalidate();
     caseArchiveCache.invalidate();
+    httpClient = null;
     return Optional.empty();
   }
 

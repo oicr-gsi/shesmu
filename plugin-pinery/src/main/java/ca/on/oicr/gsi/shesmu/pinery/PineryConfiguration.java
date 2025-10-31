@@ -9,7 +9,7 @@ public class PineryConfiguration {
   private String provider;
   private String shortProvider;
   private String url;
-  private int version;
+  private int version, timeout;
 
   public Set<String> getClinicalPipelines() {
     return clinicalPipelines;
@@ -53,5 +53,13 @@ public class PineryConfiguration {
 
   public String shortProvider() {
     return shortProvider == null ? provider : shortProvider;
+  }
+
+  public int getTimeout() {
+    return timeout;
+  }
+
+  public void setTimeout(int timeout) {
+    this.timeout = timeout;
   }
 }

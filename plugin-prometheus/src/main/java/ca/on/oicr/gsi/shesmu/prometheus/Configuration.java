@@ -7,6 +7,7 @@ public class Configuration {
   private String alertmanager;
   private String environment;
   private List<String> labels = List.of("job");
+  private int timeout;
 
   public String getAlertmanager() {
     return alertmanager;
@@ -30,5 +31,13 @@ public class Configuration {
 
   public void setLabels(List<String> labels) {
     this.labels = labels;
+  }
+
+  public int getTimeout() {
+    return timeout;
+  }
+
+  public void setTimeout(int timeout) {
+    this.timeout = timeout;
   }
 }

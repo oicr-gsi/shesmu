@@ -15,6 +15,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,11 +30,23 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
   private final CaseSequencingTestCache caseSequencingTestCache;
   private final CaseSummaryCache caseSummaryCache;
 
-  static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   static final ObjectMapper MAPPER = new ObjectMapper();
 
   static {
     MAPPER.registerModule(new JavaTimeModule());
+  }
+
+  private HttpClient httpClient = null;
+
+  private HttpClient httpClient() {
+    if (null == httpClient) {
+      HttpClient.Builder builder = HttpClient.newBuilder();
+      if (config.isPresent()) {
+        builder.connectTimeout(Duration.ofMinutes(config.get().getTimeout()));
+      }
+      httpClient = builder.build();
+    }
+    return httpClient;
   }
 
   public CardeaPlugin(Path fileName, String instanceName, Definer<CardeaPlugin> definer) {
@@ -57,6 +70,7 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
     caseDetailedSummaryCache.invalidate();
     caseSequencingTestCache.invalidate();
     caseSummaryCache.invalidate();
+    httpClient = null;
     return Optional.empty();
   }
 
@@ -67,7 +81,7 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
 
     private Stream<DeliverableValue> deliverables(String baseUrl)
         throws IOException, InterruptedException {
-      return HTTP_CLIENT
+      return httpClient()
           .send(
               HttpRequest.newBuilder(URI.create(baseUrl + "/shesmu-detailed-cases")).GET().build(),
               new JsonListBodyHandler<>(MAPPER, CaseDetailedSummaryDto.class))
@@ -127,7 +141,7 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
 
     private Stream<CaseDetailedSummaryValue> caseDetailedSummary(String baseUrl)
         throws IOException, InterruptedException {
-      return HTTP_CLIENT
+      return httpClient()
           .send(
               HttpRequest.newBuilder(URI.create(baseUrl + "/shesmu-detailed-cases")).GET().build(),
               new JsonListBodyHandler<>(MAPPER, CaseDetailedSummaryDto.class))
@@ -166,7 +180,7 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
 
     private Stream<CaseSummaryValue> caseSummary(String baseUrl)
         throws IOException, InterruptedException {
-      return HTTP_CLIENT
+      return httpClient()
           .send(
               HttpRequest.newBuilder(URI.create(baseUrl + "/shesmu-cases")).GET().build(),
               new JsonListBodyHandler<>(MAPPER, CaseSummaryDto.class))
@@ -201,7 +215,7 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
 
     private Stream<SequencingTestValue> sequencingTest(String baseUrl)
         throws IOException, InterruptedException {
-      return HTTP_CLIENT
+      return httpClient()
           .send(
               HttpRequest.newBuilder(URI.create(baseUrl + "/shesmu-detailed-cases")).GET().build(),
               new JsonListBodyHandler<>(MAPPER, CaseDetailedSummaryDto.class))

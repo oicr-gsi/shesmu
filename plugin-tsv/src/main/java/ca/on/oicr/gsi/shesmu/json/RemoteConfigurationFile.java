@@ -10,6 +10,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -37,6 +38,7 @@ public final class RemoteConfigurationFile extends BaseStructuredConfigFile<Remo
               .send(
                   HttpRequest.newBuilder(URI.create(configuration.getUrl()))
                       .header("Accept", "application/json")
+                      .timeout(Duration.ofMinutes(configuration.getTimeout()))
                       .GET()
                       .build(),
                   new JsonBodyHandler<>(

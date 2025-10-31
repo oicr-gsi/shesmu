@@ -8,6 +8,7 @@ public class Configuration {
   private String url;
   private List<AnalysisOutputType> analysisTypes;
   private List<String> versionTypes;
+  private int timeout;
 
   public Long getDefaultMaxSubmissionDelay() {
     return defaultMaxSubmissionDelay;
@@ -39,5 +40,13 @@ public class Configuration {
 
   public void setVersionTypes(List<String> versionTypes) {
     this.versionTypes = versionTypes;
+  }
+
+  public int getTimeout() {
+    return timeout;
+  }
+
+  public void setTimeout(int timeout) {
+    this.timeout = timeout;
   }
 }

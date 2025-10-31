@@ -69,18 +69,19 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
     protected Stream<VidarrAnalysisValue> analysisArchive(String baseUrl) throws Exception {
 
       final var results =
-          HTTP_CLIENT.send(
-              HttpRequest.newBuilder(URI.create(baseUrl + "/api/provenance"))
-                  .header("Content-type", "application/json")
-                  .timeout(Duration.ofMinutes(10))
-                  .POST(
-                      HttpRequest.BodyPublishers.ofString(
-                          createVidarrProvenanceRequestBody(
-                              configuration.get().getAnalysisTypes(),
-                              configuration.get().getVersionTypes())))
-                  .build(),
-              new JsonBodyHandler<>(
-                  MAPPER, new TypeReference<AnalysisProvenanceResponse<ExternalKey>>() {}));
+          httpClient()
+              .send(
+                  HttpRequest.newBuilder(URI.create(baseUrl + "/api/provenance"))
+                      .header("Content-type", "application/json")
+                      .timeout(Duration.ofMinutes(10))
+                      .POST(
+                          HttpRequest.BodyPublishers.ofString(
+                              createVidarrProvenanceRequestBody(
+                                  configuration.get().getAnalysisTypes(),
+                                  configuration.get().getVersionTypes())))
+                      .build(),
+                  new JsonBodyHandler<>(
+                      MAPPER, new TypeReference<AnalysisProvenanceResponse<ExternalKey>>() {}));
 
       if (results.statusCode() != 200) {
         return new ErrorableStream<>(Stream.empty(), false);
@@ -335,7 +336,18 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
     return submissionPolicy;
   }
 
-  static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
+  private HttpClient httpClient = null;
+
+  private HttpClient httpClient() {
+    if (null == httpClient) {
+      HttpClient.Builder builder = HttpClient.newBuilder();
+      if (configuration.isPresent()) {
+        builder.connectTimeout(Duration.ofMinutes(configuration.get().getTimeout()));
+      }
+      httpClient = builder.build();
+    }
+    return httpClient;
+  }
 
   @ShesmuMethod(
       type =
@@ -382,6 +394,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   protected Optional<Integer> update(Configuration value) {
     configuration = Optional.of(value);
     try {
+      httpClient = null;
       if (value.getDefaultMaxSubmissionDelay() == null) {
         submissionPolicy = SubmissionPolicy.ALWAYS;
       } else {
