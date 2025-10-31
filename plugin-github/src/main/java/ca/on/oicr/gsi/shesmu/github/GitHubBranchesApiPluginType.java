@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.github;
 
+import static ca.on.oicr.gsi.shesmu.plugin.Utils.httpGet;
+
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
@@ -10,9 +12,7 @@ import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.invoke.MethodHandles;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
@@ -33,13 +33,10 @@ public class GitHubBranchesApiPluginType
         final var c = configuration.get();
         var response =
             HTTP_CLIENT.send(
-                HttpRequest.newBuilder(
-                        URI.create(
-                            String.format(
-                                "https://api.github.com/repos/%s/%s/branches",
-                                c.getOwner(), c.getRepo())))
-                    .GET()
-                    .build(),
+                httpGet(
+                    String.format(
+                        "https://api.github.com/repos/%s/%s/branches", c.getOwner(), c.getRepo()),
+                    configuration.map(Configuration::getTimeout)),
                 new JsonBodyHandler<>(MAPPER, BranchResponse[].class));
         // TODO: If this input format comes into use, convert to use ErrorableStream
         return Stream.of(response.body().get()) //
