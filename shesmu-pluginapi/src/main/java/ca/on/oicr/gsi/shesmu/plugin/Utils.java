@@ -3,8 +3,10 @@ package ca.on.oicr.gsi.shesmu.plugin;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -83,5 +85,11 @@ public class Utils {
           new TreeMap<>());
       return null;
     }
+  }
+
+  public static HttpRequest httpGet(String uri, Optional<Integer> timeout) {
+    HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(uri));
+    if (timeout.isPresent()) builder.timeout(Duration.ofMinutes(timeout.get()));
+    return builder.GET().build();
   }
 }
