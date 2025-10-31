@@ -8,12 +8,13 @@ ending `.loki` with the following:
       "labels": {
         "environment": "foo"
       },
-      "level": "INFO"
+      "level": "INFO",
+      "timeout": 10
     }
 
 The `"url"` property is the URL of the Loki server to push logs into. The
 optional `"labels"` object will apply static labels to all values logged from
-this instance.
+this instance. `"timeout"` defines the HTTP connection timeout for communication with Loki, in minutes.
 
 The `"level"` property is one of:
 1. FATAL

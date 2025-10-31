@@ -10,6 +10,7 @@ public class Configuration {
   private Map<String, String> labels = Map.of();
   private String url;
   private LogLevel level;
+  private int timeout;
 
   public Map<String, String> getLabels() {
     return labels;
@@ -33,5 +34,13 @@ public class Configuration {
 
   public void setLevel(LogLevel level) {
     this.level = level;
+  }
+
+  public int getTimeout() {
+    return timeout;
+  }
+
+  public void setTimeout(int timeout) {
+    this.timeout = timeout;
   }
 }

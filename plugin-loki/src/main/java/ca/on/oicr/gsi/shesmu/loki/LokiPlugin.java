@@ -112,6 +112,7 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
               // and Loki then thinks the request is a protobuf
               request =
                   HttpRequest.newBuilder(URI.create(c.getUrl()))
+                      .timeout(Duration.ofMinutes(c.getTimeout()))
                       .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(body)))
                       .header("Content-type", "application/json")
                       .build();
