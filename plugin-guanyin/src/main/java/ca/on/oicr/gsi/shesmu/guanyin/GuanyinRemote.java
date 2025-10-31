@@ -14,9 +14,11 @@ import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
@@ -36,19 +38,21 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
         return new ErrorableStream<>(Stream.empty(), false);
       }
       final var reportsResponse =
-          RunReport.HTTP_CLIENT.send(
-              HttpRequest.newBuilder(
-                      URI.create(configuration.get().getGuanyin() + "/reportdb/reports"))
-                  .version(Version.HTTP_1_1)
-                  .build(),
-              new JsonBodyHandler<>(RunReport.MAPPER, ReportDto[].class));
+          httpClient()
+              .send(
+                  HttpRequest.newBuilder(
+                          URI.create(configuration.get().getGuanyin() + "/reportdb/reports"))
+                      .version(Version.HTTP_1_1)
+                      .build(),
+                  new JsonBodyHandler<>(RunReport.MAPPER, ReportDto[].class));
       final var recordsResponse =
-          RunReport.HTTP_CLIENT.send(
-              HttpRequest.newBuilder(
-                      URI.create(configuration.get().getGuanyin() + "/reportdb/records"))
-                  .version(Version.HTTP_1_1)
-                  .build(),
-              new JsonBodyHandler<>(RunReport.MAPPER, RecordDto[].class));
+          httpClient()
+              .send(
+                  HttpRequest.newBuilder(
+                          URI.create(configuration.get().getGuanyin() + "/reportdb/records"))
+                      .version(Version.HTTP_1_1)
+                      .build(),
+                  new JsonBodyHandler<>(RunReport.MAPPER, RecordDto[].class));
       final var reports =
           Stream.of(reportsResponse.body().get())
               .collect(Collectors.toMap(ReportDto::getId, Function.identity()));
@@ -62,6 +66,18 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
   private Optional<Configuration> configuration = Optional.empty();
   private final Definer<GuanyinRemote> definer;
   private final ReportsCache reports;
+  private HttpClient httpClient = null;
+
+  private HttpClient httpClient() {
+    if (null == httpClient) {
+      HttpClient.Builder builder = HttpClient.newBuilder();
+      if (configuration.isPresent()) {
+        builder.connectTimeout(Duration.ofMinutes(configuration.get().getHttpTimeout()));
+      }
+      httpClient = builder.build();
+    }
+    return httpClient;
+  }
 
   public GuanyinRemote(Path fileName, String instanceName, Definer<GuanyinRemote> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);
@@ -111,13 +127,16 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
   @Override
   protected Optional<Integer> update(Configuration configuration) {
     try {
+      httpClient = null;
       final var response =
-          RunReport.HTTP_CLIENT.send(
-              HttpRequest.newBuilder(URI.create(configuration.getGuanyin() + "/reportdb/reports"))
-                  .GET()
-                  .version(Version.HTTP_1_1)
-                  .build(),
-              new JsonBodyHandler<>(RunReport.MAPPER, ReportDto[].class));
+          httpClient()
+              .send(
+                  HttpRequest.newBuilder(
+                          URI.create(configuration.getGuanyin() + "/reportdb/reports"))
+                      .GET()
+                      .version(Version.HTTP_1_1)
+                      .build(),
+                  new JsonBodyHandler<>(RunReport.MAPPER, ReportDto[].class));
       definer.clearActions();
       if (response.statusCode() == 200) {
         for (final var report : response.body().get()) {
@@ -138,7 +157,7 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
               actionName,
               description,
               RunReport.class,
-              () -> new RunReport(definer, reportId, reportName), //
+              () -> new RunReport(definer, reportId, reportName, httpClient()), //
               report
                   .getPermittedParameters() //
                   .entrySet()

@@ -60,7 +60,6 @@ public class RunReport extends JsonParameterisedAction {
           return Response.IGNORED;
         }
       };
-  static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   static final ObjectMapper MAPPER = new ObjectMapper();
   private static final String WDL =
       "version 1.0\n"
@@ -111,12 +110,15 @@ public class RunReport extends JsonParameterisedAction {
   private final String reportName;
   private OptionalLong reportRecordId = OptionalLong.empty();
   private final ObjectNode rootParameters = MAPPER.createObjectNode();
+  private HttpClient httpClient;
 
-  public RunReport(Definer<GuanyinRemote> owner, long reportId, String reportName) {
+  public RunReport(
+      Definer<GuanyinRemote> owner, long reportId, String reportName, HttpClient httpClient) {
     super("guanyin-report");
     this.owner = owner;
     this.reportId = reportId;
     this.reportName = reportName;
+    this.httpClient = httpClient;
     parameters = rootParameters.putObject("parameters");
   }
 
@@ -232,7 +234,7 @@ public class RunReport extends JsonParameterisedAction {
             .POST(body)
             .build();
     try (var timer = 观音RequestTime.start(owner.get().观音Url())) {
-      var response = HTTP_CLIENT.send(request, new JsonBodyHandler<>(MAPPER, RecordDto[].class));
+      var response = httpClient.send(request, new JsonBodyHandler<>(MAPPER, RecordDto[].class));
       if (response.statusCode() / 100 != 2) {
         showError(response, request.uri());
         观音RequestErrors.labels(owner.get().观音Url()).inc();
@@ -271,7 +273,7 @@ public class RunReport extends JsonParameterisedAction {
               .build();
       try (var timer = 观音RequestTime.start(owner.get().观音Url())) {
         var response =
-            HTTP_CLIENT.send(createRequest, new JsonBodyHandler<>(MAPPER, CreateDto.class));
+            httpClient.send(createRequest, new JsonBodyHandler<>(MAPPER, CreateDto.class));
         if (response.statusCode() / 100 != 2) {
           showError(response, request.uri());
           观音RequestErrors.labels(owner.get().观音Url()).inc();
@@ -313,7 +315,7 @@ public class RunReport extends JsonParameterisedAction {
                 .addPart("labels", MAPPER.writeValueAsString(labels));
 
         cromwellId =
-            HTTP_CLIENT
+            httpClient
                 .send(
                     HttpRequest.newBuilder()
                         .uri(
@@ -329,7 +331,7 @@ public class RunReport extends JsonParameterisedAction {
         this.errors = Collections.emptyList();
       } else if (cromwellId != null) {
         cromwellId =
-            HTTP_CLIENT
+            httpClient
                 .send(
                     HttpRequest.newBuilder(
                             URI.create(
