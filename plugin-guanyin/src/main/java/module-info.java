@@ -1,12 +1,10 @@
 import ca.on.oicr.gsi.shesmu.guanyin.GuanyinReportInputFormat;
 import ca.on.oicr.gsi.shesmu.guanyin.GuanyinReportPluginType;
-import ca.on.oicr.gsi.shesmu.onlinereport.OnlineReportPluginType;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import ca.on.oicr.gsi.shesmu.plugin.input.InputFormat;
 
 module ca.on.oicr.gsi.shesmu.plugin.guanyin {
   exports ca.on.oicr.gsi.shesmu.guanyin;
-  exports ca.on.oicr.gsi.shesmu.onlinereport;
   exports ca.on.oicr.gsi.shesmu.cromwell;
 
   requires ca.on.oicr.gsi.serverutils;
@@ -19,6 +17,5 @@ module ca.on.oicr.gsi.shesmu.plugin.guanyin {
   provides InputFormat with
       GuanyinReportInputFormat;
   provides PluginFileType with
-      GuanyinReportPluginType,
-      OnlineReportPluginType;
+      GuanyinReportPluginType;
 }
