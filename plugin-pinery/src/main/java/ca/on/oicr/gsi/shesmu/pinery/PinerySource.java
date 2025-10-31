@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.pinery;
 
+import static ca.on.oicr.gsi.shesmu.plugin.Utils.httpGet;
+
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.SampleProvenance;
 import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
@@ -27,9 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.prometheus.client.Gauge;
 import java.io.IOException;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -61,7 +61,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       final Map<String, RunDto> allRuns =
           HTTP_CLIENT
               .send(
-                  HttpRequest.newBuilder(URI.create(cfg.getUrl() + "/sequencerruns")).GET().build(),
+                  httpGet(cfg.getUrl() + "/sequencerruns", Optional.of(cfg.getTimeout())),
                   new JsonListBodyHandler<>(MAPPER, RunDto.class))
               .body()
               .get()
@@ -111,10 +111,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         throws IOException, InterruptedException {
       return HTTP_CLIENT
           .send(
-              HttpRequest.newBuilder(
-                      URI.create(baseUrl + "/provenance/v" + version + "/lane-provenance"))
-                  .GET()
-                  .build(),
+              httpGet(
+                  baseUrl + "/provenance/v" + version + "/lane-provenance",
+                  config.map(PineryConfiguration::getTimeout)),
               new JsonListBodyHandler<>(MAPPER, LaneProvenanceDto.class))
           .body()
           .get()
@@ -209,10 +208,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         throws IOException, InterruptedException {
       return HTTP_CLIENT
           .send(
-              HttpRequest.newBuilder(
-                      URI.create(baseUrl + "/provenance/v" + version + "/sample-provenance"))
-                  .GET()
-                  .build(),
+              httpGet(
+                  baseUrl + "/provenance/v" + version + "/sample-provenance",
+                  config.map(PineryConfiguration::getTimeout)),
               new JsonListBodyHandler<>(MAPPER, SampleProvenanceDto.class))
           .body()
           .get()
@@ -336,7 +334,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       final Map<String, RunDto> allRuns =
           HTTP_CLIENT
               .send(
-                  HttpRequest.newBuilder(URI.create(cfg.getUrl() + "/sequencerruns")).GET().build(),
+                  httpGet(cfg.getUrl() + "/sequencerruns", Optional.of(cfg.getTimeout())),
                   new JsonListBodyHandler<>(MAPPER, RunDto.class))
               .body()
               .get()
@@ -386,10 +384,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         throws IOException, InterruptedException {
       return HTTP_CLIENT
           .send(
-              HttpRequest.newBuilder(
-                      URI.create(baseUrl + "/provenance/v" + version + "/lane-provenance"))
-                  .GET()
-                  .build(),
+              httpGet(
+                  baseUrl + "/provenance/v" + version + "/lane-provenance",
+                  config.map(PineryConfiguration::getTimeout)),
               new JsonListBodyHandler<>(MAPPER, LaneProvenanceDto.class))
           .body()
           .get()
@@ -482,10 +479,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         throws IOException, InterruptedException {
       return HTTP_CLIENT
           .send(
-              HttpRequest.newBuilder(
-                      URI.create(baseUrl + "/provenance/v" + version + "/sample-provenance"))
-                  .GET()
-                  .build(),
+              httpGet(
+                  baseUrl + "/provenance/v" + version + "/sample-provenance",
+                  config.map(PineryConfiguration::getTimeout)),
               new JsonListBodyHandler<>(MAPPER, SampleProvenanceDto.class))
           .body()
           .get()
@@ -606,9 +602,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       return Optional.of(
           HTTP_CLIENT
               .send(
-                  HttpRequest.newBuilder(URI.create(config.get().getUrl() + "/instrumentmodels"))
-                      .GET()
-                      .build(),
+                  httpGet(
+                      config.get().getUrl() + "/instrumentmodels", Optional.of(cfg.getTimeout())),
                   new JsonListBodyHandler<>(MAPPER, InstrumentModelDto.class))
               .body()
               .get()
@@ -630,11 +625,10 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     @Override
     protected Stream<SampleProjectDto> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) return new ErrorableStream<>(Stream.empty(), false);
+      PineryConfiguration cfg = config.get();
       return HTTP_CLIENT
           .send(
-              HttpRequest.newBuilder(URI.create(config.get().getUrl() + "/sample/projects"))
-                  .GET()
-                  .build(),
+              httpGet(cfg.getUrl() + "/sample/projects", Optional.of(cfg.getTimeout())),
               new JsonListBodyHandler<>(MAPPER, SampleProjectDto.class))
           .body()
           .get();
