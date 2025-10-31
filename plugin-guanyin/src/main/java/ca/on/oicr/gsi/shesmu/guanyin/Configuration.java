@@ -11,6 +11,7 @@ public class Configuration {
   private String modules = "";
   private String script;
   private int timeout = 1;
+  private int httpTimeout;
 
   public String getCromwell() {
     return cromwell;
@@ -58,5 +59,13 @@ public class Configuration {
 
   public void setTimeout(int timeout) {
     this.timeout = timeout;
+  }
+
+  public int getHttpTimeout() {
+    return httpTimeout;
+  }
+
+  public void setHttpTimeout(int httpTimeout) {
+    this.httpTimeout = httpTimeout;
   }
 }

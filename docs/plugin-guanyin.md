@@ -6,6 +6,30 @@ through [Cromwell](https://github.com/broadinstitute/cromwell). Before
 launching a report action, Shesmu first checks with Guanyin to see if the
 report has already been run.
 
+## Configure the Plugin
+
+To configure a Guanyin connection, create a JSON file ending in `.guanyin` as follows:
+
+```
+{
+  "cromwell": "http://cromwell.url",
+  "httpTimeout": 10,
+  "guanyin": "http://guanyin.url",
+  "modules": "guanyin-reports/0.2",
+  "memory": 8,
+  "script": "/path/to/script",
+  "timeout": 1
+}
+```
+
+Where `"cromwell"` defines the URL of the Cromwell instance on which to launch,
+`"httpTimeout"` defines the HTTP connection timeout for communication with Guanyin and Cromwell, in minutes,
+`"guanyin"` defines the URL of the Guanyin instance with which to run reports,
+`"modules"` defines the Guanyin module,
+`"memory"` defines the requested amount of memory with which to run the report, in gigabytes,
+`"script"` defines the path to the report action script, defined below,
+and `"timeout"` defines the requested length of time with which to run the report, in hours.
+
 ## Launch Custom Reports with Guanyin
 Shesmu frequently scans the input data and generates the set of actions to be
 launched for that data. Since Shesmu is stateless, a record of which actions
