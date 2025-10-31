@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.prometheus;
 
+import static ca.on.oicr.gsi.shesmu.plugin.Utils.httpGet;
+
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
@@ -17,6 +19,7 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -61,9 +64,9 @@ public class PrometheusAlertManagerPluginType
         }
         var response =
             HTTP_CLIENT.send(
-                HttpRequest.newBuilder(URI.create(String.format("%s/api/v1/alerts", url)))
-                    .GET()
-                    .build(),
+                httpGet(
+                    String.format("%s/api/v1/alerts", url),
+                    configuration.map(Configuration::getTimeout)),
                 new JsonBodyHandler<>(MAPPER, AlertResultDto.class));
         final var result = response.body().get();
         if (result == null || result.getData() == null) {
@@ -100,6 +103,7 @@ public class PrometheusAlertManagerPluginType
                 HttpRequest.newBuilder(
                         URI.create(String.format("%s/api/v1/alerts", config.getAlertmanager())))
                     .header("Content-type", "application/json")
+                    .timeout(Duration.ofMinutes(config.getTimeout()))
                     .POST(BodyPublishers.ofString(alertJson, StandardCharsets.UTF_8))
                     .build();
             try {

@@ -8,7 +8,8 @@ To configure the server, create a file ending in `.alertman` as follows:
     {
       "alertmanager": "http://alertmanager:9093",
       "environment": "production"
-      "labels": ["job", "scope"]
+      "labels": ["job", "scope"],
+      "timeout": 20
     }
 
 The plugin will check Alert Manager and block any alerts firing of the form
@@ -17,6 +18,8 @@ The plugin will check Alert Manager and block any alerts firing of the form
 the service used by an olive or action and _y_ is one of `labels`, in this
 case, `job` or `scope`. If labels is not supplied, `job` is assumed. This
 allows dynamic throttling of Shesmu workload based on the services required.
+`timeout` defines the HTTP connection timeout for fetching
+input information from Alert Manager, in minutes.
 
 Additionally, an `Alert` olives' output is pushed to Alert Manager with the
 additional label `environment="production"`.
