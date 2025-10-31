@@ -1,0 +1,1 @@
+`timeout` required in Cardea plugin configuration
