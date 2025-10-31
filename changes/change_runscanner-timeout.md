@@ -1,0 +1,1 @@
+`timeout` required in Run Scanner plugin configuration

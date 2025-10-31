@@ -124,7 +124,6 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
     }
   }
 
-  static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final Gauge fetchOk =
       Gauge.build(
@@ -164,9 +163,20 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   private PurgeState runCachePurge = PurgeState.FRESH;
   private final Semaphore updateLock = new Semaphore(1);
   private Optional<String> url = Optional.empty();
+  private int timeout;
+  private HttpClient httpClient = null;
 
   public RunScannerClient(Path fileName, String instanceName) {
     super(fileName, instanceName, MAPPER, Configuration.class);
+  }
+
+  private HttpClient httpClient() {
+    if (null == httpClient) {
+      HttpClient.Builder builder = HttpClient.newBuilder();
+      builder.connectTimeout(Duration.ofMinutes(timeout));
+      httpClient = builder.build();
+    }
+    return httpClient;
   }
 
   @Override
@@ -278,7 +288,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
           var noUpdates = true;
           while (isMoreAvailable) {
             final var response =
-                HTTP_CLIENT
+                httpClient()
                     .send(
                         HttpRequest.newBuilder(
                                 URI.create(String.format("%s/runs/progressive", url.get())))
@@ -337,6 +347,8 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
 
   @Override
   protected Optional<Integer> update(Configuration value) {
+    httpClient = null;
+    timeout = value.getTimeout();
     url = Optional.ofNullable(value.getUrl());
     return Optional.empty();
   }
