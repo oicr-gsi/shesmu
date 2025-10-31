@@ -255,6 +255,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     return builder
         .header("Content-type", "application/json")
         .header("Accept", "application/json")
+        .timeout(Duration.ofMinutes(owner.get().timeout()))
         .POST(body)
         .build();
   }
