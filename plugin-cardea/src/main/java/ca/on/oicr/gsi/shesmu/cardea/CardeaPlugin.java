@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.cardea;
 
+import static ca.on.oicr.gsi.shesmu.plugin.Utils.httpGet;
+
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
@@ -11,9 +13,7 @@ import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Objects;
@@ -69,7 +69,8 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
         throws IOException, InterruptedException {
       return HTTP_CLIENT
           .send(
-              HttpRequest.newBuilder(URI.create(baseUrl + "/shesmu-detailed-cases")).GET().build(),
+              httpGet(
+                  baseUrl + "/shesmu-detailed-cases", config.map(CardeaConfiguration::getTimeout)),
               new JsonListBodyHandler<>(MAPPER, CaseDetailedSummaryDto.class))
           .body()
           .get()
@@ -129,7 +130,8 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
         throws IOException, InterruptedException {
       return HTTP_CLIENT
           .send(
-              HttpRequest.newBuilder(URI.create(baseUrl + "/shesmu-detailed-cases")).GET().build(),
+              httpGet(
+                  baseUrl + "/shesmu-detailed-cases", config.map(CardeaConfiguration::getTimeout)),
               new JsonListBodyHandler<>(MAPPER, CaseDetailedSummaryDto.class))
           .body()
           .get()
@@ -168,7 +170,7 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
         throws IOException, InterruptedException {
       return HTTP_CLIENT
           .send(
-              HttpRequest.newBuilder(URI.create(baseUrl + "/shesmu-cases")).GET().build(),
+              httpGet(baseUrl + "/shesmu-cases", config.map(CardeaConfiguration::getTimeout)),
               new JsonListBodyHandler<>(MAPPER, CaseSummaryDto.class))
           .body()
           .get()
@@ -203,7 +205,8 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
         throws IOException, InterruptedException {
       return HTTP_CLIENT
           .send(
-              HttpRequest.newBuilder(URI.create(baseUrl + "/shesmu-detailed-cases")).GET().build(),
+              httpGet(
+                  baseUrl + "/shesmu-detailed-cases", config.map(CardeaConfiguration::getTimeout)),
               new JsonListBodyHandler<>(MAPPER, CaseDetailedSummaryDto.class))
           .body()
           .get()
