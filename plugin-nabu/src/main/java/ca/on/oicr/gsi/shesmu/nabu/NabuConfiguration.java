@@ -6,6 +6,7 @@ public class NabuConfiguration {
 
   private AuthenticationConfiguration authentication;
   private String url;
+  private int timeout;
 
   public AuthenticationConfiguration getAuthentication() {
     return authentication;
@@ -21,5 +22,13 @@ public class NabuConfiguration {
 
   public void setUrl(String url) {
     this.url = url;
+  }
+
+  public int getTimeout() {
+    return timeout;
+  }
+
+  public void setTimeout(int timeout) {
+    this.timeout = timeout;
   }
 }

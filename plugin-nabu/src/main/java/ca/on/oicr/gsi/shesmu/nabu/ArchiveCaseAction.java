@@ -37,7 +37,6 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
   public Set<String> limsIds;
   public Set<String> workflowRunIdsForOffsiteArchive;
   public Set<String> workflowRunIdsForVidarrArchival;
-  static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private final ObjectNode parameters;
   private final ObjectNode rootParameters = MAPPER.createObjectNode();
   private Optional<String> authenticationHeader = Optional.empty();
@@ -54,9 +53,12 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
           "The request time latency to launch a remote action.",
           "target");
 
-  public ArchiveCaseAction(Definer<NabuPlugin> owner) {
+  private HttpClient httpClient;
+
+  public ArchiveCaseAction(Definer<NabuPlugin> owner, HttpClient httpClient) {
     super("nabu-plugin");
     this.owner = owner;
+    this.httpClient = httpClient;
     parameters = rootParameters.putObject("parameters");
   }
 
@@ -240,7 +242,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
     }
 
     String baseUrl = owner.get().NabuUrl();
-    return sendArchiveCaseActionRequest(HTTP_CLIENT, baseUrl);
+    return sendArchiveCaseActionRequest(httpClient, baseUrl);
   }
 
   private HttpRequest buildRequest(String baseUrl) throws JsonProcessingException {
