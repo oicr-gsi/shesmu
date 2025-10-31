@@ -13,11 +13,12 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
 public class RemoteInstance extends JsonPluginFile<Configuration> {
-  private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
+  private HttpClient httpClient = null;
 
   private String allow = ".*";
 
@@ -25,9 +26,20 @@ public class RemoteInstance extends JsonPluginFile<Configuration> {
 
   private String url = "<unknown>";
 
+  private int timeout;
+
   public RemoteInstance(Path fileName, String instanceName, Definer<RemoteInstance> definer) {
     super(fileName, instanceName, FakeAction.MAPPER, Configuration.class);
     this.definer = definer;
+  }
+
+  private HttpClient httpClient() {
+    if (null == httpClient) {
+      HttpClient.Builder builder = HttpClient.newBuilder();
+      builder.connectTimeout(Duration.ofMinutes(timeout));
+      httpClient = builder.build();
+    }
+    return httpClient;
   }
 
   public void configuration(SectionRenderer renderer) {
@@ -37,16 +49,18 @@ public class RemoteInstance extends JsonPluginFile<Configuration> {
 
   @Override
   protected Optional<Integer> update(Configuration configuration) {
+    httpClient = null;
     url = configuration.getUrl();
     allow = configuration.getAllow();
+    timeout = configuration.getTimeout();
     final var allow = Pattern.compile(configuration.getAllow());
     definer.clearActions();
     final var request =
         HttpRequest.newBuilder(URI.create(String.format("%s/actions", url))).GET().build();
     try {
       var response =
-          HTTP_CLIENT.send(
-              request, new JsonBodyHandler<>(RuntimeSupport.MAPPER, ObjectNode[].class));
+          httpClient()
+              .send(request, new JsonBodyHandler<>(RuntimeSupport.MAPPER, ObjectNode[].class));
       if (response.statusCode() == 200) {
         for (final var obj : response.body().get()) {
           var name = obj.get("name").asText();
