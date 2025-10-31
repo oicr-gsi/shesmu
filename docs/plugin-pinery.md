@@ -16,6 +16,7 @@ To configure a Pinery source, create a JSON file ending in `.pinery` as follows:
       "clinicalPipelines": ["Clinical", "Accredited Pipeline"],
       "provider": "foo-v2",
       "shortProvider": "foo",
+      "timeout": 120,
       "url": "http://pinery:8080/",
       "version": 2
     }
@@ -23,7 +24,8 @@ To configure a Pinery source, create a JSON file ending in `.pinery` as follows:
 where `provider` is an arbitrary string that will be baked into the
 `provider` field for `pinery_ius` and `pinery_ius_include_skipped`. `shortProvider` is 
 similar, but will be used in `external_key`. `url` is the address of the Pinery
-server and `version` provides the Pinery data model version.
+server and `version` provides the Pinery data model version. `timeout` defines the HTTP connection timeout for fetching
+input information from Pinery, in minutes.
 
 For each configuration, the names of all and active projects are also available
 as constants.
