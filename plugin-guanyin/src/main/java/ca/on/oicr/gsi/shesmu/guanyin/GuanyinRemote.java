@@ -13,9 +13,6 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient.Version;
-import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
@@ -37,17 +34,15 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
       }
       final var reportsResponse =
           RunReport.HTTP_CLIENT.send(
-              HttpRequest.newBuilder(
-                      URI.create(configuration.get().getGuanyin() + "/reportdb/reports"))
-                  .version(Version.HTTP_1_1)
-                  .build(),
+              RunReport.httpGet(
+                  configuration.get().getGuanyin() + "/reportdb/reports",
+                  configuration.get().getHttpTimeout()),
               new JsonBodyHandler<>(RunReport.MAPPER, ReportDto[].class));
       final var recordsResponse =
           RunReport.HTTP_CLIENT.send(
-              HttpRequest.newBuilder(
-                      URI.create(configuration.get().getGuanyin() + "/reportdb/records"))
-                  .version(Version.HTTP_1_1)
-                  .build(),
+              RunReport.httpGet(
+                  configuration.get().getGuanyin() + "/reportdb/records",
+                  configuration.get().getHttpTimeout()),
               new JsonBodyHandler<>(RunReport.MAPPER, RecordDto[].class));
       final var reports =
           Stream.of(reportsResponse.body().get())
@@ -77,6 +72,10 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
           renderer.link("Cromwell", configuration.getCromwell(), configuration.getCromwell());
           renderer.line("Script", configuration.getScript());
         });
+  }
+
+  public int httpTimeout() {
+    return configuration.get().getHttpTimeout();
   }
 
   public int memory() {
@@ -113,10 +112,8 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
     try {
       final var response =
           RunReport.HTTP_CLIENT.send(
-              HttpRequest.newBuilder(URI.create(configuration.getGuanyin() + "/reportdb/reports"))
-                  .GET()
-                  .version(Version.HTTP_1_1)
-                  .build(),
+              RunReport.httpGet(
+                  configuration.getGuanyin() + "/reportdb/reports", configuration.getHttpTimeout()),
               new JsonBodyHandler<>(RunReport.MAPPER, ReportDto[].class));
       definer.clearActions();
       if (response.statusCode() == 200) {

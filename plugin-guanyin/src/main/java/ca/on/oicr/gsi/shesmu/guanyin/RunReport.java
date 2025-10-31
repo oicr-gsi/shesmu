@@ -222,15 +222,11 @@ public class RunReport extends JsonParameterisedAction {
 
     var create = false;
     final var request =
-        HttpRequest.newBuilder(
-                URI.create(
-                    String.format(
-                        "%s/reportdb/record_parameters?report=%d", owner.get().观音Url(), reportId)))
-            .header("Content-type", "application/json")
-            .header("Accept", "application/json")
-            .version(Version.HTTP_1_1)
-            .POST(body)
-            .build();
+        httpPost(
+            String.format("%s/reportdb/record_parameters?report=%d", owner.get().观音Url(), reportId),
+            body,
+            owner.get().httpTimeout());
+
     try (var timer = 观音RequestTime.start(owner.get().观音Url())) {
       var response = HTTP_CLIENT.send(request, new JsonBodyHandler<>(MAPPER, RecordDto[].class));
       if (response.statusCode() / 100 != 2) {
@@ -260,15 +256,10 @@ public class RunReport extends JsonParameterisedAction {
     // Create it if it doesn't exist
     if (create) {
       final var createRequest =
-          HttpRequest.newBuilder(
-                  URI.create(
-                      String.format(
-                          "%s/reportdb/record_start?report=%d", owner.get().观音Url(), reportId)))
-              .header("Content-type", "application/json")
-              .header("Accept", "application/json")
-              .version(Version.HTTP_1_1)
-              .POST(body)
-              .build();
+          httpPost(
+              String.format("%s/reportdb/record_start?report=%d", owner.get().观音Url(), reportId),
+              body,
+              owner.get().httpTimeout());
       try (var timer = 观音RequestTime.start(owner.get().观音Url())) {
         var response =
             HTTP_CLIENT.send(createRequest, new JsonBodyHandler<>(MAPPER, CreateDto.class));
@@ -315,14 +306,11 @@ public class RunReport extends JsonParameterisedAction {
         cromwellId =
             HTTP_CLIENT
                 .send(
-                    HttpRequest.newBuilder()
-                        .uri(
-                            URI.create(
-                                String.format("%s/api/workflows/v1", owner.get().cromwellUrl())))
-                        .header("Content-Type", cromwellBody.getContentType())
-                        .version(Version.HTTP_1_1)
-                        .POST(cromwellBody.build())
-                        .build(),
+                    httpPost(
+                        String.format("%s/api/workflows/v1", owner.get().cromwellUrl()),
+                        cromwellBody.build(),
+                        owner.get().httpTimeout(),
+                        cromwellBody.getContentType()),
                     new JsonBodyHandler<>(MAPPER, WorkflowIdAndStatus.class))
                 .body()
                 .get();
@@ -394,5 +382,28 @@ public class RunReport extends JsonParameterisedAction {
     reportRecordId.ifPresent(
         id -> node.put("url", String.format("%s/reportdb/record/%d", owner.get().观音Url(), id)));
     return node;
+  }
+
+  public static HttpRequest httpGet(String uri, int timeout) {
+    return HttpRequest.newBuilder(URI.create(uri))
+        .version(Version.HTTP_1_1)
+        .timeout(Duration.ofMinutes(timeout))
+        .GET()
+        .build();
+  }
+
+  private static HttpRequest httpPost(String uri, HttpRequest.BodyPublisher body, int timeout) {
+    return httpPost(uri, body, timeout, "application/json");
+  }
+
+  private static HttpRequest httpPost(
+      String uri, HttpRequest.BodyPublisher body, int timeout, String contentType) {
+    return HttpRequest.newBuilder(URI.create(uri))
+        .header("Content-type", contentType)
+        .header("Accept", "application/json")
+        .version(Version.HTTP_1_1)
+        .timeout(Duration.ofMinutes(timeout))
+        .POST(body)
+        .build();
   }
 }
