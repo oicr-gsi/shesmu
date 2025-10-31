@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.nabu;
 
+import static ca.on.oicr.gsi.shesmu.plugin.Utils.httpGet;
+
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorableStream;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
@@ -14,9 +16,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
@@ -34,7 +34,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
         throws IOException, InterruptedException {
       return HTTP_CLIENT
           .send(
-              HttpRequest.newBuilder(URI.create(baseUrl + "/cases")).GET().build(),
+              httpGet(baseUrl + "/cases", config.map(NabuConfiguration::getTimeout)),
               new JsonListBodyHandler<>(MAPPER, NabuCaseArchiveDto.class))
           .body()
           .get()
@@ -107,7 +107,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
         throws IOException, InterruptedException {
       return HTTP_CLIENT
           .send(
-              HttpRequest.newBuilder(URI.create(baseUrl + "/fileqcs-only")).GET().build(),
+              httpGet(baseUrl + "/fileqcs-only", config.map(NabuConfiguration::getTimeout)),
               new JsonListBodyHandler<>(MAPPER, NabuFileQcDto.class))
           .body()
           .get()
@@ -186,6 +186,10 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
     } catch (IOException e) {
       throw new RuntimeException("Unable to get authentication method");
     }
+  }
+
+  public int timeout() {
+    return config.get().getTimeout();
   }
 
   private Optional<String> findMetadataTextValue(
