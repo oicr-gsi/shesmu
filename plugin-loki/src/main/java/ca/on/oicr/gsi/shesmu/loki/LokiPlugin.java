@@ -27,7 +27,6 @@ import java.util.regex.Pattern;
 
 public class LokiPlugin extends JsonPluginFile<Configuration> {
 
-  private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final Gauge error =
       Gauge.build(
@@ -48,10 +47,22 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
   private final Map<Map<String, String>, List<Pair<Instant, String>>> buffer = new HashMap<>();
   private Optional<Configuration> configuration = Optional.empty();
   private final Definer<LokiPlugin> definer;
+  private HttpClient httpClient;
 
   public LokiPlugin(Path fileName, String instanceName, Definer<LokiPlugin> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);
     this.definer = definer;
+  }
+
+  private HttpClient httpClient() {
+    if (null == httpClient) {
+      HttpClient.Builder builder = HttpClient.newBuilder();
+      if (configuration.isPresent()) {
+        builder.connectTimeout(Duration.ofMinutes(configuration.get().getTimeout()));
+      }
+      httpClient = builder.build();
+    }
+    return httpClient;
   }
 
   @Override
@@ -122,7 +133,7 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
             }
             writeTime.labels(fileName().toString()).setToCurrentTime();
             try (final var timer = writeLatency.start(fileName().toString())) {
-              final var response = HTTP_CLIENT.send(request, BodyHandlers.ofString());
+              final var response = httpClient().send(request, BodyHandlers.ofString());
               final var success = response.statusCode() / 100 == 2;
               if (success) {
                 buffer.clear();
@@ -156,6 +167,7 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
     // Flush logs to the old configuration if it's about to change; if there's a backlog, it will
     // get flushed in a minute.
     flush(Instant.now());
+    httpClient = null;
     this.configuration = Optional.of(configuration);
     // Keep waking us up to flush logs
     return Optional.of(1);
