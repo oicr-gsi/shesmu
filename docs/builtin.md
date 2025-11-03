@@ -77,11 +77,14 @@ To configure this, create a file ending in `.fakeactions` as follows:
     {
       "url": "http://shesmu-prod:8081,
       "allow": ".*",
-      "prefix": ""
+      "prefix": "",
+      "timeout": 10
     }
 
 where `url` is the Shesmu server to copy and `allow` is a regular expression of
-which action definitions to copy. An optional `prefix` can be applied to the names of all
+which action definitions to copy. `timeout` defines the HTTP connection timeout when fetching
+action information from the remote Shesmu, in minutes.
+An optional `prefix` can be applied to the names of all
 the action definitions.
 
 If the remote server is not accessible, download the `/actions` endpoint to a
