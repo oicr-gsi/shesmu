@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.core.actions.fake;
 
+import static ca.on.oicr.gsi.shesmu.plugin.Utils.httpGet;
+
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
@@ -9,9 +11,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -42,7 +42,7 @@ public class RemoteInstance extends JsonPluginFile<Configuration> {
     final var allow = Pattern.compile(configuration.getAllow());
     definer.clearActions();
     final var request =
-        HttpRequest.newBuilder(URI.create(String.format("%s/actions", url))).GET().build();
+        httpGet(String.format("%s/actions", url), Optional.of(configuration.getTimeout()));
     try {
       var response =
           HTTP_CLIENT.send(
