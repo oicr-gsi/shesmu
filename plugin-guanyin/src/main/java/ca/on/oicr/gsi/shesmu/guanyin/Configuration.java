@@ -10,8 +10,8 @@ public class Configuration {
   private int memory = 1;
   private String modules = "";
   private String script;
-  private int timeout = 1;
-  private int httpTimeout;
+  private int reportTimeout = 1;
+  private int timeout;
 
   public String getCromwell() {
     return cromwell;
@@ -33,8 +33,8 @@ public class Configuration {
     return script;
   }
 
-  public int getTimeout() {
-    return timeout;
+  public int getReportTimeout() {
+    return reportTimeout;
   }
 
   public void setCromwell(String cromwell) {
@@ -57,15 +57,15 @@ public class Configuration {
     this.script = script;
   }
 
+  public void setReportTimeout(int reportTimeout) {
+    this.reportTimeout = reportTimeout;
+  }
+
+  public int getTimeout() {
+    return timeout;
+  }
+
   public void setTimeout(int timeout) {
     this.timeout = timeout;
-  }
-
-  public int getHttpTimeout() {
-    return httpTimeout;
-  }
-
-  public void setHttpTimeout(int httpTimeout) {
-    this.httpTimeout = httpTimeout;
   }
 }
