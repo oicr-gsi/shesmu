@@ -164,6 +164,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   private PurgeState runCachePurge = PurgeState.FRESH;
   private final Semaphore updateLock = new Semaphore(1);
   private Optional<String> url = Optional.empty();
+  private Optional<Integer> timeout = Optional.empty();
 
   public RunScannerClient(Path fileName, String instanceName) {
     super(fileName, instanceName, MAPPER, Configuration.class);
@@ -283,6 +284,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
                         HttpRequest.newBuilder(
                                 URI.create(String.format("%s/runs/progressive", url.get())))
                             .POST(BodyPublishers.ofByteArray(MAPPER.writeValueAsBytes(request)))
+                            .timeout(Duration.ofMinutes(timeout.get()))
                             .header("Content-type", "application/json")
                             .build(),
                         new JsonBodyHandler<>(MAPPER, ProgressiveResponseDto.class))
@@ -338,6 +340,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   @Override
   protected Optional<Integer> update(Configuration value) {
     url = Optional.ofNullable(value.getUrl());
+    timeout = Optional.of(value.getTimeout());
     return Optional.empty();
   }
 }
