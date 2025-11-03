@@ -72,7 +72,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
           HTTP_CLIENT.send(
               HttpRequest.newBuilder(URI.create(baseUrl + "/api/provenance"))
                   .header("Content-type", "application/json")
-                  .timeout(Duration.ofMinutes(10))
+                  .timeout(Duration.ofMinutes(configuration.get().getTimeout()))
                   .POST(
                       HttpRequest.BodyPublishers.ofString(
                           createVidarrProvenanceRequestBody(
