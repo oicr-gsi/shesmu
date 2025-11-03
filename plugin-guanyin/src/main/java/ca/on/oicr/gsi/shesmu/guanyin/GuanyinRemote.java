@@ -36,13 +36,13 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
           RunReport.HTTP_CLIENT.send(
               RunReport.httpGet(
                   configuration.get().getGuanyin() + "/reportdb/reports",
-                  configuration.get().getHttpTimeout()),
+                  configuration.get().getTimeout()),
               new JsonBodyHandler<>(RunReport.MAPPER, ReportDto[].class));
       final var recordsResponse =
           RunReport.HTTP_CLIENT.send(
               RunReport.httpGet(
                   configuration.get().getGuanyin() + "/reportdb/records",
-                  configuration.get().getHttpTimeout()),
+                  configuration.get().getTimeout()),
               new JsonBodyHandler<>(RunReport.MAPPER, RecordDto[].class));
       final var reports =
           Stream.of(reportsResponse.body().get())
@@ -75,7 +75,7 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
   }
 
   public int httpTimeout() {
-    return configuration.get().getHttpTimeout();
+    return configuration.get().getTimeout();
   }
 
   public int memory() {
@@ -91,7 +91,7 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
   }
 
   public int timeout() {
-    return configuration.get().getTimeout();
+    return configuration.get().getReportTimeout();
   }
 
   public String cromwellUrl() {
@@ -113,7 +113,7 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
       final var response =
           RunReport.HTTP_CLIENT.send(
               RunReport.httpGet(
-                  configuration.getGuanyin() + "/reportdb/reports", configuration.getHttpTimeout()),
+                  configuration.getGuanyin() + "/reportdb/reports", configuration.getTimeout()),
               new JsonBodyHandler<>(RunReport.MAPPER, ReportDto[].class));
       definer.clearActions();
       if (response.statusCode() == 200) {

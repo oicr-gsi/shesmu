@@ -13,22 +13,22 @@ To configure a Guanyin connection, create a JSON file ending in `.guanyin` as fo
 ```
 {
   "cromwell": "http://cromwell.url",
-  "httpTimeout": 10,
+  "timeout": 10,
   "guanyin": "http://guanyin.url",
   "modules": "guanyin-reports/0.2",
   "memory": 8,
   "script": "/path/to/script",
-  "timeout": 1
+  "reportTimeout": 1
 }
 ```
 
 Where `"cromwell"` defines the URL of the Cromwell instance on which to launch,
-`"httpTimeout"` defines the HTTP connection timeout for communication with Guanyin and Cromwell, in minutes,
+`"timeout"` defines the HTTP connection timeout for communication with Guanyin and Cromwell, in minutes,
 `"guanyin"` defines the URL of the Guanyin instance with which to run reports,
 `"modules"` defines the Guanyin module,
 `"memory"` defines the requested amount of memory with which to run the report, in gigabytes,
 `"script"` defines the path to the report action script, defined below,
-and `"timeout"` defines the requested length of time with which to run the report, in hours.
+and `"reportTimeout"` defines the requested length of time with which to run the report, in hours.
 
 ## Launch Custom Reports with Guanyin
 Shesmu frequently scans the input data and generates the set of actions to be
