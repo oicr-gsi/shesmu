@@ -171,7 +171,7 @@ It is also possible to use data from a remote server using a `.remotejsonconfig`
     }
 
 In this case, no `"values"` is provided. Instead, it will be fetched from `"url"` and be refreshed
-every `"ttl"` minutes. `"timeout"` defines the HTTP connection timeout for fetching data from the remote server.
+every `"ttl"` minutes. `"timeout"` defines the HTTP connection timeout for fetching data from the remote server, in minutes..
 All other configuration is the same as `.jsonconfig`.
 
 ## Refillable Dictionary
