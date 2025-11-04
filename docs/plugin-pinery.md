@@ -34,3 +34,7 @@ There are functions and constants that separate out clinical projects. If `"clin
 set to an array, then any pipeline listed will be considered clinical. If it is `null`, then the
 legacy behaviour is enabled where the pipeline `Clinical` or any pipeline starting with `Accredited`
 will be considered clinical.
+
+Pinery as of version 3.2.0 supports multiple containers in a run, however, Shesmu does not. Records for runs with
+multiple containers will be discarded and the Prometheus metric `shesmu_pinery_multiple_containers` will indicate
+the problematic runs.
