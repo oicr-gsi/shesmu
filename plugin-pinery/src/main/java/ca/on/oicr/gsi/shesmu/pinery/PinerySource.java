@@ -684,7 +684,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   private static Set<Set<Long>> flowcellGeometry(RunDto run) {
-    if (null == run.getContainers()) return null;
+    if (null == run.getContainers()) return Set.of();
     RunDtoContainer container = run.getContainers().stream().findFirst().get();
     final var lanes =
         container.getPositions().stream()
