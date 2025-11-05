@@ -312,6 +312,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   private final Definer<VidarrPlugin> definer;
   private final MaxInFlightCache mifCache;
   private Optional<URI> url = Optional.empty();
+  private boolean canSubmit = true;
   private SubmissionPolicy submissionPolicy = SubmissionPolicy.ALWAYS;
   private final WorkflowRunInformationCache workflowRunInfo;
   private Optional<Configuration> configuration = Optional.empty();
@@ -329,6 +330,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   public void configuration(SectionRenderer renderer) {
     final var u = url;
     u.ifPresent(uri -> renderer.link("URL", uri.toString(), uri.toString()));
+    renderer.line("Can submit?", String.valueOf(canSubmit));
   }
 
   public SubmissionPolicy defaultSubmissionPolicy() {
@@ -382,162 +384,173 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   protected Optional<Integer> update(Configuration value) {
     configuration = Optional.of(value);
     try {
-      if (value.getDefaultMaxSubmissionDelay() == null) {
-        submissionPolicy = SubmissionPolicy.ALWAYS;
-      } else {
-        submissionPolicy = SubmissionPolicy.maxDelay(value.getDefaultMaxSubmissionDelay());
-      }
       url = Optional.of(URI.create(value.getUrl()));
-      final var workflowsResult =
-          CLIENT.send(
-              HttpRequest.newBuilder(url.get().resolve("/api/workflows")).GET().build(),
-              new JsonBodyHandler<>(MAPPER, WorkflowDeclaration[].class));
-      final var targetsResult =
-          CLIENT.send(
-              HttpRequest.newBuilder(url.get().resolve("/api/targets")).GET().build(),
-              new JsonBodyHandler<>(
-                  MAPPER, new TypeReference<Map<String, TargetDeclaration>>() {}));
-      if (workflowsResult.statusCode() == 200 && targetsResult.statusCode() == 200) {
+      if (!value.isCanSubmit()) {
         definer.clearActions();
-        final var workflows = workflowsResult.body().get();
-        for (final var target : targetsResult.body().get().entrySet()) {
-          final var targetParameters = new ArrayList<CustomActionParameter<SubmitAction>>();
-          if (target.getValue().getEngineParameters() != null) {
-            targetParameters.add(
-                new CustomActionParameter<>(
-                    "engine_parameters",
-                    true,
-                    target.getValue().getEngineParameters().apply(SIMPLE_TO_IMYHAT)) {
-                  @Override
-                  public void store(SubmitAction action, Object value) {
-                    action.request.setEngineParameters(AsJsonNode.convert(type(), value));
-                  }
-                });
-          }
-          if (target.getValue().getConsumableResources() != null
-              && !target.getValue().getConsumableResources().isEmpty()) {
-            for (final var resource : target.getValue().getConsumableResources().entrySet()) {
-              final var type = resource.getValue().apply(SIMPLE_TO_IMYHAT);
+        return Optional.of(10);
+      } else {
+        if (value.getDefaultMaxSubmissionDelay() == null) {
+          submissionPolicy = SubmissionPolicy.ALWAYS;
+        } else {
+          submissionPolicy = SubmissionPolicy.maxDelay(value.getDefaultMaxSubmissionDelay());
+        }
+        final var workflowsResult =
+            CLIENT.send(
+                HttpRequest.newBuilder(url.get().resolve("/api/workflows")).GET().build(),
+                new JsonBodyHandler<>(MAPPER, WorkflowDeclaration[].class));
+        final var targetsResult =
+            CLIENT.send(
+                HttpRequest.newBuilder(url.get().resolve("/api/targets")).GET().build(),
+                new JsonBodyHandler<>(
+                    MAPPER, new TypeReference<Map<String, TargetDeclaration>>() {}));
+        if (workflowsResult.statusCode() == 200 && targetsResult.statusCode() == 200) {
+          definer.clearActions();
+          final var workflows = workflowsResult.body().get();
+          for (final var target : targetsResult.body().get().entrySet()) {
+            final var targetParameters = new ArrayList<CustomActionParameter<SubmitAction>>();
+            if (target.getValue().getEngineParameters() != null) {
               targetParameters.add(
                   new CustomActionParameter<>(
-                      sanitise("resource_" + resource.getKey()),
-                      // Optional resources can be absent from the request and Vidarr will
-                      // behave properly, so we can safely make them not required
-                      !(type instanceof OptionalImyhat),
-                      type) {
-                    private final String name = resource.getKey();
-
+                      "engine_parameters",
+                      true,
+                      target.getValue().getEngineParameters().apply(SIMPLE_TO_IMYHAT)) {
                     @Override
                     public void store(SubmitAction action, Object value) {
-                      action
-                          .request
-                          .getConsumableResources()
-                          .put(name, AsJsonNode.convert(type(), value));
+                      action.request.setEngineParameters(AsJsonNode.convert(type(), value));
                     }
                   });
             }
-          }
-          for (final var workflow : workflows) {
-            if (target.getValue().getLanguage().contains(workflow.getLanguage())) {
-              InputParameterConverter.create(workflow.getParameters(), target.getValue())
-                  .ifPresent(
-                      inputParameters ->
-                          MetadataParameterConverter.create(
-                                  workflow.getMetadata(), target.getValue())
-                              .ifPresent(
-                                  metadataParameters ->
-                                      definer.defineAction(
-                                          sanitise(target.getKey())
-                                              + Parser.NAMESPACE_SEPARATOR
-                                              + sanitise(
-                                                  workflow.getName()
-                                                      + "_v"
-                                                      + workflow.getVersion()),
-                                          String.format(
-                                              "Workflow %s version %s from Vidarr instance %s on target %s.",
-                                              workflow.getName(),
-                                              workflow.getVersion(),
-                                              value.getUrl(),
-                                              target.getKey()),
-                                          SubmitAction.class,
-                                          new Supplier<>() {
-                                            private final Supplier<VidarrPlugin> supplier = definer;
-                                            private final String targetName = target.getKey();
-                                            private final String workflowName = workflow.getName();
-                                            private final String workflowVersion =
-                                                workflow.getVersion();
+            if (target.getValue().getConsumableResources() != null
+                && !target.getValue().getConsumableResources().isEmpty()) {
+              for (final var resource : target.getValue().getConsumableResources().entrySet()) {
+                final var type = resource.getValue().apply(SIMPLE_TO_IMYHAT);
+                targetParameters.add(
+                    new CustomActionParameter<>(
+                        sanitise("resource_" + resource.getKey()),
+                        // Optional resources can be absent from the request and Vidarr will
+                        // behave properly, so we can safely make them not required
+                        !(type instanceof OptionalImyhat),
+                        type) {
+                      private final String name = resource.getKey();
 
-                                            @Override
-                                            public SubmitAction get() {
-                                              return new SubmitAction(
-                                                  supplier,
-                                                  targetName,
-                                                  workflowName,
-                                                  workflowVersion);
-                                            }
-                                          },
-                                          Stream.of(
-                                                  targetParameters.stream(),
-                                                  Stream.of(inputParameters, metadataParameters),
-                                                  workflow.getLabels() == null
-                                                      ? Stream
-                                                          .<CustomActionParameter<SubmitAction>>
-                                                              empty()
-                                                      : workflow.getLabels().entrySet().stream()
-                                                          .<CustomActionParameter<SubmitAction>>map(
-                                                              entry ->
-                                                                  new CustomActionParameter<>(
-                                                                      sanitise(
-                                                                          "label_"
-                                                                              + entry.getKey()),
-                                                                      true,
-                                                                      entry
-                                                                          .getValue()
-                                                                          .apply(
-                                                                              SIMPLE_TO_IMYHAT)) {
-                                                                    private final String label =
-                                                                        entry.getKey();
+                      @Override
+                      public void store(SubmitAction action, Object value) {
+                        action
+                            .request
+                            .getConsumableResources()
+                            .put(name, AsJsonNode.convert(type(), value));
+                      }
+                    });
+              }
+            }
+            for (final var workflow : workflows) {
+              if (target.getValue().getLanguage().contains(workflow.getLanguage())) {
+                InputParameterConverter.create(workflow.getParameters(), target.getValue())
+                    .ifPresent(
+                        inputParameters ->
+                            MetadataParameterConverter.create(
+                                    workflow.getMetadata(), target.getValue())
+                                .ifPresent(
+                                    metadataParameters ->
+                                        definer.defineAction(
+                                            sanitise(target.getKey())
+                                                + Parser.NAMESPACE_SEPARATOR
+                                                + sanitise(
+                                                    workflow.getName()
+                                                        + "_v"
+                                                        + workflow.getVersion()),
+                                            String.format(
+                                                "Workflow %s version %s from Vidarr instance %s on target %s.",
+                                                workflow.getName(),
+                                                workflow.getVersion(),
+                                                value.getUrl(),
+                                                target.getKey()),
+                                            SubmitAction.class,
+                                            new Supplier<>() {
+                                              private final Supplier<VidarrPlugin> supplier =
+                                                  definer;
+                                              private final String targetName = target.getKey();
+                                              private final String workflowName =
+                                                  workflow.getName();
+                                              private final String workflowVersion =
+                                                  workflow.getVersion();
 
-                                                                    @Override
-                                                                    public void store(
-                                                                        SubmitAction action,
-                                                                        Object value) {
-                                                                      type()
-                                                                          .accept(
-                                                                              new PackJsonObject(
-                                                                                  action.request
-                                                                                      .getLabels(),
-                                                                                  label),
-                                                                              value);
-                                                                    }
-                                                                  }))
-                                              .flatMap(Function.identity()),
-                                          new SupplementaryInformation() {
-                                            @Override
-                                            public Stream<Pair<DisplayElement, DisplayElement>>
-                                                generate() {
-                                              return Stream.of(
-                                                  new Pair<>(
-                                                      SupplementaryInformation.text("In-flight"),
-                                                      SupplementaryInformation.text(
-                                                          definer
-                                                              .get()
-                                                              .getMaxInFlightMessage(
-                                                                  workflow.getName()))));
-                                            }
-                                          })));
+                                              @Override
+                                              public SubmitAction get() {
+                                                return new SubmitAction(
+                                                    supplier,
+                                                    targetName,
+                                                    workflowName,
+                                                    workflowVersion);
+                                              }
+                                            },
+                                            Stream.of(
+                                                    targetParameters.stream(),
+                                                    Stream.of(inputParameters, metadataParameters),
+                                                    workflow.getLabels() == null
+                                                        ? Stream
+                                                            .<CustomActionParameter<SubmitAction>>
+                                                                empty()
+                                                        : workflow.getLabels().entrySet().stream()
+                                                            .<CustomActionParameter<SubmitAction>>
+                                                                map(
+                                                                    entry ->
+                                                                        new CustomActionParameter<>(
+                                                                            sanitise(
+                                                                                "label_"
+                                                                                    + entry
+                                                                                        .getKey()),
+                                                                            true,
+                                                                            entry
+                                                                                .getValue()
+                                                                                .apply(
+                                                                                    SIMPLE_TO_IMYHAT)) {
+                                                                          private final String
+                                                                              label =
+                                                                                  entry.getKey();
+
+                                                                          @Override
+                                                                          public void store(
+                                                                              SubmitAction action,
+                                                                              Object value) {
+                                                                            type()
+                                                                                .accept(
+                                                                                    new PackJsonObject(
+                                                                                        action
+                                                                                            .request
+                                                                                            .getLabels(),
+                                                                                        label),
+                                                                                    value);
+                                                                          }
+                                                                        }))
+                                                .flatMap(Function.identity()),
+                                            new SupplementaryInformation() {
+                                              @Override
+                                              public Stream<Pair<DisplayElement, DisplayElement>>
+                                                  generate() {
+                                                return Stream.of(
+                                                    new Pair<>(
+                                                        SupplementaryInformation.text("In-flight"),
+                                                        SupplementaryInformation.text(
+                                                            definer
+                                                                .get()
+                                                                .getMaxInFlightMessage(
+                                                                    workflow.getName()))));
+                                              }
+                                            })));
+              }
             }
           }
+          return Optional.of(10);
+        } else if (workflowsResult.statusCode() == 301) {
+          value.setUrl(Utils.get301LocationUrl(workflowsResult, definer));
+          return update(value);
+        } else if (targetsResult.statusCode() == 301) {
+          value.setUrl(Utils.get301LocationUrl(targetsResult, definer));
+          return update(value);
+        } else {
+          return Optional.of(2);
         }
-        return Optional.of(10);
-      } else if (workflowsResult.statusCode() == 301) {
-        value.setUrl(Utils.get301LocationUrl(workflowsResult, definer));
-        return update(value);
-      } else if (targetsResult.statusCode() == 301) {
-        value.setUrl(Utils.get301LocationUrl(targetsResult, definer));
-        return update(value);
-      } else {
-        return Optional.of(2);
       }
     } catch (IOException | InterruptedException e) {
       e.printStackTrace();

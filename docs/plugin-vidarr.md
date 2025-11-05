@@ -22,6 +22,15 @@ window is exceeded, they will be run as dry-run.
 
 `"timeout"` defines the HTTP connection timeout for fetching information from Vidarr, in minutes.
 
+If you wish to configure a Vidarr instance so that caches can be built from its
+data but workflow actions cannot be built and workflow runs cannot be submitted,
+add the following field to the configuration file:
+
+    "canSubmit": false
+
+If this field is not provided, Shesmu will by default build all actions and 
+caches for this Vidarr instance.
+
 The Vidarr plugin provides an input format: `vidarr_analysis` which provides the analysis
 provenance data. To use this input format add the fields to the configuration file as follows:
 

@@ -4,11 +4,16 @@ import ca.on.oicr.gsi.vidarr.api.AnalysisOutputType;
 import java.util.List;
 
 public class Configuration {
+  private boolean canSubmit = true;
   private Long defaultMaxSubmissionDelay;
   private String url;
   private List<AnalysisOutputType> analysisTypes;
   private List<String> versionTypes;
   private int timeout;
+
+  public boolean isCanSubmit() {
+    return canSubmit;
+  }
 
   public Long getDefaultMaxSubmissionDelay() {
     return defaultMaxSubmissionDelay;
@@ -24,6 +29,10 @@ public class Configuration {
 
   public List<String> getVersionTypes() {
     return versionTypes;
+  }
+
+  public void setCanSubmit(boolean canSubmit) {
+    this.canSubmit = canSubmit;
   }
 
   public void setDefaultMaxSubmissionDelay(Long defaultMaxSubmissionDelay) {
