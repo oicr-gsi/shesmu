@@ -133,7 +133,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 addLane.accept(lp.getSequencerRunName(), lp.getLaneNumber());
 
                 Set<RunDtoContainer> containers = run.getContainers();
-                if (containers.size() > 1) {
+                if (null != containers && containers.size() > 1) {
                   multipleContainers.labels(run.getName()).inc();
                   return null;
                 }
@@ -235,7 +235,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 final RunDto run = allRuns.get(sp.getSequencerRunName());
                 if (run == null) return null;
                 Set<RunDtoContainer> containers = run.getContainers();
-                if (containers.size() > 1) {
+                if (null != containers && containers.size() > 1) {
                   multipleContainers.labels(run.getName()).inc();
                   return null;
                 }
@@ -419,7 +419,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 addLane.accept(lp.getSequencerRunName(), lp.getLaneNumber());
 
                 Set<RunDtoContainer> containers = run.getContainers();
-                if (containers.size() > 1) {
+                if (null != containers && containers.size() > 1) {
                   multipleContainers.labels(run.getName()).inc();
                   return null;
                 }
@@ -522,7 +522,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 final RunDto run = allRuns.get(sp.getSequencerRunName());
                 if (run == null) return null;
                 Set<RunDtoContainer> containers = run.getContainers();
-                if (containers.size() > 1) {
+                if (null != containers && containers.size() > 1) {
                   multipleContainers.labels(run.getName()).inc();
                   return null;
                 }
