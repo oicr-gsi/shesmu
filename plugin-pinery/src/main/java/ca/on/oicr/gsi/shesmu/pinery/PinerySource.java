@@ -684,6 +684,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   private static Set<Set<Long>> flowcellGeometry(RunDto run) {
+    if (null == run.getContainers()) return null;
     RunDtoContainer container = run.getContainers().stream().findFirst().get();
     final var lanes =
         container.getPositions().stream()
@@ -709,6 +710,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   private static long runLaneCount(RunDto dto) {
+    if (null == dto.getContainers()) return 0;
     return dto.getContainers().stream().findFirst().get().getPositions().stream()
         .map(RunDtoPosition::getPosition)
         .max(Comparator.naturalOrder())
