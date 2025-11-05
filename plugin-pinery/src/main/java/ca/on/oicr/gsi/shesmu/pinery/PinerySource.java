@@ -146,7 +146,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     null != containers && !containers.isEmpty()
                         ? Optional.of(
                             run.getContainers().stream().findFirst().get().getContainerModel())
-                        : null,
+                        : Optional.empty(),
                     "",
                     Optional.empty(),
                     "",
@@ -252,7 +252,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         null != containers && !containers.isEmpty()
                             ? Optional.of(
                                 run.getContainers().stream().findFirst().get().getContainerModel())
-                            : null,
+                            : Optional.empty(),
                         sp.getRootSampleName(),
                         limsAttr(sp, "dv200", badSetInRecord::add, false).map(Double::parseDouble),
                         limsAttr(sp, "geo_external_name", badSetInRecord::add, false).orElse(""),
@@ -433,7 +433,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     null != containers && !containers.isEmpty()
                         ? Optional.of(
                             run.getContainers().stream().findFirst().get().getContainerModel())
-                        : null,
+                        : Optional.empty(),
                     "",
                     Optional.empty(),
                     "",
@@ -539,7 +539,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         null != containers && !containers.isEmpty()
                             ? Optional.of(
                                 run.getContainers().stream().findFirst().get().getContainerModel())
-                            : null,
+                            : Optional.empty(),
                         sp.getRootSampleName(),
                         limsAttr(sp, "dv200", badSetInRecord::add, false).map(Double::parseDouble),
                         limsAttr(sp, "geo_external_name", badSetInRecord::add, false).orElse(""),
