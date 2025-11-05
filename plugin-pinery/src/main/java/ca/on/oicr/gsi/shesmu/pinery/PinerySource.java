@@ -143,7 +143,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     Set.of(),
                     Optional.empty(),
                     Optional.ofNullable(lp.getCreatedDate()).map(ZonedDateTime::toInstant),
-                    !containers.isEmpty()
+                    null != containers && !containers.isEmpty()
                         ? Optional.of(
                             run.getContainers().stream().findFirst().get().getContainerModel())
                         : null,
@@ -249,7 +249,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         limsAttr(sp, "cell_viability", badSetInRecord::add, false)
                             .map(Double::parseDouble),
                         Optional.ofNullable(sp.getCreatedDate()).map(ZonedDateTime::toInstant),
-                        !containers.isEmpty()
+                        null != containers && !containers.isEmpty()
                             ? Optional.of(
                                 run.getContainers().stream().findFirst().get().getContainerModel())
                             : null,
@@ -430,7 +430,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     Set.of(),
                     Optional.empty(),
                     Optional.ofNullable(lp.getCreatedDate()).map(ZonedDateTime::toInstant),
-                    !containers.isEmpty()
+                    null != containers && !containers.isEmpty()
                         ? Optional.of(
                             run.getContainers().stream().findFirst().get().getContainerModel())
                         : null,
@@ -536,7 +536,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         limsAttr(sp, "cell_viability", badSetInRecord::add, false)
                             .map(Double::parseDouble),
                         Optional.ofNullable(sp.getCreatedDate()).map(ZonedDateTime::toInstant),
-                        !containers.isEmpty()
+                        null != containers && !containers.isEmpty()
                             ? Optional.of(
                                 run.getContainers().stream().findFirst().get().getContainerModel())
                             : null,
