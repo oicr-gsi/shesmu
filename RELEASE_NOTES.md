@@ -20,7 +20,19 @@ For unreleased changes, see [changes](changes).
   instance.
 
 ### Changed
-
+ * `timeout required in Cardea plugin configuration
+ * Increase shesmu_pinery_multiple_containers and discard the record if multiple containers are found in pinery_ius
+ * timeout now required in .fakeactions configuration files
+ * timeout required in GitHub plugin configuration
+ * timeout renamed to reportTimeout, new timeout required in Guanyin plugin configuration
+ * timeout required for Loki plugin configuration
+ * timeout required in Nabu plugin configuration
+ * Upgrade Pinery to 3.2.1
+ * timeout required in Pinery configuration
+ * timeout required in Alert Manager configuration
+ * timeout now required for .remotejsonconfig files
+ * timeout required in Run Scanner plugin configuration
+ * timeout required for Vidarr plugin configuration
 
 
 ## [1.51.1] - 2025-10-22
