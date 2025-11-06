@@ -19,12 +19,7 @@ import ca.on.oicr.gsi.shesmu.plugin.json.JsonListBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.runscanner.RunScannerPluginType;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import ca.on.oicr.ws.dto.InstrumentModelDto;
-import ca.on.oicr.ws.dto.LaneProvenanceDto;
-import ca.on.oicr.ws.dto.RunDto;
-import ca.on.oicr.ws.dto.RunDtoPosition;
-import ca.on.oicr.ws.dto.SampleProjectDto;
-import ca.on.oicr.ws.dto.SampleProvenanceDto;
+import ca.on.oicr.ws.dto.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.prometheus.client.Gauge;
@@ -41,6 +36,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PinerySource extends JsonPluginFile<PineryConfiguration> {
+  public static Gauge multipleContainers =
+      Gauge.build(
+              "shesmu_pinery_multiple_containers", "Pinery found a run with multiple containers")
+          .labelNames("run")
+          .register();
 
   /**
    * This input format filters out skipped samples and lanes, and provides only items that would be
@@ -132,13 +132,21 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     lp.getLastModified() == null ? Instant.EPOCH : lp.getLastModified().toInstant();
                 addLane.accept(lp.getSequencerRunName(), lp.getLaneNumber());
 
+                Set<RunDtoContainer> containers = run.getContainers();
+                if (null != containers && containers.size() > 1) {
+                  multipleContainers.labels(run.getName()).inc();
+                  return null;
+                }
                 return new PineryIUSForAnalysisValue(
                     Optional.empty(),
                     run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
                     Set.of(),
                     Optional.empty(),
                     Optional.ofNullable(lp.getCreatedDate()).map(ZonedDateTime::toInstant),
-                    maybeGetRunField(run, RunDto::getContainerModel),
+                    null != containers && !containers.isEmpty()
+                        ? Optional.ofNullable(
+                            run.getContainers().stream().findFirst().get().getContainerModel())
+                        : Optional.empty(),
                     "",
                     Optional.empty(),
                     "",
@@ -226,6 +234,11 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     sp.getLastModified() == null ? Instant.EPOCH : sp.getLastModified().toInstant();
                 final RunDto run = allRuns.get(sp.getSequencerRunName());
                 if (run == null) return null;
+                Set<RunDtoContainer> containers = run.getContainers();
+                if (null != containers && containers.size() > 1) {
+                  multipleContainers.labels(run.getName()).inc();
+                  return null;
+                }
                 final PineryIUSForAnalysisValue result =
                     new PineryIUSForAnalysisValue(
                         limsAttr(sp, "barcode_kit", badSetInRecord::add, false),
@@ -236,7 +249,10 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         limsAttr(sp, "cell_viability", badSetInRecord::add, false)
                             .map(Double::parseDouble),
                         Optional.ofNullable(sp.getCreatedDate()).map(ZonedDateTime::toInstant),
-                        maybeGetRunField(run, RunDto::getContainerModel),
+                        null != containers && !containers.isEmpty()
+                            ? Optional.ofNullable(
+                                run.getContainers().stream().findFirst().get().getContainerModel())
+                            : Optional.empty(),
                         sp.getRootSampleName(),
                         limsAttr(sp, "dv200", badSetInRecord::add, false).map(Double::parseDouble),
                         limsAttr(sp, "geo_external_name", badSetInRecord::add, false).orElse(""),
@@ -402,13 +418,22 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     lp.getLastModified() == null ? Instant.EPOCH : lp.getLastModified().toInstant();
                 addLane.accept(lp.getSequencerRunName(), lp.getLaneNumber());
 
+                Set<RunDtoContainer> containers = run.getContainers();
+                if (null != containers && containers.size() > 1) {
+                  multipleContainers.labels(run.getName()).inc();
+                  return null;
+                }
+
                 return new PineryIUSIncludeSkippedValue(
                     Optional.empty(),
                     run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
                     Set.of(),
                     Optional.empty(),
                     Optional.ofNullable(lp.getCreatedDate()).map(ZonedDateTime::toInstant),
-                    maybeGetRunField(run, RunDto::getContainerModel),
+                    null != containers && !containers.isEmpty()
+                        ? Optional.ofNullable(
+                            run.getContainers().stream().findFirst().get().getContainerModel())
+                        : Optional.empty(),
                     "",
                     Optional.empty(),
                     "",
@@ -496,6 +521,11 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     sp.getLastModified() == null ? Instant.EPOCH : sp.getLastModified().toInstant();
                 final RunDto run = allRuns.get(sp.getSequencerRunName());
                 if (run == null) return null;
+                Set<RunDtoContainer> containers = run.getContainers();
+                if (null != containers && containers.size() > 1) {
+                  multipleContainers.labels(run.getName()).inc();
+                  return null;
+                }
                 final PineryIUSIncludeSkippedValue result =
                     new PineryIUSIncludeSkippedValue(
                         limsAttr(sp, "barcode_kit", badSetInRecord::add, false),
@@ -506,7 +536,10 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         limsAttr(sp, "cell_viability", badSetInRecord::add, false)
                             .map(Double::parseDouble),
                         Optional.ofNullable(sp.getCreatedDate()).map(ZonedDateTime::toInstant),
-                        maybeGetRunField(run, RunDto::getContainerModel),
+                        null != containers && !containers.isEmpty()
+                            ? Optional.ofNullable(
+                                run.getContainers().stream().findFirst().get().getContainerModel())
+                            : Optional.empty(),
                         sp.getRootSampleName(),
                         limsAttr(sp, "dv200", badSetInRecord::add, false).map(Double::parseDouble),
                         limsAttr(sp, "geo_external_name", badSetInRecord::add, false).orElse(""),
@@ -651,12 +684,18 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   private static Set<Set<Long>> flowcellGeometry(RunDto run) {
-    final var lanes =
-        run.getPositions().stream()
-            .map(RunDtoPosition::getPosition)
-            .max(Comparator.naturalOrder())
-            .orElse(0);
-    final var isJoined =
+    int lanes;
+    if (null != run.getContainers() && !run.getContainers().isEmpty()) {
+      RunDtoContainer container = run.getContainers().stream().findFirst().get();
+      lanes =
+          container.getPositions().stream()
+              .map(RunDtoPosition::getPosition)
+              .max(Comparator.naturalOrder())
+              .orElse(0);
+    } else {
+      lanes = 0;
+    }
+    final boolean isJoined =
         Objects.equals(run.getChemistry(), "NS_HIGH")
             || Objects.equals(run.getChemistry(), "NS_MID")
             || run.getWorkflowType() != null
@@ -675,7 +714,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   private static long runLaneCount(RunDto dto) {
-    return dto.getPositions().stream()
+    if (null == dto.getContainers()) return 0;
+    return dto.getContainers().stream().findFirst().get().getPositions().stream()
         .map(RunDtoPosition::getPosition)
         .max(Comparator.naturalOrder())
         .orElse(0);
