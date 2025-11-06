@@ -83,6 +83,8 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
     @Override
     protected Stream<NabuCaseArchiveValue> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) {
+        System.err.println(
+            "The case_archive input format is unusable because Nabu config is empty.");
         return new ErrorableStream<>(Stream.empty(), false);
       }
       return caseArchives(config.get().getUrl());
@@ -98,6 +100,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
     @Override
     protected Stream<NabuFileQcValue> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) {
+        System.err.println("The file_qc input format is unusable because Nabu config is empty.");
         return new ErrorableStream<>(Stream.empty(), false);
       }
       return fileQcs(config.get().getUrl());

@@ -139,6 +139,9 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
       ErrorableStream<FileProvenanceOutput> fpoStream = new ErrorableStream<>(cache.get().stream());
       return fpoStream.flatMap(FileProvenanceOutput::errors);
     } catch (Exception e) {
+      System.err.println(
+          "The cerberus_error input format is unusable because there was an error getting the data.");
+      e.printStackTrace();
       return new ErrorableStream<>(Stream.empty(), false);
     }
   }
@@ -149,6 +152,9 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
       ErrorableStream<FileProvenanceOutput> fpoStream = new ErrorableStream<>(cache.get().stream());
       return fpoStream.flatMap(FileProvenanceOutput::fileProvenance);
     } catch (Exception e) {
+      System.err.println(
+          "The cerberus_fp input format is unusable because there was an error getting the data.");
+      e.printStackTrace();
       return new ErrorableStream<>(Stream.empty(), false);
     }
   }
@@ -159,6 +165,9 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
       ErrorableStream<FileProvenanceOutput> fpoStream = new ErrorableStream<>(cache.get().stream());
       return fpoStream.flatMap(FileProvenanceOutput::fileProvenanceSkipped);
     } catch (Exception e) {
+      System.err.println(
+          "The cerberus_fp_skipped input format is unusable because there was an error getting the data.");
+      e.printStackTrace();
       return new ErrorableStream<>(Stream.empty(), false);
     }
   }

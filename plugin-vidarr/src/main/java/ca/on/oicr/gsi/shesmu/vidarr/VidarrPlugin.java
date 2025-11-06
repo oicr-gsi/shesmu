@@ -83,6 +83,9 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                   MAPPER, new TypeReference<AnalysisProvenanceResponse<ExternalKey>>() {}));
 
       if (results.statusCode() != 200) {
+        System.err.printf(
+            "Request to %s to build vidarr_analysis input format returned bad HTTP code %d. The input format is now unusable.%n",
+            baseUrl, results.statusCode());
         return new ErrorableStream<>(Stream.empty(), false);
       }
 
@@ -138,6 +141,8 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
     @Override
     protected Stream<VidarrAnalysisValue> fetch(Instant lastUpdated) throws Exception {
       if (configuration.isEmpty()) {
+        System.err.println(
+            "The vidarr_analysis input format is unusable because Vidarr config is empty.");
         return new ErrorableStream<>(Stream.empty(), false);
       }
       if (configuration.get().getAnalysisTypes() == null

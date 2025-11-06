@@ -30,6 +30,8 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
     @Override
     protected Stream<GuanyinReportValue> fetch(Instant lastUpdated) throws Exception {
       if (configuration.isEmpty()) {
+        System.err.println(
+            "The guanyin_report input format is unusable because Guanyin config is empty.");
         return new ErrorableStream<>(Stream.empty(), false);
       }
       final var reportsResponse =
@@ -103,6 +105,8 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
     try {
       return readStale ? reports.getStale() : reports.get();
     } catch (Exception e) {
+      System.err.println(
+          "The guanyin_reports input format is unusable because there was an error getting the data.");
       return new ErrorableStream<>(Stream.empty(), false);
     }
   }
