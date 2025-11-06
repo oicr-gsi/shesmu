@@ -684,14 +684,18 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   private static Set<Set<Long>> flowcellGeometry(RunDto run) {
-    if (null == run.getContainers()) return Set.of();
-    RunDtoContainer container = run.getContainers().stream().findFirst().get();
-    final var lanes =
-        container.getPositions().stream()
-            .map(RunDtoPosition::getPosition)
-            .max(Comparator.naturalOrder())
-            .orElse(0);
-    final var isJoined =
+    int lanes;
+    if (null != run.getContainers() && !run.getContainers().isEmpty()) {
+      RunDtoContainer container = run.getContainers().stream().findFirst().get();
+      lanes =
+          container.getPositions().stream()
+              .map(RunDtoPosition::getPosition)
+              .max(Comparator.naturalOrder())
+              .orElse(0);
+    } else {
+      lanes = 0;
+    }
+    final boolean isJoined =
         Objects.equals(run.getChemistry(), "NS_HIGH")
             || Objects.equals(run.getChemistry(), "NS_MID")
             || run.getWorkflowType() != null
