@@ -144,7 +144,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     Optional.empty(),
                     Optional.ofNullable(lp.getCreatedDate()).map(ZonedDateTime::toInstant),
                     null != containers && !containers.isEmpty()
-                        ? Optional.of(
+                        ? Optional.ofNullable(
                             run.getContainers().stream().findFirst().get().getContainerModel())
                         : Optional.empty(),
                     "",
@@ -250,7 +250,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             .map(Double::parseDouble),
                         Optional.ofNullable(sp.getCreatedDate()).map(ZonedDateTime::toInstant),
                         null != containers && !containers.isEmpty()
-                            ? Optional.of(
+                            ? Optional.ofNullable(
                                 run.getContainers().stream().findFirst().get().getContainerModel())
                             : Optional.empty(),
                         sp.getRootSampleName(),
@@ -431,7 +431,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     Optional.empty(),
                     Optional.ofNullable(lp.getCreatedDate()).map(ZonedDateTime::toInstant),
                     null != containers && !containers.isEmpty()
-                        ? Optional.of(
+                        ? Optional.ofNullable(
                             run.getContainers().stream().findFirst().get().getContainerModel())
                         : Optional.empty(),
                     "",
@@ -537,7 +537,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             .map(Double::parseDouble),
                         Optional.ofNullable(sp.getCreatedDate()).map(ZonedDateTime::toInstant),
                         null != containers && !containers.isEmpty()
-                            ? Optional.of(
+                            ? Optional.ofNullable(
                                 run.getContainers().stream().findFirst().get().getContainerModel())
                             : Optional.empty(),
                         sp.getRootSampleName(),
