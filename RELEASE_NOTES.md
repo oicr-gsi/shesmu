@@ -7,6 +7,22 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.52.0] - 2025-11-06
+
+### Added
+
+* Add `last_accessed` field to `vidarr_analysis` input format
+* Add optional `canSubmit` field to Vidarr configuration to toggle whether Shesmu
+  can build Vidarr workflow actions.
+  If the field is absent, Shesmu will be able to build and submit actions to the
+  Vidarr instance.
+  If the field is set to `false`, Shesmu will only build caches from the Vidarr
+  instance.
+
+### Changed
+
+
+
 ## [1.51.1] - 2025-10-22
 
 ### Fixed

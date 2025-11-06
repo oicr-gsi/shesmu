@@ -1,1 +1,0 @@
-`timeout` required in GitHub plugin configuration

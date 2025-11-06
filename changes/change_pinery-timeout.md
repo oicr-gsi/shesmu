@@ -1,1 +1,0 @@
-`timeout` required in Pinery configuration

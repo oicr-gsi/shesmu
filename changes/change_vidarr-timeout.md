@@ -1,1 +1,0 @@
-`timeout` required for Vidarr plugin configuration

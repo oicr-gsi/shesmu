@@ -1,1 +1,0 @@
-`timeout` now required for .remotejsonconfig files

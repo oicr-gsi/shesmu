@@ -1,1 +1,0 @@
-`httpTimeout` required in Guanyin plugin configuration

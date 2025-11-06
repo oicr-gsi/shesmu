@@ -1,1 +1,0 @@
-`timeout` required in Nabu plugin configuration

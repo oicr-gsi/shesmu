@@ -1,1 +1,0 @@
-`timeout` now required in `.fakeactions` configuration files
