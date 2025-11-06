@@ -113,6 +113,8 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
     @Override
     protected Stream<DeliverableValue> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) {
+        System.err.println(
+            "The case_deliverable input format is unusable because the Cardea config is empty.");
         return new ErrorableStream<>(Stream.empty(), false);
       }
       return deliverables(config.get().getUrl());
@@ -154,6 +156,8 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
     @Override
     protected Stream<CaseDetailedSummaryValue> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) {
+        System.err.println(
+            "The case_detailed_summary input format is unusable because Cardea config is empty.");
         return new ErrorableStream<>(Stream.empty(), false);
       }
       return caseDetailedSummary(config.get().getUrl());
@@ -190,6 +194,8 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
     @Override
     protected Stream<CaseSummaryValue> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) {
+        System.out.println(
+            "The case_summary input format is unusable because Cardea config is empty.");
         return new ErrorableStream<>(Stream.empty(), false);
       }
       return caseSummary(config.get().getUrl());
@@ -232,6 +238,8 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
     @Override
     protected Stream<SequencingTestValue> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) {
+        System.err.println(
+            "The sequencing_test input format is unusable because Cardea config is empty.");
         return new ErrorableStream<>(Stream.empty(), false);
       }
       return sequencingTest(config.get().getUrl());

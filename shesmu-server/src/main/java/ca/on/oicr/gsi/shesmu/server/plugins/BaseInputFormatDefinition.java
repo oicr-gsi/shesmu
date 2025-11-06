@@ -312,7 +312,12 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
         HttpResponse<InputStream> response =
             Server.HTTP_CLIENT.send(request.build(), BodyHandlers.ofInputStream());
         try (JsonParser parser = RuntimeSupport.MAPPER.getFactory().createParser(response.body())) {
-          if (response.statusCode() != 200) return new ErrorableStream<>(Stream.empty(), false);
+          if (response.statusCode() != 200) {
+            System.err.printf(
+                "Request to %s for %s input format returned bad HTTP code %d . The input format is now unusable.%n",
+                url, name, response.statusCode());
+            return new ErrorableStream<>(Stream.empty(), false);
+          }
           final List<Object> results = new ArrayList<>();
           if (parser.nextToken() != JsonToken.START_ARRAY) {
             throw new IllegalStateException("Expected an array");

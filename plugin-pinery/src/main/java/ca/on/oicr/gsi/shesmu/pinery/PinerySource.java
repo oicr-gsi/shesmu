@@ -54,6 +54,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     @Override
     protected Stream<PineryIUSForAnalysisValue> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) {
+        System.err.println(
+            "The pinery_ius input format is unusable because Pinery config is empty.");
         return new ErrorableStream<>(Stream.empty(), false);
       }
       final PineryConfiguration cfg = config.get();
@@ -343,6 +345,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     @Override
     protected Stream<PineryIUSIncludeSkippedValue> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) {
+        System.err.println(
+            "The pinery_ius_include_skipped input format is unusable because Pinery config is empty.");
         return new ErrorableStream<>(Stream.empty(), false);
       }
       final PineryConfiguration cfg = config.get();
@@ -657,7 +661,11 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
     @Override
     protected Stream<SampleProjectDto> fetch(Instant lastUpdated) throws Exception {
-      if (config.isEmpty()) return new ErrorableStream<>(Stream.empty(), false);
+      if (config.isEmpty()) {
+        System.err.println(
+            "The pinery_project input format is unusable because Pinery config is empty.");
+        return new ErrorableStream<>(Stream.empty(), false);
+      }
       PineryConfiguration cfg = config.get();
       return HTTP_CLIENT
           .send(
@@ -860,6 +868,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     try {
       return readStale ? cache.getStale() : cache.get();
     } catch (Exception e) {
+      System.err.println(
+          "The pinery_ius input format is unusable because there was an error getting the data.");
+      e.printStackTrace();
       return new ErrorableStream<>(Stream.empty(), false);
     }
   }
@@ -869,6 +880,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     try {
       return readStale ? includeSkippedCache.getStale() : includeSkippedCache.get();
     } catch (Exception e) {
+      System.err.println(
+          "The pinery_ius_include_skipped input format is unusable because there was an error getting the data.");
+      e.printStackTrace();
       return new ErrorableStream<>(Stream.empty(), false);
     }
   }
@@ -880,6 +894,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       return (readStale ? projects.getStale() : projects.get())
           .map(backing -> new PineryProjectValue(backing, provider));
     } catch (Exception e) {
+      System.err.println(
+          "The pinery_project input format is unusable because there was an error getting the data.");
+      e.printStackTrace();
       return new ErrorableStream<>(Stream.empty(), false);
     }
   }
