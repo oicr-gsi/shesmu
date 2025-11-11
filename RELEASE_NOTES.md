@@ -7,6 +7,17 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.53.0] - 2025-11-11
+
+### Added
+
+
+### Fixed
+
+* `vidarr_analysis` `last_accessed` field is optional
+* Log a message when fetching/building an input format does not succeed
+
+
 ## [1.52.0] - 2025-11-06
 
 ### Added

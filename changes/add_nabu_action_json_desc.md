@@ -1,1 +1,0 @@
-More informative text desc and searchability for nabu actions
