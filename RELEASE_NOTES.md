@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.53.1] - 2025-11-11
+
+### Fixed
+
+* `vidarr_analysis` `last_accessed` field is optional and this actually fixes the bug
+
+
 ## [1.53.0] - 2025-11-11
 
 ### Added
