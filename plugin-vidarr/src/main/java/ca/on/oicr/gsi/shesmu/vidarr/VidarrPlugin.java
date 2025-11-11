@@ -46,7 +46,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
 
   private class AnalysisCache extends ValueCache<Stream<VidarrAnalysisValue>> {
     public AnalysisCache(Path fileName) {
-      super("vidarr-analysis " + fileName.toString(), 30, ReplacingRecord::new);
+      super("vidarr_analysis " + fileName.toString(), 30, ReplacingRecord::new);
     }
 
     private String createVidarrProvenanceRequestBody(
