@@ -99,7 +99,7 @@ public class VidarrAnalysisValue {
 
   @ShesmuVariable(
       type =
-          "ao8checksum$schecksum_type$sexternal_keys$ao2accession$sprovider$sfile_attributes$mssfile_size$iid$smetatype$spath$s")
+          "ao8checksum$schecksum_type$sexternal_keys$ao2id$sprovider$sfile_attributes$mssfile_size$iid$smetatype$spath$p")
   public Set<Tuple> output_files() {
     return output_files;
   }
