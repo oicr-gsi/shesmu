@@ -7,6 +7,14 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.54.0] - 2025-11-26
+
+### Changed
+
+* `vidarr_analysis`.`output_files`.`external_keys` `accession` field renamed to `id`
+* `vidarr_analysis`.`output_files`.`path` type changed from `string` to `path`
+
+
 ## [1.53.1] - 2025-11-11
 
 ### Fixed
