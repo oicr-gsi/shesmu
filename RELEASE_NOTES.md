@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.54.1] - 2025-11-28
+
+### Fixed
+
+* Path type for vidarr_analysis output files paths
+
+
 ## [1.54.0] - 2025-11-26
 
 ### Changed
