@@ -120,7 +120,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                               "vidarr:%s/file/%s",
                                               ca.getInstanceName(), analysisRecord.getId()),
                                           analysisRecord.getMetatype(),
-                                          analysisRecord.getPath()))
+                                          Path.of(analysisRecord.getPath())))
                               .collect(Collectors.toSet()),
                       ca.getExternalKeys().stream()
                           .map(
