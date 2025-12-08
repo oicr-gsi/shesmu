@@ -25,10 +25,10 @@ import org.objectweb.asm.commons.Method;
 
 public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
 
-  private class PrefixedTarget implements Target {
+  private class PrefixedTargetUsingOriginalName implements Target {
     private final Target backing;
 
-    private PrefixedTarget(Target backing) {
+    private PrefixedTargetUsingOriginalName(Target backing) {
       this.backing = backing;
     }
 
@@ -50,6 +50,23 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
     @Override
     public Imyhat type() {
       return backing.type();
+    }
+
+    @Override
+    public String unaliasedName() {
+      return backing.unaliasedName();
+    }
+  }
+
+  private class PrefixedTarget extends PrefixedTargetUsingOriginalName {
+
+    private PrefixedTarget(Target backing) {
+      super(backing);
+    }
+
+    @Override
+    public String unaliasedName() {
+      return name();
     }
   }
 
@@ -384,14 +401,14 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
             & innerKey.resolve(
                 defs.replaceStream(
                     this.innerVariables.stream()
-                        .flatMap(
+                        .map(
                             v -> {
                               if (v instanceof InputVariable) {
-                                return Stream.of(new PrefixedVariable((InputVariable) v));
+                                return new PrefixedVariable((InputVariable) v);
                               } else if (v.name().contains(Parser.NAMESPACE_SEPARATOR)) {
-                                return Stream.of(Target.wrap(v));
+                                return Target.wrapAsStreamVariable(v);
                               } else {
-                                return Stream.of(new PrefixedTarget(v));
+                                return new PrefixedTargetUsingOriginalName(v);
                               }
                             }),
                     true),

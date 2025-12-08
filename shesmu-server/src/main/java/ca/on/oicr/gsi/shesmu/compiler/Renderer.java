@@ -139,7 +139,8 @@ public abstract class Renderer {
         methodGen()
             .invokeVirtual(
                 streamType(),
-                new Method(target.name(), target.type().apply(TypeUtils.TO_ASM), new Type[] {}));
+                new Method(
+                    target.unaliasedName(), target.type().apply(TypeUtils.TO_ASM), new Type[] {}));
       }
     } else {
       emitNamed(target.unaliasedName());
