@@ -153,8 +153,8 @@ public class RunTest {
     public Stream<Object> fetch(String format) {
       usedFormats.add(format);
       return switch (format) {
-        case "inner_test" -> Stream.of(INNER_TEST_DATA);
-        case "test" -> Stream.of(TEST_DATA);
+        case "inner_test" -> Arrays.stream(INNER_TEST_DATA);
+        case "test" -> Arrays.stream(TEST_DATA);
         case "test_json" -> JSON_DATA.stream();
         default -> Stream.empty();
       };
