@@ -7,6 +7,6 @@ Define foo()
     num = Count;
 
 Olive
- LeftJoin library_size To Call foo() ls
-   x = Univalued num Default 0
+ LeftJoin library_size To Prefix j_ Call foo() j_ls
+   x = Univalued j_num Default 0
  Run ok With ok = x == 1;
