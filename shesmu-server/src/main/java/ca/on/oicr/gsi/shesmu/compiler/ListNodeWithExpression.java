@@ -68,6 +68,7 @@ public abstract class ListNodeWithExpression extends ListNode {
   }
 
   private Set<String> definedNames;
+
   /** Resolve all variable plugins in this expression and its children. */
   @Override
   public final Optional<DestructuredArgumentNode> resolve(

@@ -86,7 +86,7 @@ public interface Target {
         }
       };
 
-  static Target softWrap(Target target) {
+  static Target wrapAsStreamPreservingFlavour(Target target) {
     if (!target.flavour().isStream) {
       throw new IllegalArgumentException(
           String.format("Cannot wrap %s variable %s", target.flavour().name(), target.name()));
@@ -115,7 +115,7 @@ public interface Target {
     };
   }
 
-  static Target wrap(Target target) {
+  static Target wrapAsStreamVariable(Target target) {
     if (!target.flavour().isStream) {
       throw new IllegalArgumentException(
           String.format("Cannot wrap %s variable %s", target.flavour().name(), target.name()));

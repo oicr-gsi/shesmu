@@ -184,7 +184,7 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
     return defs.replaceStream(
         Stream.concat(
                 defs.stream().filter(n -> n.flavour().isStream()), this.innerVariables.stream())
-            .map(Target::wrap),
+            .map(Target::wrapAsStreamVariable),
         ok);
   }
 

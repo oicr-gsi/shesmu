@@ -208,6 +208,7 @@ public class TypeUtils {
           return A_TUPLE_TYPE;
         }
       };
+
   /**
    * Convert a type into a JavaScript command to parse a string containing this type in the front
    * end
