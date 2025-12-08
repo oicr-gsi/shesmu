@@ -360,7 +360,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
                     .map(
                         v ->
                             v.name().contains(Parser.NAMESPACE_SEPARATOR)
-                                ? Target.softWrap(v)
+                                ? Target.wrapAsStreamPreservingFlavour(v)
                                 : new PrefixedTarget(v))),
             true);
 
@@ -399,7 +399,8 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
             & where.map(w -> w.resolve(joinedDefs, errorHandler)).orElse(true);
 
     return defs.replaceStream(
-        Stream.concat(discriminators.stream().map(Target::wrap), children.stream()), ok);
+        Stream.concat(discriminators.stream().map(Target::wrapAsStreamVariable), children.stream()),
+        ok);
   }
 
   @Override

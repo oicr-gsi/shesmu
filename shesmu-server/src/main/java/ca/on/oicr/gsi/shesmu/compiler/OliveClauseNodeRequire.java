@@ -212,7 +212,9 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
     return defs.replaceStream(
             Stream.concat(
                 name.targets(),
-                defs.stream().filter(t -> t.flavour().isStream()).map(Target::softWrap)),
+                defs.stream()
+                    .filter(t -> t.flavour().isStream())
+                    .map(Target::wrapAsStreamPreservingFlavour)),
             good)
         .withProvider(
             UndefinedVariableProvider.combine(
