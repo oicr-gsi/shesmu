@@ -695,7 +695,7 @@ dependencies = [
 
 [[package]]
 name = "json-dir-list"
-version = "1.44.0"
+version = "1.54.1"
 dependencies = [
  "chrono",
  "gethostname",
@@ -1100,7 +1100,7 @@ dependencies = [
 
 [[package]]
 name = "shawk"
-version = "1.44.0"
+version = "1.54.1"
 dependencies = [
  "clap",
  "directories",
