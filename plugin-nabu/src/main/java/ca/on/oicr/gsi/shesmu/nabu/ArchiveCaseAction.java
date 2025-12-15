@@ -55,7 +55,7 @@ public class ArchiveCaseAction extends JsonParameterisedAction {
           "target");
 
   public ArchiveCaseAction(Definer<NabuPlugin> owner) {
-    super("nabu-plugin");
+    super("archive-case-action");
     this.owner = owner;
     parameters = rootParameters.putObject("parameters");
   }

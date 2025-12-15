@@ -19,7 +19,8 @@ public class NabuPluginType extends PluginFileType<NabuPlugin> {
 
   @Override
   public void writeJavaScriptRenderer(PrintStream writer) {
-    writer.println(
-        "actionRender.set('nabu-action', a => [title(a, '${a.type} of ${a.caseIdentifier}'), text(`Archive Target: ${a.archiveTarget}`)]);");
+    writer.println("actionRender.set('archive-case-action', a => [");
+    writer.println("  title(a, '${a.type} of ${a.caseIdentifier}'),");
+    writer.println("  text(`Archive Target: ${a.archiveTarget}`)]);");
   }
 }
