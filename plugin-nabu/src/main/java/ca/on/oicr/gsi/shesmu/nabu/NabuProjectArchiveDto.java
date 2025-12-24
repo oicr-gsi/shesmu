@@ -6,12 +6,12 @@ import java.util.Set;
 
 /** This class allows for proper deserialization of JSON data */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class NabuCaseArchiveDto {
+public class NabuProjectArchiveDto {
 
   private String archiveTarget;
   private Set<String> archiveWith;
   private String filesUnloaded;
-  private String caseIdentifier;
+  private String projectIdentifier;
   private String commvaultBackupJobId;
   private String created;
   private String filesCopiedToOffsiteArchiveStagingDir;
@@ -35,8 +35,8 @@ public class NabuCaseArchiveDto {
     return filesUnloaded;
   }
 
-  public String getCaseIdentifier() {
-    return caseIdentifier;
+  public String getProjectIdentifier() {
+    return projectIdentifier;
   }
 
   public String getCommvaultBackupJobId() {
@@ -91,8 +91,8 @@ public class NabuCaseArchiveDto {
     this.filesUnloaded = filesUnloaded;
   }
 
-  public void setCaseIdentifier(String caseIdentifier) {
-    this.caseIdentifier = caseIdentifier;
+  public void setProjectIdentifier(String projectIdentifier) {
+    this.projectIdentifier = projectIdentifier;
   }
 
   public void setCommvaultBackupJobId(String commvaultBackupJobId) {

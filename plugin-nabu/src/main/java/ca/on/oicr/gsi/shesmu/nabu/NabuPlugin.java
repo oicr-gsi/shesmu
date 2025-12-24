@@ -24,6 +24,73 @@ import java.util.stream.Stream;
 
 public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
 
+  private final class ProjectArchiveCache extends ValueCache<Stream<NabuProjectArchiveValue>> {
+
+    private ProjectArchiveCache(Path fileName) {
+      super("project_archive " + fileName.toString(), 30, ReplacingRecord::new);
+    }
+
+    private Stream<NabuProjectArchiveValue> projectArchives(String baseUrl)
+        throws IOException, InterruptedException {
+      return HTTP_CLIENT
+          .send(
+              httpGet(baseUrl + "/projects", config.map(NabuConfiguration::getTimeout)),
+              new JsonListBodyHandler<>(MAPPER, NabuProjectArchiveDto.class))
+          .body()
+          .get()
+          .map(
+              ca ->
+                  new NabuProjectArchiveValue(
+                      ca.getArchiveTarget(),
+                      ca.getArchiveWith(),
+                      ca.getFilesUnloaded() == null
+                          ? Optional.empty()
+                          : Optional.of(Instant.parse(ca.getFilesUnloaded())),
+                      ca.getProjectIdentifier(),
+                      Optional.ofNullable(ca.getCommvaultBackupJobId()),
+                      Instant.parse(ca.getCreated()),
+                      ca.getFilesCopiedToOffsiteArchiveStagingDir() == null
+                          ? Optional.empty()
+                          : Optional.of(
+                              Instant.parse(ca.getFilesCopiedToOffsiteArchiveStagingDir())),
+                      ca.getFilesLoadedIntoVidarrArchival() == null
+                          ? Optional.empty()
+                          : Optional.of(Instant.parse(ca.getFilesLoadedIntoVidarrArchival())),
+                      ca.getLimsIds(),
+                      deserializeMetadata(ca.getMetadata()),
+                      Instant.parse(ca.getModified()),
+                      ca.getRequisitionId(),
+                      ca.getWorkflowRunIdsForOffsiteArchive(),
+                      ca.getWorkflowRunIdsForVidarrArchival() == null
+                          ? Optional.empty()
+                          : Optional.of(ca.getWorkflowRunIdsForVidarrArchival())));
+    }
+
+    private Tuple deserializeMetadata(JsonNode metadata) {
+      if (metadata == null) {
+        return new Tuple();
+      } else {
+        return new Tuple(
+            findMetadataTextValue(metadata, "archiveNote", "archive_note"),
+            findMetadataTextValue(metadata, "assayName", "assay_name"),
+            findMetadataTextValue(metadata, "assayVersion", "assay_version"),
+            findMetadataLongValue(metadata, "projectTotalSize", "project_total_size"),
+            findMetadataLongValue(metadata, "offsiteArchiveSize", "offsite_archive_size"),
+            findMetadataLongValue(metadata, "onsiteArchiveSize", "onsite_archive_size"));
+      }
+    }
+
+    @Override
+    protected Stream<NabuProjectArchiveValue> fetch(Instant lastUpdated) throws Exception {
+      if (config.isEmpty()) {
+        System.err.println(
+            "The case_archive input format is unusable because Nabu config is empty.");
+        return new ErrorableStream<>(Stream.empty(), false);
+      }
+      return projectArchives(config.get().getUrl());
+    }
+  }
+
   private final class CaseArchiveCache extends ValueCache<Stream<NabuCaseArchiveValue>> {
 
     private CaseArchiveCache(Path fileName) {
@@ -43,9 +110,9 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
                   new NabuCaseArchiveValue(
                       ca.getArchiveTarget(),
                       ca.getArchiveWith(),
-                      ca.getCaseFilesUnloaded() == null
+                      ca.getFilesUnloaded() == null
                           ? Optional.empty()
-                          : Optional.of(Instant.parse(ca.getCaseFilesUnloaded())),
+                          : Optional.of(Instant.parse(ca.getFilesUnloaded())),
                       ca.getCaseIdentifier(),
                       Optional.ofNullable(ca.getCommvaultBackupJobId()),
                       Instant.parse(ca.getCreated()),
@@ -139,6 +206,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
   }
 
   private final CaseArchiveCache caseArchiveCache;
+  private final ProjectArchiveCache projectArchiveCache;
   private Optional<NabuConfiguration> config = Optional.empty();
   private final Definer<NabuPlugin> definer;
   private final FileQcCache fileQcCache;
@@ -148,6 +216,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
     this.definer = definer;
     fileQcCache = new FileQcCache(fileName);
     caseArchiveCache = new CaseArchiveCache(fileName);
+    projectArchiveCache = new ProjectArchiveCache(fileName);
   }
 
   @ShesmuAction(
@@ -167,6 +236,11 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
   }
 
   @ShesmuInputSource
+  public Stream<NabuProjectArchiveValue> streamProjectArchives(boolean readStale) {
+    return readStale ? projectArchiveCache.getStale() : projectArchiveCache.get();
+  }
+
+  @ShesmuInputSource
   public Stream<NabuFileQcValue> streamFileQcs(boolean readStale) {
     return readStale ? fileQcCache.getStale() : fileQcCache.get();
   }
@@ -176,6 +250,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
     config = Optional.of(value);
     fileQcCache.invalidate();
     caseArchiveCache.invalidate();
+    projectArchiveCache.invalidate();
     return Optional.empty();
   }
 
