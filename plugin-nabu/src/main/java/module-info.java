@@ -1,6 +1,7 @@
 import ca.on.oicr.gsi.shesmu.nabu.NabuCaseArchiveFormatDefinition;
 import ca.on.oicr.gsi.shesmu.nabu.NabuFileQcFormatDefinition;
 import ca.on.oicr.gsi.shesmu.nabu.NabuPluginType;
+import ca.on.oicr.gsi.shesmu.nabu.NabuProjectArchiveFormatDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import ca.on.oicr.gsi.shesmu.plugin.input.InputFormat;
 
@@ -17,6 +18,7 @@ module ca.on.oicr.gsi.shesmu.plugin.nabu {
 
   provides InputFormat with
       NabuCaseArchiveFormatDefinition,
+      NabuProjectArchiveFormatDefinition,
       NabuFileQcFormatDefinition;
   provides PluginFileType with
       NabuPluginType;
