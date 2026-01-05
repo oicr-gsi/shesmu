@@ -142,14 +142,10 @@ public class ArchiveProjectAction extends JsonParameterisedAction {
       return false;
     }
     final ArchiveProjectAction other = (ArchiveProjectAction) obj;
-    if (requisitionId != other.requisitionId) {
-      return false;
-    } else if (!limsIds.equals(other.limsIds)) {
-      return false;
-    } else if (!parameters.equals(other.parameters)) {
-      return false;
-    }
-    return projectIdentifier.equals(other.projectIdentifier);
+    return Objects.equals(this.requisitionId, other.requisitionId) 
+      && Objects.equals(this.limsIds, other.limsIds)
+      && Objects.equals(this.parameters, other.parameters)
+      && Objects.equals(this.projectIdentifier, other.projectIdentifier);
   }
 
   @Override
