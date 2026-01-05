@@ -242,7 +242,7 @@ public class ArchiveProjectAction extends JsonParameterisedAction {
   private HttpRequest buildRequest(String baseUrl) throws JsonProcessingException {
     HttpRequest.BodyPublisher body = HttpRequest.BodyPublishers.ofString(createRequestBody());
     final String authentication = owner.get().NabuToken();
-    authenticationHeader = authentication == null ? Optional.empty() : Optional.of(authentication);
+    authenticationHeader = Optional.ofNullable(authentication);
 
     final HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl + "/project"));
 
