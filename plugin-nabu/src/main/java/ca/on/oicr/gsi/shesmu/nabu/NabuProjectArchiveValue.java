@@ -7,12 +7,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-public class NabuCaseArchiveValue {
+public class NabuProjectArchiveValue {
 
   private final String archive_target;
   private final Set<String> archive_with;
   private final Optional<Instant> files_unloaded;
-  private final String case_identifier;
+  private final String project_identifier;
   private final Optional<String> commvault_backup_job_id;
   private final Instant created;
   private final Optional<Instant> files_copied_to_offsite_archive_staging_dir;
@@ -24,11 +24,11 @@ public class NabuCaseArchiveValue {
   private final Set<String> workflow_run_ids_for_offsite_archive;
   private final Optional<Set<String>> workflow_run_ids_for_vidarr_archival;
 
-  public NabuCaseArchiveValue(
+  public NabuProjectArchiveValue(
       String archive_target,
       Set<String> archive_with,
       Optional<Instant> files_unloaded,
-      String case_identifier,
+      String project_identifier,
       Optional<String> commvault_backup_job_id,
       Instant created,
       Optional<Instant> files_copied_to_offsite_archive_staging_dir,
@@ -43,7 +43,7 @@ public class NabuCaseArchiveValue {
     this.archive_target = archive_target;
     this.archive_with = archive_with;
     this.files_unloaded = files_unloaded;
-    this.case_identifier = case_identifier;
+    this.project_identifier = project_identifier;
     this.commvault_backup_job_id = commvault_backup_job_id;
     this.created = created;
     this.files_copied_to_offsite_archive_staging_dir = files_copied_to_offsite_archive_staging_dir;
@@ -72,8 +72,8 @@ public class NabuCaseArchiveValue {
   }
 
   @ShesmuVariable
-  public String case_identifier() {
-    return case_identifier;
+  public String project_identifier() {
+    return project_identifier;
   }
 
   @ShesmuVariable
@@ -94,11 +94,11 @@ public class NabuCaseArchiveValue {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    NabuCaseArchiveValue that = (NabuCaseArchiveValue) o;
+    NabuProjectArchiveValue that = (NabuProjectArchiveValue) o;
     return archive_target.equals(that.archive_target())
         && archive_with.equals(that.archive_with())
         && files_unloaded == that.files_unloaded()
-        && case_identifier.equals(that.case_identifier())
+        && project_identifier.equals(that.project_identifier())
         && commvault_backup_job_id.equals(that.commvault_backup_job_id())
         && created.equals(that.created())
         && files_copied_to_offsite_archive_staging_dir
@@ -128,7 +128,7 @@ public class NabuCaseArchiveValue {
         archive_target,
         archive_with,
         files_unloaded,
-        case_identifier,
+        project_identifier,
         commvault_backup_job_id,
         created,
         files_copied_to_offsite_archive_staging_dir,
@@ -148,7 +148,7 @@ public class NabuCaseArchiveValue {
 
   @ShesmuVariable(
       type =
-          "o6archive_note$qsassay_name$qsassay_version$qscase_total_size$qioffsite_archive_size$qionsite_archive_size$qi")
+          "o6archive_note$qsassay_name$qsassay_version$qsproject_total_size$qioffsite_archive_size$qionsite_archive_size$qi")
   // If this object's size changes, the deserialization code needs to change as well
   public Tuple metadata() {
     return metadata;
