@@ -46,7 +46,7 @@ public abstract class ArchiveAction<dTo extends NabuArchiveDto> extends JsonPara
   private static final Counter nabuRequestErrors =
       Counter.build(
               "shesmu_nabu_request_errors",
-              "The number of errors trying to countact the Nabu web service.")
+              "The number of errors trying to contact the Nabu web service.")
           .labelNames("target")
           .register();
   private static final LatencyHistogram NabuRequestTime =
@@ -170,6 +170,7 @@ public abstract class ArchiveAction<dTo extends NabuArchiveDto> extends JsonPara
     final String authentication = owner.get().NabuToken();
     authenticationHeader = Optional.ofNullable(authentication);
 
+    // Note that pathSegment assumes a leading "/"
     final HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl + pathSegment()));
 
     authenticationHeader.ifPresent(header -> builder.header("X-API-KEY", header));
@@ -184,6 +185,8 @@ public abstract class ArchiveAction<dTo extends NabuArchiveDto> extends JsonPara
 
   private ActionState sendArchiveActionRequest(HttpClient HTTP_CLIENT, String baseUrl) {
     HttpRequest request;
+    final Map<String, String> labels = new TreeMap<>();
+    labels.put("url", baseUrl);
     try {
       request = buildRequest(baseUrl);
     } catch (JsonProcessingException e) {
@@ -202,14 +205,14 @@ public abstract class ArchiveAction<dTo extends NabuArchiveDto> extends JsonPara
                 + " "
                 + this.identifier,
             LogLevel.ERROR,
-            new TreeMap<>());
+            labels);
         return ActionState.HALP;
       } else if (response.statusCode() >= 400) {
         nabuRequestErrors.labels(baseUrl).inc();
         try {
           this.showHTTPError(response, baseUrl);
         } catch (JsonProcessingException e) {
-          this.errors.add("Additional error decoding Nabu response");
+          this.errors.add("Additional error decoding Nabu response: " + e.getMessage());
         }
         return ActionState.FAILED;
       } else if (response.statusCode() / 100 == 3) {
@@ -229,8 +232,6 @@ public abstract class ArchiveAction<dTo extends NabuArchiveDto> extends JsonPara
       }
     } catch (Exception e) {
       e.printStackTrace();
-      final Map<String, String> labels = new TreeMap<>();
-      labels.put("url", baseUrl);
       owner.log(
           "Error performing " + entityLabel() + " archiving action: " + e.getMessage(),
           LogLevel.ERROR,

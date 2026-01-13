@@ -88,7 +88,7 @@ public class RunReport extends JsonParameterisedAction {
   private static final Counter 观音RequestErrors =
       Counter.build(
               "shesmu_guanyin_request_errors",
-              "The number of errors trying to countact the Guanyin web service.")
+              "The number of errors trying to contact the Guanyin web service.")
           .labelNames("target")
           .register();
   private static final LatencyHistogram 观音RequestTime =

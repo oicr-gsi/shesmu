@@ -58,14 +58,14 @@ public class NabuProjectArchiveValue extends NabuAbstractArchiveValue {
       return false;
     }
     NabuProjectArchiveValue that = (NabuProjectArchiveValue) o;
-    return baseEquals(that)
+    return super.equals(o)
         && project_identifier.equals(that.project_identifier)
         && metadata.equals(that.metadata);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(baseHashCode(), project_identifier, metadata);
+    return Objects.hash(super.hashCode(), project_identifier, metadata);
   }
 
   @ShesmuVariable(

@@ -34,7 +34,6 @@ public abstract class NabuAbstractArchiveValue {
       long requisition_id,
       Set<String> workflow_run_ids_for_offsite_archive,
       Optional<Set<String>> workflow_run_ids_for_vidarr_archival) {
-    super();
     this.archive_target = archive_target;
     this.archive_with = archive_with;
     this.files_unloaded = files_unloaded;
@@ -74,7 +73,8 @@ public abstract class NabuAbstractArchiveValue {
     return created;
   }
 
-  public boolean baseEquals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
@@ -107,7 +107,8 @@ public abstract class NabuAbstractArchiveValue {
     return files_loaded_into_vidarr_archival;
   }
 
-  public int baseHashCode() {
+  @Override
+  public int hashCode() {
     return Objects.hash(
         archive_target,
         archive_with,

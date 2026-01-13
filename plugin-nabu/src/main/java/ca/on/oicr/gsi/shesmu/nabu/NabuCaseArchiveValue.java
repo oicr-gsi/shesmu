@@ -51,7 +51,7 @@ public class NabuCaseArchiveValue extends NabuAbstractArchiveValue {
 
   @Override
   public int hashCode() {
-    return Objects.hash(baseHashCode(), case_identifier, metadata);
+    return Objects.hash(super.hashCode(), case_identifier, metadata);
   }
 
   @Override
@@ -63,7 +63,7 @@ public class NabuCaseArchiveValue extends NabuAbstractArchiveValue {
       return false;
     }
     NabuCaseArchiveValue that = (NabuCaseArchiveValue) o;
-    return baseEquals(that)
+    return super.equals(o)
         && case_identifier.equals(that.case_identifier)
         && metadata.equals(that.metadata);
   }
