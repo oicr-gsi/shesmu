@@ -6,7 +6,7 @@ import java.util.Set;
 
 /** This class allows for proper deserialization of JSON data */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class NabuProjectArchiveDto {
+public class NabuProjectArchiveDto implements NabuArchiveDto {
 
   private String archiveTarget;
   private Set<String> archiveWith;
