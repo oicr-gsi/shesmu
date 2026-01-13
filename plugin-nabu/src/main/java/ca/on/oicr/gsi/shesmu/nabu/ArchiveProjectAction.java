@@ -116,12 +116,9 @@ public class ArchiveProjectAction extends ArchiveAction<NabuProjectArchiveDto> {
       return false;
     }
     final ArchiveProjectAction other = (ArchiveProjectAction) obj;
-    if (!limsIds.equals(other.limsIds)) {
-      return false;
-    } else if (!parameters.equals(other.parameters)) {
-      return false;
-    }
-    return identifier.equals(other.identifier);
+    return Objects.equals(this.limsIds, other.limsIds)
+        && Objects.equals(this.parameters, other.parameters)
+        && Objects.equals(this.identifier, other.identifier);
   }
 
   @Override

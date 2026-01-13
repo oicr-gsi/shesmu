@@ -128,9 +128,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
                       Instant.parse(ca.getModified()),
                       ca.getRequisitionId(),
                       ca.getWorkflowRunIdsForOffsiteArchive(),
-                      ca.getWorkflowRunIdsForVidarrArchival() == null
-                          ? Optional.empty()
-                          : Optional.of(ca.getWorkflowRunIdsForVidarrArchival())));
+                      Optional.ofNullable(ca.getWorkflowRunIdsForVidarrArchival())));
     }
 
     private Tuple deserializeMetadata(JsonNode metadata) {
