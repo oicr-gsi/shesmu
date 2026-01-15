@@ -7,16 +7,16 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-public class NabuCaseArchiveValue extends NabuBaseArchiveValue {
+public class NabuProjectArchiveValue extends NabuBaseArchiveValue {
 
-  private final String case_identifier;
+  private final String project_identifier;
   private final Tuple metadata;
 
-  public NabuCaseArchiveValue(
+  public NabuProjectArchiveValue(
       String archive_target,
       Set<String> archive_with,
       Optional<Instant> files_unloaded,
-      String case_identifier,
+      String project_identifier,
       Optional<String> commvault_backup_job_id,
       Instant created,
       Optional<Instant> files_copied_to_offsite_archive_staging_dir,
@@ -40,18 +40,13 @@ public class NabuCaseArchiveValue extends NabuBaseArchiveValue {
         requisition_id,
         workflow_run_ids_for_offsite_archive,
         workflow_run_ids_for_vidarr_archival);
-    this.case_identifier = case_identifier;
+    this.project_identifier = project_identifier;
     this.metadata = metadata;
   }
 
   @ShesmuVariable
-  public String case_identifier() {
-    return case_identifier;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(super.hashCode(), case_identifier, metadata);
+  public String project_identifier() {
+    return project_identifier;
   }
 
   @Override
@@ -62,15 +57,18 @@ public class NabuCaseArchiveValue extends NabuBaseArchiveValue {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    NabuCaseArchiveValue that = (NabuCaseArchiveValue) o;
-    return super.equals(o)
-        && case_identifier.equals(that.case_identifier)
-        && requisition_id.equals(that.requisition_id);
+    NabuProjectArchiveValue that = (NabuProjectArchiveValue) o;
+    return super.equals(o) && project_identifier.equals(that.project_identifier);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), project_identifier, metadata);
   }
 
   @ShesmuVariable(
       type =
-          "o6archive_note$qsassay_name$qsassay_version$qscase_total_size$qioffsite_archive_size$qionsite_archive_size$qi")
+          "o6archive_note$qsassay_name$qsassay_version$qsoffsite_archive_size$qionsite_archive_size$qiproject_total_size$qi")
   // If this object's size changes, the deserialization code needs to change as well
   public Tuple metadata() {
     return metadata;

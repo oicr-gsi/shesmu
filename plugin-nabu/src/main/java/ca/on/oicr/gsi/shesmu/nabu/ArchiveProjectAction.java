@@ -3,24 +3,15 @@ package ca.on.oicr.gsi.shesmu.nabu;
 import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Consumer;
 
-public class ArchiveCaseAction extends ArchiveAction<NabuCaseArchiveDto> {
+public class ArchiveProjectAction extends ArchiveAction<NabuProjectArchiveDto> {
 
-  public ArchiveCaseAction(Definer<NabuPlugin> owner) {
-    super(owner, "archive-case-action");
-  }
-
-  @ActionParameter(name = "assay_name")
-  public void assayName(String assayName) {
-    this.assayName = assayName;
-  }
-
-  @ActionParameter(name = "assay_version")
-  public void assayVersion(String assayVersion) {
-    this.assayVersion = assayVersion;
+  public ArchiveProjectAction(Definer<NabuPlugin> owner) {
+    super(owner, "archive-project-action");
   }
 
   @ActionParameter(name = "archive_note")
@@ -38,14 +29,14 @@ public class ArchiveCaseAction extends ArchiveAction<NabuCaseArchiveDto> {
     this.archiveWith = archiveWith;
   }
 
-  @ActionParameter(name = "case_identifier")
-  public void caseId(String caseId) {
-    this.identifier = caseId;
+  @ActionParameter(name = "project_identifier")
+  public void projectId(String projectId) {
+    this.identifier = projectId;
   }
 
-  @ActionParameter(name = "case_total_size")
-  public void caseTotalSize(Long caseTotalSize) {
-    this.totalSize = caseTotalSize;
+  @ActionParameter(name = "project_total_size")
+  public void projectTotalSize(Long projectTotalSize) {
+    this.totalSize = projectTotalSize;
   }
 
   @ActionParameter(name = "lims_ids")
@@ -63,11 +54,6 @@ public class ArchiveCaseAction extends ArchiveAction<NabuCaseArchiveDto> {
     this.onsiteArchiveSize = onsiteArchiveSize;
   }
 
-  @ActionParameter(name = "requisition_id")
-  public void requisitionId(Optional<Long> requisitionId) {
-    this.requisitionId = requisitionId;
-  }
-
   @ActionParameter(name = "workflow_run_ids_for_offsite_archive")
   public void workflowRunIdsForOffsiteArchive(Set<String> workflowRunIdsForOffsiteArchive) {
     this.workflowRunIdsForOffsiteArchive = workflowRunIdsForOffsiteArchive;
@@ -79,23 +65,28 @@ public class ArchiveCaseAction extends ArchiveAction<NabuCaseArchiveDto> {
   }
 
   @Override
+  public ObjectNode parameters() {
+    return parameters;
+  }
+
+  @Override
   protected String identifierJsonFieldName() {
-    return "caseIdentifier";
+    return "projectIdentifier";
   }
 
   @Override
   protected String totalSizeJsonFieldName() {
-    return "caseTotalSize";
+    return "projectTotalSize";
   }
 
   @Override
   protected String entityLabel() {
-    return "case";
+    return "project";
   }
 
   @Override
-  protected Class<NabuCaseArchiveDto[]> dtoArrayClass() {
-    return NabuCaseArchiveDto[].class;
+  protected Class<NabuProjectArchiveDto[]> dtoArrayClass() {
+    return NabuProjectArchiveDto[].class;
   }
 
   @Override
@@ -109,16 +100,10 @@ public class ArchiveCaseAction extends ArchiveAction<NabuCaseArchiveDto> {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final ArchiveCaseAction other = (ArchiveCaseAction) obj;
-    return Objects.equals(this.requisitionId, other.requisitionId)
-        && Objects.equals(this.limsIds, other.limsIds)
+    final ArchiveProjectAction other = (ArchiveProjectAction) obj;
+    return Objects.equals(this.limsIds, other.limsIds)
         && Objects.equals(this.parameters, other.parameters)
         && Objects.equals(this.identifier, other.identifier);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(owner, parameters, identifier, limsIds, requisitionId);
   }
 
   @Override
@@ -128,11 +113,15 @@ public class ArchiveCaseAction extends ArchiveAction<NabuCaseArchiveDto> {
       digest.accept(new byte[] {0});
       digest.accept(identifier.getBytes(StandardCharsets.UTF_8));
       digest.accept(new byte[] {0});
-      digest.accept(MAPPER.writeValueAsBytes(requisitionId));
       digest.accept(MAPPER.writeValueAsBytes(limsIds));
       digest.accept(MAPPER.writeValueAsBytes(parameters));
     } catch (JsonProcessingException e) {
       e.printStackTrace();
     }
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(owner, parameters, identifier, limsIds);
   }
 }
