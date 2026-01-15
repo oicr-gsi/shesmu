@@ -14,16 +14,6 @@ public class ArchiveProjectAction extends ArchiveAction<NabuProjectArchiveDto> {
     super(owner, "archive-project-action");
   }
 
-  @ActionParameter(name = "assay_name")
-  public void assayName(String assayName) {
-    this.assayName = assayName;
-  }
-
-  @ActionParameter(name = "assay_version")
-  public void assayVersion(String assayVersion) {
-    this.assayVersion = assayVersion;
-  }
-
   @ActionParameter(name = "archive_note")
   public void archiveNote(Optional<String> archiveNote) {
     this.archiveNote = archiveNote;
@@ -77,11 +67,6 @@ public class ArchiveProjectAction extends ArchiveAction<NabuProjectArchiveDto> {
   @Override
   public ObjectNode parameters() {
     return parameters;
-  }
-
-  @Override
-  protected String pathSegment() {
-    return "/project";
   }
 
   @Override

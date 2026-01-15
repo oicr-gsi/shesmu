@@ -7,7 +7,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-public class NabuProjectArchiveValue extends NabuAbstractArchiveValue {
+public class NabuProjectArchiveValue extends NabuBaseArchiveValue {
 
   private final String project_identifier;
   private final Tuple metadata;
@@ -24,9 +24,9 @@ public class NabuProjectArchiveValue extends NabuAbstractArchiveValue {
       Set<String> lims_ids,
       Tuple metadata,
       Instant modified,
-      long requisition_id,
+      Optional<Long> requisition_id,
       Set<String> workflow_run_ids_for_offsite_archive,
-      Optional<Set<String>> workflow_run_ids_for_vidarr_archival) {
+      Set<String> workflow_run_ids_for_vidarr_archival) {
     super(
         archive_target,
         archive_with,
@@ -58,9 +58,7 @@ public class NabuProjectArchiveValue extends NabuAbstractArchiveValue {
       return false;
     }
     NabuProjectArchiveValue that = (NabuProjectArchiveValue) o;
-    return super.equals(o)
-        && project_identifier.equals(that.project_identifier)
-        && metadata.equals(that.metadata);
+    return super.equals(o) && project_identifier.equals(that.project_identifier);
   }
 
   @Override
@@ -70,7 +68,7 @@ public class NabuProjectArchiveValue extends NabuAbstractArchiveValue {
 
   @ShesmuVariable(
       type =
-          "o6archive_note$qsassay_name$qsassay_version$qsproject_total_size$qioffsite_archive_size$qionsite_archive_size$qi")
+          "o6archive_note$qsassay_name$qsassay_version$qsoffsite_archive_size$qionsite_archive_size$qiproject_total_size$qi")
   // If this object's size changes, the deserialization code needs to change as well
   public Tuple metadata() {
     return metadata;

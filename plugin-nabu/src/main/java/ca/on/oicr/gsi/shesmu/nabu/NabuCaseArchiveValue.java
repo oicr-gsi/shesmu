@@ -7,7 +7,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-public class NabuCaseArchiveValue extends NabuAbstractArchiveValue {
+public class NabuCaseArchiveValue extends NabuBaseArchiveValue {
 
   private final String case_identifier;
   private final Tuple metadata;
@@ -24,9 +24,9 @@ public class NabuCaseArchiveValue extends NabuAbstractArchiveValue {
       Set<String> lims_ids,
       Tuple metadata,
       Instant modified,
-      long requisition_id,
+      Optional<Long> requisition_id,
       Set<String> workflow_run_ids_for_offsite_archive,
-      Optional<Set<String>> workflow_run_ids_for_vidarr_archival) {
+      Set<String> workflow_run_ids_for_vidarr_archival) {
     super(
         archive_target,
         archive_with,
@@ -65,7 +65,7 @@ public class NabuCaseArchiveValue extends NabuAbstractArchiveValue {
     NabuCaseArchiveValue that = (NabuCaseArchiveValue) o;
     return super.equals(o)
         && case_identifier.equals(that.case_identifier)
-        && metadata.equals(that.metadata);
+        && requisition_id.equals(that.requisition_id);
   }
 
   @ShesmuVariable(

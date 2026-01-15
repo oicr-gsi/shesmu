@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-public abstract class NabuAbstractArchiveValue {
+public abstract class NabuBaseArchiveValue {
 
   protected final String archive_target;
   protected final Set<String> archive_with;
@@ -17,11 +17,11 @@ public abstract class NabuAbstractArchiveValue {
   protected final Optional<Instant> files_loaded_into_vidarr_archival;
   protected final Set<String> lims_ids;
   protected final Instant modified;
-  protected final long requisition_id;
+  protected final Optional<Long> requisition_id;
   protected final Set<String> workflow_run_ids_for_offsite_archive;
-  protected final Optional<Set<String>> workflow_run_ids_for_vidarr_archival;
+  protected final Set<String> workflow_run_ids_for_vidarr_archival;
 
-  protected NabuAbstractArchiveValue(
+  protected NabuBaseArchiveValue(
       String archive_target,
       Set<String> archive_with,
       Optional<Instant> files_unloaded,
@@ -31,9 +31,9 @@ public abstract class NabuAbstractArchiveValue {
       Optional<Instant> files_loaded_into_vidarr_archival,
       Set<String> lims_ids,
       Instant modified,
-      long requisition_id,
+      Optional<Long> requisition_id,
       Set<String> workflow_run_ids_for_offsite_archive,
-      Optional<Set<String>> workflow_run_ids_for_vidarr_archival) {
+      Set<String> workflow_run_ids_for_vidarr_archival) {
     this.archive_target = archive_target;
     this.archive_with = archive_with;
     this.files_unloaded = files_unloaded;
@@ -81,7 +81,7 @@ public abstract class NabuAbstractArchiveValue {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    NabuAbstractArchiveValue that = (NabuAbstractArchiveValue) o;
+    NabuBaseArchiveValue that = (NabuBaseArchiveValue) o;
     return archive_target.equals(that.archive_target())
         && archive_with.equals(that.archive_with())
         && files_unloaded == that.files_unloaded()
@@ -92,7 +92,6 @@ public abstract class NabuAbstractArchiveValue {
         && files_loaded_into_vidarr_archival == that.files_loaded_into_vidarr_archival()
         && lims_ids.equals(that.lims_ids())
         && modified.equals(that.modified())
-        && requisition_id == that.requisition_id()
         && workflow_run_ids_for_offsite_archive.equals(that.workflow_run_ids_for_offsite_archive())
         && workflow_run_ids_for_vidarr_archival.equals(that.workflow_run_ids_for_vidarr_archival());
   }
@@ -119,7 +118,6 @@ public abstract class NabuAbstractArchiveValue {
         files_loaded_into_vidarr_archival,
         lims_ids,
         modified,
-        requisition_id,
         workflow_run_ids_for_offsite_archive,
         workflow_run_ids_for_vidarr_archival);
   }
@@ -135,7 +133,7 @@ public abstract class NabuAbstractArchiveValue {
   }
 
   @ShesmuVariable
-  public long requisition_id() {
+  public Optional<Long> requisition_id() {
     return requisition_id;
   }
 
@@ -145,7 +143,7 @@ public abstract class NabuAbstractArchiveValue {
   }
 
   @ShesmuVariable
-  public Optional<Set<String>> workflow_run_ids_for_vidarr_archival() {
+  public Set<String> workflow_run_ids_for_vidarr_archival() {
     return workflow_run_ids_for_vidarr_archival;
   }
 }

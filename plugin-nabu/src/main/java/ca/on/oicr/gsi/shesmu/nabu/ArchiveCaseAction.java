@@ -64,7 +64,7 @@ public class ArchiveCaseAction extends ArchiveAction<NabuCaseArchiveDto> {
   }
 
   @ActionParameter(name = "requisition_id")
-  public void requisitionId(long requisitionId) {
+  public void requisitionId(Optional<Long> requisitionId) {
     this.requisitionId = requisitionId;
   }
 
@@ -76,11 +76,6 @@ public class ArchiveCaseAction extends ArchiveAction<NabuCaseArchiveDto> {
   @ActionParameter(name = "workflow_run_ids_for_vidarr_archival")
   public void workflowRunIdsForVidarrArchival(Set<String> workflowRunIdsForVidarrArchival) {
     this.workflowRunIdsForVidarrArchival = workflowRunIdsForVidarrArchival;
-  }
-
-  @Override
-  protected String pathSegment() {
-    return "/case";
   }
 
   @Override
@@ -133,7 +128,7 @@ public class ArchiveCaseAction extends ArchiveAction<NabuCaseArchiveDto> {
       digest.accept(new byte[] {0});
       digest.accept(identifier.getBytes(StandardCharsets.UTF_8));
       digest.accept(new byte[] {0});
-      digest.accept(Utils.toBytes(requisitionId));
+      digest.accept(MAPPER.writeValueAsBytes(requisitionId));
       digest.accept(MAPPER.writeValueAsBytes(limsIds));
       digest.accept(MAPPER.writeValueAsBytes(parameters));
     } catch (JsonProcessingException e) {

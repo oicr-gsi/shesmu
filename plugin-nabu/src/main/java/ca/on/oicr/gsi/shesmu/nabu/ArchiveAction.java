@@ -20,7 +20,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public abstract class ArchiveAction<dTo extends NabuArchiveDto> extends JsonParameterisedAction {
+public abstract class ArchiveAction<T extends NabuArchiveDto> extends JsonParameterisedAction {
 
   protected final Definer<NabuPlugin> owner;
   static final ObjectMapper MAPPER = new ObjectMapper();
@@ -34,7 +34,7 @@ public abstract class ArchiveAction<dTo extends NabuArchiveDto> extends JsonPara
   public Long totalSize;
   public Long offsiteArchiveSize;
   public Long onsiteArchiveSize;
-  public long requisitionId;
+  public Optional<Long> requisitionId;
   public Set<String> limsIds;
   public Set<String> workflowRunIdsForOffsiteArchive;
   public Set<String> workflowRunIdsForVidarrArchival;
@@ -61,15 +61,13 @@ public abstract class ArchiveAction<dTo extends NabuArchiveDto> extends JsonPara
     parameters = rootParameters.putObject("parameters");
   }
 
-  protected abstract String pathSegment();
-
   protected abstract String identifierJsonFieldName();
 
   protected abstract String totalSizeJsonFieldName();
 
   protected abstract String entityLabel();
 
-  protected abstract Class<dTo[]> dtoArrayClass();
+  protected abstract Class<T[]> dtoArrayClass();
 
   @Override
   public ObjectNode parameters() {
@@ -91,7 +89,7 @@ public abstract class ArchiveAction<dTo extends NabuArchiveDto> extends JsonPara
     return identifier.equals(other.identifier);
   }
 
-  private ActionState actionStatusFromArchive(dTo archive) {
+  private ActionState actionStatusFromArchive(T archive) {
     if (archive.getCreated() != null) {
       if (archive.getFilesLoadedIntoVidarrArchival() == null
           && archive.getFilesCopiedToOffsiteArchiveStagingDir() == null) {
@@ -170,8 +168,8 @@ public abstract class ArchiveAction<dTo extends NabuArchiveDto> extends JsonPara
     final String authentication = owner.get().NabuToken();
     authenticationHeader = Optional.ofNullable(authentication);
 
-    // Note that pathSegment assumes a leading "/"
-    final HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl + pathSegment()));
+    final HttpRequest.Builder builder =
+        HttpRequest.newBuilder(URI.create(baseUrl + "/" + entityLabel()));
 
     authenticationHeader.ifPresent(header -> builder.header("X-API-KEY", header));
 
@@ -225,7 +223,7 @@ public abstract class ArchiveAction<dTo extends NabuArchiveDto> extends JsonPara
       } else if (response.statusCode() == 201) {
         return ActionState.INFLIGHT;
       } else if (response.statusCode() == 200) {
-        final dTo[] results = response.body().get();
+        final T[] results = response.body().get();
         return actionStatusFromArchive(Arrays.stream(results).findFirst().get());
       } else {
         return ActionState.UNKNOWN;
@@ -274,7 +272,7 @@ public abstract class ArchiveAction<dTo extends NabuArchiveDto> extends JsonPara
     node.put("archiveTarget", archiveTarget);
     archiveWith.forEach(node.putArray("archiveWith")::add);
     node.put(identifierJsonFieldName(), identifier);
-    node.put("requisitionId", requisitionId);
+    node.put("requisitionId", requisitionId.orElse(null));
     node.set("parameters", parameters);
     errors.forEach(node.putArray("errors")::add);
     limsIds.forEach(node.putArray("limsIds")::add);

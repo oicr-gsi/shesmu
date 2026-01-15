@@ -1,11 +1,21 @@
 package ca.on.oicr.gsi.shesmu.nabu;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Set;
 
 /** This class allows for proper deserialization of JSON data */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.EXISTING_PROPERTY,
+    property = "entityType")
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = NabuCaseArchiveDto.class, name = "case"),
+  @JsonSubTypes.Type(value = NabuProjectArchiveDto.class, name = "project")
+})
 public abstract class NabuArchiveDto {
 
   private String archiveTarget;
@@ -13,6 +23,7 @@ public abstract class NabuArchiveDto {
   private String filesUnloaded;
   private String commvaultBackupJobId;
   private String created;
+  private String entityType;
   private String filesCopiedToOffsiteArchiveStagingDir;
   private String filesLoadedIntoVidarrArchival;
   private Set<String> limsIds;
@@ -40,6 +51,10 @@ public abstract class NabuArchiveDto {
 
   public String getCreated() {
     return created;
+  }
+
+  public String getEntityType() {
+    return entityType;
   }
 
   public String getFilesCopiedToOffsiteArchiveStagingDir() {
@@ -92,6 +107,10 @@ public abstract class NabuArchiveDto {
 
   public void setCreated(String created) {
     this.created = created;
+  }
+
+  public void setEntityType(String entityType) {
+    this.entityType = entityType;
   }
 
   public void setFilesCopiedToOffsiteArchiveStagingDir(

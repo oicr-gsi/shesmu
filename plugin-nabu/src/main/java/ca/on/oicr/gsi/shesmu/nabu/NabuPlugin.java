@@ -59,11 +59,9 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
                       ca.getLimsIds(),
                       deserializeMetadata(ca.getMetadata()),
                       Instant.parse(ca.getModified()),
-                      ca.getRequisitionId(),
+                      Optional.ofNullable(ca.getRequisitionId()),
                       ca.getWorkflowRunIdsForOffsiteArchive(),
-                      ca.getWorkflowRunIdsForVidarrArchival() == null
-                          ? Optional.empty()
-                          : Optional.of(ca.getWorkflowRunIdsForVidarrArchival())));
+                      ca.getWorkflowRunIdsForVidarrArchival()));
     }
 
     private Tuple deserializeMetadata(JsonNode metadata) {
@@ -84,7 +82,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
     protected Stream<NabuProjectArchiveValue> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) {
         System.err.println(
-            "The case_archive input format is unusable because Nabu config is empty.");
+            "The project_archive input format is unusable because Nabu config is empty.");
         return new ErrorableStream<>(Stream.empty(), false);
       }
       return projectArchives(config.get().getUrl());
@@ -126,9 +124,9 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
                       ca.getLimsIds(),
                       deserializeMetadata(ca.getMetadata()),
                       Instant.parse(ca.getModified()),
-                      ca.getRequisitionId(),
+                      Optional.ofNullable(ca.getRequisitionId()),
                       ca.getWorkflowRunIdsForOffsiteArchive(),
-                      Optional.ofNullable(ca.getWorkflowRunIdsForVidarrArchival())));
+                      ca.getWorkflowRunIdsForVidarrArchival()));
     }
 
     private Tuple deserializeMetadata(JsonNode metadata) {
@@ -221,6 +219,12 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
       description = "send archiving info for case to Nabu (completes when files archived)")
   public ArchiveCaseAction archive_case() {
     return new ArchiveCaseAction(definer);
+  }
+
+  @ShesmuAction(
+      description = "send archiving info for project to Nabu (completes when files archived)")
+  public ArchiveProjectAction archive_project() {
+    return new ArchiveProjectAction(definer);
   }
 
   @Override
