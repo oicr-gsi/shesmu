@@ -16,11 +16,13 @@ import java.net.URI;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -72,7 +74,7 @@ final class RunStateAttemptSubmit extends RunState {
       throws IOException, InterruptedException {
     request.setAttempt(attempt);
     request.setMode(submissionPolicy.mode(lastGeneratedByOlive, isOliveLive));
-    final var response =
+    final HttpResponse<Supplier<SubmitWorkflowResponse>> response =
         VidarrPlugin.CLIENT.send(
             HttpRequest.newBuilder(vidarrUrl.resolve("/api/submit"))
                 .header("Content-type", "application/json")
@@ -83,7 +85,7 @@ final class RunStateAttemptSubmit extends RunState {
     switch (response.statusCode()) {
       case 200:
         {
-          final var result = response.body().get();
+          final SubmitWorkflowResponse result = response.body().get();
           if (result instanceof SubmitWorkflowResponseSuccess) {
             return RunStateMonitor.create(
                 vidarrUrl, ((SubmitWorkflowResponseSuccess) result).getId());
@@ -100,17 +102,20 @@ final class RunStateAttemptSubmit extends RunState {
       case 409:
         {
           retryMinutes = Math.min(retryMinutes * 2, 60);
-          final var result = response.body().get();
+          final SubmitWorkflowResponse result = response.body().get();
           if (result instanceof SubmitWorkflowResponseFailure) {
             return new PerformResult(
                 ((SubmitWorkflowResponseFailure) result).getErrors(), ActionState.FAILED, this);
           } else if (result instanceof SubmitWorkflowResponseMissingKeyVersions) {
-            final var keyResult = ((SubmitWorkflowResponseMissingKeyVersions) result);
-            final var nextState = new RunStateMissing(keyResult.getId(), keyResult.getKeys());
+            final SubmitWorkflowResponseMissingKeyVersions keyResult =
+                ((SubmitWorkflowResponseMissingKeyVersions) result);
+            final RunStateMissing nextState =
+                new RunStateMissing(keyResult.getId(), keyResult.getKeys());
             return new PerformResult(nextState.errors(), ActionState.HALP, nextState);
           } else if (result instanceof SubmitWorkflowResponseConflict) {
-            final var conflict = ((SubmitWorkflowResponseConflict) result);
-            final var nextState = new RunStateConflicted(conflict.getIds());
+            final SubmitWorkflowResponseConflict conflict =
+                ((SubmitWorkflowResponseConflict) result);
+            final RunStateConflicted nextState = new RunStateConflicted(conflict.getIds());
             return new PerformResult(nextState.errors(), ActionState.HALP, nextState);
           } else {
             return new PerformResult(

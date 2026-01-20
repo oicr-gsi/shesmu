@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.time.Instant;
@@ -20,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -59,14 +61,14 @@ final class RunStateMonitor extends RunState {
 
   public static PerformResult create(URI vidarrUrl, String id)
       throws IOException, InterruptedException {
-    final var workflowRunUrl = vidarrUrl.resolve("/api/status/" + id);
-    final var response =
+    final URI workflowRunUrl = vidarrUrl.resolve("/api/status/" + id);
+    final HttpResponse<Supplier<WorkflowRunStatusResponse>> response =
         VidarrPlugin.CLIENT.send(
             HttpRequest.newBuilder(workflowRunUrl).GET().build(),
             new JsonBodyHandler<>(MAPPER, WorkflowRunStatusResponse.class));
     if (response.statusCode() == 200) {
-      final var result = response.body().get();
-      final var status = actionStatusForWorkflowRun(result);
+      final WorkflowRunStatusResponse result = response.body().get();
+      final ActionState status = actionStatusForWorkflowRun(result);
       return new PerformResult(
           status == ActionState.FAILED
               ? List.of(
@@ -130,7 +132,7 @@ final class RunStateMonitor extends RunState {
   public boolean delete(URI vidarrUrl) {
     if (commands().canRetry()) {
       try {
-        final var response =
+        final HttpResponse<Void> response =
             VidarrPlugin.CLIENT.send(
                 HttpRequest.newBuilder(vidarrUrl.resolve("/api/status/" + status.getId()))
                     .DELETE()
@@ -150,9 +152,9 @@ final class RunStateMonitor extends RunState {
   public boolean retry(URI vidarrUrl) {
     if (commands().canRetry()) {
       try {
-        final var request = new RetryProvisionOutRequest();
+        final RetryProvisionOutRequest request = new RetryProvisionOutRequest();
         request.setWorkflowRunIds(List.of(status.getId()));
-        final var response =
+        final HttpResponse<Supplier<String[]>> response =
             VidarrPlugin.CLIENT.send(
                 HttpRequest.newBuilder(vidarrUrl.resolve("/api/retry-provision-out"))
                     .POST(BodyPublishers.ofByteArray(MAPPER.writeValueAsBytes(request)))
@@ -161,7 +163,7 @@ final class RunStateMonitor extends RunState {
         if (response.statusCode() != 200) {
           return false;
         }
-        final var ids = response.body().get();
+        final String[] ids = response.body().get();
         return Arrays.asList(ids).contains(status.getId());
       } catch (InterruptedException | IOException e) {
         e.printStackTrace();
