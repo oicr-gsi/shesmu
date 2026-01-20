@@ -19,13 +19,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -43,7 +37,7 @@ public final class SubmitAction extends Action {
     switch (json.getNodeType()) {
       case ARRAY:
         {
-          for (final var element : json) {
+          for (final JsonNode element : json) {
             if (checkJson(element, query)) {
               return true;
             }
@@ -56,9 +50,9 @@ public final class SubmitAction extends Action {
         return query.matcher(json.numberValue().toString()).matches();
       case OBJECT:
         {
-          final var iterator = json.fields();
+          final Iterator<Map.Entry<String, JsonNode>> iterator = json.fields();
           while (iterator.hasNext()) {
-            final var field = iterator.next();
+            final Map.Entry<String, JsonNode> field = iterator.next();
             if (query.matcher(field.getKey()).matches() || checkJson(field.getValue(), query)) {
               return true;
             }
@@ -116,7 +110,7 @@ public final class SubmitAction extends Action {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    var that = (SubmitAction) o;
+    SubmitAction that = (SubmitAction) o;
     return stale == that.stale && request.equalsIgnoreAttempt(that.request);
   }
 
@@ -127,7 +121,7 @@ public final class SubmitAction extends Action {
         values.stream()
             .map(
                 value -> {
-                  final var externalKey = new ExternalKey();
+                  final ExternalKey externalKey = new ExternalKey();
                   externalKey.setId((String) value.get(0));
                   externalKey.setProvider((String) value.get(1));
                   stale |= (Boolean) value.get(2);
@@ -163,12 +157,12 @@ public final class SubmitAction extends Action {
     if (stale) {
       return ActionState.ZOMBIE;
     }
-    final var throttled = services.isOverloaded(this.services);
+    final Set<String> throttled = services.isOverloaded(this.services);
     if (!throttled.isEmpty()) {
       errors = List.of("Services are unavailable: ", String.join(", ", throttled));
       return ActionState.THROTTLED;
     }
-    final var result =
+    final RunState.PerformResult result =
         owner
             .get()
             .url()
@@ -270,7 +264,7 @@ public final class SubmitAction extends Action {
 
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
-    final var node = mapper.createObjectNode();
+    final ObjectNode node = mapper.createObjectNode();
     node.putPOJO("request", request);
     node.put("priority", priority);
     services.forEach(node.putArray("services")::add);

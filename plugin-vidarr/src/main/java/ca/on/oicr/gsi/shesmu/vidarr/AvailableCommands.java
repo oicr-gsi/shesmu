@@ -52,7 +52,7 @@ public enum AvailableCommands {
           Preference.ALLOW_BULK) {
         @Override
         protected Response execute(SubmitAction action, Optional<String> user) {
-          final var result = action.state.reattempt();
+          final Optional<RunState> result = action.state.reattempt();
           result.ifPresent(s -> action.state = s);
           return result.isPresent() ? Response.RESET : Response.IGNORED;
         }
