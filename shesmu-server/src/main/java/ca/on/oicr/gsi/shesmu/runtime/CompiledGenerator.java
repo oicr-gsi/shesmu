@@ -652,7 +652,10 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
                 },
                 ft -> dashboard = ft,
                 imports::add);
-        sourceValid.labels(fileName.toString()).set(result.isPresent() ? 1 : 0);
+        // Files which compile are valid. Removed files are also valid.
+        boolean isValid = result.isPresent() || !(fileName.toFile().exists());
+        sourceValid.labels(fileName.toString()).set(isValid ? 1 : 0);
+
         result.ifPresent(
             x -> {
               final var newNames =
