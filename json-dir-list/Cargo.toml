@@ -1,6 +1,6 @@
 [package]
 name = "json-dir-list"
-version = "1.54.1"
+version = "1.55.0"
 edition = "2021"
 repository = "https://github.com/oicr-gsi/shesmu"
 authors = ["Andre Masella <andre@masella.name>"]
