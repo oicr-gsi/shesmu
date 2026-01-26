@@ -7,6 +7,20 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.55.0] - 2026-01-26
+
+### Added
+
+* project archive input format
+
+### Fixed
+
+* Fix state transition for Vidarr actions with missing keys
+  
+* * Fix bug where using `Prefix` and `Call` in `Join` would generate incorrect bytecode
+* removing files that Shesmu tracks would sometimes cause Shesmu to interpret them as not-valid forever
+
+
 ## [1.54.1] - 2025-11-28
 
 ### Fixed
