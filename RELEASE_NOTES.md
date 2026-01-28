@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.55.1] - 2026-01-28
+
+### Fixed
+
+* Fix bug with action rendering for external keys mismatch
+
+
 ## [1.55.0] - 2026-01-26
 
 ### Added
