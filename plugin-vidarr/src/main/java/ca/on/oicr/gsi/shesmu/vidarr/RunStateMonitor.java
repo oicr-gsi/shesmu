@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 
 final class RunStateMonitor extends RunState {
 
-  private static ActionState actionStatusForWorkflowRun(WorkflowRunStatusResponse response) {
+  public static ActionState actionStatusForWorkflowRun(WorkflowRunStatusResponse response) {
     // It happens in some rare (and typically, bugged) cases for all operations to succeed but the
     // engine itself to fail.
     // This state leaves broken actions stuck in QUEUED. Check early for engine failure to ensure
