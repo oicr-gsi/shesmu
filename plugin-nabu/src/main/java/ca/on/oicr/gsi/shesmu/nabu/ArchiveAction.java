@@ -279,9 +279,7 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
         labels);
     errors.add("HTTP error: " + response.statusCode());
     if (response.body() != null && !response.body().toString().isEmpty()) {
-      if (customLogMessage == null) {
-        owner.log("HTTP error: " + response.body().toString(), LogLevel.ERROR, labels);
-      }
+      owner.log("HTTP error: " + response.body().toString(), LogLevel.ERROR, labels);
       errors.add("Error: " + MAPPER.writeValueAsString(response.body()));
     }
     this.errors = errors;
