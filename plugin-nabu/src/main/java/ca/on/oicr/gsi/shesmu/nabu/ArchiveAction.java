@@ -210,15 +210,17 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
     try (AutoCloseable timer = NabuRequestTime.start(baseUrl)) {
       var response = HTTP_CLIENT.send(request, new JsonBodyHandler<>(MAPPER, dtoArrayClass()));
       if (response.statusCode() == 409) {
-        owner.log(
-            "Attempted to resubmit "
-                + entityLabel()
-                + " archive with conflicting data for "
-                + entityLabel()
-                + " "
-                + this.identifier,
-            LogLevel.ERROR,
-            labels);
+        nabuRequestErrors.labels(baseUrl).inc();
+        try {
+          this.showHTTPError(
+              response,
+              baseUrl,
+              String.format(
+                  "Attempted to resubmit archive request with conflicting data for %s %s",
+                  entityLabel(), this.identifier));
+        } catch (JsonProcessingException e) {
+          this.errors.add("Additional error decoding Nabu response: " + e.getMessage());
+        }
         return ActionState.HALP;
       } else if (response.statusCode() >= 400) {
         nabuRequestErrors.labels(baseUrl).inc();
@@ -265,19 +267,29 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
     return 10;
   }
 
-  protected void showHTTPError(HttpResponse<?> response, String url)
+  protected void showHTTPError(HttpResponse<?> response, String url, String customLogMessage)
       throws UnsupportedOperationException, JsonProcessingException {
     final List<String> errors = new ArrayList<>();
     final Map<String, String> labels = new TreeMap<>();
     labels.put("url", url);
-    owner.log("HTTP error: " + response.statusCode(), LogLevel.ERROR, labels);
+    owner.log(
+        Objects.requireNonNullElseGet(
+            customLogMessage, () -> "HTTP error: " + response.statusCode()),
+        LogLevel.ERROR,
+        labels);
     errors.add("HTTP error: " + response.statusCode());
     if (response.body() != null && !response.body().toString().isEmpty()) {
-      owner.log("HTTP error: " + response.body().toString(), LogLevel.ERROR, labels);
+      if (customLogMessage == null) {
+        owner.log("HTTP error: " + response.body().toString(), LogLevel.ERROR, labels);
+      }
       errors.add("Error: " + MAPPER.writeValueAsString(response.body()));
     }
-    nabuRequestErrors.labels(url).inc();
     this.errors = errors;
+  }
+
+  protected void showHTTPError(HttpResponse<?> response, String url)
+      throws UnsupportedOperationException, JsonProcessingException {
+    showHTTPError(response, url, null);
   }
 
   @Override
