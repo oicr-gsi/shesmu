@@ -23,13 +23,13 @@ import ca.on.oicr.gsi.vidarr.BasicType.Visitor;
 import ca.on.oicr.gsi.vidarr.JsonBodyHandler;
 import ca.on.oicr.gsi.vidarr.api.*;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -68,7 +68,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
 
     protected Stream<VidarrAnalysisValue> analysisArchive(String baseUrl) throws Exception {
 
-      final var results =
+      final HttpResponse<Supplier<AnalysisProvenanceResponse<ExternalKey>>> results =
           HTTP_CLIENT.send(
               HttpRequest.newBuilder(URI.create(baseUrl + "/api/provenance"))
                   .header("Content-type", "application/json")
@@ -79,8 +79,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                               configuration.get().getAnalysisTypes(),
                               configuration.get().getVersionTypes())))
                   .build(),
-              new JsonBodyHandler<>(
-                  MAPPER, new TypeReference<AnalysisProvenanceResponse<ExternalKey>>() {}));
+              new JsonBodyHandler<>(MAPPER, new TypeReference<>() {}));
 
       if (results.statusCode() != 200) {
         System.err.printf(
@@ -89,7 +88,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
         return new ErrorableStream<>(Stream.empty(), false);
       }
 
-      final var body = results.body().get();
+      final AnalysisProvenanceResponse<ExternalKey> body = results.body().get();
       return body.getResults().stream()
           .map(
               ca ->
@@ -134,8 +133,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                       ca.getWorkflowName(),
                       ca.getWorkflowName() + "/" + ca.getWorkflowVersion(),
                       String.format("vidarr:%s/run/%s", ca.getInstanceName(), ca.getId()),
-                      MAPPER.convertValue(
-                          ca.getLabels(), new TypeReference<Map<String, JsonNode>>() {}),
+                      MAPPER.convertValue(ca.getLabels(), new TypeReference<>() {}),
                       IUSUtils.parseWorkflowVersion(ca.getWorkflowVersion())
                           .orElse(IUSUtils.UNKNOWN_VERSION)));
     }
@@ -166,7 +164,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
       Optional<MaxInFlightDeclaration> maxInFlight = Optional.empty();
       try {
         if (url.isPresent()) {
-          final var mifResult =
+          final HttpResponse<Supplier<MaxInFlightDeclaration>> mifResult =
               CLIENT.send(
                   HttpRequest.newBuilder(url.get().resolve("/api/max-in-flight")).GET().build(),
                   new JsonBodyHandler<>(MAPPER, MaxInFlightDeclaration.class));
@@ -189,15 +187,15 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
 
     @Override
     protected Optional<Tuple> fetch(String id, Instant lastUpdated) throws Exception {
-      final var result =
+      final HttpResponse<Supplier<ProvenanceWorkflowRun<ExternalMultiVersionKey>>> result =
           CLIENT.send(
               HttpRequest.newBuilder(url.orElseThrow().resolve("/api/run/" + id)).GET().build(),
               new JsonBodyHandler<>(
                   MAPPER, new TypeReference<ProvenanceWorkflowRun<ExternalMultiVersionKey>>() {}));
       if (result.statusCode() == 200) {
-        final var run = result.body().get();
-        final var externalKeys = EXTERNAL_KEY_TYPE.newSet();
-        for (final var externalKey : run.getExternalKeys()) {
+        final ProvenanceWorkflowRun<ExternalMultiVersionKey> run = result.body().get();
+        final Set<Object> externalKeys = EXTERNAL_KEY_TYPE.newSet();
+        for (final ExternalMultiVersionKey externalKey : run.getExternalKeys()) {
           externalKeys.add(
               new Tuple(
                   externalKey.getId(),
@@ -312,7 +310,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
   }
 
   static String sanitise(String raw) {
-    final var clean = INVALID.matcher(raw).replaceAll("_");
+    final String clean = INVALID.matcher(raw).replaceAll("_");
     return Character.isLowerCase(clean.charAt(0)) ? clean : ("v" + clean);
   }
 
@@ -335,7 +333,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
 
   @Override
   public void configuration(SectionRenderer renderer) {
-    final var u = url;
+    final Optional<URI> u = url;
     u.ifPresent(uri -> renderer.link("URL", uri.toString(), uri.toString()));
     renderer.line("Can submit?", String.valueOf(canSubmit));
   }
@@ -359,7 +357,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
     String message;
     Optional<MaxInFlightDeclaration> maxInFlight = mifCache.get();
     if (maxInFlight.isPresent()) {
-      var result = maxInFlight.get().getWorkflows().get(workflow);
+      InFlightValue result = maxInFlight.get().getWorkflows().get(workflow);
       if (result == null) {
         message = "unknown workflow";
       } else {
@@ -401,20 +399,21 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
         } else {
           submissionPolicy = SubmissionPolicy.maxDelay(value.getDefaultMaxSubmissionDelay());
         }
-        final var workflowsResult =
+        final HttpResponse<Supplier<WorkflowDeclaration[]>> workflowsResult =
             CLIENT.send(
                 HttpRequest.newBuilder(url.get().resolve("/api/workflows")).GET().build(),
                 new JsonBodyHandler<>(MAPPER, WorkflowDeclaration[].class));
-        final var targetsResult =
+        final HttpResponse<Supplier<Map<String, TargetDeclaration>>> targetsResult =
             CLIENT.send(
                 HttpRequest.newBuilder(url.get().resolve("/api/targets")).GET().build(),
-                new JsonBodyHandler<>(
-                    MAPPER, new TypeReference<Map<String, TargetDeclaration>>() {}));
+                new JsonBodyHandler<>(MAPPER, new TypeReference<>() {}));
         if (workflowsResult.statusCode() == 200 && targetsResult.statusCode() == 200) {
           definer.clearActions();
-          final var workflows = workflowsResult.body().get();
-          for (final var target : targetsResult.body().get().entrySet()) {
-            final var targetParameters = new ArrayList<CustomActionParameter<SubmitAction>>();
+          final WorkflowDeclaration[] workflows = workflowsResult.body().get();
+          for (final Entry<String, TargetDeclaration> target :
+              targetsResult.body().get().entrySet()) {
+            final ArrayList<CustomActionParameter<SubmitAction>> targetParameters =
+                new ArrayList<>();
             if (target.getValue().getEngineParameters() != null) {
               targetParameters.add(
                   new CustomActionParameter<>(
@@ -429,8 +428,9 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
             }
             if (target.getValue().getConsumableResources() != null
                 && !target.getValue().getConsumableResources().isEmpty()) {
-              for (final var resource : target.getValue().getConsumableResources().entrySet()) {
-                final var type = resource.getValue().apply(SIMPLE_TO_IMYHAT);
+              for (final Entry<String, BasicType> resource :
+                  target.getValue().getConsumableResources().entrySet()) {
+                final Imyhat type = resource.getValue().apply(SIMPLE_TO_IMYHAT);
                 targetParameters.add(
                     new CustomActionParameter<>(
                         sanitise("resource_" + resource.getKey()),
@@ -450,7 +450,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                     });
               }
             }
-            for (final var workflow : workflows) {
+            for (final WorkflowDeclaration workflow : workflows) {
               if (target.getValue().getLanguage().contains(workflow.getLanguage())) {
                 InputParameterConverter.create(workflow.getParameters(), target.getValue())
                     .ifPresent(
