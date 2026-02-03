@@ -3,6 +3,7 @@ import {
   UIElement,
   blank,
   busyDialog,
+  butter,
   button,
   dialog,
   pager,
@@ -548,6 +549,7 @@ export function saveClipboard(data: string): void {
   window.setTimeout(() => {
     closeBusy();
     document.body.removeChild(buffer);
+    butter(3000, "Copied to clipboard.")
   }, 300);
 }
 /**
