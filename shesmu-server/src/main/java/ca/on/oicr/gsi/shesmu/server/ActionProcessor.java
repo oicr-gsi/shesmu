@@ -943,7 +943,7 @@ public final class ActionProcessor
 
   @Override
   public Stream<Object> fetch(String format, boolean readStale) {
-    return format.equals("shesmu")
+    return format.equals("shesmu_actions")
         ? actions.entrySet().stream()
             .map(
                 entry ->
