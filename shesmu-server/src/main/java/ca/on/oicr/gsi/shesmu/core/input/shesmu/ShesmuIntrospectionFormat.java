@@ -6,6 +6,6 @@ import java.lang.invoke.MethodHandles;
 public final class ShesmuIntrospectionFormat extends InputFormat {
 
   public ShesmuIntrospectionFormat() {
-    super("shesmu", ShesmuIntrospectionValue.class, MethodHandles.lookup());
+    super("shesmu_actions", ShesmuIntrospectionValue.class, MethodHandles.lookup());
   }
 }

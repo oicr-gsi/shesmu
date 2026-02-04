@@ -45,7 +45,7 @@ Note that paths can be joined with the `+` operator and strings can be joined us
 ## Input Formats
 These input formats are available on any instance:
 
-- `shesmu` input format: information about the actions current running inside Shesmu
+- `shesmu_actions` input format: information about the actions currently running inside Shesmu
 
 ## Signatures
 These signatures are available on any instance:
