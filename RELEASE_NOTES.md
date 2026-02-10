@@ -7,6 +7,20 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.56.0] - 2026-02-10
+
+### Changed
+
+* `shesmu` input format renamed to `shesmu_actions` to avoid conflict with inhibitions
+  
+* 'Copied to clipboard' popup when copying to clipboard
+  
+
+### Fixed
+
+* Conflicting data errors now display on nabu archive action cards
+
+
 ## [1.55.1] - 2026-01-28
 
 ### Fixed
