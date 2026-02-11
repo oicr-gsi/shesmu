@@ -7,7 +7,6 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.JsonParameterisedAction;
-import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,6 +16,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.*;
 
@@ -208,7 +208,7 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
       return ActionState.FAILED;
     }
     try (AutoCloseable timer = NabuRequestTime.start(baseUrl)) {
-      var response = HTTP_CLIENT.send(request, new JsonBodyHandler<>(MAPPER, dtoArrayClass()));
+      HttpResponse<String> response = HTTP_CLIENT.send(request, BodyHandlers.ofString());
       if (response.statusCode() == 409) {
         nabuRequestErrors.labels(baseUrl).inc();
         try {
@@ -240,7 +240,7 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
       } else if (response.statusCode() == 201) {
         return ActionState.INFLIGHT;
       } else if (response.statusCode() == 200) {
-        final T[] results = response.body().get();
+        final T[] results = MAPPER.readValue(response.body(), dtoArrayClass());
         return actionStatusFromArchive(Arrays.stream(results).findFirst().get());
       } else {
         return ActionState.UNKNOWN;
@@ -267,7 +267,7 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
     return 10;
   }
 
-  protected void showHTTPError(HttpResponse<?> response, String url, String customLogMessage)
+  protected void showHTTPError(HttpResponse<String> response, String url, String customLogMessage)
       throws UnsupportedOperationException, JsonProcessingException {
     final List<String> errors = new ArrayList<>();
     final Map<String, String> labels = new TreeMap<>();
@@ -278,14 +278,17 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
         LogLevel.ERROR,
         labels);
     errors.add("HTTP error: " + response.statusCode());
-    if (response.body() != null && !response.body().toString().isEmpty()) {
-      owner.log("HTTP error: " + response.body().toString(), LogLevel.ERROR, labels);
-      errors.add("Error: " + MAPPER.writeValueAsString(response.body()));
+    if (response.body() != null) {
+      String responseBody = response.body();
+      if (!responseBody.isEmpty()) {
+        owner.log("HTTP response: " + responseBody, LogLevel.ERROR, labels);
+        errors.add("Error: " + responseBody);
+      }
     }
     this.errors = errors;
   }
 
-  protected void showHTTPError(HttpResponse<?> response, String url)
+  protected void showHTTPError(HttpResponse<String> response, String url)
       throws UnsupportedOperationException, JsonProcessingException {
     showHTTPError(response, url, null);
   }
