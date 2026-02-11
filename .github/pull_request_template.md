@@ -1,4 +1,4 @@
 JIRA Ticket: 
 
 - [ ] Updates Changelog
-- [ ] Updates developer documentation
+- [ ] Updates developer documentation (or N/A)
