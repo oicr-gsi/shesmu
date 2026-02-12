@@ -1,15 +1,11 @@
 package ca.on.oicr.gsi.shesmu.vidarr;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
-import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.vidarr.api.ExternalKey;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -26,11 +22,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public final class SubmitAction extends Action {
-  static final Imyhat EXTERNAL_IDS =
-      new ObjectImyhat(
-              Stream.of(new Pair<>("id", Imyhat.STRING), new Pair<>("provider", Imyhat.STRING)))
-          .asList();
+public final class SubmitAction extends VidarrAction {
+
   private static final String SORT_KEY_ATTEMPT = "vidarr-attempt";
 
   private static boolean checkJson(JsonNode json, Pattern query) {
