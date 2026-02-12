@@ -452,10 +452,12 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
             }
             for (final WorkflowDeclaration workflow : workflows) {
               if (target.getValue().getLanguage().contains(workflow.getLanguage())) {
-                InputParameterConverter.create(workflow.getParameters(), target.getValue())
+                // Create submit actions
+                InputParameterConverter.createSubmitParam(
+                        workflow.getParameters(), target.getValue())
                     .ifPresent(
                         inputParameters ->
-                            MetadataParameterConverter.create(
+                            MetadataParameterConverter.createSubmitParam(
                                     workflow.getMetadata(), target.getValue())
                                 .ifPresent(
                                     metadataParameters ->
@@ -545,6 +547,36 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                                     workflow.getName()))));
                                               }
                                             })));
+
+                // Create import actions
+                InputParameterConverter.createImportParam(
+                        workflow.getParameters(), target.getValue())
+                    .ifPresent(
+                        inputParameters ->
+                            MetadataParameterConverter.createImportParam(
+                                    workflow.getMetadata(), target.getValue())
+                                .ifPresent(
+                                    metadataParameters ->
+                                        definer.defineAction(
+                                            String.format(
+                                                "import_%s_v%s",
+                                                workflow.getName(), workflow.getVersion()),
+                                            String.format(
+                                                "Import workflow run of workflow %s version %s on Vidarr instance %s",
+                                                workflow.getName(),
+                                                workflow.getVersion(),
+                                                value.getUrl()),
+                                            ImportAction.class,
+                                            new Supplier<ImportAction>() {
+                                              private final Supplier<VidarrPlugin> supplier =
+                                                  definer;
+
+                                              @Override
+                                              public ImportAction get() {
+                                                return new ImportAction(supplier, workflow);
+                                              }
+                                            },
+                                            Stream.of(inputParameters, metadataParameters))));
               }
             }
           }
