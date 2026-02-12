@@ -1,24 +1,21 @@
 package ca.on.oicr.gsi.shesmu.vidarr;
 
-import ca.on.oicr.gsi.shesmu.plugin.action.Action;
-import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
-import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
-import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
+import ca.on.oicr.gsi.shesmu.plugin.action.*;
 import ca.on.oicr.gsi.vidarr.api.ImportRequest;
+import ca.on.oicr.gsi.vidarr.api.UnloadedWorkflow;
+import ca.on.oicr.gsi.vidarr.api.UnloadedWorkflowVersion;
+import ca.on.oicr.gsi.vidarr.api.WorkflowDeclaration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-public class ImportAction extends Action {
+public class ImportAction extends VidarrAction {
   private boolean stale;
   private int priority;
   final ImportRequest request = new ImportRequest();
@@ -27,11 +24,49 @@ public class ImportAction extends Action {
   ImportState state = new ImportStateAttemptSubmit();
   List<String> errors = List.of();
 
-  // private final List<String> tags;
+  private final List<String> tags = new LinkedList<>();
 
-  public ImportAction(Supplier<VidarrPlugin> owner) {
+  public ImportAction(Supplier<VidarrPlugin> owner, WorkflowDeclaration workflow) {
     super("vidarr-import");
     this.owner = owner;
+
+    // TODO it'd be so sick if the object handled this itself
+    UnloadedWorkflow adaptedWorkflow = new UnloadedWorkflow();
+    adaptedWorkflow.setName(workflow.getName());
+    adaptedWorkflow.setLabels(workflow.getLabels());
+    request.setWorkflows(List.of(adaptedWorkflow));
+
+    UnloadedWorkflowVersion adaptedVersion = new UnloadedWorkflowVersion();
+    adaptedVersion.setName(workflow.getName());
+    adaptedVersion.setVersion(workflow.getVersion());
+    adaptedVersion.setWorkflow(workflow.getName());
+
+    // TODO I don't know what to do about this one!
+    // adaptedVersion.setAccessoryFiles();
+
+    adaptedVersion.setLanguage(workflow.getLanguage());
+    adaptedVersion.setOutputs(workflow.getMetadata());
+    adaptedVersion.setParameters(workflow.getParameters());
+
+    request.setWorkflowVersions(List.of(adaptedVersion));
+
+    priority = workflow.getName().hashCode() % 100;
+
+    //    tags =
+    //              List.of(
+    //                      "vidarr-target:" + targetName,
+    //                      "vidarr-workflow:" + workflowName,
+    //                      "vidarr-workflow:" + workflowName + "/" + workflowVersion);
+  }
+
+  @ActionParameter(name = "output_provisioner")
+  public void outputProvisioner(String name) {
+    request.setOutputProvisionerName(name);
+  }
+
+  @ActionParameter(name = "path")
+  public void path(String path) {
+    request.setOutputPath(path);
   }
 
   @Override
