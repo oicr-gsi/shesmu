@@ -71,7 +71,7 @@ final class RunStateMissing extends RunState {
       SubmissionPolicy submissionPolicy,
       Duration lastGeneratedByOlive,
       boolean isOliveLive) {
-    return new PerformResult(errors, ActionState.FAILED, this);
+    return new PerformResult(errors, ActionState.HALP, this);
   }
 
   @Override
