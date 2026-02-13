@@ -559,8 +559,13 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                     metadataParameters ->
                                         definer.defineAction(
                                             String.format(
-                                                "import_%s_v%s",
-                                                workflow.getName(), workflow.getVersion()),
+                                                "%s%simport_%s",
+                                                sanitise(target.getKey()),
+                                                Parser.NAMESPACE_SEPARATOR,
+                                                sanitise(
+                                                    workflow.getName()
+                                                        + "_"
+                                                        + workflow.getVersion())),
                                             String.format(
                                                 "Import workflow run of workflow %s version %s on Vidarr instance %s",
                                                 workflow.getName(),
