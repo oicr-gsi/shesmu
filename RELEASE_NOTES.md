@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.56.1] - 2026-02-17
+
+### Fixed
+
+* Better error handling for Nabu archive action errors
+
+
 ## [1.56.0] - 2026-02-10
 
 ### Changed
