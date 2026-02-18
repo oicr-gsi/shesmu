@@ -94,7 +94,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      var that = (DefinitionKey) o;
+      DefinitionKey that = (DefinitionKey) o;
       return inputFormat.equals(that.inputFormat)
           && definitionName.equals(that.definitionName)
           && variableName.equals(that.variableName);
@@ -165,18 +165,18 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
             parameterTypes.stream()
                 .map(Imyhat::descriptor)
                 .collect(Collectors.joining(" ", name + " ", ""));
-        for (final var variableSubset : powerSet(variables)) {
+        for (final List<DefineVariableExport> variableSubset : powerSet(variables)) {
           if (variableSubset.isEmpty()) {
             continue;
           }
-          final var expandedName =
+          final String expandedName =
               qualifiedName
                   + variableSubset.stream()
                       .sorted(Comparator.comparing(DefineVariableExport::name))
                       .map(d -> d.name() + "$" + d.type().descriptor())
                       .collect(Collectors.joining(" ", " ", ""));
           callsites.add(DEFINE_REGISTRY.upsert(new Pair<>(inputFormatName, expandedName), method));
-          for (final var variable : variableSubset) {
+          for (final DefineVariableExport variable : variableSubset) {
             callsites.add(
                 DEFINE_VARIABLE_REGISTRY.upsert(
                     new DefinitionKey(
@@ -185,7 +185,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
                         variable.name() + "$" + variable.type().descriptor()),
                     variable.method()));
           }
-          for (final var variable : checks) {
+          for (final DefineVariableExport variable : checks) {
             callsites.add(
                 DEFINE_SIGNATURE_CHECK_REGISTRY.upsert(
                     new DefinitionKey(inputFormatName, expandedName, variable.name()),
@@ -368,7 +368,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
 
       private List<List<DefineVariableExport>> powerSet(List<DefineVariableExport> variables) {
         Stream<Supplier<Stream<DefineVariableExport>>> supplier = Stream.of(Stream::empty);
-        for (final var variable : variables) {
+        for (final DefineVariableExport variable : variables) {
           supplier =
               supplier.flatMap(
                   head -> Stream.of(head, () -> Stream.concat(head.get(), Stream.of(variable))));
@@ -550,7 +550,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
       if (errors.isEmpty()) {
         return;
       }
-      for (final var error : errors) {
+      for (final String error : errors) {
         renderer.line(
             Stream.of(new Pair<>("class", "error")),
             "Compile Error",
@@ -573,7 +573,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
       if (CompiledGenerator.this.checkPaused.test(fileName.toString())) {
         return "Script is paused.";
       }
-      try (final var monitoredConsumer =
+      try (final MonitoredOliveServices monitoredConsumer =
           new MonitoredOliveServices(consumer, fileName.toString())) {
         generator.run(monitoredConsumer, input);
         return "Completed normally";
@@ -597,13 +597,14 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
     @Override
     public synchronized Optional<Integer> update() {
       live = true;
-      try (var timer = compileTime.labels(fileName.toString()).startTimer()) {
+      try (Gauge.Timer timer = compileTime.labels(fileName.toString()).startTimer()) {
         final List<ExportedDefineOliveDefinition> exportedDefineOlives = new ArrayList<>();
         final List<ExportedConstantDefinition> exportedConstants = new ArrayList<>();
         final List<ExportedFunctionDefinition> exportedFunctions = new ArrayList<>();
         final Set<ImportVerifier> imports = new HashSet<>();
-        final var compiler = new HotloadingCompiler(SOURCES::get, allowedDefinitions);
-        final var result =
+        final HotloadingCompiler compiler =
+            new HotloadingCompiler(SOURCES::get, allowedDefinitions);
+        final Optional<ActionGenerator> result =
             compiler.compile(
                 fileName,
                 new LiveExportConsumer() {
@@ -658,7 +659,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
 
         result.ifPresent(
             x -> {
-              final var newNames =
+              final Set<String> newNames =
                   Stream.concat(
                           exportedFunctions.stream().map(e -> e.invokeName),
                           exportedConstants.stream().map(e -> e.invokeName))
@@ -819,7 +820,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
 
   static {
     try {
-      final var lookup = MethodHandles.lookup();
+      final Lookup lookup = MethodHandles.lookup();
       CREATE_EXCEPTION =
           lookup.findConstructor(
               IllegalStateException.class, MethodType.methodType(void.class, String.class));
@@ -904,12 +905,12 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
 
   private static MethodHandle makeDeadMethodHandle(String name, MethodType methodType) {
     // Create a method handle that instantiates a new exception
-    final var createException =
+    final MethodHandle createException =
         CREATE_EXCEPTION.bindTo(String.format("Exported function %s is no longer valid.", name));
 
     // Now, create a method handle that appears to return the same type as the callsite expects and
     // throws the exception we just made
-    final var throwException =
+    final MethodHandle throwException =
         MethodHandles.foldArguments(
             MethodHandles.throwException(
                 methodType.returnType(),
@@ -992,12 +993,12 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
   public void run(OliveServices consumer, InputSource input) {
     // Load all the input data in an attempt to cache it before any olives try to
     // use it. This avoids making the first olive seem really slow.
-    final var usedFormats =
+    final Set<String> usedFormats =
         scripts()
             .filter(s -> s.running.isDone())
             .flatMap(s -> s.generator.inputs())
             .collect(Collectors.toSet());
-    final var cache =
+    final InputProvider cache =
         new InputProvider() {
           final Map<String, List<Object>> data =
               SOURCES
@@ -1008,16 +1009,17 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
                               && !consumer.isOverloaded(format.name()))
                   .flatMap(
                       format -> {
-                        try (var timer = INPUT_FETCH_TIME.start(format.name());
-                            var inflight = Server.inflightCloseable("Fetching " + format.name())) {
-                          final var results = input.fetch(format.name(), false);
+                        try (AutoCloseable timer = INPUT_FETCH_TIME.start(format.name());
+                            AutoCloseable inflight =
+                                Server.inflightCloseable("Fetching " + format.name())) {
+                          final Stream<Object> results = input.fetch(format.name(), false);
                           if (results instanceof ErrorableStream<Object> errorableResults) {
                             if (!errorableResults.isOk()) {
                               INPUT_RECORDS.labels(format.name()).set(0);
                               return Stream.empty();
                             }
                           }
-                          final var listResults = results.toList();
+                          final List<Object> listResults = results.toList();
                           INPUT_RECORDS.labels(format.name()).set(listResults.size());
                           return Stream.of(new Pair<>(format.name(), listResults));
                         } catch (final Exception e) {
@@ -1055,20 +1057,21 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
         // have.
         .forEach(
             script -> {
-              final var inflight =
+              final AtomicReference<Runnable> inflight =
                   new AtomicReference<>(Server.inflight("Queued " + script.fileName.toString()));
               // For each script, create two futures: one that runs the olive script and
               // return true and one that will wait for the timeout and return false
-              final var timeoutFuture = new CompletableFuture<OliveRunInfo>();
-              final var processFuture =
+              final CompletableFuture<OliveRunInfo> timeoutFuture =
+                  new CompletableFuture<OliveRunInfo>();
+              final CompletableFuture<OliveRunInfo> processFuture =
                   CompletableFuture.supplyAsync(
                       () -> {
-                        final var startTime = Instant.now();
+                        final Instant startTime = Instant.now();
                         inflight.get().run();
                         inflight.set(Server.inflight("Running " + script.fileName.toString()));
                         script.runInfo =
                             new OliveRunInfo(true, "Running now", null, startTime, null);
-                        final var inputCount =
+                        final long inputCount =
                             script.dashboard == null
                                 ? 0
                                 : cache.fetch(script.dashboard.format().name()).count();
@@ -1081,8 +1084,11 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
                                         false, "Deadline exceeded", inputCount, startTime, null)),
                             script.generator.timeout(),
                             TimeUnit.SECONDS);
-                        final var startCpu = CPU_TIME.getAsLong();
-                        final var result = script.run(consumer, cache);
+                        final long startCpu =
+                            CPU_TIME
+                                .getAsLong(); // https://stackoverflow.com/questions/73067716/tracking-memory-allocations-per-thread-in-a-java-application
+                        final String result =
+                            script.run(consumer, cache); // Add a new field, it ends up in the UI
                         return new OliveRunInfo(
                             true,
                             result,
@@ -1098,7 +1104,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
                   CompletableFuture.anyOf(timeoutFuture, processFuture)
                       .thenAccept(
                           obj -> {
-                            final var runInfo = (OliveRunInfo) obj;
+                            final OliveRunInfo runInfo = (OliveRunInfo) obj;
                             script.runInfo = runInfo;
                             OLIVE_WATCHDOG
                                 .labels(script.fileName.toString())
