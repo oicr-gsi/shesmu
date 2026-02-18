@@ -40,8 +40,8 @@ public abstract class BaseHotloadingCompiler {
   }
 
   public static final String PACKAGE_INTERNAL = "dyn/shesmu";
-  public static final String TARGET = "dyn.shesmu.Generated";
-  public static final String TARGET_INTERNAL = "dyn/shesmu/Generated";
+  public static final String TARGET = "dyn.shesmu.Generated"; // "java" name
+  public static final String TARGET_INTERNAL = "dyn/shesmu/Generated"; // "jvm" name
   private final Map<String, byte[]> bytecode = new TreeMap<>();
 
   private final ClassLoader classloader =
@@ -50,7 +50,7 @@ public abstract class BaseHotloadingCompiler {
         @Override
         protected Class<?> findClass(String name) throws ClassNotFoundException {
           if (bytecode.containsKey(name)) {
-            final var contents = bytecode.get(name);
+            final byte[] contents = bytecode.get(name);
             return defineClass(name, contents, 0, contents.length);
           }
           return super.findClass(name);

@@ -83,7 +83,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
       boolean allowUnused) {
     try {
       errors.clear();
-      final var compiler =
+      final Compiler compiler =
           new Compiler(false) {
             private final NameLoader<ActionDefinition> actionCache =
                 new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
@@ -107,7 +107,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
             @Override
             protected ActionDefinition getAction(String name) {
-              final var definition = actionCache.get(name);
+              final ActionDefinition definition = actionCache.get(name);
               if (definition != null) {
                 registerImport.accept(new ActionVerifier(definition));
               }
@@ -116,7 +116,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
             @Override
             protected FunctionDefinition getFunction(String function) {
-              final var definition = functionCache.get(function);
+              final FunctionDefinition definition = functionCache.get(function);
               if (definition != null) {
                 registerImport.accept(new FunctionVerifier(definition));
               }
@@ -130,7 +130,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
             @Override
             protected CallableDefinition getOliveDefinition(String name) {
-              final var definition = definitionCache.get(name);
+              final CallableOliveDefinition definition = definitionCache.get(name);
               if (definition != null) {
                 registerImport.accept(new OliveDefinitionVerifier(definition));
               }
@@ -144,7 +144,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
             @Override
             protected RefillerDefinition getRefiller(String name) {
-              final var definition = refillerCache.get(name);
+              final RefillerDefinition definition = refillerCache.get(name);
               if (definition != null) {
                 registerImport.accept(new RefillerVerifier(definition));
               }
@@ -155,7 +155,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
       final List<Consumer<ActionGenerator>> exports = new ArrayList<>();
       if (compiler.compile(
           contents,
-          BaseHotloadingCompiler.TARGET_INTERNAL,
+          BaseHotloadingCompiler.TARGET_INTERNAL, // TODO append me
           fileName,
           definitionRepository
                   .constants()
@@ -318,8 +318,9 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
           dashboardConsumer,
           false,
           allowUnused)) {
-        final var generator = load(ActionGenerator.class, BaseHotloadingCompiler.TARGET);
-        for (final var export : exports) {
+        final ActionGenerator generator =
+            load(ActionGenerator.class, BaseHotloadingCompiler.TARGET); // TODO append me
+        for (final Consumer<ActionGenerator> export : exports) {
           export.accept(generator);
         }
         return Optional.of(generator);
