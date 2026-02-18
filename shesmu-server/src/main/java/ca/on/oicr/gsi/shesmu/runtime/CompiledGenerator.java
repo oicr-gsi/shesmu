@@ -998,7 +998,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
             .filter(s -> s.running.isDone())
             .flatMap(s -> s.generator.inputs())
             .collect(Collectors.toSet());
-    final InputProvider cache =
+    final var cache =
         new InputProvider() {
           final Map<String, List<Object>> data =
               SOURCES
