@@ -1084,11 +1084,8 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
                                         false, "Deadline exceeded", inputCount, startTime, null)),
                             script.generator.timeout(),
                             TimeUnit.SECONDS);
-                        final long startCpu =
-                            CPU_TIME
-                                .getAsLong(); // https://stackoverflow.com/questions/73067716/tracking-memory-allocations-per-thread-in-a-java-application
-                        final String result =
-                            script.run(consumer, cache); // Add a new field, it ends up in the UI
+                        final long startCpu = CPU_TIME.getAsLong();
+                        final String result = script.run(consumer, cache);
                         return new OliveRunInfo(
                             true,
                             result,
