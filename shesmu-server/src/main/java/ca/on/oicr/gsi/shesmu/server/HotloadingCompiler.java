@@ -155,7 +155,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
       final List<Consumer<ActionGenerator>> exports = new ArrayList<>();
       if (compiler.compile(
           contents,
-          BaseHotloadingCompiler.TARGET_INTERNAL, // TODO append me
+          BaseHotloadingCompiler.TARGET_INTERNAL + "$" + sanitizeFilename(fileName),
           fileName,
           definitionRepository
                   .constants()
@@ -319,7 +319,9 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
           false,
           allowUnused)) {
         final ActionGenerator generator =
-            load(ActionGenerator.class, BaseHotloadingCompiler.TARGET); // TODO append me
+            load(
+                ActionGenerator.class,
+                BaseHotloadingCompiler.TARGET + "$" + sanitizeFilename(fileName));
         for (final Consumer<ActionGenerator> export : exports) {
           export.accept(generator);
         }
@@ -333,5 +335,21 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
   public Stream<String> errors() {
     return errors.stream();
+  }
+
+  /**
+   * JVM requires names be sanitized of the ASCII characters . ; [ /
+   *
+   * @param path String
+   * @return Filename from path with characters replaced
+   */
+  private String sanitizeFilename(String path) {
+    return Path.of(path)
+        .getFileName()
+        .toString()
+        .replace('.', '_')
+        .replace(';', '_')
+        .replace('[', '_')
+        .replace('/', '_');
   }
 }
