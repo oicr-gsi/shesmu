@@ -7,6 +7,14 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.57.0] - 2026-02-20
+
+### Added
+
+* Backend: include sanitized filename in generated class name
+  
+
+
 ## [1.56.1] - 2026-02-17
 
 ### Fixed
