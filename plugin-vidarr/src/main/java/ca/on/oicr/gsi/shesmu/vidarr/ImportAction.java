@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -65,6 +67,30 @@ public class ImportAction extends VidarrAction {
   @ActionParameter(name = "path")
   public void path(String path) {
     request.setOutputPath(path);
+  }
+
+  @ActionParameter
+  public void created(Instant created) {
+    ZonedDateTime zdt = ZonedDateTime.from(created);
+    request.getWorkflowRuns().get(0).setCreated(zdt);
+  }
+
+  @ActionParameter
+  public void completed(Instant completed) {
+    ZonedDateTime zdt = ZonedDateTime.from(completed);
+    request.getWorkflowRuns().get(0).setCompleted(zdt);
+  }
+
+  @ActionParameter
+  public void modified(Instant modified) {
+    ZonedDateTime zdt = ZonedDateTime.from(modified);
+    request.getWorkflowRuns().get(0).setCompleted(zdt);
+  }
+
+  @ActionParameter
+  public void started(Instant started) {
+    ZonedDateTime zdt = ZonedDateTime.from(started);
+    request.getWorkflowRuns().get(0).setCompleted(zdt);
   }
 
   @SuppressWarnings("unchecked")

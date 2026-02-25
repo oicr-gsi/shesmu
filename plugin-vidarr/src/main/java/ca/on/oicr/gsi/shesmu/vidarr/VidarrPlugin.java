@@ -581,65 +581,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                 return new ImportAction(supplier, workflow);
                                               }
                                             },
-                                            Stream.of(
-                                                inputParameters,
-                                                metadataParameters,
-                                                new CustomActionParameter<ImportAction>(
-                                                    "completed", true, Imyhat.DATE) {
-                                                  @Override
-                                                  public void store(
-                                                      ImportAction action, Object value) {
-                                                    ZonedDateTime zdt =
-                                                        ZonedDateTime.from((Instant) value);
-                                                    action
-                                                        .request
-                                                        .getWorkflowRuns()
-                                                        .get(0)
-                                                        .setCompleted(zdt);
-                                                  }
-                                                },
-                                                new CustomActionParameter<ImportAction>(
-                                                    "created", true, Imyhat.DATE) {
-                                                  @Override
-                                                  public void store(
-                                                      ImportAction action, Object value) {
-                                                    ZonedDateTime zdt =
-                                                        ZonedDateTime.from((Instant) value);
-                                                    action
-                                                        .request
-                                                        .getWorkflowRuns()
-                                                        .get(0)
-                                                        .setCreated(zdt);
-                                                  }
-                                                },
-                                                new CustomActionParameter<ImportAction>(
-                                                    "modified", true, Imyhat.DATE) {
-                                                  @Override
-                                                  public void store(
-                                                      ImportAction action, Object value) {
-                                                    ZonedDateTime zdt =
-                                                        ZonedDateTime.from((Instant) value);
-                                                    action
-                                                        .request
-                                                        .getWorkflowRuns()
-                                                        .get(0)
-                                                        .setModified(zdt);
-                                                  }
-                                                },
-                                                new CustomActionParameter<ImportAction>(
-                                                    "started", true, Imyhat.DATE) {
-                                                  @Override
-                                                  public void store(
-                                                      ImportAction action, Object value) {
-                                                    ZonedDateTime zdt =
-                                                        ZonedDateTime.from((Instant) value);
-                                                    action
-                                                        .request
-                                                        .getWorkflowRuns()
-                                                        .get(0)
-                                                        .setStarted(zdt);
-                                                  }
-                                                }))));
+                                            Stream.of(inputParameters, metadataParameters))));
               }
             }
           }
