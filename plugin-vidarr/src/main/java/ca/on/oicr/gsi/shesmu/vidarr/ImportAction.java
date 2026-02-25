@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.vidarr;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
 import ca.on.oicr.gsi.vidarr.api.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
@@ -91,6 +92,11 @@ public class ImportAction extends VidarrAction {
   public void started(Instant started) {
     ZonedDateTime zdt = ZonedDateTime.from(started);
     request.getWorkflowRuns().get(0).setCompleted(zdt);
+  }
+
+  @ActionParameter(name = "engine_parameters")
+  public void engineParameters(JsonNode json) {
+    request.getWorkflowRuns().get(0).setEngineParameters(json);
   }
 
   @SuppressWarnings("unchecked")
