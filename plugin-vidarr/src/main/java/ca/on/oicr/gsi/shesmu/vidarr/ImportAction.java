@@ -1,10 +1,8 @@
 package ca.on.oicr.gsi.shesmu.vidarr;
 
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
-import ca.on.oicr.gsi.vidarr.api.ImportRequest;
-import ca.on.oicr.gsi.vidarr.api.UnloadedWorkflow;
-import ca.on.oicr.gsi.vidarr.api.UnloadedWorkflowVersion;
-import ca.on.oicr.gsi.vidarr.api.WorkflowDeclaration;
+import ca.on.oicr.gsi.vidarr.api.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
@@ -67,6 +65,26 @@ public class ImportAction extends VidarrAction {
   @ActionParameter(name = "path")
   public void path(String path) {
     request.setOutputPath(path);
+  }
+
+  @SuppressWarnings("unchecked")
+  @ActionParameter(name = "external_keys", type = "ao4id$sprovider$sstale$bversions$msas")
+  public void externalKeys(Set<Tuple> values) {
+    request
+        .getWorkflowRuns()
+        .get(0)
+        .setExternalKeys(
+            values.stream()
+                .map(
+                    value -> {
+                      final ExternalMultiVersionKey externalKey = new ExternalMultiVersionKey();
+                      externalKey.setId((String) value.get(0));
+                      externalKey.setProvider((String) value.get(1));
+                      stale |= (Boolean) value.get(2);
+                      externalKey.setVersions((Map<String, Set<String>>) value.get(3));
+                      return externalKey;
+                    })
+                .toList());
   }
 
   @Override
