@@ -1198,7 +1198,7 @@ from the beginning of the list. The list must already be sorted.
 #### Sort
 - `Sort` _expr_
 
-Sorts the items in a list based on an integer or date returned by _expr_.
+Sorts the items in a list in ascending order based on an integer or date returned by _expr_.
 
 #### Reverse
 - `Reverse`
