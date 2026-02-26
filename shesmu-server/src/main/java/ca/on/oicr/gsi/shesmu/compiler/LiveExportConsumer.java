@@ -43,6 +43,7 @@ public interface LiveExportConsumer {
   void constant(MethodHandle method, String name, Imyhat type);
 
   void defineOlive(
+      MethodHandle inputsHandle,
       MethodHandle method,
       String name,
       String inputFormatName,
