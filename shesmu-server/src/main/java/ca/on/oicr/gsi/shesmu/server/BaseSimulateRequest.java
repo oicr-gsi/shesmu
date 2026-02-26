@@ -465,6 +465,7 @@ public abstract class BaseSimulateRequest {
 
                 @Override
                 public void defineOlive(
+                    MethodHandle inputsHandle,
                     MethodHandle method,
                     String name,
                     String inputFormatName,
@@ -538,6 +539,7 @@ public abstract class BaseSimulateRequest {
                 final var inputs =
                     action
                         .inputs()
+                        .distinct()
                         .collect(
                             Collectors.toMap(
                                 Function.identity(),

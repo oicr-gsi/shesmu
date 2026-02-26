@@ -7,6 +7,8 @@ public interface CallableDefinitionRenderer {
 
   Type currentType();
 
+  void generateAppendInputFormats(GeneratorAdapter methodGen);
+
   void generateCall(GeneratorAdapter methodGen);
 
   void generatePreamble(GeneratorAdapter methodGen);

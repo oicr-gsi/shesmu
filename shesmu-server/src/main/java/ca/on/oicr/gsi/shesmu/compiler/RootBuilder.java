@@ -171,6 +171,7 @@ public abstract class RootBuilder implements OwningBuilder {
   private final Type selfType;
   private final Supplier<Stream<SignatureDefinition>> signatures;
   private final Set<String> usedFormats = new HashSet<>();
+  private final Set<CallableDefinitionRenderer> usedFormatsFromDefine = new HashSet<>();
   private final List<LoadableValue> userDefinedConstants = new ArrayList<>();
 
   public RootBuilder(
@@ -409,6 +410,9 @@ public abstract class RootBuilder implements OwningBuilder {
         "of",
         Type.getMethodDescriptor(A_STREAM_TYPE, Type.getType(Object[].class)),
         true);
+    for (final var callableDefinitionRenderer : usedFormatsFromDefine) {
+      callableDefinitionRenderer.generateAppendInputFormats(inputFormatsMethod);
+    }
     inputFormatsMethod.returnValue();
     inputFormatsMethod.visitMaxs(0, 0);
     inputFormatsMethod.visitEnd();
@@ -478,6 +482,10 @@ public abstract class RootBuilder implements OwningBuilder {
 
   public String sourcePath() {
     return path;
+  }
+
+  public final void useInputFormatFromDefine(CallableDefinitionRenderer definition) {
+    usedFormatsFromDefine.add(definition);
   }
 
   public final void useInputFormat(InputFormatDefinition format) {
