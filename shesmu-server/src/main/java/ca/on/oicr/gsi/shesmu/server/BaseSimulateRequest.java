@@ -640,7 +640,7 @@ public abstract class BaseSimulateRequest {
                         durations.put(new Pair<>(line, column), timeInNs);
                       }
                     },
-                    format -> inputs.get(format).stream());
+                    format -> inputs.getOrDefault(format, List.of()).stream());
               } catch (InitialCachePopulationException e) {
                 exceptionThrown.set(true);
                 errors.add(e.getMessage());
