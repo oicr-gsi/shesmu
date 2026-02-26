@@ -258,6 +258,7 @@ public abstract class BaseOliveBuilder {
     if (!currentType.equals(owner.inputFormatDefinition().type())) {
       throw new IllegalArgumentException("Cannot call on a transformed data stream.");
     }
+    owner.useInputFormatFromDefine(defineOlive);
     steps.add(
         renderer -> {
           defineOlive.generatePreamble(renderer.methodGen());
@@ -431,6 +432,7 @@ public abstract class BaseOliveBuilder {
     currentType = newType;
 
     owner.useInputFormat(innerType.format());
+    innerType.additionalFormatCollector().ifPresent(owner::useInputFormatFromDefine);
 
     final var outerKeyLambda =
         new LambdaBuilder(
@@ -494,6 +496,7 @@ public abstract class BaseOliveBuilder {
     currentType = newType;
 
     owner.useInputFormat(innerType.format());
+    innerType.additionalFormatCollector().ifPresent(owner::useInputFormatFromDefine);
 
     final var newMethod =
         new LambdaBuilder(

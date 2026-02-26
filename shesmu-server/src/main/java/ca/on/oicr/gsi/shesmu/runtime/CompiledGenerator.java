@@ -146,6 +146,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
       private final List<DefineVariableExport> variables;
 
       public ExportedDefineOliveDefinition(
+          MethodHandle inputsMethod,
           MethodHandle method,
           String name,
           String inputFormatName,
@@ -176,6 +177,9 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
                       .map(d -> d.name() + "$" + d.type().descriptor())
                       .collect(Collectors.joining(" ", " ", ""));
           callsites.add(DEFINE_REGISTRY.upsert(new Pair<>(inputFormatName, expandedName), method));
+          callsites.add(
+              DEFINE_FORMAT_REGISTRY.upsert(
+                  new Pair<>(inputFormatName, expandedName), inputsMethod));
           for (final DefineVariableExport variable : variableSubset) {
             callsites.add(
                 DEFINE_VARIABLE_REGISTRY.upsert(
@@ -271,6 +275,21 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
           @Override
           public Type currentType() {
             return A_OBJECT_TYPE;
+          }
+
+          @Override
+          public void generateAppendInputFormats(GeneratorAdapter methodGen) {
+            methodGen.invokeDynamic(
+                qualifiedName,
+                Type.getMethodDescriptor(A_STREAM_TYPE),
+                BSM_DEFINE_FORMATS,
+                Stream.concat(Stream.of(inputFormatName), used.stream()).toArray());
+            methodGen.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                A_STREAM_TYPE.getInternalName(),
+                "concat",
+                Type.getMethodDescriptor(A_STREAM_TYPE, A_STREAM_TYPE, A_STREAM_TYPE),
+                true);
           }
 
           @Override
@@ -619,6 +638,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
 
                   @Override
                   public void defineOlive(
+                      MethodHandle inputsHandle,
                       MethodHandle method,
                       String name,
                       String inputFormatName,
@@ -628,6 +648,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
                       List<DefineVariableExport> checks) {
                     exportedDefineOlives.add(
                         new ExportedDefineOliveDefinition(
+                            inputsHandle,
                             method,
                             String.join(Parser.NAMESPACE_SEPARATOR, "olive", instance, name),
                             inputFormatName,
@@ -742,6 +763,19 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
               A_STRING_TYPE,
               A_STRING_ARRAY_TYPE),
           false);
+  public static final Handle BSM_DEFINE_FORMATS =
+      new Handle(
+          Opcodes.H_INVOKESTATIC,
+          Type.getInternalName(CompiledGenerator.class),
+          "bootstrapDefineFormats",
+          Type.getMethodDescriptor(
+              A_CALLSITE_TYPE,
+              A_LOOKUP_TYPE,
+              A_STRING_TYPE,
+              A_METHOD_TYPE_TYPE,
+              A_STRING_TYPE,
+              A_STRING_ARRAY_TYPE),
+          false);
   public static final Handle BSM_DEFINE_SIGNATURE_CHECK =
       new Handle(
           Opcodes.H_INVOKESTATIC,
@@ -776,6 +810,8 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
           : () -> 0L;
   private static final MethodHandle CREATE_EXCEPTION;
   private static final CallSiteRegistry<Pair<String, String>> DEFINE_REGISTRY =
+      new CallSiteRegistry<>();
+  private static final CallSiteRegistry<Pair<String, String>> DEFINE_FORMAT_REGISTRY =
       new CallSiteRegistry<>();
   private static final CallSiteRegistry<DefinitionKey> DEFINE_SIGNATURE_CHECK_REGISTRY =
       new CallSiteRegistry<>();
@@ -841,6 +877,13 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
         : new ConstantCallSite(makeDeadMethodHandle(methodName.split(" ")[0], type));
   }
 
+  public static Pair<String, String> definitionName(
+      String defineName, String inputFormat, String[] otherVariables) {
+    return new Pair<>(
+        inputFormat,
+        defineName + Stream.of(otherVariables).sorted().collect(Collectors.joining(" ", " ", "")));
+  }
+
   public static CallSite bootstrapDefine(
       MethodHandles.Lookup lookup,
       String defineName,
@@ -848,13 +891,22 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
       String inputFormat,
       String... otherVariables) {
     final CallSite result =
-        DEFINE_REGISTRY.get(
-            new Pair<>(
-                inputFormat,
-                defineName
-                    + Stream.of(otherVariables)
-                        .sorted()
-                        .collect(Collectors.joining(" ", " ", ""))));
+        DEFINE_REGISTRY.get(definitionName(defineName, inputFormat, otherVariables));
+    return (result != null)
+        ? result
+        : new ConstantCallSite(
+            makeDeadMethodHandle(
+                String.format("Definition %s on %s", defineName, inputFormat), type));
+  }
+
+  public static CallSite bootstrapDefineFormats(
+      MethodHandles.Lookup lookup,
+      String defineName,
+      MethodType type,
+      String inputFormat,
+      String... otherVariables) {
+    final CallSite result =
+        DEFINE_FORMAT_REGISTRY.get(definitionName(defineName, inputFormat, otherVariables));
     return (result != null)
         ? result
         : new ConstantCallSite(
