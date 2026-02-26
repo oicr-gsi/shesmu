@@ -93,6 +93,11 @@ public class JoinSourceNodeCall extends JoinSourceNode {
       private final CallableDefinitionRenderer defineOlive = definitions.apply(name);
 
       @Override
+      public Optional<CallableDefinitionRenderer> additionalFormatCollector() {
+        return Optional.of(defineOlive);
+      }
+
+      @Override
       public InputFormatDefinition format() {
         return format;
       }

@@ -14,6 +14,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class OliveNodeDefinition extends OliveNodeWithClauses implements CallableDefinition {
+  // We have to generate all possible permutations of stream variables when this gets registered.
+  // We don't know what combination the output will used, so all have to be pre-registered.
+  // Generating 2^output_variables is a lot, so we limit to 2^16 somewhat arbitrarily but also for
+  // sanity.
+  private static final int MAX_VARIABLES = 20;
 
   private final int column;
   private final boolean export;
@@ -189,6 +194,14 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
               .collect(Collectors.toList());
     }
     resolveLock = false;
+
+    if (export && outputStreamVariables.size() > MAX_VARIABLES) {
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Olive definition %s cannot output more than %d variables. It has %d. Use “Let” to reduce the number.",
+              line, column, name, MAX_VARIABLES, outputStreamVariables.size()));
+      return false;
+    }
     return result.isGood();
   }
 
