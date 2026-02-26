@@ -909,13 +909,18 @@ public final class StandardDefinitions implements DefinitionRepository {
 
   @RuntimeInterop
   public static boolean version_at_least(Tuple version, long major, long minor, long patch) {
-    if ((Long) version.get(0) < major) {
-      return false;
+    if ((Long) version.get(0) > major) {
+      return true;
     }
-    if ((Long) version.get(1) < minor) {
-      return false;
+    if ((Long) version.get(0) == major && (Long) version.get(1) > minor) {
+      return true;
     }
-    return (Long) version.get(2) >= patch;
+    if ((Long) version.get(0) == major
+        && (Long) version.get(1) == minor
+        && (Long) version.get(2) >= patch) {
+      return true;
+    }
+    return false;
   }
 
   @RuntimeInterop
