@@ -7,6 +7,17 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.58.0] - 2026-02-27
+
+### Changed
+
+* clarify order for Sort operation
+
+### Fixed
+
+* bug with `std::version_at_least`
+
+
 ## [1.57.0] - 2026-02-20
 
 ### Added
