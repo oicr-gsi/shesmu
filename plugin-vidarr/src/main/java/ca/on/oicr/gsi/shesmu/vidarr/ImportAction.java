@@ -119,6 +119,11 @@ public class ImportAction extends VidarrAction {
                 .toList());
   }
 
+  @ActionParameter(name = "input_files")
+  public void inputFiles(Set<String> files) {
+    request.getWorkflowRuns().get(0).setInputFiles(files.stream().toList());
+  }
+
   @Override
   public boolean equals(Object other) {
     if (this == other) return true;
