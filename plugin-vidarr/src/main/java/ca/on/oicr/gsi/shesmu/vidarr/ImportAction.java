@@ -124,6 +124,14 @@ public class ImportAction extends VidarrAction {
     request.getWorkflowRuns().get(0).setInputFiles(files.stream().toList());
   }
 
+  @ActionParameter
+  public void labels(Map<String, String> labels) {
+    request
+        .getWorkflowRuns()
+        .get(0)
+        .setLabels(VidarrPlugin.MAPPER.convertValue(labels, ObjectNode.class));
+  }
+
   @Override
   public boolean equals(Object other) {
     if (this == other) return true;
