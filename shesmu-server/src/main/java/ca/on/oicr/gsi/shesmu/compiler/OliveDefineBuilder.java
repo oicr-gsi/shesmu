@@ -99,6 +99,11 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
   }
 
   @Override
+  public void generateAppendInputFormats(GeneratorAdapter methodGen) {
+    // None required as we are within the same file
+  }
+
+  @Override
   protected void emitSigner(SignatureDefinition signer, Renderer renderer) {
     renderer.emitNamed(SIGNER_ACCESSOR_NAME);
     renderer.methodGen().push(signer.name());

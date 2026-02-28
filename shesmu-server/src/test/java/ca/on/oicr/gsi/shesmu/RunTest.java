@@ -161,7 +161,7 @@ public class RunTest {
     }
 
     public boolean ok(ActionGenerator generator) {
-      return generator.inputs().count() == usedFormats.size()
+      return generator.inputs().distinct().count() == usedFormats.size()
           && generator.inputs().allMatch(usedFormats::contains);
     }
   }
@@ -548,6 +548,7 @@ public class RunTest {
 
                     @Override
                     public void defineOlive(
+                        MethodHandle inputsHandle,
                         MethodHandle method,
                         String name,
                         String inputFormatName,

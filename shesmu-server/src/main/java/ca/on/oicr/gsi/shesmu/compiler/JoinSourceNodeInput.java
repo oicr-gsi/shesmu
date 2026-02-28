@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -56,6 +57,11 @@ public final class JoinSourceNodeInput extends JoinSourceNode {
                     signatureDefinition));
 
     return new JoinInputSource() {
+      @Override
+      public Optional<CallableDefinitionRenderer> additionalFormatCollector() {
+        return Optional.empty();
+      }
+
       @Override
       public InputFormatDefinition format() {
         return inputFormat;

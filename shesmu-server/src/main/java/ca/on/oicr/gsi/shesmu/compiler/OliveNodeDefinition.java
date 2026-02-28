@@ -189,6 +189,17 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
               .collect(Collectors.toList());
     }
     resolveLock = false;
+    // We have to generate all possible permutations of stream variables when this gets registered.
+    // We don't know what combination the output will used, so all have to be pre-registered.
+    // Generating 2^output_variables is a lot, so we limit to 2^16 somewhat arbitrarily but also for
+    // sanity.
+    if (export && outputStreamVariables.size() > 16) {
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Olive definition %s cannot output more than 16 variables. It has %d. Use “Let” to reduce the number.",
+              line, column, name, outputStreamVariables.size()));
+      return false;
+    }
     return result.isGood();
   }
 
