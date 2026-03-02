@@ -96,7 +96,7 @@ public class ImportAction extends VidarrAction {
 
   @ActionParameter(
       type =
-          "ao10checksum$schecksumType$screated$dexternalKeys$ao2id$sprovider$sid$slabels$mssmetatype$smodified$dpath$psize$i")
+          "ao9checksum$schecksumType$screated$dexternalKeys$ao2id$sprovider$slabels$mssmetatype$smodified$dpath$psize$i")
   public void analysis(Set<Tuple> analysis) {
     // Handle checksum
 
