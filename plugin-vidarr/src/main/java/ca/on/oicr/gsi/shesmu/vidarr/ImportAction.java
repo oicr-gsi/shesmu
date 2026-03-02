@@ -96,8 +96,27 @@ public class ImportAction extends VidarrAction {
 
   @ActionParameter(
       type =
-          "ao11checksum$schecksumType$screated$dexternalKeys$ao2id$sprovider$sid$slabels$mssmetatype$smodified$dpath$psize$itype$s")
-  public void analysis(Set<Tuple> analysis) {}
+          "ao10checksum$schecksumType$screated$dexternalKeys$ao2id$sprovider$sid$slabels$mssmetatype$smodified$dpath$psize$i")
+  public void analysis(Set<Tuple> analysis) {
+    // Handle checksum
+
+    // Handle checksumType
+
+    // handle created
+
+    // handle external keys
+
+    // handle labels
+
+    // handle metatype
+
+    // handle modified
+
+    // handle path
+
+    // handle size
+
+  }
 
   @ActionParameter(name = "engine_parameters")
   public void engineParameters(JsonNode json) {
