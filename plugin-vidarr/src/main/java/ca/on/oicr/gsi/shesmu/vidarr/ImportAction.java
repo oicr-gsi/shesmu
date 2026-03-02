@@ -94,6 +94,11 @@ public class ImportAction extends VidarrAction {
     request.getWorkflowRuns().get(0).setCompleted(zdt);
   }
 
+  @ActionParameter(
+      type =
+          "ao11checksum$schecksumType$screated$dexternalKeys$ao2id$sprovider$sid$slabels$mssmetatype$smodified$dpath$psize$itype$s")
+  public void analysis(Set<Tuple> analysis) {}
+
   @ActionParameter(name = "engine_parameters")
   public void engineParameters(JsonNode json) {
     request.getWorkflowRuns().get(0).setEngineParameters(json);
