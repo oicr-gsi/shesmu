@@ -98,24 +98,21 @@ public class ImportAction extends VidarrAction {
       type =
           "ao9checksum$schecksumType$screated$dexternalKeys$ao2id$sprovider$slabels$mssmetatype$smodified$dpath$psize$i")
   public void analysis(Set<Tuple> analysis) {
-    // Handle checksum
-
-    // Handle checksumType
-
-    // handle created
-
-    // handle external keys
-
-    // handle labels
-
-    // handle metatype
-
-    // handle modified
-
-    // handle path
-
-    // handle size
-
+    List<ProvenanceAnalysisRecord<ExternalId>> list = new LinkedList<>();
+    for (Tuple a : analysis) {
+      ProvenanceAnalysisRecord<ExternalId> record = new ProvenanceAnalysisRecord<>();
+      record.setChecksum((String) a.get(0));
+      record.setChecksumType((String) a.get(1));
+      record.setCreated(ZonedDateTime.from((Instant) a.get(2)));
+      record.setExternalKeys((List<ExternalId>) a.get(3));
+      record.setLabels((Map<String, String>) a.get(4));
+      record.setMetatype((String) a.get(5));
+      record.setModified(ZonedDateTime.from((Instant) a.get(6)));
+      record.setPath((String) a.get(7));
+      record.setSize((long) a.get(8));
+      list.add(record);
+    }
+    request.getWorkflowRuns().get(0).setAnalysis(list);
   }
 
   @ActionParameter(name = "engine_parameters")
