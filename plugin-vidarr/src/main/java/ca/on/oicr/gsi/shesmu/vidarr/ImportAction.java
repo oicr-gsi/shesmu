@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Consumer;
@@ -51,6 +52,10 @@ public class ImportAction extends VidarrAction {
 
     request.setWorkflowVersions(List.of(adaptedVersion));
 
+    List<ProvenanceWorkflowRun<ExternalMultiVersionKey>> temp = new ArrayList<>();
+    temp.add(new ProvenanceWorkflowRun<>());
+    request.setWorkflowRuns(temp);
+
     priority = workflow.getName().hashCode() % 100;
 
     //    tags =
@@ -65,33 +70,33 @@ public class ImportAction extends VidarrAction {
     request.setOutputProvisionerName(name);
   }
 
-  @ActionParameter(name = "path")
-  public void path(String path) {
+  @ActionParameter(name = "new_output_dir")
+  public void newOutputDir(String path) {
     request.setOutputPath(path);
   }
 
   @ActionParameter
   public void created(Instant created) {
-    ZonedDateTime zdt = ZonedDateTime.from(created);
+    ZonedDateTime zdt = ZonedDateTime.ofInstant(created, ZoneId.of("UTC"));
     request.getWorkflowRuns().get(0).setCreated(zdt);
   }
 
   @ActionParameter
   public void completed(Instant completed) {
-    ZonedDateTime zdt = ZonedDateTime.from(completed);
+    ZonedDateTime zdt = ZonedDateTime.ofInstant(completed, ZoneId.of("UTC"));
     request.getWorkflowRuns().get(0).setCompleted(zdt);
   }
 
   @ActionParameter
   public void modified(Instant modified) {
-    ZonedDateTime zdt = ZonedDateTime.from(modified);
-    request.getWorkflowRuns().get(0).setCompleted(zdt);
+    ZonedDateTime zdt = ZonedDateTime.ofInstant(modified, ZoneId.of("UTC"));
+    request.getWorkflowRuns().get(0).setModified(zdt);
   }
 
   @ActionParameter
   public void started(Instant started) {
-    ZonedDateTime zdt = ZonedDateTime.from(started);
-    request.getWorkflowRuns().get(0).setCompleted(zdt);
+    ZonedDateTime zdt = ZonedDateTime.ofInstant(started, ZoneId.of("UTC"));
+    request.getWorkflowRuns().get(0).setStarted(zdt);
   }
 
   @ActionParameter(
@@ -103,11 +108,11 @@ public class ImportAction extends VidarrAction {
       ProvenanceAnalysisRecord<ExternalId> record = new ProvenanceAnalysisRecord<>();
       record.setChecksum((String) a.get(0));
       record.setChecksumType((String) a.get(1));
-      record.setCreated(ZonedDateTime.from((Instant) a.get(2)));
+      record.setCreated(ZonedDateTime.ofInstant((Instant) a.get(2), ZoneId.of("UTC")));
       record.setExternalKeys((List<ExternalId>) a.get(3));
       record.setLabels((Map<String, String>) a.get(4));
       record.setMetatype((String) a.get(5));
-      record.setModified(ZonedDateTime.from((Instant) a.get(6)));
+      record.setModified(ZonedDateTime.ofInstant((Instant) a.get(6), ZoneId.of("UTC")));
       record.setPath((String) a.get(7));
       record.setSize((long) a.get(8));
       list.add(record);

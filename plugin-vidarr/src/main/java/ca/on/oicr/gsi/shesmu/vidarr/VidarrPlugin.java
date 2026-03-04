@@ -556,8 +556,8 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                             MetadataParameterConverter.createImportParam(
                                     workflow.getMetadata(), target.getValue())
                                 .ifPresent(
-                                    metadataParameters ->
-                                        definer.defineAction(
+                                    metadataParameters -> // TODO might be wrong for these actions?
+                                    definer.defineAction(
                                             String.format(
                                                 "%s%simport_%s",
                                                 sanitise(target.getKey()),
