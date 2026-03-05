@@ -232,6 +232,9 @@ public class ImportAction extends VidarrAction {
 
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
-    return null;
+    ObjectNode node = super.toJson(mapper);
+    node.putPOJO("request", request);
+    state.writeJson(mapper, node);
+    return node;
   }
 }

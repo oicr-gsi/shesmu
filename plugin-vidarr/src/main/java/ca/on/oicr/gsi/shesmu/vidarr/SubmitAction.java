@@ -59,11 +59,10 @@ public final class SubmitAction extends VidarrAction {
     }
   }
 
-  private List<String> errors = List.of();
   final Supplier<VidarrPlugin> owner;
-  private int priority;
+
   final SubmitWorkflowRequest request = new SubmitWorkflowRequest();
-  private final Set<String> services = new TreeSet<>(List.of("vidarr"));
+
   private boolean stale;
   RunState state = new RunStateAttemptSubmit();
   private SubmissionPolicy submissionPolicy;
@@ -257,11 +256,8 @@ public final class SubmitAction extends VidarrAction {
 
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
-    final ObjectNode node = mapper.createObjectNode();
+    ObjectNode node = super.toJson(mapper);
     node.putPOJO("request", request);
-    node.put("priority", priority);
-    services.forEach(node.putArray("services")::add);
-    errors.forEach(node.putArray("errors")::add);
     state.writeJson(mapper, node);
     return node;
   }
