@@ -1490,9 +1490,7 @@ public final class Server implements ServerConfig, ActionServices {
                       .map(f -> f.convert(processor.filterBuilder(compiler)))
                       .toArray(Filter[]::new);
             } catch (final Exception e) {
-              e.printStackTrace();
-              t.sendResponseHeaders(400, 0);
-              try (var os = t.getResponseBody()) {}
+              internalServerErrorResponse(t, 400, e);
               return;
             }
           }
@@ -1579,8 +1577,7 @@ public final class Server implements ServerConfig, ActionServices {
                   .findFirst()
                   .orElse(null);
           if (match == null) {
-            t.sendResponseHeaders(404, 0);
-            try (var os = t.getResponseBody()) {}
+            internalServerErrorResponse(t, 404, "No result.");
             return;
           }
           t.getResponseHeaders().set("Content-type", "image/svg+xml; charset=utf-8");
@@ -1625,9 +1622,7 @@ public final class Server implements ServerConfig, ActionServices {
             filters = query.perform(processor.filterBuilder(compiler));
             sortBy = Optional.ofNullable(query.getSortBy());
           } catch (final Exception e) {
-            e.printStackTrace();
-            t.sendResponseHeaders(400, 0);
-            try (var os = t.getResponseBody()) {}
+            internalServerErrorResponse(t, 400, e);
             return;
           }
           t.sendResponseHeaders(200, 0);
@@ -1683,9 +1678,7 @@ public final class Server implements ServerConfig, ActionServices {
           try {
             names = Set.of(RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String[].class));
           } catch (final Exception e) {
-            e.printStackTrace();
-            t.sendResponseHeaders(400, 0);
-            try (var os = t.getResponseBody()) {}
+            internalServerErrorResponse(t, 400, e);
             return;
           }
           KeyValueCache.caches()
@@ -1743,8 +1736,7 @@ public final class Server implements ServerConfig, ActionServices {
           try {
             request = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), StatsRequest.class);
           } catch (final Exception e) {
-            t.sendResponseHeaders(400, 0);
-            try (var os = t.getResponseBody()) {}
+            internalServerErrorResponse(t, 400, e);
             return;
           }
           t.sendResponseHeaders(200, 0);
@@ -1768,8 +1760,7 @@ public final class Server implements ServerConfig, ActionServices {
           try {
             filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class);
           } catch (final Exception e) {
-            t.sendResponseHeaders(400, 0);
-            try (var os = t.getResponseBody()) {}
+            internalServerErrorResponse(t, 400, e);
             return;
           }
           t.sendResponseHeaders(200, 0);
@@ -1790,8 +1781,7 @@ public final class Server implements ServerConfig, ActionServices {
           try {
             filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class);
           } catch (final Exception e) {
-            t.sendResponseHeaders(400, 0);
-            try (var os = t.getResponseBody()) {}
+            internalServerErrorResponse(t, 400, e);
             return;
           }
           t.sendResponseHeaders(200, 0);
@@ -1812,8 +1802,7 @@ public final class Server implements ServerConfig, ActionServices {
           try {
             filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class);
           } catch (final Exception e) {
-            t.sendResponseHeaders(400, 0);
-            try (var os = t.getResponseBody()) {}
+            internalServerErrorResponse(t, 400, e);
             return;
           }
           t.sendResponseHeaders(200, 0);
@@ -1844,8 +1833,7 @@ public final class Server implements ServerConfig, ActionServices {
           try {
             filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class);
           } catch (final Exception e) {
-            t.sendResponseHeaders(400, 0);
-            try (final var os = t.getResponseBody()) {}
+            internalServerErrorResponse(t, 400, e);
             return;
           }
           t.sendResponseHeaders(200, 0);
@@ -1878,8 +1866,7 @@ public final class Server implements ServerConfig, ActionServices {
           try {
             request = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), CommandRequest.class);
           } catch (final Exception e) {
-            t.sendResponseHeaders(400, 0);
-            try (var os = t.getResponseBody()) {}
+            internalServerErrorResponse(t, 400, e);
             return;
           }
           t.sendResponseHeaders(200, 0);
@@ -1910,8 +1897,7 @@ public final class Server implements ServerConfig, ActionServices {
               RuntimeSupport.MAPPER.writeValue(os, result.get());
             }
           } else {
-            t.sendResponseHeaders(400, 0);
-            try (var os = t.getResponseBody()) {}
+            internalServerErrorResponse(t, 400, "No result.");
           }
         });
 
@@ -2150,11 +2136,7 @@ public final class Server implements ServerConfig, ActionServices {
                       true,
                       false);
           t.getResponseHeaders().set("Content-type", "text/plain; charset=utf-8");
-          final var errorBytes = errors.toString().getBytes(StandardCharsets.UTF_8);
-          t.sendResponseHeaders(success ? 200 : 400, errorBytes.length);
-          try (var os = t.getResponseBody()) {
-            os.write(errorBytes);
-          }
+          internalServerErrorResponse(t, success ? 200 : 400, errors.toString());
         });
     add(
         "/simulate",
@@ -2186,7 +2168,7 @@ public final class Server implements ServerConfig, ActionServices {
           final boolean decodeBody;
           if (existingScript != null) {
             if (compiler.dashboard().noneMatch(p -> p.second().filename().equals(existingScript))) {
-              t.sendResponseHeaders(403, -1);
+              internalServerErrorResponse(t, 403, "No matches.");
               return;
             }
             final var scriptPath = Paths.get(existingScript);
@@ -2265,19 +2247,14 @@ public final class Server implements ServerConfig, ActionServices {
                   DefinitionRepository.concat(definitionRepository, compiler), inputSource, t);
 
             } else {
-              t.sendResponseHeaders(503, 0);
-              try (var os = t.getResponseBody()) {
-                os.write(
-                    String.format(
-                            "Input format “%s” is overloaded right now", request.getInputFormat())
-                        .getBytes(StandardCharsets.UTF_8));
-              }
+              internalServerErrorResponse(
+                  t,
+                  503,
+                  String.format(
+                      "Input format “%s” is overloaded right now", request.getInputFormat()));
             }
           } catch (JsonProcessingException e) {
-            t.sendResponseHeaders(400, 0);
-            try (var os = t.getResponseBody()) {
-              os.write(e.getOriginalMessage().getBytes(StandardCharsets.UTF_8));
-            }
+            internalServerErrorResponse(t, 400, e);
           }
         });
     add(
@@ -2303,8 +2280,7 @@ public final class Server implements ServerConfig, ActionServices {
           if (existingScript != null) {
             if (guidedMeditations.stream()
                 .noneMatch(p -> p.filename().toString().equals(existingScript))) {
-              t.sendResponseHeaders(403, -1);
-              try (var os = t.getResponseBody()) {}
+              internalServerErrorResponse(t, 403, "No matches.");
               return;
             }
             final var scriptPath = Paths.get(existingScript);
@@ -2396,8 +2372,7 @@ public final class Server implements ServerConfig, ActionServices {
                       })
                   .parse(request.getValue());
           if (type.isBad()) {
-            t.sendResponseHeaders(400, 0);
-            try (var os = t.getResponseBody()) {}
+            internalServerErrorResponse(t, 400, "Bad type not supported.");
             return;
           }
           t.getResponseHeaders().set("Content-type", "application/json");
@@ -2491,10 +2466,7 @@ public final class Server implements ServerConfig, ActionServices {
               break;
             default:
               t.getResponseHeaders().set("Content-type", "application/json");
-              t.sendResponseHeaders(400, 0);
-              try (var os = t.getResponseBody()) {
-                os.write("{}".getBytes(StandardCharsets.UTF_8));
-              }
+              internalServerErrorResponse(t, 400, "{}");
           }
         });
     add(
@@ -2764,8 +2736,7 @@ public final class Server implements ServerConfig, ActionServices {
         && (processor.isOverloaded(format.name())
             || pluginManager.isOverloaded(Set.of(format.name())).findAny().isPresent()
             || !inputDownloadSemaphore.tryAcquire())) {
-      t.sendResponseHeaders(503, 0);
-      try (var os = t.getResponseBody()) {}
+      internalServerErrorResponse(t, 503, "Cannot download input data right now.");
       return;
     }
 
@@ -2777,8 +2748,7 @@ public final class Server implements ServerConfig, ActionServices {
       t.getResponseHeaders().set("Content-type", "application/json");
       t.sendResponseHeaders(200, 0);
     } else {
-      t.sendResponseHeaders(503, 0);
-      try (var os = t.getResponseBody()) {}
+      internalServerErrorResponse(t, 503, "Input format not OK right now.");
       if (!readStale) inputDownloadSemaphore.release();
       return;
     }
@@ -3164,6 +3134,29 @@ public final class Server implements ServerConfig, ActionServices {
       final var node = entries.putObject(record.getKey().toString());
       node.put("collectionSize", record.getValue().collectionSize());
       node.put("lastUpdate", record.getValue().lastUpdate().toEpochMilli());
+    }
+  }
+
+  private void internalServerErrorResponse(
+      HttpExchange exchange, int responseCode, String message) {
+    try (OutputStream os = exchange.getResponseBody()) {
+      exchange.sendResponseHeaders(responseCode, message.length());
+      os.write(message.getBytes(StandardCharsets.UTF_8));
+    } catch (IOException ex) {
+      System.err.println(
+          "The httpserver wasn't able to send the message " + message + ". The server says: ");
+      ex.printStackTrace();
+    }
+  }
+
+  private void internalServerErrorResponse(HttpExchange exchange, int responseCode, Exception e) {
+    e.printStackTrace();
+    try (OutputStream os = exchange.getResponseBody()) {
+      exchange.sendResponseHeaders(responseCode, e.getMessage().length());
+      os.write(e.getMessage().getBytes(StandardCharsets.UTF_8));
+    } catch (IOException ex) {
+      System.err.println("The httpserver wasn't able to send that Exception. The server says: ");
+      ex.printStackTrace();
     }
   }
 }
