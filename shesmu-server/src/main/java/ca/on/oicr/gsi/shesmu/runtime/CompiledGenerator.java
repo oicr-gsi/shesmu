@@ -348,6 +348,11 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
           }
 
           @Override
+          public boolean isRead() {
+            return !used.isEmpty();
+          }
+
+          @Override
           public boolean isRoot() {
             return isRoot;
           }
