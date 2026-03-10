@@ -113,6 +113,12 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
     return inputFormat;
   }
 
+  @Override
+  public boolean isRead() {
+    return true;
+  }
+
+  @Override
   public boolean isRoot() {
     return isRoot;
   }
