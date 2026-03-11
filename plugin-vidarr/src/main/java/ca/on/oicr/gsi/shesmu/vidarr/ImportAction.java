@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 public class ImportAction extends VidarrAction {
   private boolean stale;
   private int priority;
-  final ImportRequest request = new ImportRequest();
+  ImportRequest request;
   final Supplier<VidarrPlugin> owner;
   private final Set<String> services = new TreeSet<>(List.of("vidarr"));
   ImportState state = new ImportStateAttemptSubmit();
@@ -32,29 +32,7 @@ public class ImportAction extends VidarrAction {
     super("vidarr-import");
     this.owner = owner;
 
-    // TODO it'd be so sick if the object handled this itself
-    UnloadedWorkflow adaptedWorkflow = new UnloadedWorkflow();
-    adaptedWorkflow.setName(workflow.getName());
-    adaptedWorkflow.setLabels(workflow.getLabels());
-    request.setWorkflows(List.of(adaptedWorkflow));
-
-    UnloadedWorkflowVersion adaptedVersion = new UnloadedWorkflowVersion();
-    adaptedVersion.setName(workflow.getName());
-    adaptedVersion.setVersion(workflow.getVersion());
-    adaptedVersion.setWorkflow(workflow.getName());
-
-    // TODO I don't know what to do about this one!
-    // adaptedVersion.setAccessoryFiles();
-
-    adaptedVersion.setLanguage(workflow.getLanguage());
-    adaptedVersion.setOutputs(workflow.getMetadata());
-    adaptedVersion.setParameters(workflow.getParameters());
-
-    request.setWorkflowVersions(List.of(adaptedVersion));
-
-    List<ProvenanceWorkflowRun<ExternalMultiVersionKey>> temp = new ArrayList<>();
-    temp.add(new ProvenanceWorkflowRun<>());
-    request.setWorkflowRuns(temp);
+    this.request = ImportRequest.fromDeclaration(workflow);
 
     priority = workflow.getName().hashCode() % 100;
 
@@ -78,25 +56,25 @@ public class ImportAction extends VidarrAction {
   @ActionParameter
   public void created(Instant created) {
     ZonedDateTime zdt = ZonedDateTime.ofInstant(created, ZoneId.of("UTC"));
-    request.getWorkflowRuns().get(0).setCreated(zdt);
+    request.getWorkflowRun().setCreated(zdt);
   }
 
   @ActionParameter
   public void completed(Instant completed) {
     ZonedDateTime zdt = ZonedDateTime.ofInstant(completed, ZoneId.of("UTC"));
-    request.getWorkflowRuns().get(0).setCompleted(zdt);
+    request.getWorkflowRun().setCompleted(zdt);
   }
 
   @ActionParameter
   public void modified(Instant modified) {
     ZonedDateTime zdt = ZonedDateTime.ofInstant(modified, ZoneId.of("UTC"));
-    request.getWorkflowRuns().get(0).setModified(zdt);
+    request.getWorkflowRun().setModified(zdt);
   }
 
   @ActionParameter
   public void started(Instant started) {
     ZonedDateTime zdt = ZonedDateTime.ofInstant(started, ZoneId.of("UTC"));
-    request.getWorkflowRuns().get(0).setStarted(zdt);
+    request.getWorkflowRun().setStarted(zdt);
   }
 
   @ActionParameter(
@@ -117,20 +95,19 @@ public class ImportAction extends VidarrAction {
       record.setSize((long) a.get(8));
       list.add(record);
     }
-    request.getWorkflowRuns().get(0).setAnalysis(list);
+    request.getWorkflowRun().setAnalysis(list);
   }
 
   @ActionParameter(name = "engine_parameters")
   public void engineParameters(JsonNode json) {
-    request.getWorkflowRuns().get(0).setEngineParameters(json);
+    request.getWorkflowRun().setEngineParameters(json);
   }
 
   @SuppressWarnings("unchecked")
   @ActionParameter(name = "external_keys", type = "ao4id$sprovider$sstale$bversions$msas")
   public void externalKeys(Set<Tuple> values) {
     request
-        .getWorkflowRuns()
-        .get(0)
+        .getWorkflowRun()
         .setExternalKeys(
             values.stream()
                 .map(
@@ -147,15 +124,12 @@ public class ImportAction extends VidarrAction {
 
   @ActionParameter(name = "input_files")
   public void inputFiles(Set<String> files) {
-    request.getWorkflowRuns().get(0).setInputFiles(files.stream().toList());
+    request.getWorkflowRun().setInputFiles(files.stream().toList());
   }
 
   @ActionParameter
   public void labels(Map<String, String> labels) {
-    request
-        .getWorkflowRuns()
-        .get(0)
-        .setLabels(VidarrPlugin.MAPPER.convertValue(labels, ObjectNode.class));
+    request.getWorkflowRun().setLabels(VidarrPlugin.MAPPER.convertValue(labels, ObjectNode.class));
   }
 
   @Override
