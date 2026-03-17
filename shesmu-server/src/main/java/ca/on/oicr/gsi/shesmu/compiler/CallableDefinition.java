@@ -23,6 +23,8 @@ public interface CallableDefinition {
 
   String format();
 
+  boolean isRead();
+
   boolean isRoot();
 
   String name();

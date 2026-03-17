@@ -28,6 +28,9 @@ import ca.on.oicr.gsi.shesmu.server.ImportVerifier.OliveDefinitionVerifier;
 import ca.on.oicr.gsi.shesmu.server.ImportVerifier.RefillerVerifier;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -43,6 +46,20 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 
 /** Compiles a user-specified file into a usable program and updates it as necessary */
 public final class HotloadingCompiler extends BaseHotloadingCompiler {
+
+  private static final MethodHandle INPUTS_METHOD;
+
+  static {
+    MethodHandle inputsMethod = null;
+    try {
+      inputsMethod =
+          MethodHandles.publicLookup()
+              .findVirtual(ActionGenerator.class, "inputs", MethodType.methodType(Stream.class));
+    } catch (NoSuchMethodException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+    INPUTS_METHOD = inputsMethod;
+  }
 
   private final DefinitionRepository definitionRepository;
   private final List<String> errors = new ArrayList<>();
@@ -207,6 +224,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                   instance -> {
                     try {
                       exportConsumer.defineOlive(
+                          INPUTS_METHOD.bindTo(instance),
                           instance
                               .lookup()
                               .unreflect(
