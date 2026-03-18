@@ -64,7 +64,7 @@ const vidarrStateRenderer = {
   conflict: (a) => table(a.possibleMatches, ["Vidarr Workflow Run", (x) => x]),
   dead: (a) => "This is all there is.",
   missingKeys: (a) => [
-    `Version ${a.missingVersion} not found on all LIMS keys`,
+    `See "Errors" above for LIMS keys for workflow run ${a.workflowRunMissingVersions} which have no overlap with the versions in this workflow run submission.`,
     table(
       a.corruptExternalIds,
       ["Provider", (k) => k.provider],
