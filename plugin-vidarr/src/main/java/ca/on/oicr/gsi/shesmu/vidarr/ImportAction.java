@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -33,6 +34,10 @@ public class ImportAction extends VidarrAction {
     this.owner = owner;
 
     this.request = ImportRequest.fromDeclaration(workflow);
+    request.getWorkflowVersion().setWorkflow("");
+    ProvenanceWorkflowRun<ExternalMultiVersionKey> workflowRun = request.getWorkflowRun();
+    workflowRun.setWorkflowName(request.getWorkflow().getName());
+    workflowRun.setWorkflowVersion(request.getWorkflowVersion().getVersion());
 
     priority = workflow.getName().hashCode() % 100;
 
@@ -81,18 +86,25 @@ public class ImportAction extends VidarrAction {
       type =
           "ao9checksum$schecksumType$screated$dexternalKeys$ao2id$sprovider$slabels$mssmetatype$smodified$dpath$psize$i")
   public void analysis(Set<Tuple> analysis) {
+    // TODO can Jackson do this? please?
     List<ProvenanceAnalysisRecord<ExternalId>> list = new LinkedList<>();
     for (Tuple a : analysis) {
       ProvenanceAnalysisRecord<ExternalId> record = new ProvenanceAnalysisRecord<>();
       record.setChecksum((String) a.get(0));
       record.setChecksumType((String) a.get(1));
       record.setCreated(ZonedDateTime.ofInstant((Instant) a.get(2), ZoneId.of("UTC")));
-      record.setExternalKeys((List<ExternalId>) a.get(3));
+
+      TreeSet<Tuple> ids = (TreeSet<Tuple>) a.get(3);
+      List<ExternalId> keys =
+          ids.stream().map(t -> new ExternalId(t.get(1).toString(), t.get(0).toString())).toList();
+
+      record.setExternalKeys(keys);
       record.setLabels((Map<String, String>) a.get(4));
       record.setMetatype((String) a.get(5));
       record.setModified(ZonedDateTime.ofInstant((Instant) a.get(6), ZoneId.of("UTC")));
-      record.setPath((String) a.get(7));
+      record.setPath(((Path) a.get(7)).toString());
       record.setSize((long) a.get(8));
+      record.setType("file");
       list.add(record);
     }
     request.getWorkflowRun().setAnalysis(list);
