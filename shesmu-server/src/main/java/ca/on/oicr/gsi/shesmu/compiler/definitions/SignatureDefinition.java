@@ -37,6 +37,11 @@ public abstract class SignatureDefinition implements Target {
     public void read() {
       original.read();
     }
+
+    @Override
+    public String unaliasedName() {
+      return original.unaliasedName();
+    }
   }
 
   private final String name;

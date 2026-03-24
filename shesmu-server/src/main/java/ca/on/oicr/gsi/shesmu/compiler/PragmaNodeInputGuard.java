@@ -123,6 +123,7 @@ public class PragmaNodeInputGuard extends PragmaNode {
             .collect(Collectors.toList());
     final var prefix = String.format("Guard %d:%d ", line, column);
     root.signatureVariables()
+        .filter(signer -> signer.name().equals(signer.unaliasedName()))
         .forEach(
             signer ->
                 BaseOliveBuilder.createSignatureInfrastructure(
