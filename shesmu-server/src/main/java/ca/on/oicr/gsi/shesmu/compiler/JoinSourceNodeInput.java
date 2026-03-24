@@ -43,7 +43,10 @@ public final class JoinSourceNodeInput extends JoinSourceNode {
     oliveBuilder
         .owner
         .signatureVariables()
-        .filter(signature -> signatureUsed.test(variablePrefix + signature.name()))
+        .filter(
+            signature ->
+                signatureUsed.test(variablePrefix + signature.name())
+                    && signature.name().equals(signature.unaliasedName()))
         .forEach(
             signatureDefinition ->
                 oliveBuilder.createSignature(

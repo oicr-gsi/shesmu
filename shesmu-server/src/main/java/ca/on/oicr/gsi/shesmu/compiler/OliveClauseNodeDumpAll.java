@@ -58,9 +58,14 @@ public final class OliveClauseNodeDumpAll extends OliveClauseNodeBaseDump implem
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
       Consumer<String> errorHandler) {
+    // The unaliased names are checked to avoid emitting signatures that are duplicated by an
+    // import.
     columns =
         defs.stream()
-            .filter(i -> i.flavour() == Flavour.STREAM || i.flavour() == Flavour.STREAM_SIGNABLE)
+            .filter(
+                i ->
+                    (i.flavour() == Flavour.STREAM || i.flavour() == Flavour.STREAM_SIGNABLE)
+                        && i.name().equals(i.unaliasedName()))
             .sorted(Comparator.comparing(Target::name))
             .collect(Collectors.toList());
     return defs;

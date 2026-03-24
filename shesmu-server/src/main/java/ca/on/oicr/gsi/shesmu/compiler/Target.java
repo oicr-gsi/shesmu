@@ -141,6 +141,11 @@ public interface Target {
       public Imyhat type() {
         return target.type();
       }
+
+      @Override
+      public String unaliasedName() {
+        return target.unaliasedName();
+      }
     };
   }
 
