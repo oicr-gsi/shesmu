@@ -84,6 +84,7 @@ final class InputParameterConverter implements InputType.Visitor<Imyhat> {
           public void store(ImportAction action, Object value) {
             final Tuple tuple = (Tuple) value;
             final ObjectNode object = VidarrPlugin.MAPPER.createObjectNode();
+            action.request.getWorkflowRun().setArguments(object);
             for (int index = 0; index < handlers.size(); index++) {
               handlers.get(index).store(object, tuple.get(index));
             }
