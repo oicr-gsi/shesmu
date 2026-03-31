@@ -25,8 +25,6 @@ public class ImportAction extends VidarrAction {
   final Supplier<VidarrPlugin> owner;
   private final Set<String> services = new TreeSet<>(List.of("vidarr"));
   ImportState state = new ImportStateAttemptSubmit();
-  List<String> errors = List.of();
-
   private final List<String> tags = new LinkedList<>();
 
   public ImportAction(Supplier<VidarrPlugin> owner, WorkflowDeclaration workflow) {

@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.vidarr;
 
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
-import ca.on.oicr.gsi.vidarr.JsonBodyHandler;
 import ca.on.oicr.gsi.vidarr.api.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -9,6 +8,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 
 public class ImportStateAttemptSubmit extends ImportState {
   private int retryMinutes = 5;
-  String error = null;
+  List<String> errors = null;
 
   @Override
   public AvailableCommands commands() {
@@ -38,22 +38,32 @@ public class ImportStateAttemptSubmit extends ImportState {
                     HttpRequest.BodyPublishers.ofByteArray(
                         VidarrPlugin.MAPPER.writeValueAsBytes(request)))
                 .build(),
-            new JsonBodyHandler<>(VidarrPlugin.MAPPER, Object.class));
+            HttpResponse.BodyHandlers.ofString());
     switch (response.statusCode()) {
       case 200:
         { // Submit successful
-          return ImportStateMonitor.create(vidarrUrl, ((String[]) response.body().get())[0]);
+          SubmitWorkflowResponseSuccess success =
+              VidarrPlugin.MAPPER.convertValue(
+                  response.body(), SubmitWorkflowResponseSuccess.class);
+          return ImportStateMonitor.create(vidarrUrl, success.getId());
         }
       case 400:
         { // Malformed or conflict
-          error = (String) response.body().get();
+          String body = response.body();
+          try {
+            SubmitWorkflowResponseFailure failure =
+                VidarrPlugin.MAPPER.convertValue(body, SubmitWorkflowResponseFailure.class);
+            errors = failure.getErrors();
+          } catch (Exception e) {
+            errors = List.of(body, e.getMessage());
+          }
         }
       case 409: // ID matches multiple runs
       case 500:
         { // Internal Server Error
           retryMinutes = Math.min(retryMinutes * 2, 60);
           ImportStateDead nextState = new ImportStateDead();
-          return new PerformResult(List.of(error), ActionState.FAILED, nextState);
+          return new PerformResult(errors, ActionState.FAILED, nextState);
         }
       case 507:
         { // Reprovisioning already underway

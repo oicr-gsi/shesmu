@@ -116,6 +116,7 @@ final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
     }
 
     return Optional.of(
+        // TODO: store in the action somewhere?
         new CustomActionParameter<>("metadata", true, type) {
           @Override
           public void store(ImportAction action, Object value) {

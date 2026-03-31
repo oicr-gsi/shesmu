@@ -64,7 +64,7 @@ public class ImportStateMonitor extends ImportState {
       URI vidarrUrl, ImportRequest request, Duration lastGeneratedByOlive, boolean isOliveLive)
       throws IOException, InterruptedException {
     // TODO i don't believe that will actually work but we can try
-    return create(vidarrUrl, request.getWorkflowRuns().get(0).getId());
+    return create(vidarrUrl, request.getWorkflowRun().getId());
   }
 
   @Override
