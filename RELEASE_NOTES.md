@@ -7,6 +7,15 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.58.1] - 2026-04-01
+
+### Fixed
+
+* * Fix bug where input formats used in calls to external define olives were not included as dependencies properly
+* Correct error text for HALP actions with external key versions mismatch
+* * Prevent null pointer exception in simulator if input data is unavailable
+
+
 ## [1.58.0] - 2026-02-27
 
 ### Changed
