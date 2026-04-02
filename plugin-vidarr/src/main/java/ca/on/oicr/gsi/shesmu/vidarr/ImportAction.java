@@ -39,6 +39,7 @@ public class ImportAction extends VidarrAction {
 
     priority = workflow.getName().hashCode() % 100;
 
+    // TODO: turn these on please
     //    tags =
     //              List.of(
     //                      "vidarr-target:" + targetName,
@@ -217,7 +218,12 @@ public class ImportAction extends VidarrAction {
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
     ObjectNode node = super.toJson(mapper);
-    node.putPOJO("request", request);
+
+    // Need to convertValue with the Mapper in order to use the Java Time parsing
+    node.set("request", mapper.convertValue(request, JsonNode.class));
+    // Bring these up for the 'Differences from Olive' sections
+    ((ObjectNode) node.get("request")).set("arguments", request.getWorkflowRun().getArguments());
+    ((ObjectNode) node.get("request")).set("metadata", request.getWorkflowRun().getMetadata());
     state.writeJson(mapper, node);
     return node;
   }
