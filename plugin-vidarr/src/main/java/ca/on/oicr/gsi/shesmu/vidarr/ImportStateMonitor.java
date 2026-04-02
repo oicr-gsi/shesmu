@@ -56,7 +56,7 @@ public class ImportStateMonitor extends ImportState {
 
   @Override
   public AvailableCommands commands() {
-    return null;
+    return AvailableCommands.RESET_ONLY;
   }
 
   @Override
@@ -103,5 +103,9 @@ public class ImportStateMonitor extends ImportState {
   }
 
   @Override
-  public void writeJson(ObjectMapper mapper, ObjectNode node) {}
+  public void writeJson(ObjectMapper mapper, ObjectNode node) {
+    node.put("importState", "monitor");
+    node.putPOJO("info", status);
+    node.put("workflowRunUrl", workflowRunUrl);
+  }
 }
