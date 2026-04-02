@@ -116,5 +116,9 @@ public class ImportStateAttemptSubmit extends ImportState {
   @Override
   public void writeJson(ObjectMapper mapper, ObjectNode node) {
     node.put("importState", "attempt");
+
+    // For now, import cannot be reattempted. Put a 0 here just to keep
+    // the javascript renderer happy.
+    node.put("attempt", 0);
   }
 }
