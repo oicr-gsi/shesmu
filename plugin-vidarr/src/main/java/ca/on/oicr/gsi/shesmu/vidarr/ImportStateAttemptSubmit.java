@@ -43,8 +43,7 @@ public class ImportStateAttemptSubmit extends ImportState {
       case 200:
         { // Submit successful
           SubmitWorkflowResponseSuccess success =
-              VidarrPlugin.MAPPER.convertValue(
-                  response.body(), SubmitWorkflowResponseSuccess.class);
+              VidarrPlugin.MAPPER.readValue(response.body(), SubmitWorkflowResponseSuccess.class);
           return ImportStateMonitor.create(vidarrUrl, success.getId());
         }
       case 400:
@@ -52,7 +51,7 @@ public class ImportStateAttemptSubmit extends ImportState {
           String body = response.body();
           try {
             SubmitWorkflowResponseFailure failure =
-                VidarrPlugin.MAPPER.convertValue(body, SubmitWorkflowResponseFailure.class);
+                VidarrPlugin.MAPPER.readValue(body, SubmitWorkflowResponseFailure.class);
             errors = failure.getErrors();
           } catch (Exception e) {
             errors = List.of(body, e.getMessage());
