@@ -22,7 +22,6 @@ import ca.on.oicr.gsi.vidarr.BasicType;
 import ca.on.oicr.gsi.vidarr.BasicType.Visitor;
 import ca.on.oicr.gsi.vidarr.JsonBodyHandler;
 import ca.on.oicr.gsi.vidarr.api.*;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -234,9 +233,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
               new Pair<>("versions", Imyhat.dictionary(Imyhat.STRING, Imyhat.STRING.asList()))));
   static final HttpClient CLIENT = HttpClient.newHttpClient();
   private static final Pattern INVALID = Pattern.compile("[^A-Za-z0-9_]");
-  // TODO undo before review
-  static final ObjectMapper MAPPER =
-      new ObjectMapper().configure(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION, true);
+  static final ObjectMapper MAPPER = new ObjectMapper();
   static final BasicType.Visitor<Imyhat> SIMPLE_TO_IMYHAT =
       new Visitor<>() {
         @Override
@@ -559,8 +556,8 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                             MetadataParameterConverter.createImportParam(
                                     workflow.getMetadata(), target.getValue())
                                 .ifPresent(
-                                    metadataParameters -> // TODO might be wrong for these actions?
-                                    definer.defineAction(
+                                    metadataParameters ->
+                                        definer.defineAction(
                                             String.format(
                                                 "%s%simport_%s",
                                                 sanitise(target.getKey()),
