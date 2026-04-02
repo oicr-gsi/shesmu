@@ -76,11 +76,11 @@ public class ImportAction extends VidarrAction {
     request.getWorkflowRun().setStarted(zdt);
   }
 
+  @SuppressWarnings("unchecked")
   @ActionParameter(
       type =
           "ao9checksum$schecksumType$screated$dexternalKeys$ao2id$sprovider$slabels$mssmetatype$smodified$dpath$psize$i")
   public void analysis(Set<Tuple> analysis) {
-    // TODO can Jackson do this? please?
     List<ProvenanceAnalysisRecord<ExternalId>> list = new LinkedList<>();
     for (Tuple a : analysis) {
       ProvenanceAnalysisRecord<ExternalId> record = new ProvenanceAnalysisRecord<>();
