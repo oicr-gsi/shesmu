@@ -19,17 +19,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class ImportAction extends VidarrAction {
-  private boolean stale;
-  private int priority;
   ImportRequest request;
-  final Supplier<VidarrPlugin> owner;
-  private final Set<String> services = new TreeSet<>(List.of("vidarr"));
   ImportState state = new ImportStateAttemptSubmit();
-  private final List<String> tags = new LinkedList<>();
 
   public ImportAction(Supplier<VidarrPlugin> owner, WorkflowDeclaration workflow) {
-    super("vidarr-import");
-    this.owner = owner;
+    super("vidarr-import", owner);
 
     this.request = ImportRequest.fromDeclaration(workflow);
     request.getWorkflowVersion().setWorkflow("");
@@ -39,12 +33,14 @@ public class ImportAction extends VidarrAction {
 
     priority = workflow.getName().hashCode() % 100;
 
-    // TODO: turn these on please
-    //    tags =
-    //              List.of(
-    //                      "vidarr-target:" + targetName,
-    //                      "vidarr-workflow:" + workflowName,
-    //                      "vidarr-workflow:" + workflowName + "/" + workflowVersion);
+    tags =
+        List.of(
+            "vidarr-import-provisioner:" + request.getOutputProvisionerName(),
+            "vidarr-workflow:" + request.getWorkflow().getName(),
+            "vidarr-workflow:"
+                + request.getWorkflow().getName()
+                + "/"
+                + request.getWorkflowVersion().getVersion());
   }
 
   @ActionParameter(name = "output_provisioner")
@@ -213,6 +209,11 @@ public class ImportAction extends VidarrAction {
   @Override
   public boolean search(Pattern query) {
     return false;
+  }
+
+  @Override
+  public Stream<String> tags() {
+    return Stream.concat(super.tags(), state.tags());
   }
 
   @Override

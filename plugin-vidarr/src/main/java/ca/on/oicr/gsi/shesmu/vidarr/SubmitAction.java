@@ -59,22 +59,16 @@ public final class SubmitAction extends VidarrAction {
     }
   }
 
-  final Supplier<VidarrPlugin> owner;
-
   final SubmitWorkflowRequest request = new SubmitWorkflowRequest();
-
-  private boolean stale;
   RunState state = new RunStateAttemptSubmit();
   private SubmissionPolicy submissionPolicy;
-  private final List<String> tags;
 
   public SubmitAction(
       Supplier<VidarrPlugin> owner,
       String targetName,
       String workflowName,
       String workflowVersion) {
-    super("vidarr-run");
-    this.owner = owner;
+    super("vidarr-run", owner);
     submissionPolicy = owner.get().defaultSubmissionPolicy();
     request.setConsumableResources(new TreeMap<>());
     request.setTarget(targetName);
@@ -181,16 +175,6 @@ public final class SubmitAction extends VidarrAction {
   }
 
   @Override
-  public int priority() {
-    return priority;
-  }
-
-  @ActionParameter(required = false)
-  public void priority(long priority) {
-    this.priority = (int) priority;
-  }
-
-  @Override
   public long retryMinutes() {
     return state.retryMinutes();
   }
@@ -251,7 +235,7 @@ public final class SubmitAction extends VidarrAction {
 
   @Override
   public Stream<String> tags() {
-    return Stream.concat(tags.stream(), state.tags());
+    return Stream.concat(super.tags(), state.tags());
   }
 
   @Override
