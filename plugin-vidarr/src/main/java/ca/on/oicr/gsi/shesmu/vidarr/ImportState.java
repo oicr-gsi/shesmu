@@ -13,7 +13,6 @@ import java.util.OptionalInt;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-// TODO all of these can probably be refactored into RunStates with Generics or something
 abstract class ImportState {
   public static final class PerformResult {
     private final ActionState actionState;
