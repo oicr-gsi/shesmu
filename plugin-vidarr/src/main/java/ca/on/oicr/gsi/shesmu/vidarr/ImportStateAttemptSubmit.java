@@ -66,8 +66,9 @@ public class ImportStateAttemptSubmit extends ImportState {
         }
       case 507:
         { // Reprovisioning already underway
-          // FIXME - but how? We don't know the workflow run id do we?
-          throw new IllegalStateException("Alexis! Fix this!");
+          SubmitWorkflowResponseConflict conflict
+                  = VidarrPlugin.MAPPER.readValue(response.body(), SubmitWorkflowResponseConflict.class);
+          return ImportStateMonitor.create(vidarrUrl, conflict.getIds().get(0));
         }
       default:
         return new PerformResult(
