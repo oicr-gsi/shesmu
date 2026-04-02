@@ -63,8 +63,7 @@ public class ImportStateMonitor extends ImportState {
   public PerformResult perform(
       URI vidarrUrl, ImportRequest request, Duration lastGeneratedByOlive, boolean isOliveLive)
       throws IOException, InterruptedException {
-    // TODO i don't believe that will actually work but we can try
-    return create(vidarrUrl, request.getWorkflowRun().getId());
+    return create(vidarrUrl, status.getId());
   }
 
   @Override
