@@ -220,6 +220,38 @@ actionRender.set("vidarr-run", (a) => [
   vidarrStateRenderer[a.runState](a),
 ]);
 
+actionRender.set("vidarr-import", (a) => [
+  title(a, `Import run of ${a.request.workflow.name} (${a.request.workflowVersion.version})`),
+  table(
+    [
+      ["Output Provisioner", a.request.outputProvisionerName],
+      ["Target Directory", a.request.outputPath]
+    ]
+      .concat(a.services.map((s) => ["Required Service", s]))
+      .filter((x) => x),
+    ["Workflow Information", (x) => x[0]],
+    ["Value", (x) => x[1]]
+  ),
+  collapsible(
+    "LIMS Keys",
+    table(
+      a.request.workflowRun.externalKeys,
+      ...[
+        ["Provider", (k) => k.provider],
+        ["ID", (k) => k.id],
+      ].concat(
+        a.request.workflowRun.externalKeys.length == 0
+          ? []
+          : Object.keys(a.request.workflowRun.externalKeys[0].versions).map((key) => [
+              key,
+              (lims) => lims.versions[key] || "Missing!",
+            ])
+      )
+    )
+  ),
+  vidarrStateRenderer[a.importState](a),
+]);
+
 [
   {
     type: "runs",
