@@ -35,7 +35,6 @@ public class ImportAction extends VidarrAction {
 
     tags =
         List.of(
-            "vidarr-import-provisioner:" + request.getOutputProvisionerName(),
             "vidarr-workflow:" + request.getWorkflow().getName(),
             "vidarr-workflow:"
                 + request.getWorkflow().getName()
