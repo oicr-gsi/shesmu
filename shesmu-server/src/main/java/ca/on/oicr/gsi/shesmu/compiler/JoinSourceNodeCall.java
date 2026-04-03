@@ -84,6 +84,7 @@ public class JoinSourceNodeCall extends JoinSourceNode {
     oliveBuilder
         .owner
         .signatureVariables()
+        .filter(signer -> signer.name().equals(signer.unaliasedName()))
         .forEach(
             signer ->
                 OliveBuilder.createSignatureInfrastructure(

@@ -15,7 +15,6 @@ import java.lang.invoke.LambdaMetafactory;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
@@ -63,6 +62,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
     staticMethod.visitCode();
     owner
         .signatureVariables()
+        .filter(signer -> signer.name().equals(signer.unaliasedName()))
         .forEach(
             signer -> {
               final var resultType = signer.type().apply(TypeUtils.TO_ASM);
@@ -237,9 +237,10 @@ public final class OliveBuilder extends BaseOliveBuilder {
             String.format(
                 "%s/Signer Accessor %d:%d", BaseHotloadingCompiler.PACKAGE_INTERNAL, line, column));
     signerPrefix = String.format("Olive %d:%d ", line, column);
-    final var signables = signableNames.collect(Collectors.toList());
+    final var signables = signableNames.toList();
     owner
         .signatureVariables()
+        .filter(signer -> signer.name().equals(signer.unaliasedName()))
         .forEach(
             signer -> createSignature(signerPrefix, initialFormat, signables.stream(), signer));
   }

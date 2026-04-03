@@ -53,7 +53,10 @@ public class FlattenBuilder {
             Stream.concat(
                     Stream.of(originalType, unrollType),
                     copySignatures
-                        ? owner.signatureVariables().map(s -> s.type().apply(TO_ASM))
+                        ? owner
+                            .signatureVariables()
+                            .filter(signer -> signer.name().equals(signer.unaliasedName()))
+                            .map(s -> s.type().apply(TO_ASM))
                         : Stream.empty())
                 .toArray(Type[]::new));
     final var ctor = new GeneratorAdapter(Opcodes.ACC_PUBLIC, ctorType, null, null, classVisitor);
@@ -77,6 +80,7 @@ public class FlattenBuilder {
     if (copySignatures) {
       owner
           .signatureVariables()
+          .filter(signer -> signer.name().equals(signer.unaliasedName()))
           .forEach(
               new Consumer<>() {
                 private int index = 2;
