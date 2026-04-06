@@ -453,12 +453,17 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
             for (final WorkflowDeclaration workflow : workflows) {
               if (target.getValue().getLanguage().contains(workflow.getLanguage())) {
                 // Create submit actions
-                InputParameterConverter.createSubmitParam(
-                        workflow.getParameters(), target.getValue())
+                InputParameterConverter.createParam(
+                        workflow.getParameters(),
+                        target.getValue(),
+                        (action, object) -> ((SubmitAction) action).request.setArguments(object))
                     .ifPresent(
                         inputParameters ->
-                            MetadataParameterConverter.createSubmitParam(
-                                    workflow.getMetadata(), target.getValue())
+                            MetadataParameterConverter.createParam(
+                                    workflow.getMetadata(),
+                                    target.getValue(),
+                                    (action, object) ->
+                                        ((SubmitAction) action).request.setMetadata(object))
                                 .ifPresent(
                                     metadataParameters ->
                                         definer.defineAction(
@@ -475,7 +480,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                 value.getUrl(),
                                                 target.getKey()),
                                             SubmitAction.class,
-                                            new Supplier<>() {
+                                            new Supplier<SubmitAction>() {
                                               private final Supplier<VidarrPlugin> supplier =
                                                   definer;
                                               private final String targetName = target.getKey();
@@ -532,7 +537,8 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                                                     value);
                                                                           }
                                                                         }))
-                                                .flatMap(Function.identity()),
+                                                .flatMap(Function.identity())
+                                                .map(a -> (CustomActionParameter<SubmitAction>) a),
                                             new SupplementaryInformation() {
                                               @Override
                                               public Stream<Pair<DisplayElement, DisplayElement>>
@@ -549,12 +555,21 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                             })));
 
                 // Create import actions
-                InputParameterConverter.createImportParam(
-                        workflow.getParameters(), target.getValue())
+                InputParameterConverter.createParam(
+                        workflow.getParameters(),
+                        target.getValue(),
+                        (action, object) ->
+                            ((ImportAction) action).request.getWorkflowRun().setArguments(object))
                     .ifPresent(
                         inputParameters ->
-                            MetadataParameterConverter.createImportParam(
-                                    workflow.getMetadata(), target.getValue())
+                            MetadataParameterConverter.createParam(
+                                    workflow.getMetadata(),
+                                    target.getValue(),
+                                    (action, object) ->
+                                        ((ImportAction) action)
+                                            .request
+                                            .getWorkflowRun()
+                                            .setMetadata(object))
                                 .ifPresent(
                                     metadataParameters ->
                                         definer.defineAction(
@@ -581,7 +596,10 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                 return new ImportAction(supplier, workflow);
                                               }
                                             },
-                                            Stream.of(inputParameters, metadataParameters))));
+                                            Stream.of(inputParameters, metadataParameters)
+                                                .map(
+                                                    a ->
+                                                        (CustomActionParameter<ImportAction>) a))));
               }
             }
           }

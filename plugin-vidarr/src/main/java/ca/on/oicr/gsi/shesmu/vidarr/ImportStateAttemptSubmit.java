@@ -66,8 +66,8 @@ public class ImportStateAttemptSubmit extends ImportState {
         }
       case 507:
         { // Reprovisioning already underway
-          SubmitWorkflowResponseConflict conflict
-                  = VidarrPlugin.MAPPER.readValue(response.body(), SubmitWorkflowResponseConflict.class);
+          SubmitWorkflowResponseConflict conflict =
+              VidarrPlugin.MAPPER.readValue(response.body(), SubmitWorkflowResponseConflict.class);
           return ImportStateMonitor.create(vidarrUrl, conflict.getIds().get(0));
         }
       default:

@@ -29,8 +29,8 @@ final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
     }
   }
 
-  static Optional<CustomActionParameter<SubmitAction>> createSubmitParam(
-      Map<String, OutputType> parameters, TargetDeclaration target) {
+  static Optional<CustomActionParameter<? extends VidarrAction>> createParam(
+      Map<String, OutputType> parameters, TargetDeclaration target, EmptyObjectSetter setter) {
     final List<ParameterGroup> handlers =
         parameters.entrySet().stream()
             .map(
@@ -62,66 +62,10 @@ final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
     return Optional.of(
         new CustomActionParameter<>("metadata", true, type) {
           @Override
-          public void store(SubmitAction action, Object value) {
+          public void store(VidarrAction action, Object value) {
             final AlgebraicValue tuple = (AlgebraicValue) value;
             final ObjectNode object = VidarrPlugin.MAPPER.createObjectNode();
-            action.request.setMetadata(object);
-            switch (tuple.name()) {
-              case "INDIVIDUAL":
-                for (int index = 0; index < handlers.size(); index++) {
-                  handlers.get(index).store(object, tuple.get(index));
-                }
-                break;
-              case "GLOBAL":
-                for (final ParameterGroup handler : handlers) {
-                  handler.store(object, tuple.get(0));
-                }
-                break;
-            }
-          }
-        });
-  }
-
-  // Don't know that all of this is necessary. also refactor me into sharing code with my brother
-  // Tried to make one generic method that just returned CustomActionParameter<VidarrAction> but it
-  // blew up
-  static Optional<CustomActionParameter<ImportAction>> createImportParam(
-      Map<String, OutputType> parameters, TargetDeclaration target) {
-    final List<ParameterGroup> handlers =
-        parameters.entrySet().stream()
-            .map(
-                entry ->
-                    new ParameterGroup(
-                        entry.getKey(),
-                        entry.getValue().apply(new MetadataParameterConverter(target))))
-            .sorted()
-            .toList();
-
-    if (handlers.stream().anyMatch(h -> h.type.isBad())) {
-      return Optional.empty();
-    }
-
-    Imyhat type =
-        Imyhat.algebraicObject("INDIVIDUAL", handlers.stream().map(ParameterGroup::objectField));
-
-    boolean canHaveGlobal = true;
-    for (int index = 1; index < handlers.size(); index++) {
-      if (!handlers.get(index - 1).type.isSame(handlers.get(index).type)) {
-        canHaveGlobal = false;
-        break;
-      }
-    }
-    if (canHaveGlobal && !handlers.isEmpty()) {
-      type = type.unify(Imyhat.algebraicTuple("GLOBAL", handlers.get(0).type));
-    }
-
-    return Optional.of(
-        new CustomActionParameter<>("metadata", true, type) {
-          @Override
-          public void store(ImportAction action, Object value) {
-            final AlgebraicValue tuple = (AlgebraicValue) value;
-            final ObjectNode object = VidarrPlugin.MAPPER.createObjectNode();
-            action.request.getWorkflowRun().setMetadata(object);
+            setter.set(action, object);
             switch (tuple.name()) {
               case "INDIVIDUAL":
                 for (int index = 0; index < handlers.size(); index++) {
