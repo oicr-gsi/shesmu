@@ -133,11 +133,6 @@ public class ImportAction extends VidarrAction {
     request.getWorkflowRun().setInputFiles(files.stream().toList());
   }
 
-  @ActionParameter
-  public void labels(Map<String, String> labels) {
-    request.getWorkflowRun().setLabels(VidarrPlugin.MAPPER.convertValue(labels, ObjectNode.class));
-  }
-
   @Override
   public boolean equals(Object other) {
     if (this == other) return true;
