@@ -596,7 +596,45 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                 return new ImportAction(supplier, workflow);
                                               }
                                             },
-                                            Stream.of(inputParameters, metadataParameters)
+                                            Stream.concat(
+                                                    Stream.of(inputParameters, metadataParameters),
+                                                    workflow.getLabels() == null
+                                                        ? Stream
+                                                            .<CustomActionParameter<ImportAction>>
+                                                                empty()
+                                                        : workflow.getLabels().entrySet().stream()
+                                                            .<CustomActionParameter<ImportAction>>
+                                                                map(
+                                                                    entry ->
+                                                                        new CustomActionParameter<>(
+                                                                            sanitise(
+                                                                                "label_"
+                                                                                    + entry
+                                                                                        .getKey()),
+                                                                            true,
+                                                                            entry
+                                                                                .getValue()
+                                                                                .apply(
+                                                                                    SIMPLE_TO_IMYHAT)) {
+                                                                          private final String
+                                                                              label =
+                                                                                  entry.getKey();
+
+                                                                          @Override
+                                                                          public void store(
+                                                                              ImportAction action,
+                                                                              Object value) {
+                                                                            type()
+                                                                                .accept(
+                                                                                    new PackJsonObject(
+                                                                                        action
+                                                                                            .request
+                                                                                            .getWorkflowRun()
+                                                                                            .getLabels(),
+                                                                                        label),
+                                                                                    value);
+                                                                          }
+                                                                        }))
                                                 .map(
                                                     a ->
                                                         (CustomActionParameter<ImportAction>) a))));
