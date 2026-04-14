@@ -57,16 +57,22 @@ public enum AvailableCommands {
           return result.isPresent() ? Response.RESET : Response.IGNORED;
         }
       };
-  static final ActionCommand<SubmitAction> RESET =
+  static final ActionCommand<VidarrAction> RESET =
       new ActionCommand<>(
-          SubmitAction.class,
+          VidarrAction.class,
           "VIDARR-RESET",
           FrontEndIcon.PLUG,
           "Search Vidarr Again",
           Preference.ALLOW_BULK) {
         @Override
-        protected Response execute(SubmitAction action, Optional<String> user) {
-          action.state = new RunStateAttemptSubmit();
+        protected Response execute(VidarrAction action, Optional<String> user) {
+          // JDK 21: use pattern-matching switch
+          if (action instanceof SubmitAction) {
+            ((SubmitAction) action).state = new RunStateAttemptSubmit();
+          } else if (action instanceof ImportAction) {
+            ((ImportAction) action).state = new ImportStateAttemptSubmit();
+          }
+
           return Response.RESET;
         }
       };
