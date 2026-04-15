@@ -63,7 +63,7 @@ public class ImportStateAttemptSubmit extends ImportState {
           retryMinutes = Math.min(retryMinutes * 2, 60);
           ImportStateDead nextState = new ImportStateDead();
           return new PerformResult(errors, ActionState.FAILED, nextState);
-        }
+        } // TODO case 502, 504 gateway timeout
       case 507:
         { // Reprovisioning already underway
           SubmitWorkflowResponseConflict conflict =
