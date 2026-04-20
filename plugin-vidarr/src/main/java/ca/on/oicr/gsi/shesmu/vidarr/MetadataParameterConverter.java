@@ -5,13 +5,15 @@ import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
+import ca.on.oicr.gsi.vidarr.BasicType;
 import ca.on.oicr.gsi.vidarr.OutputProvisionFormat;
 import ca.on.oicr.gsi.vidarr.OutputType;
 import ca.on.oicr.gsi.vidarr.OutputType.IdentifierKey;
 import ca.on.oicr.gsi.vidarr.api.TargetDeclaration;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
@@ -27,9 +29,9 @@ final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
     }
   }
 
-  static Optional<CustomActionParameter<SubmitAction>> create(
-      Map<String, OutputType> parameters, TargetDeclaration target) {
-    final var handlers =
+  static Optional<CustomActionParameter<? extends VidarrAction>> createParam(
+      Map<String, OutputType> parameters, TargetDeclaration target, EmptyObjectSetter setter) {
+    final List<ParameterGroup> handlers =
         parameters.entrySet().stream()
             .map(
                 entry ->
@@ -37,17 +39,17 @@ final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
                         entry.getKey(),
                         entry.getValue().apply(new MetadataParameterConverter(target))))
             .sorted()
-            .collect(Collectors.toList());
+            .toList();
 
     if (handlers.stream().anyMatch(h -> h.type.isBad())) {
       return Optional.empty();
     }
 
-    var type =
+    Imyhat type =
         Imyhat.algebraicObject("INDIVIDUAL", handlers.stream().map(ParameterGroup::objectField));
 
-    var canHaveGlobal = true;
-    for (var index = 1; index < handlers.size(); index++) {
+    boolean canHaveGlobal = true;
+    for (int index = 1; index < handlers.size(); index++) {
       if (!handlers.get(index - 1).type.isSame(handlers.get(index).type)) {
         canHaveGlobal = false;
         break;
@@ -60,18 +62,18 @@ final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
     return Optional.of(
         new CustomActionParameter<>("metadata", true, type) {
           @Override
-          public void store(SubmitAction action, Object value) {
-            final var tuple = (AlgebraicValue) value;
-            final var object = VidarrPlugin.MAPPER.createObjectNode();
-            action.request.setMetadata(object);
+          public void store(VidarrAction action, Object value) {
+            final AlgebraicValue tuple = (AlgebraicValue) value;
+            final ObjectNode object = VidarrPlugin.MAPPER.createObjectNode();
+            setter.set(action, object);
             switch (tuple.name()) {
               case "INDIVIDUAL":
-                for (var index = 0; index < handlers.size(); index++) {
+                for (int index = 0; index < handlers.size(); index++) {
                   handlers.get(index).store(object, tuple.get(index));
                 }
                 break;
               case "GLOBAL":
-                for (final var handler : handlers) {
+                for (final ParameterGroup handler : handlers) {
                   handler.store(object, tuple.get(0));
                 }
                 break;
@@ -107,11 +109,11 @@ final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
   }
 
   private Imyhat handle(OutputProvisionFormat format) {
-    final var provisioner = target.getOutputProvisioners().get(format);
+    final BasicType provisioner = target.getOutputProvisioners().get(format);
     if (provisioner == null) {
       return Imyhat.BAD;
     } else {
-      final var customType = provisioner.apply(VidarrPlugin.SIMPLE_TO_IMYHAT);
+      final Imyhat customType = provisioner.apply(VidarrPlugin.SIMPLE_TO_IMYHAT);
       return Imyhat.algebraicTuple("ALL", customType)
           .unify(Imyhat.algebraicTuple("REMAINING", customType))
           .unify(Imyhat.algebraicTuple("MANUAL", customType, SubmitAction.EXTERNAL_IDS));

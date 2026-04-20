@@ -1,15 +1,11 @@
 package ca.on.oicr.gsi.shesmu.vidarr;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
-import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.vidarr.api.ExternalKey;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -19,31 +15,22 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public final class SubmitAction extends Action {
-  static final Imyhat EXTERNAL_IDS =
-      new ObjectImyhat(
-              Stream.of(new Pair<>("id", Imyhat.STRING), new Pair<>("provider", Imyhat.STRING)))
-          .asList();
+public final class SubmitAction extends VidarrAction {
+
   private static final String SORT_KEY_ATTEMPT = "vidarr-attempt";
 
   private static boolean checkJson(JsonNode json, Pattern query) {
     switch (json.getNodeType()) {
       case ARRAY:
         {
-          for (final var element : json) {
+          for (final JsonNode element : json) {
             if (checkJson(element, query)) {
               return true;
             }
@@ -56,9 +43,9 @@ public final class SubmitAction extends Action {
         return query.matcher(json.numberValue().toString()).matches();
       case OBJECT:
         {
-          final var iterator = json.fields();
+          final Iterator<Map.Entry<String, JsonNode>> iterator = json.fields();
           while (iterator.hasNext()) {
-            final var field = iterator.next();
+            final Map.Entry<String, JsonNode> field = iterator.next();
             if (query.matcher(field.getKey()).matches() || checkJson(field.getValue(), query)) {
               return true;
             }
@@ -72,23 +59,16 @@ public final class SubmitAction extends Action {
     }
   }
 
-  private List<String> errors = List.of();
-  final Supplier<VidarrPlugin> owner;
-  private int priority;
   final SubmitWorkflowRequest request = new SubmitWorkflowRequest();
-  private final Set<String> services = new TreeSet<>(List.of("vidarr"));
-  private boolean stale;
   RunState state = new RunStateAttemptSubmit();
   private SubmissionPolicy submissionPolicy;
-  private final List<String> tags;
 
   public SubmitAction(
       Supplier<VidarrPlugin> owner,
       String targetName,
       String workflowName,
       String workflowVersion) {
-    super("vidarr-run");
-    this.owner = owner;
+    super("vidarr-run", owner);
     submissionPolicy = owner.get().defaultSubmissionPolicy();
     request.setConsumableResources(new TreeMap<>());
     request.setTarget(targetName);
@@ -116,7 +96,7 @@ public final class SubmitAction extends Action {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    var that = (SubmitAction) o;
+    SubmitAction that = (SubmitAction) o;
     return stale == that.stale && request.equalsIgnoreAttempt(that.request);
   }
 
@@ -127,7 +107,7 @@ public final class SubmitAction extends Action {
         values.stream()
             .map(
                 value -> {
-                  final var externalKey = new ExternalKey();
+                  final ExternalKey externalKey = new ExternalKey();
                   externalKey.setId((String) value.get(0));
                   externalKey.setProvider((String) value.get(1));
                   stale |= (Boolean) value.get(2);
@@ -163,12 +143,12 @@ public final class SubmitAction extends Action {
     if (stale) {
       return ActionState.ZOMBIE;
     }
-    final var throttled = services.isOverloaded(this.services);
+    final Set<String> throttled = services.isOverloaded(this.services);
     if (!throttled.isEmpty()) {
       errors = List.of("Services are unavailable: ", String.join(", ", throttled));
       return ActionState.THROTTLED;
     }
-    final var result =
+    final RunState.PerformResult result =
         owner
             .get()
             .url()
@@ -192,16 +172,6 @@ public final class SubmitAction extends Action {
     errors = result.errors();
     state = result.nextState();
     return result.actionState();
-  }
-
-  @Override
-  public int priority() {
-    return priority;
-  }
-
-  @ActionParameter(required = false)
-  public void priority(long priority) {
-    this.priority = (int) priority;
   }
 
   @Override
@@ -265,16 +235,13 @@ public final class SubmitAction extends Action {
 
   @Override
   public Stream<String> tags() {
-    return Stream.concat(tags.stream(), state.tags());
+    return Stream.concat(super.tags(), state.tags());
   }
 
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
-    final var node = mapper.createObjectNode();
+    ObjectNode node = super.toJson(mapper);
     node.putPOJO("request", request);
-    node.put("priority", priority);
-    services.forEach(node.putArray("services")::add);
-    errors.forEach(node.putArray("errors")::add);
     state.writeJson(mapper, node);
     return node;
   }
