@@ -20,6 +20,7 @@ public abstract class NabuBaseArchiveValue {
   protected final Optional<Long> offsite_archive_size;
   protected final Optional<Long> onsite_archive_size;
   protected final Instant modified;
+  protected final boolean stop_processing;
   protected final Set<String> workflow_run_ids_for_offsite_archive;
   protected final Set<String> workflow_run_ids_for_vidarr_archival;
 
@@ -36,6 +37,7 @@ public abstract class NabuBaseArchiveValue {
       Optional<Long> offsite_archive_size,
       Optional<Long> onsite_archive_size,
       Instant modified,
+      boolean stop_processing,
       Set<String> workflow_run_ids_for_offsite_archive,
       Set<String> workflow_run_ids_for_vidarr_archival) {
     this.archive_target = archive_target;
@@ -50,6 +52,7 @@ public abstract class NabuBaseArchiveValue {
     this.offsite_archive_size = offsite_archive_size;
     this.onsite_archive_size = onsite_archive_size;
     this.modified = modified;
+    this.stop_processing = stop_processing;
     this.workflow_run_ids_for_offsite_archive = workflow_run_ids_for_offsite_archive;
     this.workflow_run_ids_for_vidarr_archival = workflow_run_ids_for_vidarr_archival;
   }
@@ -98,6 +101,7 @@ public abstract class NabuBaseArchiveValue {
         && files_loaded_into_vidarr_archival.equals(that.files_loaded_into_vidarr_archival())
         && lims_ids.equals(that.lims_ids())
         && modified.equals(that.modified())
+        && stop_processing == that.stop_processing
         && workflow_run_ids_for_offsite_archive.equals(that.workflow_run_ids_for_offsite_archive())
         && workflow_run_ids_for_vidarr_archival.equals(that.workflow_run_ids_for_vidarr_archival());
   }
@@ -124,6 +128,7 @@ public abstract class NabuBaseArchiveValue {
         files_loaded_into_vidarr_archival,
         lims_ids,
         modified,
+        stop_processing,
         workflow_run_ids_for_offsite_archive,
         workflow_run_ids_for_vidarr_archival);
   }
@@ -151,6 +156,11 @@ public abstract class NabuBaseArchiveValue {
   @ShesmuVariable
   public Instant modified() {
     return modified;
+  }
+
+  @ShesmuVariable
+  public boolean stop_processing() {
+    return stop_processing;
   }
 
   @ShesmuVariable

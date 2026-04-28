@@ -27,6 +27,7 @@ public abstract class NabuBaseArchiveDto {
   private String filesLoadedIntoVidarrArchival;
   private Set<String> limsIds;
   private String modified;
+  private boolean stopProcessing;
   private Set<String> workflowRunIdsForOffsiteArchive;
   private Set<String> workflowRunIdsForVidarrArchival;
 
@@ -68,6 +69,10 @@ public abstract class NabuBaseArchiveDto {
 
   public String getModified() {
     return modified;
+  }
+
+  public boolean isStopProcessing() {
+    return stopProcessing;
   }
 
   public Set<String> getWorkflowRunIdsForOffsiteArchive() {
@@ -117,6 +122,10 @@ public abstract class NabuBaseArchiveDto {
 
   public void setModified(String modified) {
     this.modified = modified;
+  }
+
+  public void setStopProcessing(boolean stopProcessing) {
+    this.stopProcessing = stopProcessing;
   }
 
   public void setWorkflowRunIdsForOffsiteArchive(Set<String> workflowRunIdsForOffsiteArchive) {

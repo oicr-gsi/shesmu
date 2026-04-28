@@ -23,6 +23,7 @@ public class NabuProjectArchiveValue extends NabuBaseArchiveValue {
       Set<String> lims_ids,
       ArchiveProjectMetadataDto metadata,
       Instant modified,
+      boolean stop_processing,
       Set<String> workflow_run_ids_for_offsite_archive,
       Set<String> workflow_run_ids_for_vidarr_archival) {
     super(
@@ -38,6 +39,7 @@ public class NabuProjectArchiveValue extends NabuBaseArchiveValue {
         Optional.ofNullable(metadata.getOffsiteArchiveSize()),
         Optional.ofNullable(metadata.getOnsiteArchiveSize()),
         modified,
+        stop_processing,
         workflow_run_ids_for_offsite_archive,
         workflow_run_ids_for_vidarr_archival);
     this.project_identifier = project_identifier;
