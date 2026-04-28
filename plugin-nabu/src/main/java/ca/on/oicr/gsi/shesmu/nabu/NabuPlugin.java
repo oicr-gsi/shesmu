@@ -58,6 +58,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
                       ca.getLimsIds(),
                       ca.getMetadata(),
                       Instant.parse(ca.getModified()),
+                      ca.isStopProcessing(),
                       ca.getWorkflowRunIdsForOffsiteArchive(),
                       ca.getWorkflowRunIdsForVidarrArchival()));
     }
@@ -108,6 +109,7 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
                       ca.getLimsIds(),
                       ca.getMetadata(),
                       Instant.parse(ca.getModified()),
+                      ca.isStopProcessing(),
                       ca.getRequisitionId(),
                       ca.getWorkflowRunIdsForOffsiteArchive(),
                       ca.getWorkflowRunIdsForVidarrArchival()));
