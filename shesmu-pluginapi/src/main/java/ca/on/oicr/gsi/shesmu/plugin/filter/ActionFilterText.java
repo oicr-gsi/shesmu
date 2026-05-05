@@ -39,6 +39,7 @@ public class ActionFilterText extends ActionFilter {
   public void setMatchCase(boolean matchCase) {
     this.matchCase = matchCase;
   }
+
   /**
    * Sets the text to match
    *

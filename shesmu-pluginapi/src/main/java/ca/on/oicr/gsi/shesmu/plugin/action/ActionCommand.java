@@ -44,6 +44,7 @@ public abstract class ActionCommand<A extends Action> {
             return visitor.accepted();
           }
         };
+
     /** This action was not able to execute this command. */
     public static final Response IGNORED =
         new Response() {
@@ -54,6 +55,7 @@ public abstract class ActionCommand<A extends Action> {
             return visitor.ignored();
           }
         };
+
     /** The action executed this command and now needs to be purged. */
     public static final Response PURGE =
         new Response() {
@@ -64,6 +66,7 @@ public abstract class ActionCommand<A extends Action> {
             return visitor.purge();
           }
         };
+
     /**
      * The action executed this command and needs to put back in the {@link ActionState#UNKNOWN}
      * state

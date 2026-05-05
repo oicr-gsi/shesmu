@@ -65,6 +65,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
         Stream.of(clazz.getEnumConstants())
             .map(e -> AlgebraicGuarantee.empty(e.name().toUpperCase(), e)));
   }
+
   /**
    * Provides an argument mapping from a Shesmu dictionary/map into a Java map
    *
@@ -382,6 +383,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
           return (Double) object;
         }
       };
+
   /**
    * Convert a Shesmu JSON value into a Jackson structure
    *

@@ -75,6 +75,7 @@ public interface DefinitionRepository extends LoadedConfiguration {
   Stream<CallableOliveDefinition> oliveDefinitions();
 
   Stream<RefillerDefinition> refillers();
+
   /**
    * Query the repository
    *

@@ -109,6 +109,7 @@ public abstract class PluginFile implements RequiredServices {
    *     configuration talks to an external service which is failed.
    */
   public abstract Optional<Integer> update();
+
   /**
    * Write out a logging message to this service
    *

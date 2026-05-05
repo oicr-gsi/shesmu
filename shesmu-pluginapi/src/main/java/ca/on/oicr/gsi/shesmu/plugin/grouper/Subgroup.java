@@ -41,10 +41,12 @@ public final class Subgroup<I, O> {
   public void add(I item) {
     items.add(item);
   }
+
   /** Add a collection of input rows */
   public void addAll(Collection<I> items) {
     this.items.addAll(items);
   }
+
   /** Add a stream of input rows */
   public void addAll(Stream<I> items) {
     items.forEach(this.items::add);

@@ -242,10 +242,11 @@ public final class IssueAction extends Action {
     verb =
         switch (value.name()) {
           case "CLOSED" -> new Close(asciiOnly((String) value.get(0)));
-          case "OPEN" -> new Open(
-              ((Optional<?>) value.get(0)).map(String.class::cast).map(IssueAction::asciiOnly),
-              asciiOnly((String) value.get(2)),
-              asciiOnly((String) value.get(1)));
+          case "OPEN" ->
+              new Open(
+                  ((Optional<?>) value.get(0)).map(String.class::cast).map(IssueAction::asciiOnly),
+                  asciiOnly((String) value.get(2)),
+                  asciiOnly((String) value.get(1)));
           default -> throw new IllegalArgumentException();
         };
   }

@@ -153,6 +153,7 @@ public final class WdlInputType {
   private static final Pattern OPTIONAL = Pattern.compile("\\??");
   private static final Pattern OPTIONAL_PLUS = Pattern.compile("\\+?");
   private static final Pattern PERIOD = Pattern.compile("\\.");
+
   /** Convert a Shesmu type into its equivalent WDL type */
   public static final ImyhatTransformer<String> TO_WDL_TYPE =
       new ImyhatTransformer<>() {

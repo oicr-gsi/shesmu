@@ -111,6 +111,7 @@ public abstract class ValueCache<S> implements Owner {
     innerCount.labels(name).set(value.collectionSize());
     return item;
   }
+
   /**
    * Get an item from cache, but do not update it
    *

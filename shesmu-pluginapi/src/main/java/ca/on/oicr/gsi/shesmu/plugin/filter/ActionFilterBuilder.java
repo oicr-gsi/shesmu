@@ -203,6 +203,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
           return result;
         }
       };
+
   /**
    * Converts an action filter to a query string
    *
@@ -434,6 +435,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
           return formatSet("type", types);
         }
       };
+
   /**
    * Check that an action was last added in the time range provided
    *
@@ -598,6 +600,7 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
    * @return the constructed filter
    */
   F tag(Pattern pattern);
+
   /**
    * Check that an action has one of the listed tags attached
    *
