@@ -128,6 +128,7 @@ public abstract class GenericTypeGuarantee<T> {
       }
     };
   }
+
   /**
    * Create a list containing a generic type
    *

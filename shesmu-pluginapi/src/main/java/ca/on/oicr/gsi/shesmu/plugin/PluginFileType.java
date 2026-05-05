@@ -162,6 +162,7 @@ public abstract class PluginFileType<T extends PluginFile> {
 
   /** Create some JavaScript code to render this item in dashboards */
   public void writeJavaScriptRenderer(PrintStream writer) {}
+
   /**
    * Write out a logging message to this service
    *

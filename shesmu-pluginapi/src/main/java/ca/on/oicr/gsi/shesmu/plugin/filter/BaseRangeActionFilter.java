@@ -61,6 +61,7 @@ public abstract class BaseRangeActionFilter extends ActionFilter {
   public final void setEnd(Long end) {
     this.end = end;
   }
+
   /**
    * Set the start time point of the range
    *

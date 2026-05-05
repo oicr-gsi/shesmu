@@ -34,6 +34,7 @@ public class Utils {
     buffer.putLong(x);
     return buffer.array();
   }
+
   /**
    * Combine two optionals, taking the other if one is empty, or combining the values if both exist
    */

@@ -105,6 +105,7 @@ public interface ImyhatFunction<R> {
    * @return the converted value
    */
   R apply(JsonNode value);
+
   /**
    * Collect a map type
    *

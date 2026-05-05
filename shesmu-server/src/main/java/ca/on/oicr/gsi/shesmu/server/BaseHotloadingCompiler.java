@@ -72,8 +72,11 @@ public abstract class BaseHotloadingCompiler {
    * @param className the internal name of the target class
    */
   protected final <T> T load(Class<T> clazz, String className)
-      throws InstantiationException, IllegalAccessException, ClassNotFoundException,
-          NoSuchMethodException, InvocationTargetException {
+      throws InstantiationException,
+          IllegalAccessException,
+          ClassNotFoundException,
+          NoSuchMethodException,
+          InvocationTargetException {
     return loadClass(clazz, className).getConstructor().newInstance();
   }
 

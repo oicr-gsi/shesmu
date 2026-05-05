@@ -17,6 +17,7 @@ public interface Owner {
             }
           }
           : () -> 0.0;
+
   /** The name of the cache for use in monitoring */
   String name();
 

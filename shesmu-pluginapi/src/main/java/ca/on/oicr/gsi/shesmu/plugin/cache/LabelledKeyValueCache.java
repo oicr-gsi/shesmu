@@ -135,6 +135,7 @@ public abstract class LabelledKeyValueCache<K, L, V>
     count.labels(name).set(records.size());
     return record.refresh(String.format("%s [key=%s]", name, key));
   }
+
   /**
    * Get an item from cache without updating it
    *

@@ -613,6 +613,7 @@ public abstract class AlgebraicGuarantee<T> extends GenericAlgebraicGuarantee<T>
       }
     };
   }
+
   /**
    * Add a restriction for an algebraic datatype with a single parameter
    *

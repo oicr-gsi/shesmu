@@ -35,6 +35,7 @@ public final class GrouperOutputs<I, O, C> {
       GrouperOutput<I, T> type) {
     return new GrouperOutputs<>(type);
   }
+
   /**
    * A grouper that exports two variables to the olive.
    *
@@ -49,6 +50,7 @@ public final class GrouperOutputs<I, O, C> {
       GrouperOutput<I, T> first, GrouperOutput<I, S> second) {
     return new GrouperOutputs<>(first, second);
   }
+
   /**
    * A grouper that exports two variables to the olive.
    *

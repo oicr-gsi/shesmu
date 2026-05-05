@@ -401,12 +401,14 @@ public final class PluginManager
       private final Map<String, ActionDefinition> actions = new ConcurrentHashMap<>();
 
       private final List<ActionDefinition> actionsFromAnnotations;
+
       // Hold onto a reference to the callsite so that it isn't garbage collected
       @SuppressWarnings({"unused", "FieldCanBeLocal"})
       private final MutableCallSite callsite;
 
       private final Map<String, ConstantDefinition> constants = new ConcurrentHashMap<>();
       private final List<ConstantDefinition> constantsFromAnnotations;
+
       /** Allows a plugin to define an input source directly */
       private final Map<String, Deque<InputDataSource>> customSources = new ConcurrentHashMap<>();
 
