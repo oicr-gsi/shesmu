@@ -1937,6 +1937,7 @@ public abstract class Imyhat {
    * @param transformer the converter for each type
    */
   public abstract <R> R apply(ImyhatTransformer<R> transformer);
+
   /** Create a list type containing the current type. */
   public final Imyhat asList() {
     return new ListImyhat(this);

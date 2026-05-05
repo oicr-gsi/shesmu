@@ -708,6 +708,7 @@ public abstract class ActionFilter {
   private static final Pattern DATE_PATTERN =
       Pattern.compile("(\\d{4})-(\\d{2}|[A-Za-z]+)-(\\d{2})");
   private static final ObjectMapper MAPPER = new ObjectMapper();
+
   /** A rule to parse an action state */
   public static final RuleWithLiteral<ActionState, ActionState> PARSE_ACTION_STATE =
       new RuleWithLiteral<>() {
@@ -734,6 +735,7 @@ public abstract class ActionFilter {
   private static final Parser.ParseDispatch<Pair<Boolean, List<SourceOliveLocation>>> SOURCE_MATCH =
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<String> STRING = new Parser.ParseDispatch<>();
+
   /** A rule to parse a string */
   public static final RuleWithLiteral<String, String> PARSE_STRING =
       new RuleWithLiteral<>() {
@@ -747,12 +749,14 @@ public abstract class ActionFilter {
           return parser.whitespace().dispatch(STRING, output).whitespace();
         }
       };
+
   /** A regular expression to match the contents of a string */
   public static final Pattern STRING_CONTENTS = Pattern.compile("^[^\"\n\\\\]*");
 
   private static final Parser.ParseDispatch<TagParser> TAG_MATCHER = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<TemporalType> TEMPORAL = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<Integer> TEMPORAL_UNITS = new Parser.ParseDispatch<>();
+
   /** A rule to parse a temporal offset */
   public static final RuleWithLiteral<Long, Long> PARSE_OFFSET =
       new RuleWithLiteral<>() {
@@ -784,6 +788,7 @@ public abstract class ActionFilter {
   private static final Pattern TIME_PATTERN =
       Pattern.compile("(?:(?:T| *)(\\d{2}):(\\d{2})(?::(\\d{2})))?");
   private static final Parser.ParseDispatch<InstantNode> TIME_ZONE = new Parser.ParseDispatch<>();
+
   /** A rule to parse an exact time */
   public static final RuleWithLiteral<Instant, Instant> PARSE_TIME =
       new RuleWithLiteral<>() {

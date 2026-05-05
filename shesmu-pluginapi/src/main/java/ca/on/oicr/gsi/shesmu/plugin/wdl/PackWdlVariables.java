@@ -25,6 +25,7 @@ public class PackWdlVariables implements ImyhatConsumer {
         input,
         0);
   }
+
   /**
    * Take a part a ragged x.y.z = type structure from a WDL file and turn it into nested Shesmu
    * objects with the knowledge to reconstruct the WDL structure.

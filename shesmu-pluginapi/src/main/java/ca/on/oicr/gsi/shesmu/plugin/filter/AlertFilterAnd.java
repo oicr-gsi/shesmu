@@ -19,6 +19,7 @@ public final class AlertFilterAnd extends AlertFilter {
   public List<AlertFilter> getFilters() {
     return filters;
   }
+
   /**
    * Sets the list of filters to match
    *

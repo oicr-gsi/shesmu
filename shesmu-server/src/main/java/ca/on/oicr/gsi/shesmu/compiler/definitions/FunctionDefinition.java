@@ -60,6 +60,7 @@ public interface FunctionDefinition {
       }
     };
   }
+
   /**
    * Define a function that binds to a static method
    *
@@ -276,6 +277,7 @@ public interface FunctionDefinition {
 
   /** Create ECMAScript for this function */
   String renderEcma(Object[] args);
+
   /**
    * Create bytecode for anything that should be on the stack before the arguments of this function.
    */

@@ -103,6 +103,7 @@ public interface Definer<T> extends Supplier<T> {
       Stream<CustomActionParameter<A>> parameters) {
     return defineAction(name, description, clazz, supplier, parameters, Stream::empty);
   }
+
   /**
    * Define a new action
    *
@@ -271,6 +272,7 @@ public interface Definer<T> extends Supplier<T> {
    *     format as the <code>/input</code> URLs
    */
   void defineSource(String formatName, int ttl, JsonInputSource source);
+
   /**
    * Define a new signature format that is the same for all input objects; it depends only on the
    * olive

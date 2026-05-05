@@ -29,6 +29,7 @@ public interface ExportSearch<T> {
       String urlStart,
       String urlEnd,
       String description);
+
   /**
    * Export the search as a URL containing a base64-encoded representation of the search
    *

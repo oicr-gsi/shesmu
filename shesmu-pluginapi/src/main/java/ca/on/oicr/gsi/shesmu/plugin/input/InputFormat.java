@@ -27,6 +27,7 @@ public class InputFormat {
   public InputFormat(String name, Class<?> clazz) {
     this(name, clazz, PUBLIC_LOOKUP);
   }
+
   /**
    * Create a new input format
    *

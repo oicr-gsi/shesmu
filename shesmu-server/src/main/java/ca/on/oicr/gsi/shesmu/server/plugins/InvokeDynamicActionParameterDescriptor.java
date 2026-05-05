@@ -172,6 +172,7 @@ public final class InvokeDynamicActionParameterDescriptor implements ActionParam
   }
 
   private final String actionName;
+
   // Keep this referenced so the call site doesn't get dropped from the registry
   // if there is no olive actively using it
   @SuppressWarnings("unused")

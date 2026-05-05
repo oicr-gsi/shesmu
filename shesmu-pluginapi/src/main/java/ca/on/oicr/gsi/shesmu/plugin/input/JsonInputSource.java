@@ -14,6 +14,7 @@ import java.util.Optional;
 public interface JsonInputSource {
   /** An input source that contains no values (while being valid JSON) */
   JsonInputSource EMPTY = () -> new ByteArrayInputStream("[]".getBytes(StandardCharsets.UTF_8));
+
   /**
    * Get the stream.
    *
