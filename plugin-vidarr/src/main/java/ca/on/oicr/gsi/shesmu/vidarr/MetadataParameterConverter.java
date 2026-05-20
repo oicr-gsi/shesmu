@@ -27,9 +27,9 @@ final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
     }
   }
 
-  static Optional<CustomActionParameter<SubmitAction>> create(
-      Map<String, OutputType> parameters, TargetDeclaration target) {
-    final var handlers =
+  static Optional<CustomActionParameter<? extends VidarrAction>> createParam(
+      Map<String, OutputType> parameters, TargetDeclaration target, EmptyObjectSetter setter) {
+    final List<ParameterGroup> handlers =
         parameters.entrySet().stream()
             .map(
                 entry ->
@@ -60,10 +60,10 @@ final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
     return Optional.of(
         new CustomActionParameter<>("metadata", true, type) {
           @Override
-          public void store(SubmitAction action, Object value) {
-            final var tuple = (AlgebraicValue) value;
-            final var object = VidarrPlugin.MAPPER.createObjectNode();
-            action.request.setMetadata(object);
+          public void store(VidarrAction action, Object value) {
+            final AlgebraicValue tuple = (AlgebraicValue) value;
+            final ObjectNode object = VidarrPlugin.MAPPER.createObjectNode();
+            setter.set(action, object);
             switch (tuple.name()) {
               case "INDIVIDUAL":
                 for (var index = 0; index < handlers.size(); index++) {
