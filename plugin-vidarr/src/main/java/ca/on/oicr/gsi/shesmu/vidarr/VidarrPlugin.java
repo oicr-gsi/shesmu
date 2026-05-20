@@ -450,13 +450,20 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                     });
               }
             }
-            for (final var workflow : workflows) {
+            for (final WorkflowDeclaration workflow : workflows) {
               if (target.getValue().getLanguage().contains(workflow.getLanguage())) {
-                InputParameterConverter.create(workflow.getParameters(), target.getValue())
+                // Create submit actions
+                InputParameterConverter.createParam(
+                        workflow.getParameters(),
+                        target.getValue(),
+                        (action, object) -> ((SubmitAction) action).request.setArguments(object))
                     .ifPresent(
                         inputParameters ->
-                            MetadataParameterConverter.create(
-                                    workflow.getMetadata(), target.getValue())
+                            MetadataParameterConverter.createParam(
+                                    workflow.getMetadata(),
+                                    target.getValue(),
+                                    (action, object) ->
+                                        ((SubmitAction) action).request.setMetadata(object))
                                 .ifPresent(
                                     metadataParameters ->
                                         definer.defineAction(
@@ -473,7 +480,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                 value.getUrl(),
                                                 target.getKey()),
                                             SubmitAction.class,
-                                            new Supplier<>() {
+                                            new Supplier<SubmitAction>() {
                                               private final Supplier<VidarrPlugin> supplier =
                                                   definer;
                                               private final String targetName = target.getKey();
@@ -530,7 +537,8 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                                                     value);
                                                                           }
                                                                         }))
-                                                .flatMap(Function.identity()),
+                                                .flatMap(Function.identity())
+                                                .map(a -> (CustomActionParameter<SubmitAction>) a),
                                             new SupplementaryInformation() {
                                               @Override
                                               public Stream<Pair<DisplayElement, DisplayElement>>
@@ -545,6 +553,91 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                                     workflow.getName()))));
                                               }
                                             })));
+
+                // Create import actions
+                InputParameterConverter.createParam(
+                        workflow.getParameters(),
+                        target.getValue(),
+                        (action, object) ->
+                            ((ImportAction) action).request.getWorkflowRun().setArguments(object))
+                    .ifPresent(
+                        inputParameters ->
+                            MetadataParameterConverter.createParam(
+                                    workflow.getMetadata(),
+                                    target.getValue(),
+                                    (action, object) ->
+                                        ((ImportAction) action)
+                                            .request
+                                            .getWorkflowRun()
+                                            .setMetadata(object))
+                                .ifPresent(
+                                    metadataParameters ->
+                                        definer.defineAction(
+                                            String.format(
+                                                "%s%simport::%s",
+                                                sanitise(target.getKey()),
+                                                Parser.NAMESPACE_SEPARATOR,
+                                                sanitise(
+                                                    workflow.getName()
+                                                        + "_"
+                                                        + workflow.getVersion())),
+                                            String.format(
+                                                "Import workflow run of workflow %s version %s on Vidarr instance %s",
+                                                workflow.getName(),
+                                                workflow.getVersion(),
+                                                value.getUrl()),
+                                            ImportAction.class,
+                                            new Supplier<ImportAction>() {
+                                              private final Supplier<VidarrPlugin> supplier =
+                                                  definer;
+
+                                              @Override
+                                              public ImportAction get() {
+                                                return new ImportAction(supplier, workflow);
+                                              }
+                                            },
+                                            Stream.concat(
+                                                    Stream.of(inputParameters, metadataParameters),
+                                                    workflow.getLabels() == null
+                                                        ? Stream
+                                                            .<CustomActionParameter<ImportAction>>
+                                                                empty()
+                                                        : workflow.getLabels().entrySet().stream()
+                                                            .<CustomActionParameter<ImportAction>>
+                                                                map(
+                                                                    entry ->
+                                                                        new CustomActionParameter<>(
+                                                                            sanitise(
+                                                                                "label_"
+                                                                                    + entry
+                                                                                        .getKey()),
+                                                                            true,
+                                                                            entry
+                                                                                .getValue()
+                                                                                .apply(
+                                                                                    SIMPLE_TO_IMYHAT)) {
+                                                                          private final String
+                                                                              label =
+                                                                                  entry.getKey();
+
+                                                                          @Override
+                                                                          public void store(
+                                                                              ImportAction action,
+                                                                              Object value) {
+                                                                            type()
+                                                                                .accept(
+                                                                                    new PackJsonObject(
+                                                                                        action
+                                                                                            .request
+                                                                                            .getWorkflowRun()
+                                                                                            .getLabels(),
+                                                                                        label),
+                                                                                    value);
+                                                                          }
+                                                                        }))
+                                                .map(
+                                                    a ->
+                                                        (CustomActionParameter<ImportAction>) a))));
               }
             }
           }
