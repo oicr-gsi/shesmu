@@ -10,11 +10,12 @@ import ca.on.oicr.gsi.vidarr.InputProvisionFormat;
 import ca.on.oicr.gsi.vidarr.InputType;
 import ca.on.oicr.gsi.vidarr.InputType.Visitor;
 import ca.on.oicr.gsi.vidarr.api.TargetDeclaration;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 final class InputParameterConverter implements InputType.Visitor<Imyhat> {
@@ -46,11 +47,11 @@ final class InputParameterConverter implements InputType.Visitor<Imyhat> {
             true,
             new ObjectImyhat(handlers.stream().map(ParameterGroup::objectField))) {
           @Override
-          public void store(SubmitAction action, Object value) {
-            final var tuple = (Tuple) value;
-            final var object = VidarrPlugin.MAPPER.createObjectNode();
-            action.request.setArguments(object);
-            for (var index = 0; index < handlers.size(); index++) {
+          public void store(VidarrAction action, Object value) {
+            final Tuple tuple = (Tuple) value;
+            final ObjectNode object = VidarrPlugin.MAPPER.createObjectNode();
+            setter.set(action, object);
+            for (int index = 0; index < handlers.size(); index++) {
               handlers.get(index).store(object, tuple.get(index));
             }
           }
@@ -94,7 +95,7 @@ final class InputParameterConverter implements InputType.Visitor<Imyhat> {
   }
 
   private Imyhat handle(InputProvisionFormat format) {
-    final var type = target.getInputProvisioners().get(format);
+    final BasicType type = target.getInputProvisioners().get(format);
     if (type == null) {
       return Imyhat.BAD;
     } else {

@@ -60,7 +60,7 @@ public final class SubmitAction extends VidarrAction {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    var that = (SubmitAction) o;
+    SubmitAction that = (SubmitAction) o;
     return stale == that.stale && request.equalsIgnoreAttempt(that.request);
   }
 
@@ -71,7 +71,7 @@ public final class SubmitAction extends VidarrAction {
         values.stream()
             .map(
                 value -> {
-                  final var externalKey = new ExternalKey();
+                  final ExternalKey externalKey = new ExternalKey();
                   externalKey.setId((String) value.get(0));
                   externalKey.setProvider((String) value.get(1));
                   stale |= (Boolean) value.get(2);
@@ -107,12 +107,12 @@ public final class SubmitAction extends VidarrAction {
     if (stale) {
       return ActionState.ZOMBIE;
     }
-    final var throttled = services.isOverloaded(this.services);
+    final Set<String> throttled = services.isOverloaded(this.services);
     if (!throttled.isEmpty()) {
       errors = List.of("Services are unavailable: ", String.join(", ", throttled));
       return ActionState.THROTTLED;
     }
-    final var result =
+    final RunState.PerformResult result =
         owner
             .get()
             .url()
