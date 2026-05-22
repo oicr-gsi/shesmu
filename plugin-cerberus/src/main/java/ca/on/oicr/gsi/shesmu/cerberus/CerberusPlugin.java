@@ -25,9 +25,11 @@ import io.prometheus.client.Gauge;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -200,13 +202,14 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
             .flatMap(pc -> pc.getVersions().stream())
             .map(v -> "pinery-hash-" + v)
             .collect(Collectors.toSet());
+    final Set<String> excludeWorkflowsFromProvenance = Objects.requireNonNullElse(configuration.getExcludeWorkflowsFromProvenance(), new HashSet<>());
     vidarrData =
         JoinSource.all(
             configuration.getVidarr().entrySet().stream()
                 .map(
                     e ->
                         VidarrWorkflowRunSource.of(
-                            e.getKey(), e.getValue(), versions, ignoreVersions)));
+                            e.getKey(), e.getValue(), versions, ignoreVersions, excludeWorkflowsFromProvenance)));
     return Optional.empty();
   }
 }
