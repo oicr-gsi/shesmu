@@ -7,6 +7,19 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.59.0] - 2026-05-26
+
+### Added
+
+* `stop_processing` field to `case_archive` and `project_archive` input formats
+* Configuration to exclude selected workflows from `cerberus_fp` input format
+* Vidarr plugin now supplies `import::` actions for workflow versions
+
+### Fixed
+
+* * Fixes multiple bugs where `Import std::*` would create duplicate, broken signatures for `std::signature::json` and friends
+
+
 ## [1.58.1] - 2026-04-01
 
 ### Fixed
