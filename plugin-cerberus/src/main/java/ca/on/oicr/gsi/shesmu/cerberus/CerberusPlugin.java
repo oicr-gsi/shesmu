@@ -202,14 +202,20 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
             .flatMap(pc -> pc.getVersions().stream())
             .map(v -> "pinery-hash-" + v)
             .collect(Collectors.toSet());
-    final Set<String> excludeWorkflowsFromProvenance = Objects.requireNonNullElse(configuration.getExcludeWorkflowsFromProvenance(), new HashSet<>());
+    final Set<String> excludeWorkflowsFromProvenance =
+        Objects.requireNonNullElse(
+            configuration.getExcludeWorkflowsFromProvenance(), new HashSet<>());
     vidarrData =
         JoinSource.all(
             configuration.getVidarr().entrySet().stream()
                 .map(
                     e ->
                         VidarrWorkflowRunSource.of(
-                            e.getKey(), e.getValue(), versions, ignoreVersions, excludeWorkflowsFromProvenance)));
+                            e.getKey(),
+                            e.getValue(),
+                            versions,
+                            ignoreVersions,
+                            excludeWorkflowsFromProvenance)));
     return Optional.empty();
   }
 }

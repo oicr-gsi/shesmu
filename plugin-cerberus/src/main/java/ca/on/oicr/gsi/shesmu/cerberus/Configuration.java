@@ -23,7 +23,9 @@ public class Configuration {
     return ignore;
   }
 
-  public Set<String> getExcludeWorkflowsFromProvenance() { return excludeWorkflowsFromProvenance; }
+  public Set<String> getExcludeWorkflowsFromProvenance() {
+    return excludeWorkflowsFromProvenance;
+  }
 
   public void setPinery(Map<String, PineryConfiguration> pinery) {
     this.pinery = pinery;
