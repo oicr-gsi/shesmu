@@ -695,7 +695,7 @@ dependencies = [
 
 [[package]]
 name = "json-dir-list"
-version = "1.58.1"
+version = "1.59.0"
 dependencies = [
  "chrono",
  "gethostname",
@@ -955,9 +955,9 @@ dependencies = [
 
 [[package]]
 name = "rpassword"
-version = "7.5.0"
+version = "7.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3bc4a3dd492cd6974dd3f32d6626ba9f36e5122e3df3b083474b104aebd139b"
+checksum = "835a57a69104632d64deb0df2e09a69945cd7a6eab4070fc9b1d7e50cf6c3edc"
 dependencies = [
  "libc",
  "rtoolbox",
@@ -1099,7 +1099,7 @@ dependencies = [
 
 [[package]]
 name = "shawk"
-version = "1.58.1"
+version = "1.59.0"
 dependencies = [
  "clap",
  "directories",
