@@ -12,6 +12,7 @@ public class VidarrAnalysisValue {
   private final Instant completed_date;
   private final Instant created_date;
   private final Optional<Instant> last_accessed;
+  private final Optional<Instant> started_date;
   private final Set<Tuple> output_files;
   private final Set<Tuple> workflow_run_external_keys;
   private final Set<String> input_files;
@@ -25,6 +26,7 @@ public class VidarrAnalysisValue {
       Instant completed_date,
       Instant created_date,
       Optional<Instant> last_accessed,
+      Optional<Instant> started_date,
       Set<Tuple> output_files,
       Set<Tuple> workflow_run_external_keys,
       Set<String> input_files,
@@ -37,6 +39,7 @@ public class VidarrAnalysisValue {
     this.completed_date = completed_date;
     this.created_date = created_date;
     this.last_accessed = last_accessed;
+    this.started_date = started_date;
     this.output_files = output_files;
     this.input_files = input_files;
     this.workflow = workflow;
@@ -60,6 +63,11 @@ public class VidarrAnalysisValue {
   @ShesmuVariable
   public Optional<Instant> last_accessed() {
     return last_accessed;
+  }
+
+  @ShesmuVariable
+  public Optional<Instant> started_date() {
+    return started_date;
   }
 
   @ShesmuVariable

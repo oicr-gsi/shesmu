@@ -98,6 +98,9 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                       ca.getLastAccessed() == null
                           ? Optional.empty()
                           : Optional.of(ca.getLastAccessed().toInstant()),
+                      ca.getStarted() == null
+                          ? Optional.empty()
+                          : Optional.of(ca.getStarted().toInstant()),
                       ca.getAnalysis() == null
                           ? new HashSet<>()
                           : ca.getAnalysis().stream()
