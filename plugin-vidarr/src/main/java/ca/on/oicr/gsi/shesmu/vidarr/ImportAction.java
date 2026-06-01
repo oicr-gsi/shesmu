@@ -117,7 +117,7 @@ public class ImportAction extends VidarrAction {
   }
 
   @SuppressWarnings("unchecked")
-  @ActionParameter(name = "external_keys", type = "ao4id$sprovider$sstale$bversions$msas")
+  @ActionParameter(name = "external_keys", type = "ao4id$sprovider$sstale$bversions$mss")
   public void externalKeys(Set<Tuple> values) {
     request
         .getWorkflowRun()
@@ -129,7 +129,13 @@ public class ImportAction extends VidarrAction {
                       externalKey.setId((String) value.get(0));
                       externalKey.setProvider((String) value.get(1));
                       stale |= (Boolean) value.get(2);
-                      externalKey.setVersions((Map<String, Set<String>>) value.get(3));
+
+                      Map<String, Set<String>> versions = new HashMap<>();
+                      for (Map.Entry<String, String> entry :
+                          ((Map<String, String>) value.get(3)).entrySet()) {
+                        versions.put(entry.getKey(), Set.of(entry.getValue()));
+                      }
+                      externalKey.setVersions(versions);
                       return externalKey;
                     })
                 .toList());
