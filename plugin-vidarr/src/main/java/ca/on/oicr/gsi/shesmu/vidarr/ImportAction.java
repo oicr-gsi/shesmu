@@ -37,6 +37,7 @@ public class ImportAction extends VidarrAction {
     ProvenanceWorkflowRun<ExternalMultiVersionKey> workflowRun = request.getWorkflowRun();
     workflowRun.setWorkflowName(request.getWorkflow().getName());
     workflowRun.setWorkflowVersion(request.getWorkflowVersion().getVersion());
+    workflowRun.setEngineParameters(VidarrPlugin.MAPPER.createObjectNode());
 
     priority = workflow.getName().hashCode() % 100;
 
@@ -109,11 +110,6 @@ public class ImportAction extends VidarrAction {
       list.add(record);
     }
     request.getWorkflowRun().setAnalysis(list);
-  }
-
-  @ActionParameter(name = "engine_parameters")
-  public void engineParameters(JsonNode json) {
-    request.getWorkflowRun().setEngineParameters(json);
   }
 
   @SuppressWarnings("unchecked")
