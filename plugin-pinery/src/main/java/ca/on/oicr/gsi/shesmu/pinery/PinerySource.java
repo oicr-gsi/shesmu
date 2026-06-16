@@ -663,7 +663,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     protected Stream<SampleProjectDto> fetch(Instant lastUpdated) throws Exception {
       if (config.isEmpty()) {
         System.err.println(
-            "The pinery_project input format is unusable because Pinery config is empty.");
+            "The pinery_projects input format is unusable because Pinery config is empty.");
         return new ErrorableStream<>(Stream.empty(), false);
       }
       PineryConfiguration cfg = config.get();
@@ -671,6 +671,30 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
           .send(
               httpGet(cfg.getUrl() + "/sample/projects", Optional.of(cfg.getTimeout())),
               new JsonListBodyHandler<>(MAPPER, SampleProjectDto.class))
+          .body()
+          .get();
+    }
+  }
+
+  private class AssayCache extends ValueCache<Stream<AssayDto>> {
+    public AssayCache(Path fileName) {
+      super(
+          "pinery_assays " + fileName.toString(),
+          60,
+          MergingRecord.by(dto -> dto.getName() + " " + dto.getVersion()));
+    }
+
+    @Override
+    protected Stream<AssayDto> fetch(Instant lastUpdated) throws Exception {
+      if (config.isEmpty()) {
+        System.err.println("The pinery_assays cache is unusable because Pinery config is empty.");
+        return new ErrorableStream<>(Stream.empty(), false);
+      }
+      PineryConfiguration cfg = config.get();
+      return HTTP_CLIENT
+          .send(
+              httpGet(cfg.getUrl() + "/assays", Optional.of(cfg.getTimeout())),
+              new JsonListBodyHandler<>(MAPPER, AssayDto.class))
           .body()
           .get();
     }
@@ -735,6 +759,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   private Optional<PineryConfiguration> config = Optional.empty();
   private final PlatformCache platforms;
   private final ProjectCache projects;
+  private final AssayCache assays;
 
   public PinerySource(Path fileName, String instanceName) {
     super(fileName, instanceName, MAPPER, PineryConfiguration.class);
@@ -742,6 +767,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     cache = new AnalysisItemCache(fileName);
     includeSkippedCache = new IncludeSkippedItemCache(fileName);
     platforms = new PlatformCache(fileName);
+    assays = new AssayCache(fileName);
   }
 
   @ShesmuMethod(
@@ -800,6 +826,31 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     && "Accredited with Clinical Report".equals(project.getPipeline()))
         .map(SampleProjectDto::getName)
         .collect(Collectors.toCollection(TreeSet::new));
+  }
+
+  @ShesmuMethod(
+      name = "draft_assays",
+      description = "Assay versions which are in draft state"
+  )
+  public Set<String> draftAssayVersions() {
+    return assays
+        .get()
+        .filter(AssayDto::getDraft)
+        .map(a -> a.getName() + " " + a.getVersion())
+        .collect(Collectors.toCollection(TreeSet::new));
+  }
+
+  @ShesmuMethod(
+      name = "is_draft_assay",
+      description = "Check if an assay version is marked as draft"
+  )
+  public boolean isDraftAssay(String assayName, String assayVersion) {
+    return assays
+        .get()
+        .filter(a -> a.getName().equals(assayName) && a.getVersion().equals(assayVersion))
+        .map(AssayDto::getDraft)
+        .findFirst()
+        .orElse(false);
   }
 
   @Override
