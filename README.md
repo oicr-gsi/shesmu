@@ -30,7 +30,7 @@ commands.
 
 Build dependencies:
 
-- Java 17 or later
+- Java 21 or later
 - Maven 3.8 or later
 - NPM
 - Docker (optional) for container builds
