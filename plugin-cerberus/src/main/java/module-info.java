@@ -13,6 +13,7 @@ module ca.on.oicr.gsi.shesmu.plugin.cerberus {
   requires ca.on.oicr.gsi.shesmu.plugin.gsi.common;
   requires ca.on.oicr.gsi.shesmu;
   requires simpleclient;
+  requires tools.jackson.databind;
 
   provides InputFormat with
       CerberusErrorFormatDefinition;

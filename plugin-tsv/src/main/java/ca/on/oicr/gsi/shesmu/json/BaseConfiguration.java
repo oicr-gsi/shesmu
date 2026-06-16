@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.json;
 
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import java.util.Map;
 
 public abstract class BaseConfiguration {

@@ -3,7 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.util.function.Consumer;
 
 public class FetchNodeConstant extends FetchNode {
@@ -25,7 +25,7 @@ public class FetchNodeConstant extends FetchNode {
       return String.format(
           "{type:\"constant\",name:%s}",
           RuntimeSupport.MAPPER.writeValueAsString(target.unaliasedName()));
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException(e);
     }
   }

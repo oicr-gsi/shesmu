@@ -1,6 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -62,11 +62,7 @@ public abstract class ToBytesConverter implements ImyhatConsumer {
 
   @Override
   public final void accept(JsonNode value) {
-    try {
-      add(value.binaryValue());
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    add(value.binaryValue());
   }
 
   @Override

@@ -1,11 +1,10 @@
 package ca.on.oicr.gsi.shesmu.mongo;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.io.IOException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -14,13 +13,12 @@ import org.bson.conversions.Bson;
 
 @JsonDeserialize(using = QueryBuilder.Deserializer.class)
 public interface QueryBuilder {
-  class Deserializer extends JsonDeserializer<QueryBuilder> {
+  class Deserializer extends ValueDeserializer<QueryBuilder> {
 
     @Override
     public QueryBuilder deserialize(
-        JsonParser parser, DeserializationContext deserializationContext) throws IOException {
-      final var oc = parser.getCodec();
-      final JsonNode node = oc.readTree(parser);
+        JsonParser parser, DeserializationContext deserializationContext) {
+      final JsonNode node = deserializationContext.readTree(parser);
       return deserialize(node);
     }
 
@@ -45,14 +43,14 @@ public interface QueryBuilder {
             return parameter(node.get("$$parameter").asInt());
           }
           final Map<String, QueryBuilder> fields = new TreeMap<>();
-          final var iterator = node.fields();
+          final var iterator = node.properties().iterator();
           while (iterator.hasNext()) {
             final var entry = iterator.next();
             fields.put(entry.getKey(), deserialize(entry.getValue()));
           }
           return object(fields);
         case STRING:
-          return literal(new BsonString(node.asText()));
+          return literal(new BsonString(node.asString()));
         default:
           throw new UnsupportedOperationException();
       }

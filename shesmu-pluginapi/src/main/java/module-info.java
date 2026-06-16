@@ -23,8 +23,8 @@ module ca.on.oicr.gsi.shesmu {
 
   requires ca.on.oicr.gsi.serverutils;
   requires com.fasterxml.jackson.annotation;
-  requires com.fasterxml.jackson.core;
-  requires com.fasterxml.jackson.databind;
+  requires tools.jackson.core;
+  requires tools.jackson.databind;
   requires simpleclient;
   requires java.management;
   requires java.net.http;

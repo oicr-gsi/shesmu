@@ -9,10 +9,10 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.JsonParameterisedAction;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
 import java.io.IOException;
 import java.net.URI;
@@ -181,7 +181,7 @@ public class RunReport extends JsonParameterisedAction {
     digest.accept(Utils.toBytes(reportId));
     try {
       digest.accept(MAPPER.writeValueAsBytes(parameters));
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       e.printStackTrace();
     }
   }

@@ -10,7 +10,7 @@ import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -49,20 +49,20 @@ public class RemoteInstance extends JsonPluginFile<Configuration> {
               request, new JsonBodyHandler<>(RuntimeSupport.MAPPER, ObjectNode[].class));
       if (response.statusCode() == 200) {
         for (final var obj : response.body().get()) {
-          var name = obj.get("name").asText();
+          var name = obj.get("name").asString();
           if (name.equals("nothing") || !allow.matcher(name).matches()) continue;
           definer.defineAction(
               configuration.getPrefix() + name,
-              "Fake version of: " + obj.get("description").asText(),
+              "Fake version of: " + obj.get("description").asString(),
               FakeAction.class,
               () -> new FakeAction(name),
-              Utils.stream(obj.get("parameters").elements())
+              Utils.stream(obj.path("parameters").values())
                   .map(
                       p ->
                           new JsonParameter<>(
-                              p.get("name").asText(),
+                              p.get("name").asString(),
                               p.get("required").asBoolean(),
-                              Imyhat.parse(p.get("type").asText()))));
+                              Imyhat.parse(p.get("type").asString()))));
         }
       } else if (response.statusCode() == 301) {
         configuration.setUrl(Utils.get301LocationUrl(response, definer));

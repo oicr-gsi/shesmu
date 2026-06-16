@@ -6,7 +6,7 @@ module ca.on.oicr.gsi.shesmu.plugin.mongo {
 
   requires ca.on.oicr.gsi.serverutils;
   requires ca.on.oicr.gsi.shesmu;
-  requires com.fasterxml.jackson.databind;
+  requires tools.jackson.databind;
   requires org.mongodb.bson;
   requires org.mongodb.driver.core;
   requires org.mongodb.driver.sync.client;

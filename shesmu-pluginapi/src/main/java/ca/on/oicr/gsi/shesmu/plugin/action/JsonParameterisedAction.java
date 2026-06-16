@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.plugin.action;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 import java.util.regex.Pattern;
 
 /** An {@link Action} that stores some of its parameters in a JSON object */

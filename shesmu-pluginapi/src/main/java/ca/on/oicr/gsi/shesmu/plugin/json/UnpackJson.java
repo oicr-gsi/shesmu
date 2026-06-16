@@ -6,7 +6,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.TimeFormat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -32,7 +32,7 @@ public class UnpackJson implements ImyhatTransformer<Object> {
 
   @Override
   public Object algebraic(Stream<AlgebraicTransformer> contents) {
-    final var type = value.get("type").asText();
+    final var type = value.get("type").asString();
     return contents
         .filter(a -> a.name().equals(type))
         .findFirst()
@@ -81,7 +81,7 @@ public class UnpackJson implements ImyhatTransformer<Object> {
     } else if (value.isNumber() && format == TimeFormat.SECONDS_NUMERIC) {
       return Instant.ofEpochMilli((long) (1000 * value.asDouble()));
     } else {
-      return DateTimeFormatter.ISO_INSTANT.parse(value.asText(), Instant::from);
+      return DateTimeFormatter.ISO_INSTANT.parse(value.asString(), Instant::from);
     }
   }
 
@@ -113,7 +113,7 @@ public class UnpackJson implements ImyhatTransformer<Object> {
     final var comparator = (Comparator<Object>) key.comparator();
     final SortedMap<Object, Object> map = new TreeMap<>(comparator);
     if (key.isSame(Imyhat.STRING) && this.value.isObject()) {
-      final var fields = this.value.fields();
+      final var fields = this.value.properties().iterator();
       while (fields.hasNext()) {
         final var field = fields.next();
         map.put(field.getKey(), value.apply(new UnpackJson(field.getValue())));
@@ -153,12 +153,12 @@ public class UnpackJson implements ImyhatTransformer<Object> {
 
   @Override
   public Object path() {
-    return Paths.get(value.asText());
+    return Paths.get(value.asString());
   }
 
   @Override
   public Object string() {
-    return value.asText();
+    return value.asString();
   }
 
   @Override

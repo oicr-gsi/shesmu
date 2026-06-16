@@ -3,17 +3,16 @@ package ca.on.oicr.gsi.shesmu.plugin.types;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import java.io.IOException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.JsonNode;
 
-public class ImyhatDeserializer extends JsonDeserializer<Imyhat> {
+public class ImyhatDeserializer extends ValueDeserializer<Imyhat> {
 
   private Imyhat deserialize(JsonNode node) {
-    if (node.isTextual()) {
-      return Imyhat.parse(node.asText());
+    if (node.isString()) {
+      return Imyhat.parse(node.asString());
     }
     if (node.isArray()) {
       final var elements = new Imyhat[node.size()];
@@ -23,7 +22,7 @@ public class ImyhatDeserializer extends JsonDeserializer<Imyhat> {
       return Imyhat.tuple(elements);
     }
     if (node.isObject()) {
-      final var type = node.get("is").asText();
+      final var type = node.get("is").asString();
       switch (type) {
         case "optional":
           return deserialize(node.get("inner")).asOptional();
@@ -33,10 +32,10 @@ public class ImyhatDeserializer extends JsonDeserializer<Imyhat> {
           return Imyhat.dictionary(deserialize(node.get("key")), deserialize(node.get("value")));
         case "object":
           return new ObjectImyhat(
-              Utils.stream(node.get("fields").fields())
+              Utils.stream(node.get("fields").properties())
                   .map(e -> new Pair<>(e.getKey(), deserialize(e.getValue()))));
         case "algebraic":
-          return Utils.stream((node.get("union")).fields())
+          return Utils.stream((node.get("union")).properties())
               .map(e -> deserializeAlgebraic(e.getKey(), e.getValue()))
               .reduce(Imyhat::unify)
               .orElse(Imyhat.BAD);
@@ -48,9 +47,8 @@ public class ImyhatDeserializer extends JsonDeserializer<Imyhat> {
   }
 
   @Override
-  public Imyhat deserialize(JsonParser parser, DeserializationContext context) throws IOException {
-    final var oc = parser.getCodec();
-    final JsonNode node = oc.readTree(parser);
+  public Imyhat deserialize(JsonParser parser, DeserializationContext context) {
+    final JsonNode node = context.readTree(parser);
     return deserialize(node);
   }
 
@@ -69,7 +67,7 @@ public class ImyhatDeserializer extends JsonDeserializer<Imyhat> {
       if (node.size() > 0) {
         return Imyhat.algebraicObject(
             name,
-            Utils.stream(node.fields())
+            Utils.stream(node.properties())
                 .map(e -> new Pair<>(e.getKey(), deserialize(e.getValue()))));
       } else {
         return Imyhat.algebraicTuple(name);

@@ -1,6 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.input;
 
-import com.fasterxml.jackson.core.JsonGenerator;
+import tools.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.time.Instant;
 import javax.xml.stream.XMLStreamException;

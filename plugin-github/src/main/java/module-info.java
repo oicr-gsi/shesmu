@@ -10,7 +10,7 @@ module ca.on.oicr.gsi.shesmu.plugin.github {
 
   requires ca.on.oicr.gsi.serverutils;
   requires ca.on.oicr.gsi.shesmu;
-  requires com.fasterxml.jackson.databind;
+  requires tools.jackson.databind;
   requires java.net.http;
 
   provides InputFormat with

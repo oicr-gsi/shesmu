@@ -6,7 +6,7 @@ import ca.on.oicr.gsi.vidarr.UnloadFilter;
 import ca.on.oicr.gsi.vidarr.UnloadTextSelector;
 import ca.on.oicr.gsi.vidarr.api.UnloadFilterExternalId;
 import ca.on.oicr.gsi.vidarr.api.UnloadFilterOr;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;

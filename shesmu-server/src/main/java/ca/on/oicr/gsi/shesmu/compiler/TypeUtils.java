@@ -5,8 +5,8 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.GangDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.*;
-import com.fasterxml.jackson.core.io.JsonStringEncoder;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.io.JsonStringEncoder;
+import tools.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -243,7 +243,9 @@ public class TypeUtils {
         }
 
         private String quote(String name) {
-          return "\"" + new String(JsonStringEncoder.getInstance().quoteAsString(name)) + "\"";
+          StringBuilder sb = new StringBuilder(name.length() * 2); // with extra padding for escapes
+          JsonStringEncoder.getInstance().quoteAsString(name, sb);
+          return "\"" + sb + "\"";
         }
 
         @Override

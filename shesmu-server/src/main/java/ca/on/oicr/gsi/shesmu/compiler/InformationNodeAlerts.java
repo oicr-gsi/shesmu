@@ -5,7 +5,7 @@ import ca.on.oicr.gsi.shesmu.plugin.filter.AlertFilter.AlertFilterNode;
 import ca.on.oicr.gsi.shesmu.plugin.filter.AlertFilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.filter.SourceOliveLocation;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -41,7 +41,7 @@ public class InformationNodeAlerts extends InformationNode {
                                 l -> {
                                   try {
                                     return RuntimeSupport.MAPPER.writeValueAsString(l);
-                                  } catch (JsonProcessingException e) {
+                                  } catch (JacksonException e) {
                                     throw new RuntimeException(e);
                                   }
                                 })
@@ -54,7 +54,7 @@ public class InformationNodeAlerts extends InformationNode {
                       return String.format(
                           "{type: \"has\", isRegex: true, name: %s}",
                           RuntimeSupport.MAPPER.writeValueAsString(labelName.pattern()));
-                    } catch (JsonProcessingException e) {
+                    } catch (JacksonException e) {
                       throw new RuntimeException(e);
                     }
                   }
@@ -74,7 +74,7 @@ public class InformationNodeAlerts extends InformationNode {
                           "{type: \"eq\", isRegex: true, name: %s, value: %s}",
                           labelName.renderEcma(renderer),
                           RuntimeSupport.MAPPER.writeValueAsString(regex.pattern()));
-                    } catch (JsonProcessingException e) {
+                    } catch (JacksonException e) {
                       throw new RuntimeException(e);
                     }
                   }

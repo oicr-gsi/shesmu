@@ -8,9 +8,9 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.vidarr.api.ExternalKey;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
@@ -91,7 +91,7 @@ public final class SubmitAction extends VidarrAction {
     try {
       digest.accept(new byte[] {(byte) (stale ? 1 : 0)});
       digest.accept(VidarrPlugin.MAPPER.writeValueAsBytes(request));
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       e.printStackTrace();
     }
   }

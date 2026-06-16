@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import java.util.Date;
 import java.util.Map;
 import java.util.Objects;

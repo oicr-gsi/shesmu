@@ -6,7 +6,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -44,7 +44,7 @@ public class WizardNodeMatch extends WizardNode {
           try {
             return String.format(
                 "%s.type == %s", testValue, RuntimeSupport.MAPPER.writeValueAsString(m.name()));
-          } catch (JsonProcessingException e) {
+          } catch (JacksonException e) {
             throw new RuntimeException(e);
           }
         },

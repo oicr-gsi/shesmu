@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
 import ca.on.oicr.gsi.shesmu.plugin.authentication.AuthenticationConfiguration;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
 

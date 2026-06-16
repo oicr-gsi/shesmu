@@ -5,7 +5,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -32,7 +32,7 @@ public class FetchNodeFunction extends FetchNode {
           "{type:\"function\", name:%s, args:%s}",
           RuntimeSupport.MAPPER.writeValueAsString(funcDef.name()),
           args.stream().map(a -> a.renderEcma(r)).collect(Collectors.joining(",", "[", "]")));
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException(e);
     }
   }

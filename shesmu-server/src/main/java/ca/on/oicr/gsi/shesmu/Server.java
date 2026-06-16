@@ -82,13 +82,14 @@ import ca.on.oicr.gsi.status.ServerConfig;
 import ca.on.oicr.gsi.status.StatusPage;
 import ca.on.oicr.gsi.status.TablePage;
 import ca.on.oicr.gsi.status.TableRowWriter;
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JsonEncoding;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.module.SimpleSerializers;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -325,7 +326,8 @@ public final class Server implements ServerConfig, ActionServices {
     final var module = new SimpleModule("shesmu");
     module.addSerializer(
         SourceLocation.class, new SourceLocation.SourceLocationSerializer(pluginManager));
-    RuntimeSupport.MAPPER.registerModule(module);
+    // rebuild with the new module
+    RuntimeSupport.MAPPER.rebuild().addModule(module).build();
     server = HttpServer.create(new InetSocketAddress(port), 0);
     server.setExecutor(wwwExecutor);
     definitionRepository = DefinitionRepository.concat(new StandardDefinitions(), pluginManager);
@@ -411,7 +413,7 @@ public final class Server implements ServerConfig, ActionServices {
                                     try {
                                       jsonDumpers.put(
                                           name, RuntimeSupport.MAPPER.writeValueAsString(output));
-                                    } catch (JsonProcessingException e) {
+                                    } catch (JacksonException e) {
                                       e.printStackTrace();
                                     }
                                   }
@@ -651,7 +653,7 @@ public final class Server implements ServerConfig, ActionServices {
             final var jsonOutput = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8);
             jsonOutput.writeStartObject();
             for (var inflight : INFLIGHT.entrySet()) {
-              jsonOutput.writeNumberField(inflight.getKey(), inflight.getValue().toEpochMilli());
+              jsonOutput.writeNumberProperty(inflight.getKey(), inflight.getValue().toEpochMilli());
             }
             jsonOutput.writeEndObject();
           }
@@ -793,17 +795,13 @@ public final class Server implements ServerConfig, ActionServices {
               @Override
               public Stream<Header> headers() {
                 var filesJson = "[]";
-                try {
-                  final var files = RuntimeSupport.MAPPER.createArrayNode();
-                  compiler
-                      .dashboard()
-                      .map(fileTable -> fileTable.second().filename())
-                      .forEach(files::add);
-                  filesJson = RuntimeSupport.MAPPER.writeValueAsString(files);
+                final var files = RuntimeSupport.MAPPER.createArrayNode();
+                compiler
+                    .dashboard()
+                    .map(fileTable -> fileTable.second().filename())
+                    .forEach(files::add);
+                filesJson = RuntimeSupport.MAPPER.writeValueAsString(files);
 
-                } catch (IOException e) {
-                  e.printStackTrace();
-                }
                 return Stream.of(
                     Header.jsModule(
                         "import {"
@@ -907,7 +905,7 @@ public final class Server implements ServerConfig, ActionServices {
                 String pauses;
                 try {
                   pauses = RuntimeSupport.MAPPER.writeValueAsString(pauses());
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                   e.printStackTrace();
                   pauses = "null";
                 }
@@ -954,7 +952,7 @@ public final class Server implements ServerConfig, ActionServices {
                   refillerDefsJson(array);
                   signatureDefsJson(array);
                   defs = RuntimeSupport.MAPPER.writeValueAsString(array);
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                   e.printStackTrace();
                 }
                 return Stream.of(
@@ -1345,7 +1343,7 @@ public final class Server implements ServerConfig, ActionServices {
                 for (final var parser :
                     typeParsers.values().stream()
                         .sorted(Comparator.comparing(TypeParser::description))
-                        .collect(Collectors.toList())) {
+                        .toList()) {
                   writer.writeStartElement("option");
                   writer.writeAttribute("value", parser.format());
                   writer.writeCharacters(parser.description());
@@ -1629,40 +1627,33 @@ public final class Server implements ServerConfig, ActionServices {
           try (var os = t.getResponseBody()) {
             final var jsonOutput = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8);
             jsonOutput.writeStartObject();
-            jsonOutput.writeNumberField("offset", query.getSkip());
-            jsonOutput.writeNumberField("total", processor.size(filters));
-            jsonOutput.writeArrayFieldStart("results");
+            jsonOutput.writeNumberProperty("offset", query.getSkip());
+            jsonOutput.writeNumberProperty("total", processor.size(filters));
+            jsonOutput.writeArrayPropertyStart("results");
             final var availableSortKeys = new TreeSet<String>();
             processor.stream(pluginManager, sortBy, availableSortKeys::add, filters)
                 .skip(Math.max(0, query.getSkip()))
                 .limit(query.getLimit())
-                .forEach(
-                    action -> {
-                      try {
-                        jsonOutput.writeTree(action);
-                      } catch (IOException e) {
-                        throw new RuntimeException(e);
-                      }
-                    });
+                .forEach(jsonOutput::writeTree);
             jsonOutput.writeEndArray();
-            jsonOutput.writeArrayFieldStart("availableSortKeys");
+            jsonOutput.writeArrayPropertyStart("availableSortKeys");
             for (final var key : availableSortKeys) {
               jsonOutput.writeString(key);
             }
             jsonOutput.writeEndArray();
-            jsonOutput.writeArrayFieldStart("bulkCommands");
+            jsonOutput.writeArrayPropertyStart("bulkCommands");
             for (final var command : processor.commonCommands(filters).entrySet()) {
               if (command.getKey().prefers(Preference.ALLOW_BULK)) {
                 jsonOutput.writeStartObject();
-                jsonOutput.writeStringField("command", command.getKey().command());
-                jsonOutput.writeStringField("buttonText", command.getKey().buttonText());
-                jsonOutput.writeStringField("icon", command.getKey().icon().icon());
-                jsonOutput.writeNumberField("importance", command.getKey().importance());
-                jsonOutput.writeBooleanField(
+                jsonOutput.writeStringProperty("command", command.getKey().command());
+                jsonOutput.writeStringProperty("buttonText", command.getKey().buttonText());
+                jsonOutput.writeStringProperty("icon", command.getKey().icon().icon());
+                jsonOutput.writeNumberProperty("importance", command.getKey().importance());
+                jsonOutput.writeBooleanProperty(
                     "showPrompt", command.getKey().prefers(Preference.PROMPT));
-                jsonOutput.writeBooleanField(
+                jsonOutput.writeBooleanProperty(
                     "annoyUser", command.getKey().prefers(Preference.ANNOY_USER));
-                jsonOutput.writeNumberField("count", command.getValue());
+                jsonOutput.writeNumberProperty("count", command.getValue());
                 jsonOutput.writeEndObject();
               }
             }
@@ -1816,13 +1807,7 @@ public final class Server implements ServerConfig, ActionServices {
                         .map(filterJson -> filterJson.convert(processor.filterBuilder(compiler)))
                         .toArray(Filter[]::new))
                 .forEach(
-                    id -> {
-                      try {
-                        jsonOutput.writeString(id);
-                      } catch (IOException e) {
-                        throw new RuntimeException(e);
-                      }
-                    });
+                    jsonOutput::writeString);
             jsonOutput.writeEndArray();
           }
         });
@@ -1845,16 +1830,12 @@ public final class Server implements ServerConfig, ActionServices {
                           .map(filterJson -> filterJson.convert(processor.filterBuilder(compiler)))
                           .toArray(Filter[]::new));
               final var os = t.getResponseBody();
-              final var jsonOutput = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8)) {
-            jsonOutput.setCodec(RuntimeSupport.MAPPER);
+
+              final var jsonOutput = RuntimeSupport.MAPPER.tokenStreamFactory().createGenerator(os, JsonEncoding.UTF8)) {
             jsonOutput.writeStartArray();
             actions.forEach(
                 action -> {
-                  try {
-                    jsonOutput.writeTree(action);
-                  } catch (IOException e) {
-                    throw new RuntimeException(e);
-                  }
+                  jsonOutput.writeTree(action);
                 });
             jsonOutput.writeEndArray();
           }
@@ -2253,7 +2234,7 @@ public final class Server implements ServerConfig, ActionServices {
                   String.format(
                       "Input format “%s” is overloaded right now", request.getInputFormat()));
             }
-          } catch (JsonProcessingException e) {
+          } catch (JacksonException e) {
             internalServerErrorResponse(t, 400, e);
           }
         });
@@ -2310,16 +2291,12 @@ public final class Server implements ServerConfig, ActionServices {
               @Override
               public Stream<Header> headers() {
                 String locations;
-                try {
-                  locations =
-                      RuntimeSupport.MAPPER.writeValueAsString(
-                          processor
-                              .locations()
-                              .map(SourceLocation::fileName)
-                              .collect(Collectors.toSet()));
-                } catch (IOException e) {
-                  locations = "[]";
-                }
+                locations =
+                    RuntimeSupport.MAPPER.writeValueAsString(
+                        processor
+                            .locations()
+                            .map(SourceLocation::fileName)
+                            .collect(Collectors.toSet()));
                 return Stream.of(
                     Header.jsFile("ace.js"),
                     Header.jsFile("ext-searchbox.js"),
@@ -2401,10 +2378,10 @@ public final class Server implements ServerConfig, ActionServices {
           final var query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ObjectNode.class);
           final var location =
               new SourceLocation(
-                  query.get("file").asText(""),
+                  query.get("file").asString(""),
                   query.get("line").asInt(0),
                   query.get("column").asInt(0),
-                  query.get("hash").asText(""));
+                  query.get("hash").asString(""));
           if (query.has("pause") && !query.get("pause").isNull()) {
             if (query.get("pause").asBoolean(false)) {
               processor.pause(location);
@@ -2423,7 +2400,7 @@ public final class Server implements ServerConfig, ActionServices {
         "/pausefile",
         t -> {
           final var query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ObjectNode.class);
-          final var file = query.get("file").asText("");
+          final var file = query.get("file").asString("");
           if (query.has("pause") && !query.get("pause").isNull()) {
             if (query.get("pause").asBoolean(false)) {
               processor.pause(file);
@@ -2517,20 +2494,20 @@ public final class Server implements ServerConfig, ActionServices {
           try (var os = t.getResponseBody();
               var output = RuntimeSupport.MAPPER.createGenerator(os)) {
             output.writeStartObject();
-            output.writeNumberField("time", System.currentTimeMillis());
-            output.writeObjectFieldStart("threads");
+            output.writeNumberProperty("time", System.currentTimeMillis());
+            output.writeObjectPropertyStart("threads");
             final var threadMxBean = ManagementFactory.getThreadMXBean();
             for (final var thread : threadMxBean.dumpAllThreads(false, false)) {
-              output.writeObjectFieldStart(thread.getThreadName());
-              output.writeStringField("state", thread.getThreadState().name());
-              output.writeNumberField("blockedCount", thread.getBlockedCount());
-              output.writeNumberField("blockedTime", thread.getBlockedTime());
-              output.writeNumberField("waitCount", thread.getWaitedCount());
-              output.writeNumberField("waitTime", thread.getWaitedTime());
-              output.writeNumberField("priority", thread.getPriority());
-              output.writeNumberField(
+              output.writeObjectPropertyStart(thread.getThreadName());
+              output.writeStringProperty("state", thread.getThreadState().name());
+              output.writeNumberProperty("blockedCount", thread.getBlockedCount());
+              output.writeNumberProperty("blockedTime", thread.getBlockedTime());
+              output.writeNumberProperty("waitCount", thread.getWaitedCount());
+              output.writeNumberProperty("waitTime", thread.getWaitedTime());
+              output.writeNumberProperty("priority", thread.getPriority());
+              output.writeNumberProperty(
                   "cpuTime", threadMxBean.getThreadCpuTime(thread.getThreadId()));
-              output.writeArrayFieldStart("trace");
+              output.writeArrayPropertyStart("trace");
               var last = "";
               for (final var stack : thread.getStackTrace()) {
                 var current = "";
@@ -2697,7 +2674,7 @@ public final class Server implements ServerConfig, ActionServices {
   }
 
   /** Add a new service endpoint with Prometheus monitoring that handles JSON */
-  private void addJson(String url, BiFunction<ObjectMapper, String, JsonNode> fetcher) {
+  private void addJson(String url, BiFunction<JsonMapper, String, JsonNode> fetcher) {
     add(
         url,
         t -> {
@@ -2790,7 +2767,7 @@ public final class Server implements ServerConfig, ActionServices {
                       RuntimeSupport.MAPPER.writeValueAsString(description),
                       RuntimeSupport.MAPPER.writeValueAsString(urlStart),
                       RuntimeSupport.MAPPER.writeValueAsString(urlEnd));
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                   throw new RuntimeException(e);
                 }
               }
@@ -2814,7 +2791,7 @@ public final class Server implements ServerConfig, ActionServices {
                       RuntimeSupport.MAPPER.writeValueAsString(description),
                       RuntimeSupport.MAPPER.writeValueAsString(urlStart),
                       RuntimeSupport.MAPPER.writeValueAsString(urlEnd));
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                   throw new RuntimeException(e);
                 }
               }

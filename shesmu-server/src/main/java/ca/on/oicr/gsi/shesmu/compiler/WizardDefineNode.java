@@ -6,7 +6,7 @@ import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -139,7 +139,7 @@ public class WizardDefineNode {
                                                 parameter.name())
                                             + ": "
                                             + a.apply(index++);
-                                      } catch (JsonProcessingException e) {
+                                      } catch (JacksonException e) {
                                         throw new RuntimeException(e);
                                       }
                                     }

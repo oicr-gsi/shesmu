@@ -4,8 +4,8 @@ import static org.apache.commons.text.StringEscapeUtils.ESCAPE_XSI;
 
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.node.ObjectNode;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -55,7 +55,7 @@ public class SshRefiller<T> extends Refiller<T> {
             hashes.add(
                 MessageDigest.getInstance("SHA1")
                     .digest(SftpServer.MAPPER.writeValueAsBytes(outputNode)));
-          } catch (NoSuchAlgorithmException | JsonProcessingException e) {
+          } catch (NoSuchAlgorithmException | JacksonException e) {
             throw new RuntimeException(e);
           }
         });

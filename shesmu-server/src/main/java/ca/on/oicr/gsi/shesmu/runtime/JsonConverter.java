@@ -5,7 +5,7 @@ import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
@@ -26,8 +26,8 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
       contents.close();
       return Optional.empty();
     }
-    if (input.has("type") && input.get("type").isTextual() && input.has("contents")) {
-      final var type = input.get("type").asText();
+    if (input.has("type") && input.get("type").isString() && input.has("contents")) {
+      final var type = input.get("type").asString();
       final var arguments = input.get("contents");
       return contents
           .filter(t -> t.name().equals(type))
@@ -113,7 +113,7 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
     final var comparator = (Comparator<Object>) key.comparator();
     final SortedMap<Object, Object> map = new TreeMap<>(comparator);
     if (key.isSame(Imyhat.STRING) && input.isObject()) {
-      final var fields = input.fields();
+      final var fields = input.properties().iterator();
       while (fields.hasNext()) {
         final var field = fields.next();
         final var result = value.apply(new JsonConverter(field.getValue()));
@@ -182,12 +182,12 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
 
   @Override
   public Optional<Object> path() {
-    return input.isTextual() ? Optional.of(Paths.get(input.asText())) : Optional.empty();
+    return input.isString() ? Optional.of(Paths.get(input.asString())) : Optional.empty();
   }
 
   @Override
   public Optional<Object> string() {
-    return input.isTextual() ? Optional.of(input.asText()) : Optional.empty();
+    return input.isString() ? Optional.of(input.asString()) : Optional.empty();
   }
 
   @Override

@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.json;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;

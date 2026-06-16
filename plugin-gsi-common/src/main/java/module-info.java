@@ -6,7 +6,7 @@ module ca.on.oicr.gsi.shesmu.plugin.gsi.common {
   exports ca.on.oicr.gsi.shesmu.gsicommon;
 
   requires ca.on.oicr.gsi.shesmu;
-  requires com.fasterxml.jackson.databind;
+  requires tools.jackson.databind;
 
   provides InputFormat with
       CerberusFileProvenanceFormatDefinition,

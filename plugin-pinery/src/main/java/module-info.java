@@ -18,8 +18,7 @@ module shesmu.plugin.pinery {
   requires ca.on.oicr.gsi.shesmu.plugin.runscanner;
   requires ca.on.oicr.gsi.shesmu;
   requires com.fasterxml.jackson.annotation;
-  requires com.fasterxml.jackson.databind;
-  requires com.fasterxml.jackson.datatype.jsr310;
+  requires tools.jackson.databind;
   requires simpleclient;
   requires java.net.http;
   requires org.apache.commons.text;
