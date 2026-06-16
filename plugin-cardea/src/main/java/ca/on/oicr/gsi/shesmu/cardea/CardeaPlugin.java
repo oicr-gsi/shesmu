@@ -10,8 +10,10 @@ import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonListBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
@@ -30,11 +32,11 @@ public class CardeaPlugin extends JsonPluginFile<CardeaConfiguration> {
   private final CaseSummaryCache caseSummaryCache;
 
   static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
-  static final ObjectMapper MAPPER = new ObjectMapper();
-
-  static {
-    MAPPER.registerModule(new JavaTimeModule());
-  }
+  static final JsonMapper MAPPER = JsonMapper.builder()
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+      .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+      .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+      .build();
 
   public CardeaPlugin(Path fileName, String instanceName, Definer<CardeaPlugin> definer) {
     super(fileName, instanceName, MAPPER, CardeaConfiguration.class);

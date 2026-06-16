@@ -4,7 +4,7 @@ import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.ExtractRequest;
 import ca.on.oicr.gsi.shesmu.server.Extractor.ExtractVisitor;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -60,7 +60,7 @@ public class ExtractTest {
                     return output;
                   }
                 });
-      } catch (JsonProcessingException e) {
+      } catch (JacksonException e) {
         output.write(e.getOriginalMessage().getBytes(StandardCharsets.UTF_8));
       }
       final var correct =

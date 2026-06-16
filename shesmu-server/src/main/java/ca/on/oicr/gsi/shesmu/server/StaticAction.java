@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.server;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)

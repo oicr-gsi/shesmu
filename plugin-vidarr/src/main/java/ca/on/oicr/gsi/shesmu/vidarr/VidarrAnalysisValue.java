@@ -2,7 +2,7 @@ package ca.on.oicr.gsi.shesmu.vidarr;
 
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;

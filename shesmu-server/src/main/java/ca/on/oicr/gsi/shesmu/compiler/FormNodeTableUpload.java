@@ -5,7 +5,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -51,7 +51,7 @@ public final class FormNodeTableUpload extends FormNode {
                 l -> {
                   try {
                     return RuntimeSupport.MAPPER.writeValueAsString(l);
-                  } catch (JsonProcessingException e) {
+                  } catch (JacksonException e) {
                     throw new RuntimeException(e);
                   }
                 })

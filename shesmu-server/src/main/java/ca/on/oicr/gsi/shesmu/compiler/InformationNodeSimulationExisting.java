@@ -2,7 +2,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -26,7 +26,7 @@ public class InformationNodeSimulationExisting extends InformationNode {
               .flatMap(e -> e.renderConstant(renderer))
               .sorted()
               .collect(Collectors.joining(", ", "{", "}")));
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException(e);
     }
   }

@@ -14,7 +14,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -123,12 +123,12 @@ public class FetchNodeOlive extends FetchNode {
                           RuntimeSupport.MAPPER.writeValueAsString(c.inner.name()),
                           c.type().descriptor(),
                           r.load(c.inner));
-                    } catch (JsonProcessingException e) {
+                    } catch (JacksonException e) {
                       throw new RuntimeException(e);
                     }
                   })
               .collect(Collectors.joining(", ", "{", "}")));
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException(e);
     }
   }

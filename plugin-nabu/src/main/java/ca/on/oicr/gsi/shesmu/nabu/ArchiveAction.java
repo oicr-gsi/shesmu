@@ -7,10 +7,14 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.JsonParameterisedAction;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -23,7 +27,11 @@ import java.util.*;
 public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonParameterisedAction {
 
   protected final Definer<NabuPlugin> owner;
-  static final ObjectMapper MAPPER = new ObjectMapper();
+  static final JsonMapper MAPPER = JsonMapper.builder()
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+      .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+      .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+      .build();
   protected List<String> errors = new ArrayList<>();
   public Optional<String> archiveNote;
   public String archiveTarget;
@@ -160,7 +168,7 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
     return node;
   }
 
-  protected String createRequestBody() throws JsonProcessingException {
+  protected String createRequestBody() throws JacksonException {
     return MAPPER.writeValueAsString(createRequestJson(MAPPER));
   }
 
@@ -178,7 +186,7 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
     return sendArchiveActionRequest(HTTP_CLIENT, baseUrl);
   }
 
-  protected HttpRequest buildRequest(String baseUrl) throws JsonProcessingException {
+  protected HttpRequest buildRequest(String baseUrl) throws JacksonException {
     HttpRequest.BodyPublisher body = HttpRequest.BodyPublishers.ofString(createRequestBody());
     final String authentication = owner.get().NabuToken();
     authenticationHeader = Optional.ofNullable(authentication);
@@ -202,7 +210,7 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
     labels.put("url", baseUrl);
     try {
       request = buildRequest(baseUrl);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       e.printStackTrace();
       this.errors = Collections.singletonList(e.getMessage());
       return ActionState.FAILED;
@@ -218,7 +226,7 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
               String.format(
                   "Attempted to resubmit archive request with conflicting data for %s %s",
                   entityLabel(), this.identifier));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
           this.errors.add("Additional error decoding Nabu response: " + e.getMessage());
         }
         return ActionState.HALP;
@@ -226,7 +234,7 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
         nabuRequestErrors.labels(baseUrl).inc();
         try {
           this.showHTTPError(response, baseUrl);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
           this.errors.add("Additional error decoding Nabu response: " + e.getMessage());
         }
         return ActionState.FAILED;
@@ -268,7 +276,7 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
   }
 
   protected void showHTTPError(HttpResponse<String> response, String url, String customLogMessage)
-      throws UnsupportedOperationException, JsonProcessingException {
+      throws UnsupportedOperationException, JacksonException {
     final List<String> errors = new ArrayList<>();
     final Map<String, String> labels = new TreeMap<>();
     labels.put("url", url);
@@ -289,7 +297,7 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
   }
 
   protected void showHTTPError(HttpResponse<String> response, String url)
-      throws UnsupportedOperationException, JsonProcessingException {
+      throws UnsupportedOperationException, JacksonException {
     showHTTPError(response, url, null);
   }
 

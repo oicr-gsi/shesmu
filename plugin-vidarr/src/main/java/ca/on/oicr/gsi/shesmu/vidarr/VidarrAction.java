@@ -4,9 +4,9 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -42,9 +42,7 @@ public abstract class VidarrAction extends Action {
         return query.matcher(json.numberValue().toString()).matches();
       case OBJECT:
         {
-          final Iterator<Map.Entry<String, JsonNode>> iterator = json.fields();
-          while (iterator.hasNext()) {
-            final Map.Entry<String, JsonNode> field = iterator.next();
+          for (Map.Entry<String, JsonNode> field : json.properties()) {
             if (query.matcher(field.getKey()).matches() || checkJson(field.getValue(), query)) {
               return true;
             }
@@ -52,7 +50,7 @@ public abstract class VidarrAction extends Action {
           return false;
         }
       case STRING:
-        return query.matcher(json.asText()).matches();
+        return query.matcher(json.asString()).matches();
       default:
         return false;
     }

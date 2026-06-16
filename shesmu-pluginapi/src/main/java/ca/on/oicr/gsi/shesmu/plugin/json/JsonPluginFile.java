@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.plugin.json;
 
 import ca.on.oicr.gsi.shesmu.plugin.PluginFile;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import io.prometheus.client.Gauge;
 import java.nio.file.Files;
 import java.nio.file.Path;

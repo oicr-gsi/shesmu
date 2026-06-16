@@ -8,8 +8,8 @@ import ca.on.oicr.gsi.shesmu.plugin.Parser.Rule;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
@@ -48,7 +48,7 @@ public final class WdlInputType {
   public static <T> Stream<Pair<String[], T>> flatToNested(
       ObjectNode inputs, BiFunction<String, JsonNode, Optional<T>> process) {
     return StreamSupport.stream(
-            Spliterators.spliteratorUnknownSize(inputs.fields(), Spliterator.ORDERED), false)
+            Spliterators.spliteratorUnknownSize(inputs.properties().iterator(), Spliterator.ORDERED), false)
         .map(
             entry ->
                 process
@@ -107,12 +107,12 @@ public final class WdlInputType {
 
   private static Imyhat parseWdlJson(
       JsonNode node, boolean pairsAsObjects, ErrorConsumer errorHandler) {
-    if (node.isTextual()) {
-      return parseRoot(node.asText(), pairsAsObjects, errorHandler);
+    if (node.isString()) {
+      return parseRoot(node.asString(), pairsAsObjects, errorHandler);
     }
     if (node.isObject()) {
       final List<Pair<String, Imyhat>> fields = new ArrayList<>();
-      final var entries = node.fields();
+      final var entries = node.properties().iterator();
       while (entries.hasNext()) {
         final var entry = entries.next();
         fields.add(
@@ -202,7 +202,7 @@ public final class WdlInputType {
 
         @Override
         public String object(Stream<Pair<String, Imyhat>> contents) {
-          final var fields = contents.collect(Collectors.toList());
+          final var fields = contents.toList();
           if (fields.size() == 2
               && fields.stream()
                   .allMatch(p -> p.first().equals("left") || p.first().equals("right"))) {

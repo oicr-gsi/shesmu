@@ -23,12 +23,12 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
 import ca.on.oicr.gsi.shesmu.util.AutoLock;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Collector;
 import io.prometheus.client.Gauge;
 import java.io.IOException;
@@ -373,6 +373,7 @@ public final class ActionProcessor
           return "external";
         }
       };
+
   private static final JsonNodeFactory JSON_FACTORY = JsonNodeFactory.withExactBigDecimals(false);
   private static final Bin<Instant> INSTANT_BIN =
       new Bin<>() {
@@ -411,7 +412,7 @@ public final class ActionProcessor
 
         @Override
         public JsonNode json(ActionState input) {
-          return JSON_FACTORY.textNode(input.name());
+          return JSON_FACTORY.stringNode(input.name());
         }
 
         @Override
@@ -730,7 +731,7 @@ public final class ActionProcessor
     output.writeStartArray();
     for (final var alert : alerts.values()) {
       if (predicate.test(alert)) {
-        output.writeObject(alert);
+        output.objectWriteContext().writeValue(output, alert);
       }
     }
     output.writeEndArray();
@@ -1301,7 +1302,7 @@ public final class ActionProcessor
     final var contents =
         Stream.of(members)
             .flatMap(member -> input.stream().flatMap(v -> member.extract(v).stream()))
-            .collect(Collectors.toList());
+            .toList();
     final var min = contents.stream().min(bin);
     final var max = contents.stream().max(bin);
     if (min.isEmpty() || max.isEmpty() || min.get().equals(max.get())) {

@@ -4,7 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.Gang;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;

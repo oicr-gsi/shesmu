@@ -3,12 +3,11 @@ package ca.on.oicr.gsi.shesmu.mongo;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.io.IOException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
@@ -18,11 +17,11 @@ import org.bson.*;
 @JsonDeserialize(using = ParameterConverter.Deserializer.class)
 public abstract class ParameterConverter {
 
-  public static class Deserializer extends JsonDeserializer<ParameterConverter> {
+  public static class Deserializer extends ValueDeserializer<ParameterConverter> {
 
     private ParameterConverter deserialize(JsonNode node) {
-      if (node.isTextual()) {
-        final var str = node.asText();
+      if (node.isString()) {
+        final var str = node.asString();
         switch (str) {
           case "boolean":
             return BOOLEAN;
@@ -42,7 +41,7 @@ public abstract class ParameterConverter {
         }
       }
       if (node.isObject()) {
-        final var type = node.get("is").asText();
+        final var type = node.get("is").asString();
         switch (type) {
           case "list":
             return list(deserialize(node.get("of")));
@@ -50,7 +49,7 @@ public abstract class ParameterConverter {
             return deserialize(node.get("of")).asOptional();
           case "object":
             final Map<String, ParameterConverter> elements = new TreeMap<>();
-            final var iterator = node.get("of").fields();
+            final var iterator = node.get("of").properties().iterator();
             while (iterator.hasNext()) {
               final var current = iterator.next();
               elements.put(current.getKey(), deserialize(current.getValue()));
@@ -64,10 +63,8 @@ public abstract class ParameterConverter {
     }
 
     @Override
-    public ParameterConverter deserialize(JsonParser parser, DeserializationContext context)
-        throws IOException {
-      final var oc = parser.getCodec();
-      final JsonNode node = oc.readTree(parser);
+    public ParameterConverter deserialize(JsonParser parser, DeserializationContext context) {
+      final JsonNode node = context.readTree(parser);
       return deserialize(node);
     }
   }

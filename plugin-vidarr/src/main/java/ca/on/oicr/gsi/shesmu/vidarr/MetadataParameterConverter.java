@@ -10,7 +10,7 @@ import ca.on.oicr.gsi.vidarr.OutputProvisionFormat;
 import ca.on.oicr.gsi.vidarr.OutputType;
 import ca.on.oicr.gsi.vidarr.OutputType.IdentifierKey;
 import ca.on.oicr.gsi.vidarr.api.TargetDeclaration;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

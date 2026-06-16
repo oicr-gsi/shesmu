@@ -2,7 +2,7 @@ package ca.on.oicr.gsi.shesmu.jira;
 
 import static ca.on.oicr.gsi.shesmu.jira.JiraConnection.MAPPER;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 public enum JiraVersion {
   V2("2") {

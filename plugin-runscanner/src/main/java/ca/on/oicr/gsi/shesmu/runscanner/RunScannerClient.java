@@ -12,9 +12,8 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonMapper;
 import io.prometheus.client.Gauge;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -125,7 +124,11 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   }
 
   static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final JsonMapper MAPPER = JsonMapper.builder()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+          .build();
   private static final Gauge fetchOk =
       Gauge.build(
               "shesmu_runscanner_response_ok", "Whether the last request to Run Scanner went well.")
@@ -134,10 +137,6 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   private static final LatencyHistogram refillTime =
       new LatencyHistogram(
           "shesmu_runscanner_refill_time", "The time to refill the run cache", "filename");
-
-  static {
-    MAPPER.registerModule(new JavaTimeModule());
-  }
 
   /**
    * Determine the correct flow cell geometry for a run

@@ -10,9 +10,8 @@ module ca.on.oicr.gsi.shesmu.plugin.vidarr {
   requires ca.on.oicr.gsi.shesmu;
   requires ca.on.oicr.gsi.shesmu.plugin.gsi.common;
   requires ca.on.oicr.gsi.vidarr.pluginapi;
-  requires com.fasterxml.jackson.datatype.jsr310;
   requires java.net.http;
-  requires com.fasterxml.jackson.databind;
+  requires tools.jackson.databind;
 
   provides InputFormat with
       VidarrAnalysisFormatDefinition;

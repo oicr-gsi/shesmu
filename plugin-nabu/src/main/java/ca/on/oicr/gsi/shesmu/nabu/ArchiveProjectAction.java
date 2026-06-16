@@ -2,7 +2,7 @@ package ca.on.oicr.gsi.shesmu.nabu;
 
 import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Consumer;
@@ -57,7 +57,7 @@ public class ArchiveProjectAction extends ArchiveAction<NabuProjectArchiveDto> {
       digest.accept(new byte[] {0});
       digest.accept(MAPPER.writeValueAsBytes(limsIds));
       digest.accept(MAPPER.writeValueAsBytes(parameters));
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       e.printStackTrace();
     }
   }

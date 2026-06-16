@@ -4,9 +4,9 @@ import ca.on.oicr.gsi.shesmu.plugin.input.TimeFormat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
@@ -108,7 +108,7 @@ public class PackStreamingXml implements ImyhatConsumer {
   public void accept(JsonNode value) {
     try {
       writer.writeCData(MAPPER.writeValueAsString(value));
-    } catch (XMLStreamException | JsonProcessingException e) {
+    } catch (XMLStreamException | JacksonException e) {
       throw new RuntimeException(e);
     }
   }

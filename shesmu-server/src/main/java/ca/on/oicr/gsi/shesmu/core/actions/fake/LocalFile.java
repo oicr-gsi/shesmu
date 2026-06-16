@@ -6,7 +6,7 @@ import ca.on.oicr.gsi.shesmu.plugin.json.JsonParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -25,19 +25,19 @@ public class LocalFile extends JsonPluginFile<ObjectNode[]> {
   protected Optional<Integer> update(ObjectNode[] configuration) {
     definer.clearActions();
     for (final var obj : configuration) {
-      var name = obj.get("name").asText();
+      var name = obj.get("name").asString();
       definer.defineAction(
           name,
-          "Fake version of: " + obj.get("description").asText(),
+          "Fake version of: " + obj.get("description").asString(),
           FakeAction.class,
           () -> new FakeAction(name),
-          Utils.stream(obj.get("parameters").elements())
+          Utils.stream(obj.path("parameters").values())
               .map(
                   p ->
                       new JsonParameter<>(
-                          p.get("name").asText(),
+                          p.get("name").asString(),
                           p.get("required").asBoolean(),
-                          Imyhat.parse(p.get("type").asText()))));
+                          Imyhat.parse(p.get("type").asString()))));
     }
     return Optional.empty();
   }

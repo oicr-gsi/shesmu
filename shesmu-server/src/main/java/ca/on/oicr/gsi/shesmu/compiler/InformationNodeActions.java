@@ -7,7 +7,7 @@ import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter.ActionFilterNode;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.filter.SourceOliveLocation;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -119,7 +119,7 @@ public class InformationNodeActions extends InformationNode {
               public String fromJson(ActionFilter actionFilter) {
                 try {
                   return RuntimeSupport.MAPPER.writeValueAsString(actionFilter);
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                   throw new RuntimeException(e);
                 }
               }
@@ -133,7 +133,7 @@ public class InformationNodeActions extends InformationNode {
                             l -> {
                               try {
                                 return RuntimeSupport.MAPPER.writeValueAsString(l);
-                              } catch (JsonProcessingException e) {
+                              } catch (JacksonException e) {
                                 throw new RuntimeException(e);
                               }
                             })
@@ -198,7 +198,7 @@ public class InformationNodeActions extends InformationNode {
                       "{type: \"tag-regex\", matchCase: %s, pattern: %s}",
                       (((pattern.flags() & Pattern.CASE_INSENSITIVE)) == 0),
                       RuntimeSupport.MAPPER.writeValueAsString(pattern.pattern()));
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                   throw new RuntimeException(e);
                 }
               }
@@ -218,7 +218,7 @@ public class InformationNodeActions extends InformationNode {
                       "{type: \"regex\", matchCase: %s, pattern: %s}",
                       (((pattern.flags() & Pattern.CASE_INSENSITIVE)) == 0),
                       RuntimeSupport.MAPPER.writeValueAsString(pattern.pattern()));
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                   throw new RuntimeException(e);
                 }
               }

@@ -5,9 +5,9 @@ import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
@@ -24,11 +24,11 @@ public final class JsonFileDefinitionFile extends JsonPluginFile<ObjectNode> {
     if (value.isIntegralNumber()) {
       return new Pair<>(Imyhat.INTEGER, value.asLong());
     }
-    if (value.isTextual()) {
-      return new Pair<>(Imyhat.STRING, value.asText());
+    if (value.isString()) {
+      return new Pair<>(Imyhat.STRING, value.asString());
     }
     if (value.isArray()) {
-      if (value.size() == 0) {
+      if (value.isEmpty()) {
         return null;
       }
       Imyhat type;
@@ -39,14 +39,14 @@ public final class JsonFileDefinitionFile extends JsonPluginFile<ObjectNode> {
       } else if (value.get(0).isIntegralNumber()) {
         type = Imyhat.INTEGER;
         converter = JsonNode::asLong;
-      } else if (value.get(0).isTextual()) {
+      } else if (value.get(0).isString()) {
         type = Imyhat.STRING;
-        converter = JsonNode::asText;
+        converter = JsonNode::asString;
       } else {
         return null;
       }
       final var set = type.newSet();
-      final var iterator = value.elements();
+      final var iterator = value.values().iterator();
       while (iterator.hasNext()) {
         set.add(converter.apply(iterator.next()));
       }
@@ -77,7 +77,7 @@ public final class JsonFileDefinitionFile extends JsonPluginFile<ObjectNode> {
     final var description = String.format("User-defined value specified in %s.", fileName());
     definer.clearConstants();
     badKeys.clear();
-    var iterator = node.fields();
+    var iterator = node.properties().iterator();
     while (iterator.hasNext()) {
       var e = iterator.next();
       final var constant = convert(e.getValue());

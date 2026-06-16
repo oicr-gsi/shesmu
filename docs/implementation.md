@@ -82,7 +82,7 @@ olives cannot handle null values. If you need nullable values, use
 | String     | `java.lang.String`                         | `string`                 | `s`        |
 | Boolean    | `boolean` / `z`                            | `boolean`                | `b`        |
 | Date       | `java.time.Instant`                        | `date`                   | `d`        |
-| JSON       | `com.fasterxml.jackson.databind.JsonNode`  | `json`                   | `j`        |
+| JSON       | `tools.jackson.databind.JsonNode`  | `json`                   | `j`        |
 | List       | `java.lang.Set`                            | `[`_inner_`]`            | `a`_inner_ |
 | Empty List | `java.lang.Set`                            | `[]`                     | `A`        |
 | Tuple      | `ca.on.oicr.gsi.shesmu.Tuple`              | `{`_t1_`,`_t2_`,` ...`}` | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |

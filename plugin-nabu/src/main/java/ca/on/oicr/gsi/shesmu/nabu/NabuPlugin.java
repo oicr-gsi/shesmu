@@ -11,15 +11,17 @@ import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonListBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
 
@@ -167,11 +169,11 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
   }
 
   static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
-  static final ObjectMapper MAPPER = new ObjectMapper();
-
-  static {
-    MAPPER.registerModule(new JavaTimeModule());
-  }
+  static final JsonMapper MAPPER = JsonMapper.builder()
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+      .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+      .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+      .build();
 
   private final CaseArchiveCache caseArchiveCache;
   private final ProjectArchiveCache projectArchiveCache;
@@ -248,10 +250,10 @@ public class NabuPlugin extends JsonPluginFile<NabuConfiguration> {
       JsonNode metadata, String bestKey, String backupKey) {
     // metadata for earlier case archives were submitted with snake case keys
     if (metadata.findValue(bestKey) != null) {
-      return Optional.ofNullable(metadata.findValue(bestKey).textValue());
+      return Optional.ofNullable(metadata.findValue(bestKey).stringValue());
     }
     if (metadata.findValue(backupKey) != null) {
-      return Optional.ofNullable(metadata.findValue(backupKey).textValue());
+      return Optional.ofNullable(metadata.findValue(backupKey).stringValue());
     }
     return Optional.empty();
   }

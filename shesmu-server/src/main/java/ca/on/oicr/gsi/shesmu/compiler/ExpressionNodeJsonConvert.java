@@ -6,7 +6,7 @@ import ca.on.oicr.gsi.shesmu.plugin.json.AsJsonNode;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import ca.on.oicr.gsi.shesmu.runtime.JsonConverter;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;

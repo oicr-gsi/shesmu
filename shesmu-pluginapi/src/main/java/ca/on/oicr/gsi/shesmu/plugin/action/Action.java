@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.plugin.action;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

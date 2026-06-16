@@ -10,7 +10,7 @@ import ca.on.oicr.gsi.vidarr.InputProvisionFormat;
 import ca.on.oicr.gsi.vidarr.InputType;
 import ca.on.oicr.gsi.vidarr.InputType.Visitor;
 import ca.on.oicr.gsi.vidarr.api.TargetDeclaration;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;

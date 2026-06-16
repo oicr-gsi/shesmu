@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.util.function.Consumer;
 
 public class InformationParameterNodeLiteral<T> extends InformationParameterNode<T> {
@@ -21,7 +21,7 @@ public class InformationParameterNodeLiteral<T> extends InformationParameterNode
       return canFlatten
           ? String.format("[%s]", RuntimeSupport.MAPPER.writeValueAsString(value))
           : RuntimeSupport.MAPPER.writeValueAsString(value);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException(e);
     }
   }

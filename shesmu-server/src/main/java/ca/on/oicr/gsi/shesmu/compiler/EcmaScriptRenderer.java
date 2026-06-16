@@ -4,7 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -216,7 +216,7 @@ public final class EcmaScriptRenderer {
                                         .collect(Collectors.joining(" && "));
                                   }
                                 }));
-                      } catch (JsonProcessingException e) {
+                      } catch (JacksonException e) {
                         throw new RuntimeException(e);
                       }
                     })

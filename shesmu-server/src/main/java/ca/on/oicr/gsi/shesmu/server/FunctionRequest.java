@@ -1,6 +1,6 @@
 package ca.on.oicr.gsi.shesmu.server;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ArrayNode;
 
 /** JSON request to execute a function from the REST interface */
 public class FunctionRequest {

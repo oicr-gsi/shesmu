@@ -22,9 +22,11 @@ import ca.on.oicr.gsi.vidarr.BasicType;
 import ca.on.oicr.gsi.vidarr.BasicType.Visitor;
 import ca.on.oicr.gsi.vidarr.JsonBodyHandler;
 import ca.on.oicr.gsi.vidarr.api.*;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -236,7 +238,11 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
               new Pair<>("versions", Imyhat.dictionary(Imyhat.STRING, Imyhat.STRING.asList()))));
   static final HttpClient CLIENT = HttpClient.newHttpClient();
   private static final Pattern INVALID = Pattern.compile("[^A-Za-z0-9_]");
-  static final ObjectMapper MAPPER = new ObjectMapper();
+  static final JsonMapper MAPPER = JsonMapper.builder()
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+      .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+      .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+      .build();
   static final BasicType.Visitor<Imyhat> SIMPLE_TO_IMYHAT =
       new Visitor<>() {
         @Override
@@ -307,10 +313,6 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
           return Imyhat.tuple(elements.map(e -> e.apply(this)).toArray(Imyhat[]::new));
         }
       };
-
-  static {
-    MAPPER.registerModule(new JavaTimeModule());
-  }
 
   static String sanitise(String raw) {
     final String clean = INVALID.matcher(raw).replaceAll("_");

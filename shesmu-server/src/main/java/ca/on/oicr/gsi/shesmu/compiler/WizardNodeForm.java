@@ -2,7 +2,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -42,7 +42,7 @@ public class WizardNodeForm extends WizardNode {
                     return RuntimeSupport.MAPPER.writeValueAsString(c.name())
                         + ": "
                         + c.renderEcma(renderer);
-                  } catch (JsonProcessingException e) {
+                  } catch (JacksonException e) {
                     throw new RuntimeException(e);
                   }
                 })

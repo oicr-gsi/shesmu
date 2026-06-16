@@ -6,12 +6,12 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatFunction.AccessContents;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer.AlgebraicTransformer;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer.AlgebraicVisitor;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.type.TypeFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.type.TypeFactory;
 import java.io.IOException;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
@@ -1437,11 +1437,7 @@ public abstract class Imyhat {
 
         @Override
         public Object parse(String s) {
-          try {
-            return new ObjectMapper().readTree(s);
-          } catch (IOException e) {
-            return defaultValue();
-          }
+          return new ObjectMapper().readTree(s);
         }
       };
   public static final BaseImyhat NOTHING =

@@ -4,7 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.vidarr.UnloadFilter;
 import ca.on.oicr.gsi.vidarr.UnloadTextSelector;
 import ca.on.oicr.gsi.vidarr.api.UnloadFilterWorkflowRunId;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Set;

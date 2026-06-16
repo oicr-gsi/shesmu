@@ -6,7 +6,7 @@ import static org.objectweb.asm.Type.LONG_TYPE;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;

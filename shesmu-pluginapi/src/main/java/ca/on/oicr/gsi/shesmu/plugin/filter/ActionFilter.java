@@ -8,7 +8,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Parser.RuleWithLiteral;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import java.text.DateFormatSymbols;
 import java.time.*;
 import java.time.temporal.ChronoField;

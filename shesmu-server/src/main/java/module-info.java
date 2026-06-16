@@ -27,9 +27,8 @@ module ca.on.oicr.gsi.shesmu.server {
 
   requires ca.on.oicr.gsi.serverutils;
   requires ca.on.oicr.gsi.shesmu;
-  requires com.fasterxml.jackson.core;
-  requires com.fasterxml.jackson.databind;
-  requires com.fasterxml.jackson.datatype.jsr310;
+  requires tools.jackson.core;
+  requires tools.jackson.databind;
   requires org.apache.commons.csv;
   requires simpleclient.common;
   requires simpleclient.hotspot;

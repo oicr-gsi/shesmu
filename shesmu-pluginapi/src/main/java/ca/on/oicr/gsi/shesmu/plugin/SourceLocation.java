@@ -1,11 +1,10 @@
 package ca.on.oicr.gsi.shesmu.plugin;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.IOException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -32,7 +31,7 @@ public final class SourceLocation implements Comparable<SourceLocation> {
   }
 
   /** Custom JSON serializer */
-  public static final class SourceLocationSerializer extends JsonSerializer<SourceLocation> {
+  public static final class SourceLocationSerializer extends ValueSerializer<SourceLocation> {
     private final SourceLocationLinker linker;
 
     public SourceLocationSerializer(SourceLocationLinker linker) {
@@ -43,16 +42,15 @@ public final class SourceLocation implements Comparable<SourceLocation> {
     public void serialize(
         SourceLocation sourceLocation,
         JsonGenerator jsonGenerator,
-        SerializerProvider serializerProvider)
-        throws IOException {
+        SerializationContext serializerProvider) {
       jsonGenerator.writeStartObject();
-      jsonGenerator.writeStringField("file", sourceLocation.fileName);
-      jsonGenerator.writeNumberField("line", sourceLocation.line);
-      jsonGenerator.writeNumberField("column", sourceLocation.column);
-      jsonGenerator.writeStringField("hash", sourceLocation.hash);
+      jsonGenerator.writeStringProperty("file", sourceLocation.fileName);
+      jsonGenerator.writeNumberProperty("line", sourceLocation.line);
+      jsonGenerator.writeNumberProperty("column", sourceLocation.column);
+      jsonGenerator.writeStringProperty("hash", sourceLocation.hash);
       final var url = sourceLocation.url(linker);
       if (url.isPresent()) {
-        jsonGenerator.writeStringField("url", url.get());
+        jsonGenerator.writeStringProperty("url", url.get());
       }
       jsonGenerator.writeEndObject();
     }

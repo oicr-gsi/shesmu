@@ -7,7 +7,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -54,7 +54,7 @@ public class InformationNodeSimulation extends InformationNode {
               .map(RefillerDefinitionNode::render)
               .sorted()
               .collect(Collectors.joining(", ", "{", "}")));
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException(e);
     }
   }

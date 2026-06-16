@@ -3,7 +3,7 @@ package ca.on.oicr.gsi.shesmu;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.Gang;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;

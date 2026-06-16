@@ -6,7 +6,7 @@ module ca.on.oicr.gsi.shesmu.plugin.sftp {
 
   requires ca.on.oicr.gsi.serverutils;
   requires ca.on.oicr.gsi.shesmu;
-  requires com.fasterxml.jackson.databind;
+  requires tools.jackson.databind;
   requires com.hierynomus.sshj;
   requires org.apache.commons.text;
   requires org.bouncycastle.pkix;

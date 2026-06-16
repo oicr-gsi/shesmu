@@ -10,7 +10,7 @@ module ca.on.oicr.gsi.shesmu.plugin.guanyin {
   requires ca.on.oicr.gsi.serverutils;
   requires ca.on.oicr.gsi.shesmu;
   requires com.fasterxml.jackson.annotation;
-  requires com.fasterxml.jackson.databind;
+  requires tools.jackson.databind;
   requires simpleclient;
   requires java.net.http;
 

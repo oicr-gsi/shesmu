@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.plugin;
 
 import ca.on.oicr.gsi.Pair;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeFactory;
 import java.util.stream.Stream;
 
 /** A list of table rows that can be inserted into definitions pages and the olive dashboard */

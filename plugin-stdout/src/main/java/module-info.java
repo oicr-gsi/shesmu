@@ -6,7 +6,7 @@ module plugin.stdout {
 
   requires ca.on.oicr.gsi.shesmu;
   requires ca.on.oicr.gsi.serverutils;
-  requires com.fasterxml.jackson.databind;
+  requires tools.jackson.databind;
 
   provides PluginFileType with
       StdoutPluginType;

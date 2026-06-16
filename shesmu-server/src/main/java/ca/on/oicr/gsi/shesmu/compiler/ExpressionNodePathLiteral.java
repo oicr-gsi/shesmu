@@ -3,7 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
@@ -42,7 +42,7 @@ public class ExpressionNodePathLiteral extends ExpressionNode {
   public String renderEcma(EcmaScriptRenderer renderer) {
     try {
       return RuntimeSupport.MAPPER.writeValueAsString(path);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException(e);
     }
   }

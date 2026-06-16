@@ -9,8 +9,7 @@ module ca.on.oicr.gsi.shesmu.plugin.runscanner {
   requires ca.on.oicr.gsi.runscanner.dto;
   requires ca.on.oicr.gsi.serverutils;
   requires ca.on.oicr.gsi.shesmu;
-  requires com.fasterxml.jackson.databind;
-  requires com.fasterxml.jackson.datatype.jsr310;
+  requires tools.jackson.databind;
   requires java.net.http;
   requires simpleclient;
 

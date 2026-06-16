@@ -20,8 +20,7 @@ import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.runscanner.RunScannerPluginType;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.ws.dto.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.JsonMapper;
 import io.prometheus.client.Gauge;
 import java.io.IOException;
 import java.net.http.HttpClient;
@@ -703,17 +702,17 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   private static final Pattern COMMA = Pattern.compile(",");
 
   private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final JsonMapper MAPPER = JsonMapper.builder()
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+      .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+      .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+      .build();
   private static final Gauge badSetMap =
       Gauge.build(
               "shesmu_pinery_bad_set",
               "The number of provenance records with sets not containing exactly one item.")
           .labelNames("target", "property", "reason")
           .register();
-
-  static {
-    MAPPER.registerModule(new JavaTimeModule());
-  }
 
   private static Set<Set<Long>> flowcellGeometry(RunDto run) {
     int lanes;

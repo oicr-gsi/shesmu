@@ -3,12 +3,11 @@ package ca.on.oicr.gsi.shesmu.mongo;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.io.IOException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -16,11 +15,11 @@ import org.bson.Document;
 
 @JsonDeserialize(using = ReturnConverter.Deserializer.class)
 public abstract class ReturnConverter {
-  public static class Deserializer extends JsonDeserializer<ReturnConverter> {
+  public static class Deserializer extends ValueDeserializer<ReturnConverter> {
 
     private ReturnConverter deserialize(JsonNode node) {
-      if (node.isTextual()) {
-        final var str = node.asText();
+      if (node.isString()) {
+        final var str = node.asString();
         switch (str) {
           case "boolean":
             return BOOLEAN;
@@ -42,7 +41,7 @@ public abstract class ReturnConverter {
         }
       }
       if (node.isObject()) {
-        final var type = node.get("is").asText();
+        final var type = node.get("is").asString();
         switch (type) {
           case "list":
             return list(deserialize(node));
@@ -51,7 +50,7 @@ public abstract class ReturnConverter {
           case "object":
             return object(elements(node));
           case "unwrap":
-            return unwrap(node.get("name").asText(), deserialize(node.get("of")));
+            return unwrap(node.get("name").asString(), deserialize(node.get("of")));
           default:
             throw new IllegalArgumentException("Unknown Mongo type: " + type);
         }
@@ -60,16 +59,14 @@ public abstract class ReturnConverter {
     }
 
     @Override
-    public ReturnConverter deserialize(JsonParser parser, DeserializationContext context)
-        throws IOException {
-      final var oc = parser.getCodec();
-      final JsonNode node = oc.readTree(parser);
+    public ReturnConverter deserialize(JsonParser parser, DeserializationContext context) {
+      final JsonNode node = context.readTree(parser);
       return deserialize(node);
     }
 
     private Map<String, ReturnConverter> elements(JsonNode node) {
       final Map<String, ReturnConverter> elements = new TreeMap<>();
-      final var iterator = node.get("of").fields();
+      final var iterator = node.get("of").properties().iterator();
       while (iterator.hasNext()) {
         final var current = iterator.next();
         elements.put(current.getKey(), deserialize(current.getValue()));

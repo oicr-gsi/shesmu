@@ -14,14 +14,15 @@ import ca.on.oicr.gsi.shesmu.server.plugins.BaseInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicActionParameterDescriptor;
 import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicRefillerParameterDescriptor;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Gauge;
 import java.io.IOException;
 import java.lang.invoke.CallSite;
@@ -98,7 +99,11 @@ public final class RuntimeSupport {
   }
 
   @RuntimeInterop public static final String[] EMPTY = new String[0];
-  public static final ObjectMapper MAPPER = new ObjectMapper();
+  public static final JsonMapper MAPPER = JsonMapper.builder()
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+      .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+      .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+      .build();
 
   @RuntimeInterop
   public static final BinaryOperator<?> USELESS_BINARY_OPERATOR =
@@ -108,11 +113,6 @@ public final class RuntimeSupport {
           };
 
   private static final Map<Pair<String, Integer>, CallSite> callsites = new HashMap<>();
-
-  static {
-    MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
-    MAPPER.registerModule(new JavaTimeModule());
-  }
 
   public static CallSite actionParameterBootstrap(
       Lookup lookup, String methodName, MethodType type, String actionName) {
@@ -169,7 +169,7 @@ public final class RuntimeSupport {
   @RuntimeInterop
   @SafeVarargs
   public static <T> Tuple collect(Stream<T> items, Function<Stream<T>, Object>... processors) {
-    final var data = items.collect(Collectors.toList());
+    final var data = items.toList();
     return new Tuple(Stream.of(processors).map(p -> p.apply(data.stream())).toArray());
   }
 
@@ -177,7 +177,7 @@ public final class RuntimeSupport {
   public static Optional<JsonNode> decodeJson(String input) {
     try {
       return Optional.of(MAPPER.readTree(input));
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       return Optional.empty();
     }
   }
@@ -201,7 +201,7 @@ public final class RuntimeSupport {
   public static String encodeJson(JsonNode input) {
     try {
       return MAPPER.writeValueAsString(input);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException(e);
     }
   }
@@ -265,7 +265,7 @@ public final class RuntimeSupport {
       Function<I, Set<K>> makeOuterKey,
       Function<N, Set<K>> makeInnerKey,
       BiFunction<I, N, O> joiner) {
-    final var inputs = input.collect(Collectors.toList());
+    final var inputs = input.toList();
     input.close();
     final Map<K, Set<Integer>> inputGroups = new HashMap<>();
     for (var i = 0; i < inputs.size(); i++) {
@@ -274,7 +274,7 @@ public final class RuntimeSupport {
       }
     }
 
-    final var inners = inner.collect(Collectors.toList());
+    final var inners = inner.toList();
     inner.close();
     final Map<K, Set<Integer>> innerGroups = new HashMap<>();
     for (var i = 0; i < inners.size(); i++) {
@@ -298,7 +298,7 @@ public final class RuntimeSupport {
   @RuntimeInterop
   public static CallSite jsonBootstrap(
       MethodHandles.Lookup lookup, String descriptor, MethodType type, String json)
-      throws JsonProcessingException {
+      throws JacksonException {
     final var imyhat = Imyhat.parse(descriptor);
     final var value = imyhat.apply(new UnpackJson(MAPPER.readTree(json)));
     return new ConstantCallSite(MethodHandles.constant(imyhat.javaType(), value).asType(type));
@@ -306,12 +306,12 @@ public final class RuntimeSupport {
 
   @RuntimeInterop
   public static Stream<JsonNode> jsonElements(JsonNode node) {
-    return Utils.stream(node.elements());
+    return Utils.stream(node.values());
   }
 
   @RuntimeInterop
   public static Stream<Tuple> jsonFields(JsonNode node) {
-    return Utils.stream(node.fields()).map(e -> new Tuple(e.getKey(), e.getValue()));
+    return Utils.stream(node.properties()).map(e -> new Tuple(e.getKey(), e.getValue()));
   }
 
   @RuntimeInterop
@@ -347,7 +347,7 @@ public final class RuntimeSupport {
       BiFunction<I, N, J> joiner,
       Function<J, O> makeOutput,
       BiConsumer<O, J> collector) {
-    final var inners = inner.collect(Collectors.toList());
+    final var inners = inner.toList();
     inner.close();
     final Map<K, Set<Integer>> innerGroups = new HashMap<>();
     for (var i = 0; i < inners.size(); i++) {
@@ -528,11 +528,7 @@ public final class RuntimeSupport {
 
   @RuntimeInterop
   public static Optional<JsonNode> parseJson(String input) {
-    try {
-      return Optional.of(MAPPER.readTree(input));
-    } catch (IOException e) {
-      return Optional.empty();
-    }
+    return Optional.of(MAPPER.readTree(input));
   }
 
   @RuntimeInterop

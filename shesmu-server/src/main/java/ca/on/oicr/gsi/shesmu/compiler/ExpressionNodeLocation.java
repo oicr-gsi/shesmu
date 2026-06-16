@@ -2,7 +2,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -30,7 +30,7 @@ public class ExpressionNodeLocation extends ExpressionNode {
     try {
       return RuntimeSupport.MAPPER.writeValueAsString(
           String.format("%s:%d:%d[%s]", renderer.sourcePath(), line(), column(), renderer.hash()));
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException(e);
     }
   }
