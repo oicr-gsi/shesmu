@@ -46,7 +46,7 @@ public class ImportStateMonitor extends ImportState {
         return new PerformResult(
             List.of("Reprovisioning has failed while executing. See provisioner logs for details."),
             status,
-            new ImportStateMonitor(result.getWorkflowRunUrl(), result));
+            new ImportStateMonitor(url.toASCIIString(), result));
       } else {
         return new PerformResult(
             List.of(), status, new ImportStateMonitor(url.toASCIIString(), result));
