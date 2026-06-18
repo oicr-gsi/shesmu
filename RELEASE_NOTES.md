@@ -7,6 +7,24 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.60.0] - 2026-06-18
+
+### Added
+
+* `started_date` to `vidarr_analysis` input format
+* pinery `draft_assays` function to get list of assay versions currently marked as draft
+  pinery `is_draft_assay` function to check if a particular assay version is currently marked as draft
+
+### Changed
+
+* Remove 'engine_parameters' from import action definition
+* Upgrade to Java 21
+
+### Fixed
+
+* Fix bug causing `null` URL for failed import actions
+
+
 ## [1.59.0] - 2026-05-26
 
 ### Added
