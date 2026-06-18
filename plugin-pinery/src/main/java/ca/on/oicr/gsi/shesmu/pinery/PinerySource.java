@@ -828,10 +828,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         .collect(Collectors.toCollection(TreeSet::new));
   }
 
-  @ShesmuMethod(
-      name = "draft_assays",
-      description = "Assay versions which are in draft state"
-  )
+  @ShesmuMethod(name = "draft_assays", description = "Assay versions which are in draft state")
   public Set<String> draftAssayVersions() {
     return assays
         .get()
@@ -842,8 +839,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
   @ShesmuMethod(
       name = "is_draft_assay",
-      description = "Check if an assay version is marked as draft"
-  )
+      description = "Check if an assay version is marked as draft")
   public boolean isDraftAssay(String assayName, String assayVersion) {
     return assays
         .get()
