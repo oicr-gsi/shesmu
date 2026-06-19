@@ -80,9 +80,9 @@ git commit -a -m "Update release notes for release"
 # Release
 mvn versions:set -DnewVersion=${NEW_VERSION} -DgenerateBackupPoms=false
 sed -i -e 's/^version = .*$/version = "'$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | cut -f 1 -d -)'"/' */Cargo.toml
+mvn clean install
 git commit -a -m "prepare release v${NEW_VERSION}"
 git tag -a v${NEW_VERSION} -m "prepare v${NEW_VERSION} release"
-mvn clean install
 mvn versions:set -DnextSnapshot=true -DgenerateBackupPoms=false
 git commit -a -m "prepared for next development iteration"
 git push origin master
