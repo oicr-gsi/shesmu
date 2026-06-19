@@ -20,6 +20,8 @@ jobs:
       uses: s4u/maven-settings-action@v3.0.0
     - name: Build Shesmu with Maven
       run: mvn -B package --file pom.xml
+    - name: Validate code formatting
+      run: mvn git-code-format:validate-code-format -Dgcf.globPattern=**/*
     - name: Build Shesmu JavaDoc with Maven
       run: 'mvn javadoc:javadoc -pl shesmu-pluginapi --file pom.xml && mv shesmu-pluginapi/target/reports/apidocs docs/javadoc'
     - name: Build Jekyll Documentation

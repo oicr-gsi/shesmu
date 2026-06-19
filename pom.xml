@@ -255,12 +255,6 @@
               <goal>install-hooks</goal>
             </goals>
           </execution>
-          <execution>
-            <id>validate-code-format</id>
-            <goals>
-              <goal>validate-code-format</goal>
-            </goals>
-          </execution>
         </executions>
         <dependencies>
           <!-- Requires custom JVM config in .mvn/jvm.config -->
