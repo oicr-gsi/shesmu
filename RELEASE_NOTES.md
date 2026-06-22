@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.60.1] - 2026-06-22
+
+### Fixed
+
+* NullPointerException when import action requires labels
+
+
 ## [1.60.0] - 2026-06-18
 
 ### Added
