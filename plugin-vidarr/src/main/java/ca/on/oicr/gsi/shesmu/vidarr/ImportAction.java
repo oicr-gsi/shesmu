@@ -74,12 +74,6 @@ public class ImportAction extends VidarrAction {
   }
 
   @ActionParameter
-  public void modified(Instant modified) {
-    ZonedDateTime zdt = ZonedDateTime.ofInstant(modified, ZoneId.of("UTC"));
-    request.getWorkflowRun().setModified(zdt);
-  }
-
-  @ActionParameter
   public void started(Instant started) {
     ZonedDateTime zdt = ZonedDateTime.ofInstant(started, ZoneId.of("UTC"));
     request.getWorkflowRun().setStarted(zdt);
