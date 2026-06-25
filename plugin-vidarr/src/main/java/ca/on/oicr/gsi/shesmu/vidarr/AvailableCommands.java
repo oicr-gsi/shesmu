@@ -52,17 +52,18 @@ public enum AvailableCommands {
           Preference.ALLOW_BULK) {
         @Override
         protected Response execute(VidarrAction action, Optional<String> user) {
-          // JDK 21: use pattern-matching switch
-          if (action instanceof SubmitAction) {
-            final Optional<RunState> result = ((SubmitAction) action).state.reattempt();
-            result.ifPresent(s -> ((SubmitAction) action).state = s);
-            return result.isPresent() ? Response.RESET : Response.IGNORED;
-          } else if (action instanceof ImportAction) {
-            final Optional<ImportState> result = ((ImportAction) action).state.reattempt();
-            result.ifPresent(s -> ((ImportAction) action).state = s);
-            return result.isPresent() ? Response.RESET : Response.IGNORED;
-          }
-          return Response.IGNORED;
+          return switch (action) {
+            case SubmitAction submitAction:
+              final Optional<RunState> submitReattempt = submitAction.state.reattempt();
+              submitReattempt.ifPresent(s -> submitAction.state = s);
+              yield submitReattempt.isPresent() ? Response.RESET : Response.IGNORED;
+            case ImportAction importAction:
+              final Optional<ImportState> importReattempt = importAction.state.reattempt();
+              importReattempt.ifPresent(s -> importAction.state = s);
+              yield importReattempt.isPresent() ? Response.RESET : Response.IGNORED;
+            default:
+              yield Response.IGNORED;
+          };
         }
       };
   static final ActionCommand<VidarrAction> RESET =
@@ -74,16 +75,19 @@ public enum AvailableCommands {
           Preference.ALLOW_BULK) {
         @Override
         protected Response execute(VidarrAction action, Optional<String> user) {
-          // JDK 21: use pattern-matching switch
-          if (action instanceof SubmitAction) {
-            ((SubmitAction) action).state = new RunStateAttemptSubmit();
-          } else if (action instanceof ImportAction) {
-            ((ImportAction) action).state = new ImportStateAttemptSubmit();
-          }
-
-          return Response.RESET;
+          return switch (action) {
+            case SubmitAction submitAction:
+              submitAction.state = new RunStateAttemptSubmit();
+              yield Response.RESET;
+            case ImportAction importAction:
+              importAction.state = new ImportStateAttemptSubmit();
+              yield Response.RESET;
+            default:
+              yield Response.RESET;
+          };
         }
       };
+
   static final ActionCommand<SubmitAction> RETRY_PROVISION_OUT =
       new ActionCommand<>(
           SubmitAction.class,
