@@ -142,7 +142,7 @@ public class ImportAction extends VidarrAction {
     if (this == other) return true;
     if (null == other || getClass() != other.getClass()) return false;
     ImportAction o = (ImportAction) other;
-    return stale == o.stale && Objects.equals(this.request, o.request);
+    return stale == o.stale && this.request.equalsIgnoreAttempt(o.request);
   }
 
   @Override
