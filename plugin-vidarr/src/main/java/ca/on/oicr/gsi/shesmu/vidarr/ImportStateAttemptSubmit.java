@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 
 public class ImportStateAttemptSubmit extends ImportState {
   private int retryMinutes = 5;
-  List<String> errors = null;
+  List<String> errors = List.of();
   private final int attempt;
 
   public ImportStateAttemptSubmit(int attempt) {
@@ -77,6 +77,7 @@ public class ImportStateAttemptSubmit extends ImportState {
       case 500:
         { // Internal Server Error
           retryMinutes = Math.min(retryMinutes * 2, 60);
+          errors = List.of(response.body());
           return new PerformResult(errors, ActionState.FAILED, this);
         }
       case 507:
