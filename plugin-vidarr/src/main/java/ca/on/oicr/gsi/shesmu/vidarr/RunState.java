@@ -2,7 +2,7 @@ package ca.on.oicr.gsi.shesmu.vidarr;
 
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
@@ -75,5 +75,5 @@ abstract class RunState {
 
   public abstract Stream<String> tags();
 
-  public abstract void writeJson(ObjectMapper mapper, ObjectNode node);
+  public abstract void writeJson(JsonMapper mapper, ObjectNode node);
 }

@@ -8,7 +8,7 @@ import ca.on.oicr.gsi.shesmu.plugin.refill.CustomRefillerParameter;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +36,7 @@ public class RefillableDictionary extends JsonPluginFile<Configuration> {
     }
   }
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final JsonMapper MAPPER = new JsonMapper();
   private final Definer<RefillableDictionary> definer;
 
   public RefillableDictionary(
