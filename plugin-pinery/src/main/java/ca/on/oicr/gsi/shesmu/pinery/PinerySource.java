@@ -20,7 +20,10 @@ import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.runscanner.RunScannerPluginType;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.ws.dto.*;
-import tools.jackson.databind.JsonMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 import io.prometheus.client.Gauge;
 import java.io.IOException;
 import java.net.http.HttpClient;
@@ -173,7 +176,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     new Tuple(lp.getLaneProvenanceId(), provider, lastModified, lp.getVersion()),
                     "",
                     Paths.get(
-                        run.getRunDirectory() == null || run.getRunDirectory().equals("")
+                        run.getRunDirectory() == null || run.getRunDirectory().isBlank()
                             ? "/"
                             : run.getRunDirectory()),
                     "",
@@ -284,7 +287,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             sp.getSampleProvenanceId(), provider, lastModified, sp.getVersion()),
                         limsAttr(sp, "geo_organism", badSetInRecord::add, true).orElse(""),
                         Paths.get(
-                            run.getRunDirectory() == null || run.getRunDirectory().equals("")
+                            run.getRunDirectory() == null || run.getRunDirectory().isBlank()
                                 ? "/"
                                 : run.getRunDirectory()),
                         sp.getStudyTitle(),
@@ -462,7 +465,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     new Tuple(lp.getLaneProvenanceId(), provider, lastModified, lp.getVersion()),
                     "",
                     Paths.get(
-                        run.getRunDirectory() == null || run.getRunDirectory().equals("")
+                        run.getRunDirectory() == null || run.getRunDirectory().isBlank()
                             ? "/"
                             : run.getRunDirectory()),
                     "",
@@ -573,7 +576,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             sp.getSampleProvenanceId(), provider, lastModified, sp.getVersion()),
                         limsAttr(sp, "geo_organism", badSetInRecord::add, true).orElse(""),
                         Paths.get(
-                            run.getRunDirectory() == null || run.getRunDirectory().equals("")
+                            run.getRunDirectory() == null || run.getRunDirectory().isBlank()
                                 ? "/"
                                 : run.getRunDirectory()),
                         sp.getStudyTitle(),

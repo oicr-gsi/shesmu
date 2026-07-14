@@ -35,8 +35,8 @@ public abstract class JsonParameterisedAction extends Action {
 
   /** Check if the JSON value provided contains any strings that match the pattern supplied */
   protected final boolean searchParameters(Pattern pattern, JsonNode value) {
-    if (value.isTextual()) {
-      return pattern.matcher(value.asText()).matches();
+    if (value.isString()) {
+      return pattern.matcher(value.asString()).matches();
     }
     for (var inner : value) {
       if (searchParameters(pattern, inner)) return true;

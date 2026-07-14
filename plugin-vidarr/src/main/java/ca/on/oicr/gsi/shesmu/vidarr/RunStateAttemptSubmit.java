@@ -9,7 +9,7 @@ import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowResponseDryRun;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowResponseFailure;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowResponseMissingKeyVersions;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowResponseSuccess;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
@@ -164,7 +164,7 @@ final class RunStateAttemptSubmit extends RunState {
   }
 
   @Override
-  public void writeJson(ObjectMapper mapper, ObjectNode node) {
+  public void writeJson(JsonMapper mapper, ObjectNode node) {
     node.put("runState", "attempt");
     node.put("attempt", attempt);
   }

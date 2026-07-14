@@ -23,6 +23,7 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
 import ca.on.oicr.gsi.shesmu.util.AutoLock;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.math.BigDecimal;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -374,7 +375,7 @@ public final class ActionProcessor
         }
       };
 
-  private static final JsonNodeFactory JSON_FACTORY = JsonNodeFactory.withExactBigDecimals(false);
+  private static final JsonNodeFactory JSON_FACTORY = JsonNodeFactory.instance;
   private static final Bin<Instant> INSTANT_BIN =
       new Bin<>() {
         @Override
@@ -394,7 +395,7 @@ public final class ActionProcessor
 
         @Override
         public JsonNode name(Instant min, long offset) {
-          return JSON_FACTORY.numberNode(min.toEpochMilli() + offset);
+          return JSON_FACTORY.numberNode(BigDecimal.valueOf(min.toEpochMilli() + offset).stripTrailingZeros());
         }
 
         @Override
@@ -454,7 +455,7 @@ public final class ActionProcessor
 
         @Override
         public JsonNode json(String input) {
-          return JSON_FACTORY.textNode(input);
+          return JSON_FACTORY.stringNode(input);
         }
 
         @Override
@@ -490,7 +491,7 @@ public final class ActionProcessor
 
         @Override
         public JsonNode json(String input) {
-          return JSON_FACTORY.textNode(input);
+          return JSON_FACTORY.stringNode(input);
         }
 
         @Override
@@ -514,7 +515,7 @@ public final class ActionProcessor
 
         @Override
         public JsonNode json(String input) {
-          return JSON_FACTORY.textNode(input);
+          return JSON_FACTORY.stringNode(input);
         }
 
         @Override
