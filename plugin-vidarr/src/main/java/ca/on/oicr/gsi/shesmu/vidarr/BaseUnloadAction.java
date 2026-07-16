@@ -11,8 +11,6 @@ import ca.on.oicr.gsi.vidarr.JsonBodyHandler;
 import ca.on.oicr.gsi.vidarr.UnloadFilter;
 import ca.on.oicr.gsi.vidarr.api.UnloadRequest;
 import ca.on.oicr.gsi.vidarr.api.UnloadResponse;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.time.Duration;
@@ -20,6 +18,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 public abstract class BaseUnloadAction extends Action {
   private static final ActionCommand<BaseUnloadAction> HUMAN_APPROVE_COMMAND =
@@ -119,7 +119,7 @@ public abstract class BaseUnloadAction extends Action {
   }
 
   @Override
-  public final ObjectNode toJson(ObjectMapper mapper) {
+  public final ObjectNode toJson(JsonMapper mapper) {
     final var node = mapper.createObjectNode();
     node.put("vidarrOutputName", vidarrOutputName);
     errors.forEach(node.putArray("errors")::add);

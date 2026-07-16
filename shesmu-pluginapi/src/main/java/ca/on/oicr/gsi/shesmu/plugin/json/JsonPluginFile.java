@@ -1,11 +1,11 @@
 package ca.on.oicr.gsi.shesmu.plugin.json;
 
 import ca.on.oicr.gsi.shesmu.plugin.PluginFile;
-import tools.jackson.databind.ObjectMapper;
 import io.prometheus.client.Gauge;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import tools.jackson.databind.json.JsonMapper;
 
 /** Creates a watched JSON file that will be notified when the file changes on disk and parsed */
 public abstract class JsonPluginFile<T> extends PluginFile {
@@ -16,7 +16,7 @@ public abstract class JsonPluginFile<T> extends PluginFile {
 
   private final Class<T> clazz;
 
-  private final ObjectMapper mapper;
+  private final JsonMapper mapper;
 
   /**
    * Creates a new monitor
@@ -24,7 +24,7 @@ public abstract class JsonPluginFile<T> extends PluginFile {
    * @param fileName the file to monitor
    * @param clazz the class to parse the JSON file as
    */
-  public JsonPluginFile(Path fileName, String instanceName, ObjectMapper mapper, Class<T> clazz) {
+  public JsonPluginFile(Path fileName, String instanceName, JsonMapper mapper, Class<T> clazz) {
     super(fileName, instanceName);
     this.mapper = mapper;
     this.clazz = clazz;

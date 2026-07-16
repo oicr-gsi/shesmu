@@ -23,17 +23,11 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
 import ca.on.oicr.gsi.shesmu.util.AutoLock;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.math.BigDecimal;
-import tools.jackson.core.JsonGenerator;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ArrayNode;
-import tools.jackson.databind.node.JsonNodeFactory;
-import tools.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Collector;
 import io.prometheus.client.Gauge;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -69,6 +63,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Background process for launching actions and reporting the results
@@ -282,7 +282,7 @@ public final class ActionProcessor
       new AlertFilterBuilder<>() {
         @Override
         public Predicate<Alert> and(Stream<Predicate<Alert>> filters) {
-          final var predicates = filters.collect(Collectors.toList());
+          final var predicates = filters.toList();
           return alert -> predicates.stream().allMatch(predicate -> predicate.test(alert));
         }
 
@@ -331,7 +331,7 @@ public final class ActionProcessor
 
         @Override
         public Predicate<Alert> or(Stream<Predicate<Alert>> filters) {
-          final var predicates = filters.collect(Collectors.toList());
+          final var predicates = filters.toList();
           return alert -> predicates.stream().anyMatch(predicate -> predicate.test(alert));
         }
       };
@@ -395,7 +395,8 @@ public final class ActionProcessor
 
         @Override
         public JsonNode name(Instant min, long offset) {
-          return JSON_FACTORY.numberNode(BigDecimal.valueOf(min.toEpochMilli() + offset).stripTrailingZeros());
+          return JSON_FACTORY.numberNode(
+              BigDecimal.valueOf(min.toEpochMilli() + offset).stripTrailingZeros());
         }
 
         @Override
@@ -564,7 +565,7 @@ public final class ActionProcessor
           .register();
 
   static Function<String, String> commonPathPrefix(Stream<String> input) {
-    final var items = input.collect(Collectors.toList());
+    final var items = input.toList();
     if (items.isEmpty()) {
       return Function.identity();
     }
@@ -1288,7 +1289,7 @@ public final class ActionProcessor
     };
   }
 
-  public void getAlert(OutputStream output, String id) throws IOException {
+  public void getAlert(OutputStream output, String id) {
     final var alert = alerts.values().stream().filter(a -> a.id.equals(id)).findAny().orElse(null);
     RuntimeSupport.MAPPER.writeValue(output, alert);
   }
@@ -1618,7 +1619,7 @@ public final class ActionProcessor
                     .allMatch(filter -> filter.check(entry.getKey(), entry.getValue())));
   }
 
-  public ArrayNode stats(ObjectMapper mapper, boolean wait, Filter... filters) {
+  public ArrayNode stats(JsonMapper mapper, boolean wait, Filter... filters) {
     final var actions = startStream(filters).collect(Collectors.toList());
     final var array = mapper.createArrayNode();
     final var message = array.addObject();

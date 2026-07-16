@@ -9,8 +9,6 @@ import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
@@ -22,6 +20,8 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 public final class IssueAction extends Action {
 
@@ -219,7 +219,7 @@ public final class IssueAction extends Action {
   }
 
   @Override
-  public ObjectNode toJson(ObjectMapper mapper) {
+  public ObjectNode toJson(JsonMapper mapper) {
     final var node = mapper.createObjectNode();
     node.put("projectKey", connection.get().projectKey());
     node.put("summary", summary);

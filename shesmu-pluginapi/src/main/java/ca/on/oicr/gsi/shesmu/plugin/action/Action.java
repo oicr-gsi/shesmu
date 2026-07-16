@@ -1,7 +1,5 @@
 package ca.on.oicr.gsi.shesmu.plugin.action;
 
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -10,6 +8,8 @@ import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * An action that can be performed as a result of the decision-making process
@@ -190,7 +190,7 @@ public abstract class Action {
    * @param mapper the JSON mapper instance to use
    * @return a JSON representation of the action
    */
-  public abstract ObjectNode toJson(ObjectMapper mapper);
+  public abstract ObjectNode toJson(JsonMapper mapper);
 
   /**
    * The action's name as it will appear in the JSON.

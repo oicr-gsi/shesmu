@@ -7,14 +7,6 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.JsonParameterisedAction;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.SerializationFeature;
-import tools.jackson.databind.cfg.DateTimeFeature;
-import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -23,15 +15,23 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.*;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonParameterisedAction {
 
   protected final Definer<NabuPlugin> owner;
-  static final JsonMapper MAPPER = JsonMapper.builder()
-      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-      .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
-      .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
-      .build();
+  static final JsonMapper MAPPER =
+      JsonMapper.builder()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+          .build();
   protected List<String> errors = new ArrayList<>();
   public Optional<String> archiveNote;
   public String archiveTarget;
@@ -154,7 +154,7 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
     return ActionState.UNKNOWN;
   }
 
-  protected ObjectNode createRequestJson(ObjectMapper mapper) {
+  protected ObjectNode createRequestJson(JsonMapper mapper) {
     final ObjectNode node = mapper.createObjectNode();
     node.put(identifierJsonFieldName(), identifier);
     node.put("archiveTarget", archiveTarget);
@@ -302,7 +302,7 @@ public abstract class ArchiveAction<T extends NabuBaseArchiveDto> extends JsonPa
   }
 
   @Override
-  public ObjectNode toJson(ObjectMapper mapper) {
+  public ObjectNode toJson(JsonMapper mapper) {
     final ObjectNode node = mapper.createObjectNode();
     node.set("request", createRequestJson(mapper));
     node.put("type", actionType());

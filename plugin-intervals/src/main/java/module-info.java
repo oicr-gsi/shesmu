@@ -9,6 +9,7 @@ module ca.on.oicr.gsi.shesmu.plugin.intervals {
   requires ca.on.oicr.gsi.serverutils;
   requires ca.on.oicr.gsi.shesmu;
   requires tools.jackson.databind;
+  requires simpleclient;
 
   provides PluginFileType with
       IntervalFileType,

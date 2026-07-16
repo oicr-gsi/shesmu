@@ -7,8 +7,6 @@ import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
@@ -19,9 +17,19 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 public class TsvDumperFileType extends PluginFileType<TsvDumperFileType.DumperConfiguration> {
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final JsonMapper MAPPER =
+      JsonMapper.builder()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+          .build();
 
   static class DumperConfiguration extends JsonPluginFile<ObjectNode> {
     private Map<String, Path> paths = Map.of();
@@ -91,7 +99,7 @@ public class TsvDumperFileType extends PluginFileType<TsvDumperFileType.DumperCo
     @Override
     protected Optional<Integer> update(ObjectNode value) {
       paths =
-          Utils.stream(value.fields())
+          Utils.stream(value.properties())
               .collect(Collectors.toMap(Entry::getKey, e -> Paths.get(e.getValue().asText())));
       return Optional.empty();
     }

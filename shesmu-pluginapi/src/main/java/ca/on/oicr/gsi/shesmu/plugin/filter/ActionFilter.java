@@ -8,7 +8,6 @@ import ca.on.oicr.gsi.shesmu.plugin.Parser.RuleWithLiteral;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import tools.jackson.databind.ObjectMapper;
 import java.text.DateFormatSymbols;
 import java.time.*;
 import java.time.temporal.ChronoField;
@@ -20,6 +19,10 @@ import java.util.function.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 /** The JSON representation of filters for actions used by the front end */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -707,7 +710,12 @@ public abstract class ActionFilter {
       new Parser.ParseDispatch<>();
   private static final Pattern DATE_PATTERN =
       Pattern.compile("(\\d{4})-(\\d{2}|[A-Za-z]+)-(\\d{2})");
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final JsonMapper MAPPER =
+      JsonMapper.builder()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+          .build();
 
   /** A rule to parse an action state */
   public static final RuleWithLiteral<ActionState, ActionState> PARSE_ACTION_STATE =
@@ -998,7 +1006,7 @@ public abstract class ActionFilter {
    * @return a filter that contains the union of any filters or action identifiers discovered, if
    *     any were
    */
-  public static Optional<ActionFilter> extractFromText(String text, ObjectMapper mapper) {
+  public static Optional<ActionFilter> extractFromText(String text, JsonMapper mapper) {
     final Set<String> actionIds = new TreeSet<>();
     final List<ActionFilter> filters = new ArrayList<>();
     final var actionMatcher = ACTION_ID.matcher(text);

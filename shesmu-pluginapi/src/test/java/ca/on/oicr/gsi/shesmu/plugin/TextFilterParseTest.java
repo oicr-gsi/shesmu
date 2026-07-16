@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.filter.SourceOliveLocation;
-import tools.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +11,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 public class TextFilterParseTest {
   private abstract static class TestFilterBuilder
@@ -123,7 +126,12 @@ public class TextFilterParseTest {
     }
   }
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final JsonMapper MAPPER =
+      JsonMapper.builder()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+          .build();
 
   @Test
   public void testGoodBoth() {
@@ -138,7 +146,7 @@ public class TextFilterParseTest {
                           @Override
                           public Boolean ids(List<String> ids) {
                             return ids.size() == 1
-                                && ids.get(0)
+                                && ids.getFirst()
                                     .equals("shesmu:799AEF722968FF2D5433515989DC565E5AB54AAA");
                           }
 
@@ -167,7 +175,7 @@ public class TextFilterParseTest {
                           @Override
                           public Boolean ids(List<String> ids) {
                             return ids.size() == 1
-                                && ids.get(0)
+                                && ids.getFirst()
                                     .equals("shesmu:799AEF722968FF2D5433515989DC565E5AB54AAA");
                           }
 

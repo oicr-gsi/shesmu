@@ -8,9 +8,6 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.vidarr.api.ExternalKey;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
@@ -20,6 +17,9 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 public final class SubmitAction extends VidarrAction {
 
@@ -160,7 +160,7 @@ public final class SubmitAction extends VidarrAction {
                                         || query.matcher(v.getValue()).matches()))
         || checkJson(request.getArguments(), query)
         || checkJson(request.getMetadata(), query)
-        || checkJson(request.getEngineParameters(), query)
+        || checkJson((ObjectNode) request.getEngineParameters(), query)
         || state.search(query);
   }
 
@@ -203,7 +203,7 @@ public final class SubmitAction extends VidarrAction {
   }
 
   @Override
-  public ObjectNode toJson(ObjectMapper mapper) {
+  public ObjectNode toJson(JsonMapper mapper) {
     ObjectNode node = super.toJson(mapper);
     node.putPOJO("request", request);
     state.writeJson(mapper, node);

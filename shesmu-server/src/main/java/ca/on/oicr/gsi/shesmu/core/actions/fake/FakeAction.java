@@ -3,24 +3,24 @@ package ca.on.oicr.gsi.shesmu.core.actions.fake;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.JsonParameterisedAction;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.function.Consumer;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.function.Consumer;
 
 public class FakeAction extends JsonParameterisedAction {
 
-  public static final JsonMapper MAPPER = JsonMapper.builder()
-      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-      .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
-      .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
-      .build();
+  public static final JsonMapper MAPPER =
+      JsonMapper.builder()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+          .build();
   private final String name;
   private final ObjectNode parameters = MAPPER.createObjectNode();
 
@@ -94,7 +94,7 @@ public class FakeAction extends JsonParameterisedAction {
   }
 
   @Override
-  public ObjectNode toJson(ObjectMapper mapper) {
+  public ObjectNode toJson(JsonMapper mapper) {
     final var node = mapper.createObjectNode();
     node.put("name", name);
     node.set("parameters", parameters);

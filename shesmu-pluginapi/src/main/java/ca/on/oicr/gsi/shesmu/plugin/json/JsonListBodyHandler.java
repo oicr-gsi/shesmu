@@ -1,9 +1,5 @@
 package ca.on.oicr.gsi.shesmu.plugin.json;
 
-import tools.jackson.core.JsonToken;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.JavaType;
-import tools.jackson.databind.ObjectMapper;
 import java.io.InputStream;
 import java.net.http.HttpResponse;
 import java.util.Spliterator;
@@ -11,22 +7,26 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import tools.jackson.core.JsonToken;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.json.JsonMapper;
 
 /** Read a JSON array response from an HTTP connection and decode it via Jackson into a stream */
 public final class JsonListBodyHandler<W> implements HttpResponse.BodyHandler<Supplier<Stream<W>>> {
   private static <W> HttpResponse.BodySubscriber<Supplier<Stream<W>>> asJSON(
-      ObjectMapper objectMapper, JavaType targetType) {
+      JsonMapper jsonMapper, JavaType targetType) {
     HttpResponse.BodySubscriber<InputStream> upstream =
         HttpResponse.BodySubscribers.ofInputStream();
 
     return HttpResponse.BodySubscribers.mapping(
-        upstream, inputStream -> toSupplierOfType(objectMapper, inputStream, targetType));
+        upstream, inputStream -> toSupplierOfType(jsonMapper, inputStream, targetType));
   }
 
   private static <W> Supplier<Stream<W>> toSupplierOfType(
-      ObjectMapper objectMapper, InputStream inputStream, JavaType targetType) {
+      JsonMapper jsonMapper, InputStream inputStream, JavaType targetType) {
     return () -> {
-      final var parser = objectMapper.createParser(inputStream);
+      final var parser = jsonMapper.createParser(inputStream);
       switch (parser.nextToken()) {
         case START_ARRAY:
           return StreamSupport.stream(
@@ -50,7 +50,7 @@ public final class JsonListBodyHandler<W> implements HttpResponse.BodyHandler<Su
                     parser.close();
                     return false;
                   } else {
-                    consumer.accept(objectMapper.readValue(parser, targetType));
+                    consumer.accept(jsonMapper.readValue(parser, targetType));
                     return true;
                   }
                 }
@@ -72,15 +72,15 @@ public final class JsonListBodyHandler<W> implements HttpResponse.BodyHandler<Su
     };
   }
 
-  private final ObjectMapper mapper;
+  private final JsonMapper mapper;
   private final JavaType targetType;
 
-  public JsonListBodyHandler(ObjectMapper mapper, Class<W> targetType) {
+  public JsonListBodyHandler(JsonMapper mapper, Class<W> targetType) {
     this.mapper = mapper;
     this.targetType = mapper.getTypeFactory().constructType(targetType);
   }
 
-  public JsonListBodyHandler(ObjectMapper mapper, TypeReference<W> targetType) {
+  public JsonListBodyHandler(JsonMapper mapper, TypeReference<W> targetType) {
     this.mapper = mapper;
     this.targetType = mapper.getTypeFactory().constructType(targetType);
   }

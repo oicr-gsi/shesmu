@@ -7,7 +7,6 @@ import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.vidarr.api.ProvenanceWorkflowRun;
-import tools.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
@@ -16,12 +15,13 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import tools.jackson.databind.JsonNode;
 
 abstract class BaseCerberusFileProvenanceRecord<T extends LimsProvenance>
     implements CerberusFileProvenanceValue {
   static Map<String, JsonNode> labelsToMap(ProvenanceWorkflowRun<?> workflow) {
     final var workflowRunLabels = new TreeMap<String, JsonNode>();
-    final var labels = workflow.getLabels().fields();
+    final var labels = workflow.getLabels().properties().iterator();
     while (labels.hasNext()) {
       final var label = labels.next();
       workflowRunLabels.put(label.getKey(), label.getValue());
