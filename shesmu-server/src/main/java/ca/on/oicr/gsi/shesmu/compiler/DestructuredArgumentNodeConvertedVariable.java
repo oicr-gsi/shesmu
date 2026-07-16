@@ -5,12 +5,12 @@ import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 import ca.on.oicr.gsi.shesmu.plugin.json.AsJsonNode;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgumentNode {
   private abstract class BaseConvertedValue extends LoadableValue {
@@ -134,7 +134,7 @@ public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgum
   private static final Type A_AS_JSON_NODE_TYPE = Type.getType(AsJsonNode.class);
   private static final Type A_DOUBLE_TYPE = Type.getType(Double.class);
   private static final Type A_LONG_TYPE = Type.getType(Long.class);
-  private static final Type A_OBJECT_MAPPER_TYPE = Type.getType(ObjectMapper.class);
+  private static final Type A_OBJECT_MAPPER_TYPE = Type.getType(JsonMapper.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   private static final Type A_STRING_TYPE = Type.getType(String.class);

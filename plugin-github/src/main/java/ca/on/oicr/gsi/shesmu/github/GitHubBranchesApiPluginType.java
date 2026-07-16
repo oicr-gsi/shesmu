@@ -10,13 +10,16 @@ import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import tools.jackson.databind.ObjectMapper;
 import java.lang.invoke.MethodHandles;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 public class GitHubBranchesApiPluginType
     extends PluginFileType<GitHubBranchesApiPluginType.GitHubRemote> {
@@ -97,7 +100,12 @@ public class GitHubBranchesApiPluginType
   }
 
   public static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final JsonMapper MAPPER =
+      JsonMapper.builder()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+          .build();
 
   @Override
   public GitHubRemote create(Path filePath, String instanceName, Definer<GitHubRemote> definer) {

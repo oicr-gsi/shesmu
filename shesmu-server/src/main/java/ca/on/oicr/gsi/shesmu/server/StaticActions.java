@@ -8,11 +8,14 @@ import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.util.LoadedConfiguration;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import tools.jackson.databind.ObjectMapper;
 import io.prometheus.client.Gauge;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 public class StaticActions implements LoadedConfiguration {
   private class StaticActionFile implements WatchedFileListener {
@@ -94,7 +97,12 @@ public class StaticActions implements LoadedConfiguration {
     }
   }
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final JsonMapper MAPPER =
+      JsonMapper.builder()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+          .build();
 
   private static final Gauge processedCount =
       Gauge.build(

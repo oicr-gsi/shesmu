@@ -7,8 +7,6 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
@@ -17,6 +15,8 @@ import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 public class NothingAction extends Action {
 
@@ -131,7 +131,7 @@ public class NothingAction extends Action {
   }
 
   @Override
-  public ObjectNode toJson(ObjectMapper mapper) {
+  public ObjectNode toJson(JsonMapper mapper) {
     final var node = mapper.createObjectNode();
     node.put("value", value);
     return node;

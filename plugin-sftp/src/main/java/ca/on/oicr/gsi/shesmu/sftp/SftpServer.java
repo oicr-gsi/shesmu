@@ -26,8 +26,6 @@ import ca.on.oicr.gsi.shesmu.plugin.refill.CustomRefillerParameter;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ArrayNode;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import java.io.BufferedReader;
@@ -53,6 +51,11 @@ import net.schmizz.sshj.sftp.FileMode.Type;
 import net.schmizz.sshj.sftp.Response;
 import net.schmizz.sshj.sftp.Response.StatusCode;
 import net.schmizz.sshj.sftp.SFTPException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
 
 public class SftpServer extends JsonPluginFile<Configuration> {
 
@@ -100,7 +103,12 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     }
   }
 
-  static final ObjectMapper MAPPER = new ObjectMapper();
+  static final JsonMapper MAPPER =
+      JsonMapper.builder()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+          .build();
   private static final AlgebraicValue NO_EXIST = new AlgebraicValue("NO_EXIST");
   private static final AlgebraicValue NO_PERMISSION = new AlgebraicValue("NO_PERMISSION");
   private static final AlgebraicValue UNKNOWN = new AlgebraicValue("UNKNOWN");

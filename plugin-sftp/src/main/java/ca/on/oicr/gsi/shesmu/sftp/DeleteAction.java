@@ -7,8 +7,6 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -19,6 +17,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 public class DeleteAction extends Action {
 
@@ -108,7 +108,7 @@ public class DeleteAction extends Action {
   }
 
   @Override
-  public ObjectNode toJson(ObjectMapper mapper) {
+  public ObjectNode toJson(JsonMapper mapper) {
     final var node = mapper.createObjectNode();
     node.put("target", target.toString());
     node.put("instance", connection.get().name());

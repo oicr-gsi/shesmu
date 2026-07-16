@@ -3,10 +3,6 @@ package ca.on.oicr.gsi.shesmu.vidarr;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
 import ca.on.oicr.gsi.vidarr.api.*;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -18,6 +14,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 public class ImportAction extends VidarrAction {
   ImportRequest request;
@@ -37,7 +37,7 @@ public class ImportAction extends VidarrAction {
     ProvenanceWorkflowRun<ExternalMultiVersionKey> workflowRun = request.getWorkflowRun();
     workflowRun.setWorkflowName(request.getWorkflow().getName());
     workflowRun.setWorkflowVersion(request.getWorkflowVersion().getVersion());
-    workflowRun.setEngineParameters((JsonNode) VidarrPlugin.MAPPER.createObjectNode());
+    workflowRun.setEngineParameters(VidarrPlugin.MAPPER.createObjectNode());
     workflowRun.setLabels(VidarrPlugin.MAPPER.createObjectNode());
 
     priority = workflow.getName().hashCode() % 100;
@@ -228,7 +228,7 @@ public class ImportAction extends VidarrAction {
                                             .anyMatch(value -> query.matcher(value).matches())))
         || checkJson(request.getWorkflowRun().getArguments(), query)
         || checkJson(request.getWorkflowRun().getMetadata(), query)
-        || checkJson(request.getWorkflowRun().getEngineParameters(), query)
+        || checkJson((ObjectNode) request.getWorkflowRun().getEngineParameters(), query)
         || state.search(query);
   }
 
@@ -251,14 +251,16 @@ public class ImportAction extends VidarrAction {
   }
 
   @Override
-  public ObjectNode toJson(ObjectMapper mapper) {
+  public ObjectNode toJson(JsonMapper mapper) {
     ObjectNode node = super.toJson(mapper);
 
     // Need to convertValue with the Mapper in order to use the Java Time parsing
     node.set("request", mapper.convertValue(request, JsonNode.class));
     // Bring these up for the 'Differences from Olive' sections
-    ((ObjectNode) node.get("request")).set("arguments", request.getWorkflowRun().getArguments());
-    ((ObjectNode) node.get("request")).set("metadata", request.getWorkflowRun().getMetadata());
+    ((ObjectNode) node.get("request"))
+        .set("arguments", (JsonNode) request.getWorkflowRun().getArguments());
+    ((ObjectNode) node.get("request"))
+        .set("metadata", (JsonNode) request.getWorkflowRun().getMetadata());
     state.writeJson(mapper, node);
     return node;
   }

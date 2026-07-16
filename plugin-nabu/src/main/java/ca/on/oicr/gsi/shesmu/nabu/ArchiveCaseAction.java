@@ -2,13 +2,13 @@ package ca.on.oicr.gsi.shesmu.nabu;
 
 import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Consumer;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 public class ArchiveCaseAction extends ArchiveAction<NabuCaseArchiveDto> {
 
@@ -71,7 +71,7 @@ public class ArchiveCaseAction extends ArchiveAction<NabuCaseArchiveDto> {
   }
 
   @Override
-  protected ObjectNode createRequestJson(ObjectMapper mapper) {
+  protected ObjectNode createRequestJson(JsonMapper mapper) {
     final ObjectNode node = super.createRequestJson(mapper);
     node.put("requisitionId", this.requisitionId);
     return node;

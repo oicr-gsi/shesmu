@@ -3,8 +3,6 @@ package ca.on.oicr.gsi.shesmu.vidarr;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.vidarr.api.ExternalKey;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -14,6 +12,8 @@ import java.util.OptionalInt;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 final class RunStateMissing extends RunState {
   private final List<String> errors;
@@ -105,7 +105,7 @@ final class RunStateMissing extends RunState {
   }
 
   @Override
-  public void writeJson(ObjectMapper mapper, ObjectNode node) {
+  public void writeJson(JsonMapper mapper, ObjectNode node) {
     node.put("runState", "missingKeys");
     node.put("workflowRunMissingVersions", id);
     node.putPOJO("corruptExternalIds", keys);

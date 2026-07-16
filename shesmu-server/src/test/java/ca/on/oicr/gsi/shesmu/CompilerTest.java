@@ -19,8 +19,6 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.server.BaseHotloadingCompiler;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,6 +40,8 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.util.CheckClassAdapter;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 public class CompilerTest {
   public final class CompilerHarness extends Compiler {
@@ -166,7 +166,7 @@ public class CompilerTest {
     }
 
     @Override
-    public ObjectNode toJson(ObjectMapper mapper) {
+    public ObjectNode toJson(JsonMapper mapper) {
       return null;
     }
   }

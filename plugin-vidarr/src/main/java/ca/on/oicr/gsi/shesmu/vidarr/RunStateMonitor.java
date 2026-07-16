@@ -7,8 +7,6 @@ import ca.on.oicr.gsi.vidarr.JsonBodyHandler;
 import ca.on.oicr.gsi.vidarr.api.RetryProvisionOutRequest;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
 import ca.on.oicr.gsi.vidarr.api.WorkflowRunStatusResponse;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
@@ -24,6 +22,8 @@ import java.util.OptionalInt;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 final class RunStateMonitor extends RunState {
 
@@ -227,7 +227,7 @@ final class RunStateMonitor extends RunState {
   }
 
   @Override
-  public void writeJson(ObjectMapper mapper, ObjectNode node) {
+  public void writeJson(JsonMapper mapper, ObjectNode node) {
     node.put("runState", "monitor");
     node.putPOJO("info", status);
     node.put("workflowRunUrl", workflowRunUrl);

@@ -6,7 +6,6 @@ import static org.objectweb.asm.Type.LONG_TYPE;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import tools.jackson.databind.ObjectMapper;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -14,6 +13,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
+import tools.jackson.databind.json.JsonMapper;
 
 public class StringNodeExpression extends StringNode {
 
@@ -23,7 +23,7 @@ public class StringNodeExpression extends StringNode {
         .anyMatch(type::isSame);
   }
 
-  private static final Type A_OBJECT_MAPPER_TYPE = Type.getType(ObjectMapper.class);
+  private static final Type A_OBJECT_MAPPER_TYPE = Type.getType(JsonMapper.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   private static final Type A_STRINGBUILDER_TYPE = Type.getType(StringBuilder.class);

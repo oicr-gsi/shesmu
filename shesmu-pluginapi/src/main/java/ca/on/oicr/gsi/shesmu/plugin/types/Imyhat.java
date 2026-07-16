@@ -6,13 +6,6 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatFunction.AccessContents;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer.AlgebraicTransformer;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer.AlgebraicVisitor;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.annotation.JsonDeserialize;
-import tools.jackson.databind.annotation.JsonSerialize;
-import tools.jackson.databind.node.JsonNodeFactory;
-import tools.jackson.databind.type.TypeFactory;
-import java.io.IOException;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandles;
@@ -31,6 +24,12 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.type.TypeFactory;
 
 /**
  * Types as represented in Shesmu
@@ -1437,7 +1436,7 @@ public abstract class Imyhat {
 
         @Override
         public Object parse(String s) {
-          return new ObjectMapper().readTree(s);
+          return new JsonMapper().readTree(s);
         }
       };
   public static final BaseImyhat NOTHING =

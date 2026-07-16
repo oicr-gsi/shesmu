@@ -4,13 +4,13 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 public abstract class VidarrAction extends Action {
   protected static final String SORT_KEY_ATTEMPT = "vidarr-attempt";
@@ -25,12 +25,12 @@ public abstract class VidarrAction extends Action {
           .asList();
   protected boolean stale;
 
-  protected static boolean checkJson(JsonNode json, Pattern query) {
+  protected static boolean checkJson(ObjectNode json, Pattern query) {
     switch (json.getNodeType()) {
       case ARRAY:
         {
           for (final JsonNode element : json) {
-            if (checkJson(element, query)) {
+            if (checkJson((ObjectNode) element, query)) {
               return true;
             }
           }
@@ -43,7 +43,8 @@ public abstract class VidarrAction extends Action {
       case OBJECT:
         {
           for (Map.Entry<String, JsonNode> field : json.properties()) {
-            if (query.matcher(field.getKey()).matches() || checkJson(field.getValue(), query)) {
+            if (query.matcher(field.getKey()).matches()
+                || checkJson((ObjectNode) field.getValue(), query)) {
               return true;
             }
           }
@@ -67,7 +68,7 @@ public abstract class VidarrAction extends Action {
   }
 
   @Override
-  public ObjectNode toJson(ObjectMapper mapper) {
+  public ObjectNode toJson(JsonMapper mapper) {
     final ObjectNode node = mapper.createObjectNode();
     node.put("priority", priority);
     services.forEach(node.putArray("services")::add);

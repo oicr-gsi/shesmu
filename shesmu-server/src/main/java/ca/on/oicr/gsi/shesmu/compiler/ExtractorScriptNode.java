@@ -17,8 +17,6 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.OptionalImyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.OutputFormat;
-import tools.jackson.core.JsonGenerator;
-import tools.jackson.databind.ObjectMapper;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.List;
@@ -36,6 +34,8 @@ import org.apache.commons.csv.CSVPrinter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.json.JsonMapper;
 
 public final class ExtractorScriptNode {
   private static final Type A_APPENDABLE_TYPE = Type.getType(Appendable.class);
@@ -47,7 +47,7 @@ public final class ExtractorScriptNode {
   private static final Type A_JSON_GENERATOR_TYPE = Type.getType(JsonGenerator.class);
   private static final Type A_LONG_TYPE = Type.getType(Long.class);
   private static final Type A_OBJECT_ARRAY_TYPE = Type.getType(Object[].class);
-  private static final Type A_OBJECT_MAPPER_TYPE = Type.getType(ObjectMapper.class);
+  private static final Type A_OBJECT_MAPPER_TYPE = Type.getType(JsonMapper.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Type A_OUTPUT_STREAM_TYPE = Type.getType(OutputStream.class);
@@ -83,15 +83,15 @@ public final class ExtractorScriptNode {
   public static final Method METHOD_JSON_GENERATOR__CLOSE =
       new Method("close", Type.VOID_TYPE, new Type[] {});
   private static final Method METHOD_JSON_GENERATOR__WRITE_END_ARRAY =
-      new Method("writeEndArray", Type.VOID_TYPE, new Type[] {});
+      new Method("writeEndArray", A_JSON_GENERATOR_TYPE, new Type[] {});
   private static final Method METHOD_JSON_GENERATOR__WRITE_END_OBJECT =
-      new Method("writeEndObject", Type.VOID_TYPE, new Type[] {});
-  private static final Method METHOD_JSON_GENERATOR__WRITE_FIELD_NAME =
-      new Method("writeFieldName", Type.VOID_TYPE, new Type[] {A_STRING_TYPE});
+      new Method("writeEndObject", A_JSON_GENERATOR_TYPE, new Type[] {});
+  private static final Method METHOD_JSON_GENERATOR__WRITE_NAME =
+      new Method("writeName", A_JSON_GENERATOR_TYPE, new Type[] {A_STRING_TYPE});
   private static final Method METHOD_JSON_GENERATOR__WRITE_START_ARRAY =
-      new Method("writeStartArray", Type.VOID_TYPE, new Type[] {});
+      new Method("writeStartArray", A_JSON_GENERATOR_TYPE, new Type[] {});
   private static final Method METHOD_JSON_GENERATOR__WRITE_START_OBJECT =
-      new Method("writeStartObject", Type.VOID_TYPE, new Type[] {});
+      new Method("writeStartObject", A_JSON_GENERATOR_TYPE, new Type[] {});
   public static final Method METHOD_LONG__TO_STRING =
       new Method("toString", A_STRING_TYPE, new Type[] {Type.LONG_TYPE});
   public static final Method METHOD_OBJECT_MAPPER__CREATE_GENERATOR =
@@ -106,7 +106,10 @@ public final class ExtractorScriptNode {
       new Method(
           "<init>", Type.VOID_TYPE, new Type[] {A_XML_STREAM_WRITER_TYPE, A_TIME_FORMAT_TYPE});
   public static final Method METHOD_PACK_STREAMING__CTOR =
-      new Method("<init>", Type.VOID_TYPE, new Type[] {A_JSON_GENERATOR_TYPE, A_TIME_FORMAT_TYPE});
+      new Method(
+          "<init>",
+          Type.VOID_TYPE,
+          new Type[] {A_JSON_GENERATOR_TYPE, A_TIME_FORMAT_TYPE}); // TODO this??
   private static final Method METHOD_PRINT_WRITER__CTOR =
       new Method("<init>", Type.VOID_TYPE, new Type[] {A_OUTPUT_STREAM_TYPE});
   private static final Method METHOD_STREAM__FOR_EACH =
@@ -305,7 +308,7 @@ public final class ExtractorScriptNode {
                 lambdaRenderer.methodGen().push(name);
                 lambdaRenderer
                     .methodGen()
-                    .invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__WRITE_FIELD_NAME);
+                    .invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__WRITE_NAME);
 
                 lambdaRenderer.loadImyhat(type.descriptor());
 

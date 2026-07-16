@@ -6,7 +6,6 @@ import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.LogLevel;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import tools.jackson.databind.ObjectMapper;
 import io.prometheus.client.Gauge;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -24,11 +23,20 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.regex.Pattern;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 public class LokiPlugin extends JsonPluginFile<Configuration> {
 
   private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final JsonMapper MAPPER =
+      JsonMapper.builder()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+          .build();
   private static final Gauge error =
       Gauge.build(
               "shesmu_loki_push_error",

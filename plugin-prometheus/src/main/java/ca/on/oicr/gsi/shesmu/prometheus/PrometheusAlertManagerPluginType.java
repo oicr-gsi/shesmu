@@ -9,7 +9,6 @@ import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonBodyHandler;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import tools.jackson.databind.ObjectMapper;
 import io.prometheus.client.Gauge;
 import java.lang.invoke.MethodHandles;
 import java.net.URI;
@@ -26,6 +25,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Determines if throttling should occur based on a Prometheus Alert Manager
@@ -48,7 +51,12 @@ public class PrometheusAlertManagerPluginType
           .labelNames("target")
           .register();
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final JsonMapper MAPPER =
+      JsonMapper.builder()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+          .build();
 
   static class AlertManagerEndpoint extends JsonPluginFile<Configuration> {
     private class AlertCache extends ValueCache<Stream<AlertDto>> {
