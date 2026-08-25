@@ -14,15 +14,6 @@ import ca.on.oicr.gsi.shesmu.server.plugins.BaseInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicActionParameterDescriptor;
 import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicRefillerParameterDescriptor;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.SerializationFeature;
-import tools.jackson.databind.cfg.DateTimeFeature;
-import tools.jackson.databind.node.ArrayNode;
-import tools.jackson.databind.node.JsonNodeFactory;
-import tools.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Gauge;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
@@ -62,6 +53,15 @@ import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Utilities for making bytecode generation easier */
 public final class RuntimeSupport {
@@ -98,11 +98,12 @@ public final class RuntimeSupport {
   }
 
   @RuntimeInterop public static final String[] EMPTY = new String[0];
-  public static final JsonMapper MAPPER = JsonMapper.builder()
-      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-      .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
-      .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
-      .build();
+  public static final JsonMapper MAPPER =
+      JsonMapper.builder()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+          .build();
 
   @RuntimeInterop
   public static final BinaryOperator<?> USELESS_BINARY_OPERATOR =
@@ -527,7 +528,11 @@ public final class RuntimeSupport {
 
   @RuntimeInterop
   public static Optional<JsonNode> parseJson(String input) {
-    return Optional.of(MAPPER.readTree(input));
+    try {
+      return Optional.of(MAPPER.readTree(input));
+    } catch (JacksonException e) {
+      return Optional.empty();
+    }
   }
 
   @RuntimeInterop
