@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import tools.jackson.core.JsonToken;
 import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -25,6 +26,9 @@ public final class JsonListBodyHandler<W> implements HttpResponse.BodyHandler<Su
 
   private static <W> Supplier<Stream<W>> toSupplierOfType(
       JsonMapper jsonMapper, InputStream inputStream, JavaType targetType) {
+    // disable the FAIL_ON_TRAILING_TOKENS feature here, not on the global mapper
+    final var itemReader =
+        jsonMapper.readerFor(targetType).without(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
     return () -> {
       final var parser = jsonMapper.createParser(inputStream);
       switch (parser.nextToken()) {
@@ -50,7 +54,7 @@ public final class JsonListBodyHandler<W> implements HttpResponse.BodyHandler<Su
                     parser.close();
                     return false;
                   } else {
-                    consumer.accept(jsonMapper.readValue(parser, targetType));
+                    consumer.accept(itemReader.readValue(parser));
                     return true;
                   }
                 }
