@@ -82,14 +82,6 @@ import ca.on.oicr.gsi.status.ServerConfig;
 import ca.on.oicr.gsi.status.StatusPage;
 import ca.on.oicr.gsi.status.TablePage;
 import ca.on.oicr.gsi.status.TableRowWriter;
-import tools.jackson.core.JsonEncoding;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.module.SimpleModule;
-import tools.jackson.databind.module.SimpleSerializers;
-import tools.jackson.databind.node.ArrayNode;
-import tools.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -146,6 +138,13 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import org.objectweb.asm.ClassVisitor;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonEncoding;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 public final class Server implements ServerConfig, ActionServices {
   private class EmergencyThrottlerHandler implements HttpHandler {
@@ -232,6 +231,16 @@ public final class Server implements ServerConfig, ActionServices {
       return RuntimeSupport.MAPPER.writeValueAsString(
           RuntimeSupport.MAPPER.readValue(
               URLDecoder.decode(parameter, StandardCharsets.UTF_8), clazz));
+    }
+  }
+
+  private static <T> String handleJsonQueryParameterOrDefault(
+      Class<T> clazz, String parameter, T defaultValue, String onError) {
+    try {
+      return handleJsonQueryParameter(clazz, parameter, defaultValue);
+    } catch (IOException | JacksonException e) {
+      e.printStackTrace();
+      return onError;
     }
   }
 
@@ -748,7 +757,7 @@ public final class Server implements ServerConfig, ActionServices {
                       handleJsonQueryParameter(
                           AlertFilter[].class, parameters.get("alert"), new AlertFilter[0]);
 
-                } catch (IOException e) {
+                } catch (IOException | JacksonException e) {
                   e.printStackTrace();
                 }
                 return Stream.of(
@@ -855,7 +864,7 @@ public final class Server implements ServerConfig, ActionServices {
                           String.class, parameters.get("saved"), "All Actions");
                   userFilter =
                       handleJsonQueryParameter(JsonNode.class, parameters.get("filters"), null);
-                } catch (IOException e) {
+                } catch (IOException | JacksonException e) {
                   e.printStackTrace();
                   savedSearch = "null";
                   locations = "[]";
@@ -1425,13 +1434,14 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/alerts",
         t -> {
-          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
-          t.sendResponseHeaders(200, 0);
           final var filters =
-              handleJsonQueryParameter(
+              handleJsonQueryParameterOrDefault(
                   ArrayNode.class,
                   getParameters(t).get("filters"),
-                  RuntimeSupport.MAPPER.createArrayNode());
+                  RuntimeSupport.MAPPER.createArrayNode(),
+                  "[]");
+          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+          t.sendResponseHeaders(200, 0);
           try (var os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
@@ -1554,8 +1564,14 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/metrodiagram",
         t -> {
-          final var location =
-              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), SourceOliveLocation.class);
+          final SourceOliveLocation location;
+          try {
+            location =
+                RuntimeSupport.MAPPER.readValue(t.getRequestBody(), SourceOliveLocation.class);
+          } catch (final Exception e) {
+            internalServerErrorResponse(t, 400, e);
+            return;
+          }
           final var match =
               compiler
                   .dashboard()
@@ -1806,8 +1822,7 @@ public final class Server implements ServerConfig, ActionServices {
                         .filter(Objects::nonNull)
                         .map(filterJson -> filterJson.convert(processor.filterBuilder(compiler)))
                         .toArray(Filter[]::new))
-                .forEach(
-                    jsonOutput::writeString);
+                .forEach(jsonOutput::writeString);
             jsonOutput.writeEndArray();
           }
         });
@@ -1830,8 +1845,10 @@ public final class Server implements ServerConfig, ActionServices {
                           .map(filterJson -> filterJson.convert(processor.filterBuilder(compiler)))
                           .toArray(Filter[]::new));
               final var os = t.getResponseBody();
-
-              final var jsonOutput = RuntimeSupport.MAPPER.tokenStreamFactory().createGenerator(os, JsonEncoding.UTF8)) {
+              final var jsonOutput =
+                  RuntimeSupport.MAPPER
+                      .tokenStreamFactory()
+                      .createGenerator(os, JsonEncoding.UTF8)) {
             jsonOutput.writeStartArray();
             actions.forEach(
                 action -> {
@@ -1869,7 +1886,13 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/parsefiltertext",
         t -> {
-          final var text = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          final String text;
+          try {
+            text = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          } catch (final Exception e) {
+            internalServerErrorResponse(t, 400, e);
+            return;
+          }
           final var result = ActionFilter.extractFromText(text, RuntimeSupport.MAPPER);
           if (result.isPresent()) {
             t.getResponseHeaders().set("Content-type", "application/json");
@@ -1904,12 +1927,16 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/queryalerts",
         t -> {
+          final AlertFilter filter;
+          try {
+            filter = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), AlertFilter.class);
+          } catch (final Exception e) {
+            internalServerErrorResponse(t, 400, e);
+            return;
+          }
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          final var predicate =
-              RuntimeSupport.MAPPER
-                  .readValue(t.getRequestBody(), AlertFilter.class)
-                  .convert(ActionProcessor.ALERT_FILTER_BUILDER);
+          final var predicate = filter.convert(ActionProcessor.ALERT_FILTER_BUILDER);
           try (var os = t.getResponseBody();
               var jGenerator = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8)) {
             processor.alerts(jGenerator, predicate);
@@ -1918,9 +1945,15 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/getalert",
         t -> {
+          final String id;
+          try {
+            id = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          } catch (final Exception e) {
+            internalServerErrorResponse(t, 400, e);
+            return;
+          }
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          final var id = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
           try (var os = t.getResponseBody()) {
             processor.getAlert(os, id);
           }
@@ -1929,7 +1962,13 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/constant",
         t -> {
-          final var query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          final String query;
+          try {
+            query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          } catch (final Exception e) {
+            internalServerErrorResponse(t, 400, e);
+            return;
+          }
           ConstantLoader loader;
           if (constantLoaders.containsKey(query)) {
             loader = constantLoaders.get(query);
@@ -1962,8 +2001,13 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/function",
         t -> {
-          final var query =
-              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), FunctionRequest.class);
+          final FunctionRequest query;
+          try {
+            query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), FunctionRequest.class);
+          } catch (final Exception e) {
+            internalServerErrorResponse(t, 400, e);
+            return;
+          }
           FunctionRunner runner;
           if (functionRunners.containsKey(query.getName())) {
             runner = functionRunners.get(query.getName());
@@ -2122,16 +2166,27 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/simulate",
         t -> {
-          final var request =
-              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), SimulateRequest.class);
+          final SimulateRequest request;
+          try {
+            request = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), SimulateRequest.class);
+          } catch (final Exception e) {
+            internalServerErrorResponse(t, 400, e);
+            return;
+          }
           request.run(
               DefinitionRepository.concat(definitionRepository, compiler), this, inputSource, t);
         });
     add(
         "/simulate-existing",
         t -> {
-          final var request =
-              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), SimulateExistingRequest.class);
+          final SimulateExistingRequest request;
+          try {
+            request =
+                RuntimeSupport.MAPPER.readValue(t.getRequestBody(), SimulateExistingRequest.class);
+          } catch (final Exception e) {
+            internalServerErrorResponse(t, 400, e);
+            return;
+          }
           request.run(
               compiler,
               DefinitionRepository.concat(definitionRepository, compiler),
@@ -2241,9 +2296,15 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/compile-meditation",
         t -> {
-          final var request =
-              RuntimeSupport.MAPPER.readValue(
-                  t.getRequestBody(), MeditationCompilationRequest.class);
+          final MeditationCompilationRequest request;
+          try {
+            request =
+                RuntimeSupport.MAPPER.readValue(
+                    t.getRequestBody(), MeditationCompilationRequest.class);
+          } catch (final Exception e) {
+            internalServerErrorResponse(t, 400, e);
+            return;
+          }
           try {
             request.run(DefinitionRepository.concat(definitionRepository, compiler), t);
           } catch (NoSuchAlgorithmException e) {
@@ -2325,8 +2386,13 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/type",
         t -> {
-          final var request =
-              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), TypeParseRequest.class);
+          final TypeParseRequest request;
+          try {
+            request = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), TypeParseRequest.class);
+          } catch (final Exception e) {
+            internalServerErrorResponse(t, 400, e);
+            return;
+          }
           final var type =
               typeParsers
                   .getOrDefault(
@@ -2375,7 +2441,13 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/pauseolive",
         t -> {
-          final var query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ObjectNode.class);
+          final ObjectNode query;
+          try {
+            query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ObjectNode.class);
+          } catch (final Exception e) {
+            internalServerErrorResponse(t, 400, e);
+            return;
+          }
           final var location =
               new SourceLocation(
                   query.get("file").asString(""),
@@ -2399,7 +2471,13 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/pausefile",
         t -> {
-          final var query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ObjectNode.class);
+          final ObjectNode query;
+          try {
+            query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ObjectNode.class);
+          } catch (final Exception e) {
+            internalServerErrorResponse(t, 400, e);
+            return;
+          }
           final var file = query.get("file").asString("");
           if (query.has("pause") && !query.get("pause").isNull()) {
             if (query.get("pause").asBoolean(false)) {
@@ -2417,7 +2495,13 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/jsondumper",
         t -> {
-          final var name = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          final String name;
+          try {
+            name = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          } catch (final Exception e) {
+            internalServerErrorResponse(t, 400, e);
+            return;
+          }
           switch (t.getRequestMethod()) {
             case "POST":
               t.getResponseHeaders().set("Content-type", "application/json");
@@ -2449,7 +2533,13 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/parsequery",
         t -> {
-          final var input = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          final String input;
+          try {
+            input = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          } catch (final Exception e) {
+            internalServerErrorResponse(t, 400, e);
+            return;
+          }
           final var response = RuntimeSupport.MAPPER.createObjectNode();
           final var errors = response.putArray("errors");
           ActionFilter.parseQuery(
@@ -2479,7 +2569,13 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/printquery",
         t -> {
-          final var input = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter.class);
+          final ActionFilter input;
+          try {
+            input = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter.class);
+          } catch (final Exception e) {
+            internalServerErrorResponse(t, 400, e);
+            return;
+          }
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
           try (var os = t.getResponseBody()) {
