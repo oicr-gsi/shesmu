@@ -106,10 +106,7 @@ public final class ExtractorScriptNode {
       new Method(
           "<init>", Type.VOID_TYPE, new Type[] {A_XML_STREAM_WRITER_TYPE, A_TIME_FORMAT_TYPE});
   public static final Method METHOD_PACK_STREAMING__CTOR =
-      new Method(
-          "<init>",
-          Type.VOID_TYPE,
-          new Type[] {A_JSON_GENERATOR_TYPE, A_TIME_FORMAT_TYPE}); // TODO this??
+      new Method("<init>", Type.VOID_TYPE, new Type[] {A_JSON_GENERATOR_TYPE, A_TIME_FORMAT_TYPE});
   private static final Method METHOD_PRINT_WRITER__CTOR =
       new Method("<init>", Type.VOID_TYPE, new Type[] {A_OUTPUT_STREAM_TYPE});
   private static final Method METHOD_STREAM__FOR_EACH =
@@ -260,6 +257,8 @@ public final class ExtractorScriptNode {
     renderer
         .methodGen()
         .invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__WRITE_START_ARRAY);
+    // Jackson 3's write methods are fluent and return the generator; discard it
+    renderer.methodGen().pop();
     renderer.methodGen().storeLocal(generator);
     inputs.forEach(
         input -> {
@@ -301,6 +300,7 @@ public final class ExtractorScriptNode {
           lambdaRenderer
               .methodGen()
               .invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__WRITE_START_OBJECT);
+          lambdaRenderer.methodGen().pop();
 
           input.renderColumns(
               (name, value, type) -> {
@@ -309,6 +309,7 @@ public final class ExtractorScriptNode {
                 lambdaRenderer
                     .methodGen()
                     .invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__WRITE_NAME);
+                lambdaRenderer.methodGen().pop();
 
                 lambdaRenderer.loadImyhat(type.descriptor());
 
@@ -331,6 +332,7 @@ public final class ExtractorScriptNode {
           lambdaRenderer
               .methodGen()
               .invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__WRITE_END_OBJECT);
+          lambdaRenderer.methodGen().pop();
           lambdaRenderer.methodGen().visitInsn(Opcodes.RETURN);
           lambdaRenderer.methodGen().endMethod();
         });
@@ -339,6 +341,7 @@ public final class ExtractorScriptNode {
     renderer
         .methodGen()
         .invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__WRITE_END_ARRAY);
+    renderer.methodGen().pop();
     renderer.methodGen().invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__CLOSE);
   }
 
