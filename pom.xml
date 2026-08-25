@@ -83,6 +83,16 @@
         <version>3.1.4</version>
       </dependency>
       <dependency>
+        <!-- Jackson 3 deliberately did not repackage jackson-annotations; it stays
+             under com.fasterxml.jackson.core. Pin it here so any dependency (present
+             or future) that pulls in a different jackson-annotations version is
+             forced onto the one jackson-databind above actually expects, instead of
+             relying on per-module <exclusions>. -->
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>2.21</version>
+      </dependency>
+      <dependency>
         <groupId>ca.on.oicr.gsi</groupId>
         <artifactId>server-utils</artifactId>
         <version>1.0.4</version>

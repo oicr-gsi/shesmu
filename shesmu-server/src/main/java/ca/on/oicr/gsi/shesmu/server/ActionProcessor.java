@@ -27,7 +27,6 @@ import io.prometheus.client.Collector;
 import io.prometheus.client.Gauge;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -395,8 +394,7 @@ public final class ActionProcessor
 
         @Override
         public JsonNode name(Instant min, long offset) {
-          return JSON_FACTORY.numberNode(
-              BigDecimal.valueOf(min.toEpochMilli() + offset).stripTrailingZeros());
+          return JSON_FACTORY.numberNode(min.toEpochMilli() + offset);
         }
 
         @Override
