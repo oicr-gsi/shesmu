@@ -29,12 +29,6 @@ import ca.on.oicr.gsi.shesmu.server.InputSource;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.gsi.status.TableRowWriter;
-import tools.jackson.core.JsonGenerator;
-import tools.jackson.core.JsonParser;
-import tools.jackson.core.JacksonException;
-import tools.jackson.core.JsonToken;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.CallSite;
@@ -65,6 +59,14 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectReader;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Define a <tt>Input</tt> format for olives to consume */
 public abstract class BaseInputFormatDefinition implements InputFormatDefinition, InputSource {
@@ -130,7 +132,7 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
                   throw new IllegalStateException("Expected an array");
                 }
                 while (parser.nextToken() != JsonToken.END_ARRAY) {
-                  results.add(readJson(RuntimeSupport.MAPPER.readTree(parser)));
+                  results.add(readJson(ELEMENT_READER.readValue(parser)));
                 }
                 if (parser.nextToken() != null) {
                   throw new IllegalStateException("Junk at end of JSON document");
@@ -174,7 +176,7 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
                   throw new IllegalStateException("Expected an array");
                 }
                 while (parser.nextToken() != JsonToken.END_ARRAY) {
-                  results.add(readJson(RuntimeSupport.MAPPER.readTree(parser)));
+                  results.add(readJson(ELEMENT_READER.readValue(parser)));
                 }
                 if (parser.nextToken() != null) {
                   throw new IllegalStateException("Junk at end of JSON document");
@@ -312,8 +314,8 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
             config.get().getAuthentication(), request);
         HttpResponse<InputStream> response =
             Server.HTTP_CLIENT.send(request.build(), BodyHandlers.ofInputStream());
-        try (JsonParser parser = RuntimeSupport.MAPPER.tokenStreamFactory()
-            .createParser(response.body())) {
+        try (JsonParser parser =
+            RuntimeSupport.MAPPER.tokenStreamFactory().createParser(response.body())) {
           if (response.statusCode() != 200) {
             System.err.printf(
                 "Request to %s for %s input format returned bad HTTP code %d . The input format is now unusable.%n",
@@ -325,7 +327,7 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
             throw new IllegalStateException("Expected an array");
           }
           while (parser.nextToken() != JsonToken.END_ARRAY) {
-            results.add(readJson(RuntimeSupport.MAPPER.readTree(parser)));
+            results.add(readJson(ELEMENT_READER.readValue(parser)));
           }
           if (parser.nextToken() != null) {
             throw new IllegalStateException("Junk at end of JSON document");
@@ -370,8 +372,7 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
 
     @Override
     public Optional<Integer> update() {
-      config =
-          Optional.of(RuntimeSupport.MAPPER.readValue(fileName.toFile(), Configuration.class));
+      config = Optional.of(RuntimeSupport.MAPPER.readValue(fileName.toFile(), Configuration.class));
       cache.invalidate();
       cache.ttl(config.get().getTtl());
       return Optional.empty();
@@ -385,6 +386,20 @@ public abstract class BaseInputFormatDefinition implements InputFormatDefinition
       }
     }
   }
+
+  /**
+   * Reads one value at a time out of an already-positioned parser.
+   *
+   * <p>Jackson 3 enables {@link DeserializationFeature#FAIL_ON_TRAILING_TOKENS} by default, and
+   * {@code ObjectMapper.readTree(JsonParser)} applies it to whatever is left in the stream. When
+   * pulling elements out of a JSON array one at a time, everything after the current element counts
+   * as a trailing token, so the very first read of a multi-element array fails. Disable the feature
+   * on this reader rather than on the shared mapper, so whole-document reads stay strict.
+   */
+  private static final ObjectReader ELEMENT_READER =
+      RuntimeSupport.MAPPER
+          .readerFor(JsonNode.class)
+          .without(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
 
   private static final Handle BSM_INPUT_VARIABLE =
       new Handle(
