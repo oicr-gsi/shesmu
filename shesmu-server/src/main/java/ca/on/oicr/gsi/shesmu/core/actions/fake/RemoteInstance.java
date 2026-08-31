@@ -10,11 +10,11 @@ import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import tools.jackson.databind.node.ObjectNode;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import tools.jackson.databind.node.ObjectNode;
 
 public class RemoteInstance extends JsonPluginFile<Configuration> {
   private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
@@ -56,7 +56,7 @@ public class RemoteInstance extends JsonPluginFile<Configuration> {
               "Fake version of: " + obj.get("description").asString(),
               FakeAction.class,
               () -> new FakeAction(name),
-              Utils.stream(obj.path("parameters").values())
+              Utils.stream(obj.get("parameters").values())
                   .map(
                       p ->
                           new JsonParameter<>(

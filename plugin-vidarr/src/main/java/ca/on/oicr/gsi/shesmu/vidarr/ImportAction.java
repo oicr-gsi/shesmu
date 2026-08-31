@@ -228,7 +228,7 @@ public class ImportAction extends VidarrAction {
                                             .anyMatch(value -> query.matcher(value).matches())))
         || checkJson(request.getWorkflowRun().getArguments(), query)
         || checkJson(request.getWorkflowRun().getMetadata(), query)
-        || checkJson((ObjectNode) request.getWorkflowRun().getEngineParameters(), query)
+        || checkJson(request.getWorkflowRun().getEngineParameters(), query)
         || state.search(query);
   }
 
@@ -257,10 +257,8 @@ public class ImportAction extends VidarrAction {
     // Need to convertValue with the Mapper in order to use the Java Time parsing
     node.set("request", mapper.convertValue(request, JsonNode.class));
     // Bring these up for the 'Differences from Olive' sections
-    ((ObjectNode) node.get("request"))
-        .set("arguments", (JsonNode) request.getWorkflowRun().getArguments());
-    ((ObjectNode) node.get("request"))
-        .set("metadata", (JsonNode) request.getWorkflowRun().getMetadata());
+    node.get("request").asObject().set("arguments", request.getWorkflowRun().getArguments());
+    node.get("request").asObject().set("metadata", request.getWorkflowRun().getMetadata());
     state.writeJson(mapper, node);
     return node;
   }

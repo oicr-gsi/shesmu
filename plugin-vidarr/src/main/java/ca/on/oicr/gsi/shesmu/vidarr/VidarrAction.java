@@ -25,12 +25,12 @@ public abstract class VidarrAction extends Action {
           .asList();
   protected boolean stale;
 
-  protected static boolean checkJson(ObjectNode json, Pattern query) {
+  protected static boolean checkJson(JsonNode json, Pattern query) {
     switch (json.getNodeType()) {
       case ARRAY:
         {
           for (final JsonNode element : json) {
-            if (checkJson((ObjectNode) element, query)) {
+            if (checkJson(element, query)) {
               return true;
             }
           }
@@ -43,8 +43,7 @@ public abstract class VidarrAction extends Action {
       case OBJECT:
         {
           for (Map.Entry<String, JsonNode> field : json.properties()) {
-            if (query.matcher(field.getKey()).matches()
-                || checkJson((ObjectNode) field.getValue(), query)) {
+            if (query.matcher(field.getKey()).matches() || checkJson(field.getValue(), query)) {
               return true;
             }
           }
