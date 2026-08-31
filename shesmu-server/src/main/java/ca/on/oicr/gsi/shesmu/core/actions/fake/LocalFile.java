@@ -6,9 +6,9 @@ import ca.on.oicr.gsi.shesmu.plugin.json.JsonParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import tools.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
 import java.util.Optional;
+import tools.jackson.databind.node.ObjectNode;
 
 public class LocalFile extends JsonPluginFile<ObjectNode[]> {
 
@@ -31,7 +31,7 @@ public class LocalFile extends JsonPluginFile<ObjectNode[]> {
           "Fake version of: " + obj.get("description").asString(),
           FakeAction.class,
           () -> new FakeAction(name),
-          Utils.stream(obj.path("parameters").values())
+          Utils.stream(obj.get("parameters").values())
               .map(
                   p ->
                       new JsonParameter<>(
