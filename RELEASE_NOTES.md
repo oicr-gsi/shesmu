@@ -7,6 +7,18 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.61.0] - 2026-09-01
+
+### Changed
+
+* Remove `modified_time` from import action definition
+* Upgrade to Jackson 3
+
+### Fixed
+
+* Run Scanner to 2.6.3
+
+
 ## [1.60.1] - 2026-06-22
 
 ### Fixed
