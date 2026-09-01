@@ -92,7 +92,7 @@ const vidarrStateRenderer = {
             ? "Yes"
             : "No",
         ],
-        ["Attempt", a.info.attempt.toString()],
+        ["Attempt", a.info.attempt === null ? "N/A" || a.info.attempt.toString()],
         ["Target", a.info.target || "N/A"],
       ]
         .concat(a.services.map((s) => ["Required Service", s]))
@@ -178,7 +178,7 @@ actionRender.set("vidarr-run", (a) => [
   table(
     [
       ["Priority", a.priority.toString()],
-      ["Attempt", a.request.attempt.toString()],
+      ["Attempt", a.request.attempt === null ? "N/A" : a.request.attempt.toString()],
       ["Target", a.request.target.toString()],
     ]
       .concat(a.services.map((s) => ["Required Service", s]))
