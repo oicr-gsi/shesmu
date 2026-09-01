@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.ExtractRequest;
 import ca.on.oicr.gsi.shesmu.server.Extractor.ExtractVisitor;
-import tools.jackson.core.JacksonException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -16,6 +15,7 @@ import java.util.Comparator;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import tools.jackson.core.JacksonException;
 
 public class ExtractTest {
 

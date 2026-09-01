@@ -4,14 +4,14 @@ import static org.apache.commons.text.StringEscapeUtils.ESCAPE_XSI;
 
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.node.ObjectNode;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.node.ObjectNode;
 
 public class SshRefiller<T> extends Refiller<T> {
   final List<BiConsumer<T, ObjectNode>> writers = new ArrayList<>();

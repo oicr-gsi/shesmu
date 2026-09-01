@@ -4,8 +4,6 @@ import ca.on.oicr.gsi.shesmu.plugin.input.TimeFormat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
-import tools.jackson.core.JsonGenerator;
-import tools.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -14,6 +12,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.JsonNode;
 
 /** Convert a value to JSON using the streaming interface */
 public class PackStreaming implements ImyhatConsumer {

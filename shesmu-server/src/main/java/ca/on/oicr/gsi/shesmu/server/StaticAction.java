@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.server;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import tools.jackson.databind.node.ObjectNode;
 import java.util.List;
+import tools.jackson.databind.node.ObjectNode;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class StaticAction {

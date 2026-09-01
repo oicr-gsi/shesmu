@@ -9,8 +9,6 @@ import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowResponseDryRun;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowResponseFailure;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowResponseMissingKeyVersions;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowResponseSuccess;
-import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient.Version;
@@ -25,6 +23,8 @@ import java.util.OptionalInt;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 /** State when we have no knowledge of what's going on in Vidarr */
 final class RunStateAttemptSubmit extends RunState {

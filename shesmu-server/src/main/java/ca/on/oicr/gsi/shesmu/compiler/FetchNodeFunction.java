@@ -5,11 +5,11 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import tools.jackson.core.JacksonException;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import tools.jackson.core.JacksonException;
 
 public class FetchNodeFunction extends FetchNode {
   private final int line, column;

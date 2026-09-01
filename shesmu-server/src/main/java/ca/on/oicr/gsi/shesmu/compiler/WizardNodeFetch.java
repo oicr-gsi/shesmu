@@ -4,11 +4,11 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import tools.jackson.core.JacksonException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import tools.jackson.core.JacksonException;
 
 public class WizardNodeFetch extends WizardNode {
   private final List<Pair<String, FetchNode>> entries;

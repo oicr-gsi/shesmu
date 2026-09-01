@@ -2,11 +2,11 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import tools.jackson.core.JacksonException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import tools.jackson.core.JacksonException;
 
 public class WizardNodeForm extends WizardNode {
   private final List<InformationNode> information;

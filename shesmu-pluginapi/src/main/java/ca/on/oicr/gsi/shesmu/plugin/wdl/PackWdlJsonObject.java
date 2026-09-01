@@ -4,10 +4,10 @@ import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
-import tools.jackson.databind.node.ArrayNode;
-import tools.jackson.databind.node.ObjectNode;
 import java.util.Optional;
 import java.util.stream.Stream;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Serialise data to WDL-compatible JSON objects where tuples are converted to pairs */
 public class PackWdlJsonObject extends PackJsonObject {

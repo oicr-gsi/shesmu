@@ -6,12 +6,12 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import tools.jackson.core.JacksonException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.core.JacksonException;
 
 public class WizardNodeMatch extends WizardNode {
 

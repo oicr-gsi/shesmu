@@ -9,9 +9,6 @@ import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ArrayNode;
-import tools.jackson.databind.node.ObjectNode;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -21,6 +18,9 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Compile a {@link FunctionDefinition} to a {@link FunctionRunner} so that it can be used via the

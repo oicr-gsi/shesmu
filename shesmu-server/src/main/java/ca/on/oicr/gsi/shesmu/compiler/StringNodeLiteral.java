@@ -2,13 +2,13 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import tools.jackson.core.JacksonException;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
+import tools.jackson.core.JacksonException;
 
 public class StringNodeLiteral extends StringNode {
 

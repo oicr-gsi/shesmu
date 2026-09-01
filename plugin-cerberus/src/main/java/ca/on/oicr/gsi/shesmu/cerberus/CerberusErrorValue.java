@@ -8,13 +8,13 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import ca.on.oicr.gsi.vidarr.api.ExternalKey;
 import ca.on.oicr.gsi.vidarr.api.ProvenanceWorkflowRun;
-import tools.jackson.databind.JsonNode;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.databind.JsonNode;
 
 public final class CerberusErrorValue {
 

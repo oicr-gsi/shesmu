@@ -1,7 +1,5 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
-import tools.jackson.databind.JsonNode;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -11,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import tools.jackson.databind.JsonNode;
 
 /**
  * Converts a Shesmu data structure to a byte array.

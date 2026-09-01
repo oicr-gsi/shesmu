@@ -1,9 +1,9 @@
 package ca.on.oicr.gsi.shesmu.prometheus;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import tools.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.stream.Stream;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Bean of the Alert Manager alert JSON object */
 @JsonIgnoreProperties(ignoreUnknown = true)

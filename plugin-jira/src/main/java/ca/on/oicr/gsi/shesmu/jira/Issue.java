@@ -1,12 +1,12 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import tools.jackson.databind.JsonNode;
 import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
+import tools.jackson.databind.JsonNode;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class Issue {

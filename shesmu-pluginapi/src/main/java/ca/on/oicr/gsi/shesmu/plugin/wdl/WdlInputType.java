@@ -8,8 +8,6 @@ import ca.on.oicr.gsi.shesmu.plugin.Parser.Rule;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ObjectNode;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
@@ -20,6 +18,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Translate WDL types to their Shesmu equivalents
@@ -48,7 +48,9 @@ public final class WdlInputType {
   public static <T> Stream<Pair<String[], T>> flatToNested(
       ObjectNode inputs, BiFunction<String, JsonNode, Optional<T>> process) {
     return StreamSupport.stream(
-            Spliterators.spliteratorUnknownSize(inputs.properties().iterator(), Spliterator.ORDERED), false)
+            Spliterators.spliteratorUnknownSize(
+                inputs.properties().iterator(), Spliterator.ORDERED),
+            false)
         .map(
             entry ->
                 process

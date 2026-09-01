@@ -8,7 +8,6 @@ import ca.on.oicr.gsi.shesmu.plugin.refill.CustomRefillerParameter;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import tools.jackson.databind.json.JsonMapper;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
@@ -16,6 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.databind.json.JsonMapper;
 
 public class RefillableDictionary extends JsonPluginFile<Configuration> {
 

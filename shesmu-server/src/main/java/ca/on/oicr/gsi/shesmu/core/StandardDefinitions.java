@@ -24,7 +24,6 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.status.ConfigurationSection;
-import tools.jackson.databind.JsonNode;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,6 +39,7 @@ import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
+import tools.jackson.databind.JsonNode;
 
 /** The standard library of Shesmu */
 public final class StandardDefinitions implements DefinitionRepository {

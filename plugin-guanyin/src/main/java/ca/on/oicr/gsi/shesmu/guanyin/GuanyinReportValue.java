@@ -1,12 +1,12 @@
 package ca.on.oicr.gsi.shesmu.guanyin;
 
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
-import tools.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+import tools.jackson.databind.JsonNode;
 
 public class GuanyinReportValue {
   private final String category;

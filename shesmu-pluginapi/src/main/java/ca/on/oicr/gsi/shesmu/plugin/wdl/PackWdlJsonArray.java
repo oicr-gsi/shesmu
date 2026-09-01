@@ -3,9 +3,9 @@ package ca.on.oicr.gsi.shesmu.plugin.wdl;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
+import java.util.stream.Stream;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
-import java.util.stream.Stream;
 
 /** Serialse data to WDL-compatible JSON arrays where tuples are converted to pairs */
 public class PackWdlJsonArray extends PackJsonArray {

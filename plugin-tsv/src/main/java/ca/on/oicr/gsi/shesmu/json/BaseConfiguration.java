@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.json;
 
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import tools.jackson.databind.JsonNode;
 import java.util.Map;
+import tools.jackson.databind.JsonNode;
 
 public abstract class BaseConfiguration {
   private Map<String, JsonNode> defaults = Map.of();

@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import tools.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
@@ -14,6 +13,7 @@ import java.util.function.Predicate;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
+import tools.jackson.databind.JsonNode;
 
 public class ExpressionNodeObjectGet extends ExpressionNode {
 

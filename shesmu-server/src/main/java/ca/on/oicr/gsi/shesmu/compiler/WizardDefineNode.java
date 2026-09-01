@@ -6,7 +6,6 @@ import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import tools.jackson.core.JacksonException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -14,6 +13,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.core.JacksonException;
 
 public class WizardDefineNode {
   public static Parser parse(Parser parser, Consumer<WizardDefineNode> output) {

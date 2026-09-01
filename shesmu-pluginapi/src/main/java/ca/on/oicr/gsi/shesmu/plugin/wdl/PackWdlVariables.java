@@ -4,8 +4,6 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
@@ -14,6 +12,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 public class PackWdlVariables implements ImyhatConsumer {
   public static Pair<Function<ObjectNode, ImyhatConsumer>, Imyhat> create(

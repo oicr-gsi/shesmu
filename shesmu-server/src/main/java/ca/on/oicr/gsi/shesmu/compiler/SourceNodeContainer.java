@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import tools.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
@@ -16,6 +15,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
+import tools.jackson.databind.JsonNode;
 
 public class SourceNodeContainer extends SourceNode {
   private enum Mode {

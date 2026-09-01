@@ -3,16 +3,16 @@ package ca.on.oicr.gsi.shesmu.mongo;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import tools.jackson.core.JsonParser;
-import tools.jackson.databind.DeserializationContext;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ValueDeserializer;
-import tools.jackson.databind.annotation.JsonDeserialize;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.bson.*;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 @JsonDeserialize(using = ParameterConverter.Deserializer.class)
 public abstract class ParameterConverter {

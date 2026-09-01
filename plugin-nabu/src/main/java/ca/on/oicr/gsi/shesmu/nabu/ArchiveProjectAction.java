@@ -2,10 +2,10 @@ package ca.on.oicr.gsi.shesmu.nabu;
 
 import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
-import tools.jackson.core.JacksonException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Consumer;
+import tools.jackson.core.JacksonException;
 
 public class ArchiveProjectAction extends ArchiveAction<NabuProjectArchiveDto> {
 

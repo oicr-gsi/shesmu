@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.plugin.action;
 
+import java.util.regex.Pattern;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
-import java.util.regex.Pattern;
 
 /** An {@link Action} that stores some of its parameters in a JSON object */
 public abstract class JsonParameterisedAction extends Action {

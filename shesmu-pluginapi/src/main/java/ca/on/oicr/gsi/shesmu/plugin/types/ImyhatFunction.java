@@ -1,11 +1,11 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
-import tools.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import tools.jackson.databind.JsonNode;
 
 /**
  * Convert a value based on the provided information

@@ -1,13 +1,13 @@
 package ca.on.oicr.gsi.shesmu.plugin;
 
-import tools.jackson.core.JsonGenerator;
-import tools.jackson.databind.ValueSerializer;
-import tools.jackson.databind.SerializationContext;
-import tools.jackson.databind.node.ArrayNode;
-import tools.jackson.databind.node.ObjectNode;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /** The location of an olive that is stable across recompilations */
 public final class SourceLocation implements Comparable<SourceLocation> {
