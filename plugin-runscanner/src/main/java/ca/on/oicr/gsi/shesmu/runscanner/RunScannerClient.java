@@ -244,8 +244,9 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   public Optional<JsonNode> ultima_workflowfiles(
       @ShesmuParameter(description = "name of run") String run,
       @ShesmuParameter(description = "barcode, formatted like ATCGATCGATCGATCG") String barcode,
-      @ShesmuParameter(description = "workflow name") String workflow,
-      @ShesmuParameter(description = "library") String library) {
+      @ShesmuParameter(description = "library") String library,
+      @ShesmuParameter(description = "workflow name, one of: CRAMGeneration, EmSeq")
+          String workflow) {
     try {
       // Get the analysis for this run. If there is no run, or no analysis for this run, return
       Optional<RunInformation> theRun = getRun(run);
