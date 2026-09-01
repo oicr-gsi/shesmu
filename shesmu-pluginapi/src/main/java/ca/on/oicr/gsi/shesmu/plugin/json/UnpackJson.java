@@ -6,7 +6,6 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.TimeFormat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
-import tools.jackson.databind.JsonNode;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -14,6 +13,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import tools.jackson.databind.JsonNode;
 
 /** Parse a JSON value based on a type */
 public class UnpackJson implements ImyhatTransformer<Object> {

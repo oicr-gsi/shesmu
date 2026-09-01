@@ -3,15 +3,15 @@ package ca.on.oicr.gsi.shesmu.mongo;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.stream.Collectors;
+import org.bson.Document;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ValueDeserializer;
 import tools.jackson.databind.annotation.JsonDeserialize;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.stream.Collectors;
-import org.bson.Document;
 
 @JsonDeserialize(using = ReturnConverter.Deserializer.class)
 public abstract class ReturnConverter {

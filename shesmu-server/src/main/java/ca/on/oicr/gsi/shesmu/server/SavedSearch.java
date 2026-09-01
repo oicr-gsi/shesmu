@@ -3,10 +3,10 @@ package ca.on.oicr.gsi.shesmu.server;
 import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import tools.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.stream.Stream;
+import tools.jackson.databind.node.ObjectNode;
 
 public class SavedSearch implements WatchedFileListener {
   private final Path filename;

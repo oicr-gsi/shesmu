@@ -20,8 +20,6 @@ import ca.on.oicr.gsi.vidarr.api.ExternalKey;
 import ca.on.oicr.gsi.vidarr.api.ProvenanceWorkflowRun;
 import ca.on.oicr.ws.dto.LaneProvenanceDto;
 import ca.on.oicr.ws.dto.SampleProvenanceDto;
-import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.json.JsonMapper;
 import io.prometheus.client.Gauge;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -34,8 +32,10 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 public final class CerberusPlugin extends JsonPluginFile<Configuration> {
   private class FileProvenanceCache extends ValueCache<Optional<FileProvenanceOutput>> {
@@ -109,11 +109,12 @@ public final class CerberusPlugin extends JsonPluginFile<Configuration> {
     }
   }
 
-  private static final JsonMapper MAPPER = JsonMapper.builder()
-      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-      .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
-      .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
-      .build();
+  private static final JsonMapper MAPPER =
+      JsonMapper.builder()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+          .build();
   private static final Gauge errorRecords =
       Gauge.build("shesmu_cerberus_error_records", "The number of Workflows missing LIMS data")
           .labelNames("filename")

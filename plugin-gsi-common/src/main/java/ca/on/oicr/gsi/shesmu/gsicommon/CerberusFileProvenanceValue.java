@@ -4,12 +4,12 @@ import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.Gang;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
-import tools.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import tools.jackson.databind.JsonNode;
 
 public interface CerberusFileProvenanceValue {
   @ShesmuVariable

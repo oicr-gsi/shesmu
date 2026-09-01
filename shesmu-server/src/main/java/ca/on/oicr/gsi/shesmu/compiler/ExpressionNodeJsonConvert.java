@@ -6,7 +6,6 @@ import ca.on.oicr.gsi.shesmu.plugin.json.AsJsonNode;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import ca.on.oicr.gsi.shesmu.runtime.JsonConverter;
-import tools.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
@@ -14,6 +13,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
+import tools.jackson.databind.JsonNode;
 
 public class ExpressionNodeJsonConvert extends ExpressionNode {
   private static final Type A_AS_JSON_NODE_TYPE = Type.getType(AsJsonNode.class);

@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import tools.jackson.core.JacksonException;
 import java.util.function.Consumer;
+import tools.jackson.core.JacksonException;
 
 public class InformationParameterNodeLiteral<T> extends InformationParameterNode<T> {
 

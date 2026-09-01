@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.json;
 
-import tools.jackson.databind.JsonNode;
 import java.util.Map;
+import tools.jackson.databind.JsonNode;
 
 public final class LocalConfiguration extends BaseConfiguration {
   private Map<String, Map<String, JsonNode>> values;

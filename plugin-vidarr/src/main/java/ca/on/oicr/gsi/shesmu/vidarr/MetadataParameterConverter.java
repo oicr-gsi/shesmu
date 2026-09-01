@@ -10,11 +10,11 @@ import ca.on.oicr.gsi.vidarr.OutputProvisionFormat;
 import ca.on.oicr.gsi.vidarr.OutputType;
 import ca.on.oicr.gsi.vidarr.OutputType.IdentifierKey;
 import ca.on.oicr.gsi.vidarr.api.TargetDeclaration;
-import tools.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import tools.jackson.databind.node.ObjectNode;
 
 final class MetadataParameterConverter implements OutputType.Visitor<Imyhat> {
 

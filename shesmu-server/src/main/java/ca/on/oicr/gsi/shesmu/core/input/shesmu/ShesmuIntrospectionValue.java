@@ -6,12 +6,12 @@ import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import tools.jackson.databind.JsonNode;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import tools.jackson.databind.JsonNode;
 
 public final class ShesmuIntrospectionValue {
   private final Action action;

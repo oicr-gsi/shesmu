@@ -6,7 +6,6 @@ import ca.on.oicr.gsi.vidarr.UnloadFilter;
 import ca.on.oicr.gsi.vidarr.UnloadTextSelector;
 import ca.on.oicr.gsi.vidarr.api.UnloadFilterExternalId;
 import ca.on.oicr.gsi.vidarr.api.UnloadFilterOr;
-import tools.jackson.databind.node.ObjectNode;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +16,7 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.databind.node.ObjectNode;
 
 public final class UnloadExternalIdentifiersAction extends BaseUnloadAction {
   private Map<String, List<String>> externalIds = Map.of();

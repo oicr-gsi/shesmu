@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.plugin.types;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
-import tools.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -13,6 +12,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.databind.JsonNode;
 
 /**
  * Matches to make Java's type checking produce correct types in Shesmu

@@ -2,8 +2,8 @@ package ca.on.oicr.gsi.shesmu.guanyin;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import tools.jackson.databind.node.ObjectNode;
 import java.util.List;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Bean of record responses from Guanyin

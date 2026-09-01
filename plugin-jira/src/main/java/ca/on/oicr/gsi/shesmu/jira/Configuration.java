@@ -1,9 +1,9 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
 import ca.on.oicr.gsi.shesmu.plugin.authentication.AuthenticationConfiguration;
-import tools.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
+import tools.jackson.databind.JsonNode;
 
 public final class Configuration {
   private AuthenticationConfiguration authentication;

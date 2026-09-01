@@ -10,8 +10,6 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.BaseHotloadingCompiler;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.node.ObjectNode;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -27,6 +25,8 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * A constant value that can be injected into a Shesmu program

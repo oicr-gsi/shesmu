@@ -5,13 +5,13 @@ import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
-import tools.jackson.databind.JsonNode;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import tools.jackson.databind.JsonNode;
 
 public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
   private final JsonNode input;

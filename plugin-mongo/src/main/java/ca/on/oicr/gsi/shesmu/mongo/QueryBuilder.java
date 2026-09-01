@@ -1,15 +1,15 @@
 package ca.on.oicr.gsi.shesmu.mongo;
 
-import tools.jackson.core.JsonParser;
-import tools.jackson.databind.DeserializationContext;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ValueDeserializer;
-import tools.jackson.databind.annotation.JsonDeserialize;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.bson.*;
 import org.bson.conversions.Bson;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 @JsonDeserialize(using = QueryBuilder.Deserializer.class)
 public interface QueryBuilder {

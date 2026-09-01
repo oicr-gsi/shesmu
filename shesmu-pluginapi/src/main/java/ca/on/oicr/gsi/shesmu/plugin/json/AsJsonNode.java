@@ -3,14 +3,14 @@ package ca.on.oicr.gsi.shesmu.plugin.json;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatFunction;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.JsonNodeFactory;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeFactory;
 
 /** Convert a Shesmu value into a JSON value based on the Shesmu type */
 public class AsJsonNode implements ImyhatFunction<JsonNode> {

@@ -1,12 +1,11 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
 import ca.on.oicr.gsi.Pair;
-import tools.jackson.core.JsonGenerator;
-import tools.jackson.databind.ValueSerializer;
-import tools.jackson.databind.SerializationContext;
 import java.io.IOException;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 
 public class ImyhatSerializer extends ValueSerializer<Imyhat> {
   private interface Generator {
@@ -25,8 +24,7 @@ public class ImyhatSerializer extends ValueSerializer<Imyhat> {
   }
 
   @Override
-  public void serialize(
-      Imyhat imyhat, JsonGenerator jsonGenerator, SerializationContext context) {
+  public void serialize(Imyhat imyhat, JsonGenerator jsonGenerator, SerializationContext context) {
     try {
       imyhat
           .apply(
@@ -53,8 +51,7 @@ public class ImyhatSerializer extends ValueSerializer<Imyhat> {
                                                       p ->
                                                           g -> {
                                                             g.writeName(p.first());
-                                                            serialize(
-                                                                p.second(), g, context);
+                                                            serialize(p.second(), g, context);
                                                           })
                                                   .toList();
                                           return g -> {
@@ -67,7 +64,8 @@ public class ImyhatSerializer extends ValueSerializer<Imyhat> {
                                         }
 
                                         @Override
-                                        public Generator tuple(String name, Stream<Imyhat> contents) {
+                                        public Generator tuple(
+                                            String name, Stream<Imyhat> contents) {
                                           final var members = contents.toList();
                                           return g -> {
                                             g.writeArrayPropertyStart(name);
@@ -139,9 +137,7 @@ public class ImyhatSerializer extends ValueSerializer<Imyhat> {
                 @Override
                 public Generator object(Stream<Pair<String, Imyhat>> contents) {
                   final var fields =
-                      contents
-                          .map(p -> field(p.first(), p.second().apply(this)))
-                          .toList();
+                      contents.map(p -> field(p.first(), p.second().apply(this))).toList();
                   return g -> {
                     g.writeStartObject();
                     g.writeStringProperty("is", "object");

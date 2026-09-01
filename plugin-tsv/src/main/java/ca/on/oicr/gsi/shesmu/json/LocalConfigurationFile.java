@@ -1,11 +1,11 @@
 package ca.on.oicr.gsi.shesmu.json;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
-import tools.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import tools.jackson.databind.JsonNode;
 
 public final class LocalConfigurationFile extends BaseStructuredConfigFile<LocalConfiguration> {
   public LocalConfigurationFile(

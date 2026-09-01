@@ -20,10 +20,6 @@ import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.runscanner.RunScannerPluginType;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.ws.dto.*;
-import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.SerializationFeature;
-import tools.jackson.databind.cfg.DateTimeFeature;
-import tools.jackson.databind.json.JsonMapper;
 import io.prometheus.client.Gauge;
 import java.io.IOException;
 import java.net.http.HttpClient;
@@ -36,6 +32,10 @@ import java.util.function.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   public static Gauge multipleContainers =
@@ -705,11 +705,12 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   private static final Pattern COMMA = Pattern.compile(",");
 
   private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
-  private static final JsonMapper MAPPER = JsonMapper.builder()
-      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-      .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
-      .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
-      .build();
+  private static final JsonMapper MAPPER =
+      JsonMapper.builder()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+          .build();
   private static final Gauge badSetMap =
       Gauge.build(
               "shesmu_pinery_bad_set",

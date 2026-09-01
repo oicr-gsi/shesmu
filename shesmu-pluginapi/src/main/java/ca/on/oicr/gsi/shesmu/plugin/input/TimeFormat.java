@@ -1,10 +1,10 @@
 package ca.on.oicr.gsi.shesmu.plugin.input;
 
-import tools.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.time.Instant;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import tools.jackson.core.JsonGenerator;
 
 public enum TimeFormat {
   MILLIS_NUMERIC {

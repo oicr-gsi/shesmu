@@ -5,8 +5,6 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.GangDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.*;
-import tools.jackson.core.io.JsonStringEncoder;
-import tools.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -18,6 +16,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
+import tools.jackson.core.io.JsonStringEncoder;
+import tools.jackson.databind.JsonNode;
 
 public class TypeUtils {
   public interface GangProcessor<T> {

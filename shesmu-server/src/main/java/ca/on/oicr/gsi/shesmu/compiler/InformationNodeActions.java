@@ -7,7 +7,6 @@ import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter.ActionFilterNode;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.filter.SourceOliveLocation;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import tools.jackson.core.JacksonException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +14,7 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tools.jackson.core.JacksonException;
 
 public class InformationNodeActions extends InformationNode {
 

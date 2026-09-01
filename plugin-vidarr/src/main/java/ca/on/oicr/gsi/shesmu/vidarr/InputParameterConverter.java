@@ -10,13 +10,13 @@ import ca.on.oicr.gsi.vidarr.InputProvisionFormat;
 import ca.on.oicr.gsi.vidarr.InputType;
 import ca.on.oicr.gsi.vidarr.InputType.Visitor;
 import ca.on.oicr.gsi.vidarr.api.TargetDeclaration;
-import tools.jackson.databind.node.ObjectNode;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Stream;
+import tools.jackson.databind.node.ObjectNode;
 
 final class InputParameterConverter implements InputType.Visitor<Imyhat> {
 
