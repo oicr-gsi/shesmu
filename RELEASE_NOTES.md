@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.61.1] - 2026-09-01
+
+### Fixed
+
+* Bug with rendering SUCCEEDED Vidarr actions
+
+
 ## [1.61.0] - 2026-09-01
 
 ### Changed
