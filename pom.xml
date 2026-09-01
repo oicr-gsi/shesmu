@@ -80,7 +80,7 @@
       <dependency>
         <groupId>tools.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
-        <version>3.1.4</version>
+        <version>3.1.5</version>
       </dependency>
       <dependency>
         <!-- Jackson 3 deliberately did not repackage jackson-annotations; it stays
