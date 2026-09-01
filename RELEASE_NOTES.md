@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.61.2] - 2026-09-01
+
+### Fixed
+
+* Bug introduced by previous fix
+
+
 ## [1.61.1] - 2026-09-01
 
 ### Fixed
