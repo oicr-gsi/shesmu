@@ -93,4 +93,29 @@ public class Utils {
     if (timeout.isPresent()) builder.timeout(Duration.ofMinutes(timeout.get()));
     return builder.GET().build();
   }
+
+  /**
+   * Describe an exception and all of its causes on a single line
+   *
+   * <p>The message on the outermost exception is frequently useless on its own; a truncated HTTP
+   * response, for instance, arrives as a bare <code>closed</code> with the real explanation buried
+   * several causes down.
+   */
+  public static String describeCauseChain(Throwable throwable) {
+    final var output = new StringBuilder();
+    // Cause chains are allowed to be cyclic, so track what has already been printed
+    final Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+    for (var current = throwable;
+        current != null && seen.add(current);
+        current = current.getCause()) {
+      if (!output.isEmpty()) {
+        output.append(" caused by ");
+      }
+      output.append(current.getClass().getSimpleName());
+      if (current.getMessage() != null) {
+        output.append(": ").append(current.getMessage());
+      }
+    }
+    return output.toString();
+  }
 }
