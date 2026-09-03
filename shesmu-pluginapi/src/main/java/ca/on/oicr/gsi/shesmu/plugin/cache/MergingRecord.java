@@ -44,8 +44,12 @@ public final class MergingRecord<V, I> extends BaseRecord<Stream<V>, List<V>> {
     if (stream == null) {
       return null;
     }
-    final List<V> buffer = stream.collect(Collectors.toList());
-    stream.close();
+    final List<V> buffer;
+    // The stream must be closed even when collecting it fails, since it may be holding an HTTP
+    // connection open
+    try (stream) {
+      buffer = stream.collect(Collectors.toList());
+    }
     final Set<I> newIds = buffer.stream().map(getId).collect(Collectors.toSet());
     return Stream.concat(
             oldstate.stream().filter(item -> !newIds.contains(getId.apply(item))), buffer.stream())
