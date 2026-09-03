@@ -22,6 +22,7 @@ import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.ws.dto.*;
 import io.prometheus.client.Gauge;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -76,6 +77,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                       // spiteful, so we spite it back.
                       (a, b) -> a));
       final Set<Pair<String, String>> validLanes = new HashSet<>();
+      // The samples must be read after the lanes, which populate validLanes, so the request for
+      // them is deferred rather than left waiting on an idle connection
       return Stream.concat(
               lanes(
                   cfg.getUrl(),
@@ -84,13 +87,15 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                   badSetCounts,
                   allRuns,
                   (run, lane) -> validLanes.add(new Pair<>(run, lane))),
-              samples(
-                  cfg.getUrl(),
-                  cfg.getVersion(),
-                  cfg.getProvider(),
-                  badSetCounts,
-                  allRuns,
-                  (run, lane) -> validLanes.contains(new Pair<>(run, lane))))
+              lazily(
+                  () ->
+                      samples(
+                          cfg.getUrl(),
+                          cfg.getVersion(),
+                          cfg.getProvider(),
+                          badSetCounts,
+                          allRuns,
+                          (run, lane) -> validLanes.contains(new Pair<>(run, lane)))))
           .onClose(
               () ->
                   badSetCounts.forEach(
@@ -367,6 +372,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                       // spiteful, so we spite it back.
                       (a, b) -> a));
       final Set<Pair<String, String>> validLanes = new HashSet<>();
+      // The samples must be read after the lanes, which populate validLanes, so the request for
+      // them is deferred rather than left waiting on an idle connection
       return Stream.concat(
               lanes(
                   cfg.getUrl(),
@@ -375,13 +382,15 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                   badSetCounts,
                   allRuns,
                   (run, lane) -> validLanes.add(new Pair<>(run, lane))),
-              samples(
-                  cfg.getUrl(),
-                  cfg.getVersion(),
-                  cfg.getProvider(),
-                  badSetCounts,
-                  allRuns,
-                  (run, lane) -> validLanes.contains(new Pair<>(run, lane))))
+              lazily(
+                  () ->
+                      samples(
+                          cfg.getUrl(),
+                          cfg.getVersion(),
+                          cfg.getProvider(),
+                          badSetCounts,
+                          allRuns,
+                          (run, lane) -> validLanes.contains(new Pair<>(run, lane)))))
           .onClose(
               () ->
                   badSetCounts.forEach(
@@ -738,6 +747,36 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
   private static boolean isRunValid(RunDto run) {
     return run != null && run.getCreatedDate() != null;
+  }
+
+  /** A batch of provenance that has to be requested over HTTP before it can be read */
+  interface ProvenanceSource<T> {
+    Stream<T> get() throws IOException, InterruptedException;
+  }
+
+  /**
+   * Defer requesting a batch of provenance until it is about to be read
+   *
+   * <p>Both arguments to {@link Stream#concat(Stream, Stream)} are evaluated before anything is
+   * read from either, so requesting a batch eagerly leaves its response body unread, and its
+   * connection idle, for as long as the preceding batch takes to consume. Pinery is behind a proxy
+   * that will eventually give up on a connection nobody is reading.
+   *
+   * <p>Package-private so that it can be tested.
+   */
+  static <T> Stream<T> lazily(ProvenanceSource<T> source) {
+    return Stream.of(source)
+        .flatMap(
+            deferred -> {
+              try {
+                return deferred.get();
+              } catch (IOException e) {
+                throw new UncheckedIOException(e);
+              } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(e);
+              }
+            });
   }
 
   private static Optional<String> limsAttr(
