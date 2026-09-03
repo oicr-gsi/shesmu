@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -94,12 +95,33 @@ public class Utils {
     return builder.GET().build();
   }
 
+  /** The longest any one exception's message may be before it gets abbreviated */
+  private static final int MAX_CAUSE_MESSAGE_LENGTH = 200;
+
+  private static final Pattern WHITESPACE_RUN = Pattern.compile("\\s+");
+
+  /**
+   * Flatten an exception message to a single bounded line
+   *
+   * <p>Jackson's messages are the reason this is necessary: they run to several lines and tack on a
+   * source location full of the names of the features that were switched off while producing it.
+   */
+  private static String flattenMessage(String message) {
+    final var flattened = WHITESPACE_RUN.matcher(message).replaceAll(" ").trim();
+    return flattened.length() <= MAX_CAUSE_MESSAGE_LENGTH
+        ? flattened
+        : flattened.substring(0, MAX_CAUSE_MESSAGE_LENGTH) + "...";
+  }
+
   /**
    * Describe an exception and all of its causes on a single line
    *
    * <p>The message on the outermost exception is frequently useless on its own; a truncated HTTP
    * response, for instance, arrives as a bare <code>closed</code> with the real explanation buried
    * several causes down.
+   *
+   * <p>The result goes into a log line and into the text shown for an unusable input format, so
+   * each message is flattened onto one line and abbreviated rather than being used verbatim.
    */
   public static String describeCauseChain(Throwable throwable) {
     final var output = new StringBuilder();
@@ -112,8 +134,9 @@ public class Utils {
         output.append(" caused by ");
       }
       output.append(current.getClass().getSimpleName());
-      if (current.getMessage() != null) {
-        output.append(": ").append(current.getMessage());
+      final var message = current.getMessage();
+      if (message != null && !message.isBlank()) {
+        output.append(": ").append(flattenMessage(message));
       }
     }
     return output.toString();

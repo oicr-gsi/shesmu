@@ -115,6 +115,21 @@ public class JsonListBodyHandlerTest {
     assertTrue(error.getMessage().contains("empty response body"), error.getMessage());
   }
 
+  /**
+   * A proxy error page is not JSON at all, and should not be described as if it were broken JSON
+   */
+  @Test
+  public void testNonJsonBodyIsReported() {
+    final var input =
+        new TruncatingInputStream(
+            "<html><body>502 Bad Gateway</body></html>".getBytes(StandardCharsets.UTF_8),
+            Integer.MAX_VALUE);
+    final var error = assertThrows(IllegalArgumentException.class, () -> streamOf(input));
+    assertTrue(error.getMessage().contains("was not JSON"), error.getMessage());
+    assertTrue(error.getMessage().contains("Item"), error.getMessage());
+    assertTrue(input.closed, "the response body must be closed when the body is not JSON");
+  }
+
   /** The reported token used to be the one after the offending one */
   @Test
   public void testNonArrayBodyIsReported() {
@@ -151,6 +166,17 @@ public class JsonListBodyHandlerTest {
         error.getMessage().contains("Item") && error.getMessage().contains("record"),
         error.getMessage());
     assertTrue(input.closed, "the response body must be closed when reading fails");
+  }
+
+  /**
+   * A body that is already dead fails while the parser is being created, before any stream exists
+   * for the caller to close, so the body has to be released here
+   */
+  @Test
+  public void testDeadBodyIsClosed() {
+    final var input = new TruncatingInputStream(array(500).getBytes(StandardCharsets.UTF_8), 0);
+    assertThrows(RuntimeException.class, () -> streamOf(input));
+    assertTrue(input.closed, "the response body must be closed when the parser cannot be created");
   }
 
   /** Abandoning the stream early has to release the connection too */
@@ -192,6 +218,42 @@ public class JsonListBodyHandlerTest {
                 new IOException(
                     "chunked transfer encoding",
                     new java.io.EOFException("EOF reached while reading")))));
+  }
+
+  /**
+   * Jackson's messages carry a newline and a source location, and this text goes into a single log
+   * line and into the user interface
+   */
+  @Test
+  public void testMultiLineCauseMessageIsFlattened() {
+    final var described =
+        Utils.describeCauseChain(
+            assertThrows(
+                RuntimeException.class,
+                () -> MAPPER.readValue("{oops", JsonListBodyHandlerTest.Item.class)));
+    assertTrue(described.lines().count() == 1, described);
+    assertTrue(described.contains("was expecting double-quote"), described);
+  }
+
+  /** A single enormous message must not swamp the rest of the chain */
+  @Test
+  public void testLongCauseMessageIsAbbreviated() {
+    final var described =
+        Utils.describeCauseChain(
+            new IllegalStateException(
+                "x".repeat(5000), new IllegalStateException("the real cause")));
+    assertTrue(described.length() < 400, "was " + described.length() + " characters");
+    assertTrue(described.contains("..."), described);
+    assertTrue(described.endsWith("caused by IllegalStateException: the real cause"), described);
+  }
+
+  /** An exception with no message contributes only its name */
+  @Test
+  public void testMissingCauseMessageIsOmitted() {
+    assertEquals(
+        "IllegalStateException caused by IllegalStateException: inner",
+        Utils.describeCauseChain(
+            new IllegalStateException((String) null, new IllegalStateException("inner"))));
   }
 
   /** A cyclic cause chain must not loop forever */

@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.json;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpResponse;
 import java.util.Spliterator;
@@ -9,6 +10,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import tools.jackson.core.JsonParser;
 import tools.jackson.core.JsonToken;
+import tools.jackson.core.exc.StreamReadException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JavaType;
@@ -29,7 +31,7 @@ public final class JsonListBodyHandler<W> implements HttpResponse.BodyHandler<Su
   private static long byteOffsetOf(JsonParser parser) {
     try {
       return parser.currentLocation().getByteOffset();
-    } catch (RuntimeException | Error e) {
+    } catch (RuntimeException e) {
       return -1;
     }
   }
@@ -49,13 +51,39 @@ public final class JsonListBodyHandler<W> implements HttpResponse.BodyHandler<Su
     // disable the FAIL_ON_TRAILING_TOKENS feature here, not on the global mapper
     final var itemReader =
         jsonMapper.readerFor(targetType).without(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
-    final var parser = jsonMapper.createParser(inputStream);
+    // Creating the parser reads from the body to determine the encoding, so it fails outright on a
+    // response that has already been cut short. Nothing owns the body at that point, so it has to
+    // be released here or the connection is leaked.
+    final JsonParser parser;
+    try {
+      parser = jsonMapper.createParser(inputStream);
+    } catch (RuntimeException | Error e) {
+      try {
+        inputStream.close();
+      } catch (IOException | RuntimeException suppressed) {
+        e.addSuppressed(suppressed);
+      }
+      throw e;
+    }
     // Closing the parser closes the HTTP response body, and therefore releases the connection, so
     // ownership has to be handed to the stream if one is returned and the parser closed here
     // otherwise
     var releaseParser = true;
     try {
-      final var firstToken = parser.nextToken();
+      final JsonToken firstToken;
+      try {
+        firstToken = parser.nextToken();
+      } catch (StreamReadException e) {
+        // An error page from a proxy is a common enough response that "this was not JSON at all"
+        // is worth saying plainly, rather than leaving a complaint about a stray '<' to be read as
+        // if the server had sent broken JSON. Only a parse failure is treated this way; a body
+        // that dies mid-read throws JacksonIOException and is left to report itself as such.
+        throw new IllegalArgumentException(
+            String.format(
+                "Expected a JSON array of %s but the response was not JSON",
+                targetType.getRawClass().getSimpleName()),
+            e);
+      }
       if (firstToken == JsonToken.START_ARRAY) {
         releaseParser = false;
         return StreamSupport.stream(
@@ -84,14 +112,17 @@ public final class JsonListBodyHandler<W> implements HttpResponse.BodyHandler<Su
                         return false;
                       }
                       item = itemReader.readValue(parser);
-                    } catch (RuntimeException | Error e) {
+                    } catch (RuntimeException e) {
+                      // Only RuntimeException; wrapping an Error would turn it into something the
+                      // cache machinery catches and reports as a mere failed refresh. An Error
+                      // still releases the body, since the stream's close handler does that.
                       // Report how far the array got before dying, since a response that is cut
                       // short otherwise gives no indication of where, or of how much data arrived
                       final var failure =
                           new JsonListReadException(targetType, records, byteOffsetOf(parser), e);
                       try {
                         parser.close();
-                      } catch (RuntimeException | Error suppressed) {
+                      } catch (RuntimeException suppressed) {
                         failure.addSuppressed(suppressed);
                       }
                       throw failure;
