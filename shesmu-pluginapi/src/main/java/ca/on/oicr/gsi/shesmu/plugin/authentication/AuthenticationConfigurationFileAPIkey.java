@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.authentication;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -7,6 +8,7 @@ import java.nio.file.Paths;
 public final class AuthenticationConfigurationFileAPIkey extends AuthenticationConfiguration {
   private String apikeyFile;
 
+  @JsonProperty("apikeyFile")
   public String getAPIkeyFile() {
     return apikeyFile;
   }
@@ -16,6 +18,7 @@ public final class AuthenticationConfigurationFileAPIkey extends AuthenticationC
     return Files.readString(Paths.get(apikeyFile)).trim();
   }
 
+  @JsonProperty("apikeyFile")
   public void setAPIkeyFile(String apikeyFile) {
     this.apikeyFile = apikeyFile;
   }
