@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Function;
-import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.cfg.DateTimeFeature;
@@ -20,7 +19,6 @@ import tools.jackson.databind.node.ObjectNode;
 public final class JsonFileDefinitionFile extends JsonPluginFile<ObjectNode> {
   private static final JsonMapper MAPPER =
       JsonMapper.builder()
-          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
           .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
           .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
           .build();

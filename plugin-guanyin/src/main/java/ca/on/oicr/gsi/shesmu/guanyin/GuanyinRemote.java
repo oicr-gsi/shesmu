@@ -18,7 +18,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
@@ -59,7 +58,6 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
 
   private static final JsonMapper MAPPER =
       JsonMapper.builder()
-          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
           .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
           .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
           .build();

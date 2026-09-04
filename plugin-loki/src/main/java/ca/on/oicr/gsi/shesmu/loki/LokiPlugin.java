@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.regex.Pattern;
-import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
@@ -33,7 +32,6 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
   private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
   private static final JsonMapper MAPPER =
       JsonMapper.builder()
-          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
           .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
           .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
           .build();
