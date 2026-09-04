@@ -2,6 +2,8 @@ package ca.on.oicr.gsi.shesmu.runtime;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
+import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
+import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLocationLinker;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.Grouper;
@@ -55,6 +57,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
@@ -97,10 +100,22 @@ public final class RuntimeSupport {
   }
 
   @RuntimeInterop public static final String[] EMPTY = new String[0];
+
+  /**
+   * The mapper used for all of Shesmu's JSON.
+   *
+   * <p>A {@link JsonMapper} is immutable, so every module must be installed while it is being
+   * built; there is no way to add one afterwards. Writing a {@link SourceLocation} with this mapper
+   * produces a location with no source URL, since the {@link
+   * SourceLocation.SourceLocationSerializer} takes its {@link SourceLocationLinker} from a
+   * serialisation attribute; use {@link SourceLocation#writerFor(ObjectMapper,
+   * SourceLocationLinker)} to write locations that should be linked to their olives.
+   */
   public static final JsonMapper MAPPER =
       JsonMapper.builder()
           .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
           .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+          .addModule(SourceLocation.serializerModule())
           .build();
 
   @RuntimeInterop

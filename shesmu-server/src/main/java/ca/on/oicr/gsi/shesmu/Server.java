@@ -142,7 +142,6 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonEncoding;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
@@ -332,11 +331,6 @@ public final class Server implements ServerConfig, ActionServices {
     }
     pluginManager = new PluginManager(fileWatcher);
     savedSearches = new AutoUpdatingDirectory<>(fileWatcher, ".search", SavedSearch::new);
-    final var module = new SimpleModule("shesmu");
-    module.addSerializer(
-        SourceLocation.class, new SourceLocation.SourceLocationSerializer(pluginManager));
-    // rebuild with the new module
-    RuntimeSupport.MAPPER.rebuild().addModule(module).build();
     server = HttpServer.create(new InetSocketAddress(port), 0);
     server.setExecutor(wwwExecutor);
     definitionRepository = DefinitionRepository.concat(new StandardDefinitions(), pluginManager);
@@ -1919,9 +1913,8 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
-          try (final var os = t.getResponseBody();
-              final var jGenerator = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8)) {
-            processor.alerts(jGenerator, a -> true);
+          try (final OutputStream os = t.getResponseBody()) {
+            processor.alerts(os, a -> true);
           }
         });
     add(
@@ -1937,9 +1930,8 @@ public final class Server implements ServerConfig, ActionServices {
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
           final var predicate = filter.convert(ActionProcessor.ALERT_FILTER_BUILDER);
-          try (var os = t.getResponseBody();
-              var jGenerator = RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8)) {
-            processor.alerts(jGenerator, predicate);
+          try (OutputStream os = t.getResponseBody()) {
+            processor.alerts(os, predicate);
           }
         });
     add(
