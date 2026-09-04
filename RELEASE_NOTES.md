@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.61.3] - 2026-09-04
+
+### Fixed
+
+* `apikey` and `apikey-file` configuration is correctly parsed now
+
+
 ## [1.61.2] - 2026-09-01
 
 ### Fixed
