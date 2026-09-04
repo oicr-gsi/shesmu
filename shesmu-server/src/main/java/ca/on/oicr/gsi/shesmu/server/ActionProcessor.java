@@ -25,7 +25,6 @@ import ca.on.oicr.gsi.shesmu.util.AutoLock;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.prometheus.client.Collector;
 import io.prometheus.client.Gauge;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -43,6 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -62,8 +62,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import tools.jackson.core.JsonEncoding;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectWriter;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.JsonNodeFactory;
@@ -620,6 +623,13 @@ public final class ActionProcessor
   private final Map<Action, Information> actions = new ConcurrentHashMap<>();
   private final AutoLock alertLock = new AutoLock();
   private final Map<Map<String, String>, Alert> alerts = new HashMap<>();
+
+  /**
+   * The writer for {@link Alert}s, which are the only objects Jackson serialises by introspection
+   * that contain {@link SourceLocation}s; it carries the linker those locations need.
+   */
+  private final ObjectWriter alertWriter;
+
   private final URI baseUri;
   private String currentAlerts = "[]";
   private final AtomicInteger currentRunningActions = new AtomicInteger();
@@ -636,6 +646,31 @@ public final class ActionProcessor
           .map(Integer::parseInt)
           .orElse(Math.max(1, Runtime.getRuntime().availableProcessors() / 2 + 1));
 
+  /**
+   * Create a writer that resolves the source URLs of the {@link SourceLocation}s it writes
+   *
+   * <p>The linker travels as a serialisation attribute because {@link
+   * SourceLocation.SourceLocationSerializer} cannot be given one when the mapper is built. The key
+   * must be the one that serializer reads, or the URLs are silently lost. {@link
+   * SourceLocation#serializerModule()} is installed here as well, so the locations are written
+   * properly even if the mapper was built without it; that rebuild copies the mapper, so keep the
+   * writer rather than making one per request.
+   *
+   * @param mapper the mapper whose configuration to write with
+   * @param linker the resolver for source URLs, or {@link SourceLocationLinker#EMPTY} for no URLs
+   * @return a writer that will attach source URLs using this linker
+   */
+  static ObjectWriter writerFor(ObjectMapper mapper, SourceLocationLinker linker) {
+    return mapper
+        .rebuild()
+        .addModule(SourceLocation.serializerModule())
+        .build()
+        .writer()
+        .withAttribute(
+            SourceLocationLinker.class,
+            Objects.requireNonNull(linker, "Source location linker must not be null."));
+  }
+
   private final ExecutorService workExecutor =
       Executors.newFixedThreadPool(
           ACTION_THREADS, new ShesmuThreadFactory("actions", Thread.MIN_PRIORITY));
@@ -645,6 +680,7 @@ public final class ActionProcessor
     this.baseUri = baseUri;
     this.manager = manager;
     this.actionServices = actionServices;
+    alertWriter = writerFor(RuntimeSupport.MAPPER, manager);
   }
 
   /**
@@ -727,14 +763,26 @@ public final class ActionProcessor
     return startStream(filters).map(e -> e.getValue().id);
   }
 
-  public void alerts(JsonGenerator output, Predicate<Alert> predicate) throws IOException {
-    output.writeStartArray();
-    for (final var alert : alerts.values()) {
-      if (predicate.test(alert)) {
-        output.objectWriteContext().writeValue(output, alert);
+  /**
+   * Write the alerts matching a predicate as a JSON array
+   *
+   * <p>The generator is created here rather than by the caller so that the alerts are written with
+   * {@link #alertWriter}, which knows how to resolve the source URLs of the olives that generated
+   * them.
+   *
+   * @param output the stream to write to
+   * @param predicate the alerts to include
+   */
+  public void alerts(OutputStream output, Predicate<Alert> predicate) {
+    try (final JsonGenerator generator = alertWriter.createGenerator(output, JsonEncoding.UTF8)) {
+      generator.writeStartArray();
+      for (final Alert alert : alerts.values()) {
+        if (predicate.test(alert)) {
+          generator.objectWriteContext().writeValue(generator, alert);
+        }
       }
+      generator.writeEndArray();
     }
-    output.writeEndArray();
   }
 
   /**
@@ -1289,7 +1337,7 @@ public final class ActionProcessor
 
   public void getAlert(OutputStream output, String id) {
     final var alert = alerts.values().stream().filter(a -> a.id.equals(id)).findAny().orElse(null);
-    RuntimeSupport.MAPPER.writeValue(output, alert);
+    alertWriter.writeValue(output, alert);
   }
 
   @SafeVarargs
@@ -1864,7 +1912,7 @@ public final class ActionProcessor
     try (var lock = alertLock.acquire();
         var inflight = Server.inflightCloseable("Push alerts")) {
       currentAlerts =
-          RuntimeSupport.MAPPER.writeValueAsString(
+          alertWriter.writeValueAsString(
               alerts.values().stream().filter(Alert::isLive).collect(Collectors.toList()));
     } catch (final Exception e) {
       e.printStackTrace();

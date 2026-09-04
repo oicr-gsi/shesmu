@@ -6,7 +6,9 @@ import java.util.stream.Stream;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
 
 /** The location of an olive that is stable across recompilations */
@@ -30,29 +32,39 @@ public final class SourceLocation implements Comparable<SourceLocation> {
     Stream<String> sourceUrl(String localFilePath, int line, int column, String hash);
   }
 
-  /** Custom JSON serializer */
+  /**
+   * Custom JSON serializer for source locations that Jackson discovers by introspection
+   *
+   * <p>A {@link SourceLocation} has no bean getters, so without this serializer it is written as an
+   * empty object. Writing the URL requires a {@link SourceLocationLinker}, which is not known when
+   * the mapper is built, so it comes from a serialisation attribute keyed on {@link
+   * SourceLocationLinker} instead:
+   *
+   * <pre>
+   * mapper.writer().withAttribute(SourceLocationLinker.class, linker)
+   * </pre>
+   *
+   * <p>Anything writing that attribute must use the same key as {@link #serialize} reads, or the
+   * URLs are silently lost.
+   *
+   * <p>Serialising without that attribute writes the location without a URL. The front end can
+   * still render it; only the link to the olive's source is lost.
+   */
   public static final class SourceLocationSerializer extends ValueSerializer<SourceLocation> {
-    private final SourceLocationLinker linker;
-
-    public SourceLocationSerializer(SourceLocationLinker linker) {
-      this.linker = linker;
-    }
 
     @Override
     public void serialize(
         SourceLocation sourceLocation,
         JsonGenerator jsonGenerator,
         SerializationContext serializerProvider) {
-      jsonGenerator.writeStartObject();
-      jsonGenerator.writeStringProperty("file", sourceLocation.fileName);
-      jsonGenerator.writeNumberProperty("line", sourceLocation.line);
-      jsonGenerator.writeNumberProperty("column", sourceLocation.column);
-      jsonGenerator.writeStringProperty("hash", sourceLocation.hash);
-      final var url = sourceLocation.url(linker);
-      if (url.isPresent()) {
-        jsonGenerator.writeStringProperty("url", url.get());
-      }
-      jsonGenerator.writeEndObject();
+      final Object attribute = serializerProvider.getAttribute(SourceLocationLinker.class);
+      final SourceLocationLinker linker =
+          attribute instanceof SourceLocationLinker suppliedLinker
+              ? suppliedLinker
+              : SourceLocationLinker.EMPTY;
+      final ObjectNode node = JsonNodeFactory.instance.objectNode();
+      sourceLocation.toJson(node, linker);
+      node.serialize(jsonGenerator, serializerProvider);
     }
   }
 
@@ -202,5 +214,18 @@ public final class SourceLocation implements Comparable<SourceLocation> {
    */
   public Optional<String> url(SourceLocationLinker linker) {
     return linker.sourceUrl(fileName, line, column, hash).filter(Objects::nonNull).findAny();
+  }
+
+  /**
+   * The Jackson module that installs {@link SourceLocationSerializer}
+   *
+   * <p>Any mapper that serialises objects containing {@link SourceLocation}s must be built with
+   * this module, or Jackson will write each location as an empty object.
+   *
+   * @return a module that can be added to a mapper being built
+   */
+  public static SimpleModule serializerModule() {
+    return new SimpleModule("shesmu-source-location")
+        .addSerializer(SourceLocation.class, new SourceLocationSerializer());
   }
 }
