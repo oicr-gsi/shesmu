@@ -8,7 +8,6 @@ import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.stream.Stream;
-import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
@@ -20,7 +19,6 @@ public class GitSourceLinker extends PluginFileType<GitSourceLinker.GitLinkerFil
 
   private static final JsonMapper MAPPER =
       JsonMapper.builder()
-          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
           .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
           .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
           .build();
