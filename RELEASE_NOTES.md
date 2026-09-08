@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.61.4] - 2026-09-08
+
+### Fixed
+
+* Alert dashboard now loads
+
+
 ## [1.61.3] - 2026-09-04
 
 ### Fixed
