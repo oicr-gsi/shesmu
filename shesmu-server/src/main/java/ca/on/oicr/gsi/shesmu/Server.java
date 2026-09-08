@@ -140,6 +140,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.objectweb.asm.ClassVisitor;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonEncoding;
+import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -1831,23 +1832,18 @@ public final class Server implements ServerConfig, ActionServices {
             return;
           }
           t.sendResponseHeaders(200, 0);
-          try (final var actions =
+          try (final Stream<ObjectNode> actions =
                   processor.drain(
                       pluginManager,
                       Stream.of(filters)
                           .filter(Objects::nonNull)
                           .map(filterJson -> filterJson.convert(processor.filterBuilder(compiler)))
                           .toArray(Filter[]::new));
-              final var os = t.getResponseBody();
-              final var jsonOutput =
-                  RuntimeSupport.MAPPER
-                      .tokenStreamFactory()
-                      .createGenerator(os, JsonEncoding.UTF8)) {
+              final OutputStream os = t.getResponseBody();
+              final JsonGenerator jsonOutput =
+                  RuntimeSupport.MAPPER.createGenerator(os, JsonEncoding.UTF8)) {
             jsonOutput.writeStartArray();
-            actions.forEach(
-                action -> {
-                  jsonOutput.writeTree(action);
-                });
+            actions.forEach(jsonOutput::writeTree);
             jsonOutput.writeEndArray();
           }
         });
