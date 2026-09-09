@@ -84,8 +84,10 @@ public class JsonListBodyHandlerTest {
   }
 
   private static Stream<Item> streamOf(InputStream input) {
-    return JsonListBodyHandler.streamOf(
-        MAPPER, input, MAPPER.getTypeFactory().constructType(Item.class));
+    // The type witness is needed because nothing in the arguments pins the element type down
+    return JsonListBodyHandler.<Item>toSupplierOfType(
+            MAPPER, input, MAPPER.getTypeFactory().constructType(Item.class))
+        .get();
   }
 
   @Test
