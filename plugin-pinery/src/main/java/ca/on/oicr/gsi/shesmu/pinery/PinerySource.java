@@ -65,7 +65,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       final Map<String, RunDto> allRuns;
       // Collecting can fail on its own, on a run with no name, so the response body is closed
       // explicitly rather than relying on reaching the end of the array to do it
-      try (final var runs =
+      try (final Stream<RunDto> runs =
           HTTP_CLIENT
               .send(
                   httpGet(cfg.getUrl() + "/sequencerruns", Optional.of(cfg.getTimeout())),
@@ -365,7 +365,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       final Map<String, RunDto> allRuns;
       // Collecting can fail on its own, on a run with no name, so the response body is closed
       // explicitly rather than relying on reaching the end of the array to do it
-      try (final var runs =
+      try (final Stream<RunDto> runs =
           HTTP_CLIENT
               .send(
                   httpGet(cfg.getUrl() + "/sequencerruns", Optional.of(cfg.getTimeout())),

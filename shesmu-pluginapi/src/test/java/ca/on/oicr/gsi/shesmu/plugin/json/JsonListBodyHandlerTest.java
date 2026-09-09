@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
@@ -61,7 +62,7 @@ public class JsonListBodyHandlerTest {
       if (remaining <= 0) {
         throw new IOException("closed");
       }
-      final var result = super.read(buffer, offset, Math.min(length, remaining));
+      final int result = super.read(buffer, offset, Math.min(length, remaining));
       if (result > 0) {
         remaining -= result;
       }
@@ -72,8 +73,8 @@ public class JsonListBodyHandlerTest {
   private static final JsonMapper MAPPER = JsonMapper.builder().build();
 
   private static String array(int items) {
-    final var output = new StringBuilder("[");
-    for (var index = 0; index < items; index++) {
+    final StringBuilder output = new StringBuilder("[");
+    for (int index = 0; index < items; index++) {
       if (index > 0) {
         output.append(",");
       }
@@ -89,9 +90,9 @@ public class JsonListBodyHandlerTest {
 
   @Test
   public void testCompleteArrayIsRead() {
-    try (final var stream =
+    try (final Stream<Item> stream =
         streamOf(new ByteArrayInputStream(array(50).getBytes(StandardCharsets.UTF_8)))) {
-      final var names = stream.map(Item::getName).toList();
+      final List<String> names = stream.map(Item::getName).toList();
       assertEquals(50, names.size());
       assertEquals("item-0", names.get(0));
       assertEquals("item-49", names.get(49));
@@ -100,7 +101,7 @@ public class JsonListBodyHandlerTest {
 
   @Test
   public void testNullBodyIsEmpty() {
-    try (final var stream =
+    try (final Stream<Item> stream =
         streamOf(new ByteArrayInputStream("null".getBytes(StandardCharsets.UTF_8)))) {
       assertEquals(0, stream.count());
     }
@@ -109,7 +110,7 @@ public class JsonListBodyHandlerTest {
   /** An empty body used to produce a bare NullPointerException from the switch on the token */
   @Test
   public void testEmptyBodyIsReported() {
-    final var error =
+    final IllegalArgumentException error =
         assertThrows(
             IllegalArgumentException.class, () -> streamOf(new ByteArrayInputStream(new byte[0])));
     assertTrue(error.getMessage().contains("empty response body"), error.getMessage());
@@ -120,11 +121,12 @@ public class JsonListBodyHandlerTest {
    */
   @Test
   public void testNonJsonBodyIsReported() {
-    final var input =
+    final TruncatingInputStream input =
         new TruncatingInputStream(
             "<html><body>502 Bad Gateway</body></html>".getBytes(StandardCharsets.UTF_8),
             Integer.MAX_VALUE);
-    final var error = assertThrows(IllegalArgumentException.class, () -> streamOf(input));
+    final IllegalArgumentException error =
+        assertThrows(IllegalArgumentException.class, () -> streamOf(input));
     assertTrue(error.getMessage().contains("was not JSON"), error.getMessage());
     assertTrue(error.getMessage().contains("Item"), error.getMessage());
     assertTrue(input.closed, "the response body must be closed when the body is not JSON");
@@ -133,7 +135,7 @@ public class JsonListBodyHandlerTest {
   /** The reported token used to be the one after the offending one */
   @Test
   public void testNonArrayBodyIsReported() {
-    final var error =
+    final IllegalArgumentException error =
         assertThrows(
             IllegalArgumentException.class,
             () -> streamOf(new ByteArrayInputStream("{}".getBytes(StandardCharsets.UTF_8))));
@@ -147,14 +149,14 @@ public class JsonListBodyHandlerTest {
    */
   @Test
   public void testTruncatedArrayReportsProgress() {
-    final var content = array(500).getBytes(StandardCharsets.UTF_8);
-    final var input = new TruncatingInputStream(content, content.length / 2);
-    final var consumed = new ArrayList<Item>();
-    final var error =
+    final byte[] content = array(500).getBytes(StandardCharsets.UTF_8);
+    final TruncatingInputStream input = new TruncatingInputStream(content, content.length / 2);
+    final List<Item> consumed = new ArrayList<>();
+    final JsonListReadException error =
         assertThrows(
             JsonListReadException.class,
             () -> {
-              try (final var stream = streamOf(input)) {
+              try (final Stream<Item> stream = streamOf(input)) {
                 stream.forEach(consumed::add);
               }
             });
@@ -174,7 +176,8 @@ public class JsonListBodyHandlerTest {
    */
   @Test
   public void testDeadBodyIsClosed() {
-    final var input = new TruncatingInputStream(array(500).getBytes(StandardCharsets.UTF_8), 0);
+    final TruncatingInputStream input =
+        new TruncatingInputStream(array(500).getBytes(StandardCharsets.UTF_8), 0);
     assertThrows(RuntimeException.class, () -> streamOf(input));
     assertTrue(input.closed, "the response body must be closed when the parser cannot be created");
   }
@@ -182,9 +185,9 @@ public class JsonListBodyHandlerTest {
   /** Abandoning the stream early has to release the connection too */
   @Test
   public void testEarlyCloseClosesBody() {
-    final var content = array(500).getBytes(StandardCharsets.UTF_8);
-    final var input = new TruncatingInputStream(content, content.length);
-    try (final var stream = streamOf(input)) {
+    final byte[] content = array(500).getBytes(StandardCharsets.UTF_8);
+    final TruncatingInputStream input = new TruncatingInputStream(content, content.length);
+    try (final Stream<Item> stream = streamOf(input)) {
       assertEquals(10, stream.limit(10).count());
     }
     assertTrue(input.closed, "the response body must be closed when the stream is abandoned");
@@ -193,11 +196,12 @@ public class JsonListBodyHandlerTest {
   /** An exception from downstream must not be reported as a JSON reading failure */
   @Test
   public void testDownstreamFailureIsNotWrapped() {
-    final var input = new ByteArrayInputStream(array(50).getBytes(StandardCharsets.UTF_8));
+    final ByteArrayInputStream input =
+        new ByteArrayInputStream(array(50).getBytes(StandardCharsets.UTF_8));
     assertThrows(
         UncheckedIOException.class,
         () -> {
-          try (final var stream = streamOf(input)) {
+          try (final Stream<Item> stream = streamOf(input)) {
             stream.forEach(
                 item -> {
                   throw new UncheckedIOException(new IOException("downstream"));
@@ -226,7 +230,7 @@ public class JsonListBodyHandlerTest {
    */
   @Test
   public void testMultiLineCauseMessageIsFlattened() {
-    final var described =
+    final String described =
         Utils.describeCauseChain(
             assertThrows(
                 RuntimeException.class,
@@ -238,7 +242,7 @@ public class JsonListBodyHandlerTest {
   /** A single enormous message must not swamp the rest of the chain */
   @Test
   public void testLongCauseMessageIsAbbreviated() {
-    final var described =
+    final String described =
         Utils.describeCauseChain(
             new IllegalStateException(
                 "x".repeat(5000), new IllegalStateException("the real cause")));
@@ -259,8 +263,8 @@ public class JsonListBodyHandlerTest {
   /** A cyclic cause chain must not loop forever */
   @Test
   public void testCyclicCauseChainTerminates() {
-    final var first = new IllegalStateException("first");
-    final var second = new IllegalStateException("second");
+    final IllegalStateException first = new IllegalStateException("first");
+    final IllegalStateException second = new IllegalStateException("second");
     first.initCause(second);
     second.initCause(first);
     assertEquals(

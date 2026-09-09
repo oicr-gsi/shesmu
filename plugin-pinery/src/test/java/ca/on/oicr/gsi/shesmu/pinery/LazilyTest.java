@@ -21,8 +21,8 @@ public class LazilyTest {
    */
   @Test
   public void testRequestIsDeferredUntilRead() {
-    final var events = new ArrayList<String>();
-    final var combined =
+    final List<String> events = new ArrayList<>();
+    final Stream<String> combined =
         Stream.concat(
             Stream.of("a1", "a2").peek(events::add),
             PinerySource.lazily(
@@ -38,8 +38,8 @@ public class LazilyTest {
   /** Reading only part of the first batch must not trigger the request either */
   @Test
   public void testPartialReadDoesNotRequest() {
-    final var requested = new boolean[1];
-    try (final var combined =
+    final boolean[] requested = new boolean[1];
+    try (final Stream<String> combined =
         Stream.concat(
             Stream.of("a1", "a2", "a3"),
             PinerySource.lazily(
@@ -55,11 +55,11 @@ public class LazilyTest {
   /** A failure while reading the first batch must not leave the second one requested */
   @Test
   public void testFailureBeforeSecondBatchDoesNotRequest() {
-    final var requested = new boolean[1];
+    final boolean[] requested = new boolean[1];
     assertThrows(
         IllegalStateException.class,
         () -> {
-          try (final var combined =
+          try (final Stream<String> combined =
               Stream.concat(
                   Stream.of("a1", "a2")
                       .peek(
@@ -80,11 +80,11 @@ public class LazilyTest {
   /** The deferred stream still has to be closed, or the connection leaks */
   @Test
   public void testDeferredStreamIsClosedOnFailure() {
-    final var closed = new boolean[1];
+    final boolean[] closed = new boolean[1];
     assertThrows(
         IllegalStateException.class,
         () -> {
-          try (final var combined =
+          try (final Stream<String> combined =
               Stream.concat(
                   Stream.of("a1"),
                   PinerySource.lazily(
@@ -105,8 +105,8 @@ public class LazilyTest {
 
   @Test
   public void testDeferredStreamIsClosedOnSuccess() {
-    final var closed = new boolean[1];
-    try (final var combined =
+    final boolean[] closed = new boolean[1];
+    try (final Stream<String> combined =
         Stream.concat(
             Stream.of("a1"),
             PinerySource.lazily(() -> Stream.of("b1").onClose(() -> closed[0] = true)))) {
@@ -118,8 +118,8 @@ public class LazilyTest {
   /** An IOException from the request has to survive as the cause, for the sake of the log */
   @Test
   public void testIoExceptionIsWrappedWithItsCause() {
-    final var cause = new IOException("closed");
-    final var error =
+    final IOException cause = new IOException("closed");
+    final UncheckedIOException error =
         assertThrows(
             UncheckedIOException.class,
             () ->
@@ -136,8 +136,8 @@ public class LazilyTest {
   /** Interruption must not be swallowed */
   @Test
   public void testInterruptionSetsTheInterruptFlag() {
-    final var cause = new InterruptedException("stopped");
-    final var error =
+    final InterruptedException cause = new InterruptedException("stopped");
+    final IllegalStateException error =
         assertThrows(
             IllegalStateException.class,
             () ->

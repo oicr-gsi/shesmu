@@ -68,7 +68,7 @@ public final class JsonListBodyHandler<W> implements HttpResponse.BodyHandler<Su
     // Closing the parser closes the HTTP response body, and therefore releases the connection, so
     // ownership has to be handed to the stream if one is returned and the parser closed here
     // otherwise
-    var releaseParser = true;
+    boolean releaseParser = true;
     try {
       final JsonToken firstToken;
       try {
@@ -118,7 +118,7 @@ public final class JsonListBodyHandler<W> implements HttpResponse.BodyHandler<Su
                       // still releases the body, since the stream's close handler does that.
                       // Report how far the array got before dying, since a response that is cut
                       // short otherwise gives no indication of where, or of how much data arrived
-                      final var failure =
+                      final JsonListReadException failure =
                           new JsonListReadException(targetType, records, byteOffsetOf(parser), e);
                       try {
                         parser.close();

@@ -107,7 +107,7 @@ public class Utils {
    * source location full of the names of the features that were switched off while producing it.
    */
   private static String flattenMessage(String message) {
-    final var flattened = WHITESPACE_RUN.matcher(message).replaceAll(" ").trim();
+    final String flattened = WHITESPACE_RUN.matcher(message).replaceAll(" ").trim();
     return flattened.length() <= MAX_CAUSE_MESSAGE_LENGTH
         ? flattened
         : flattened.substring(0, MAX_CAUSE_MESSAGE_LENGTH) + "...";
@@ -124,17 +124,17 @@ public class Utils {
    * each message is flattened onto one line and abbreviated rather than being used verbatim.
    */
   public static String describeCauseChain(Throwable throwable) {
-    final var output = new StringBuilder();
+    final StringBuilder output = new StringBuilder();
     // Cause chains are allowed to be cyclic, so track what has already been printed
     final Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
-    for (var current = throwable;
+    for (Throwable current = throwable;
         current != null && seen.add(current);
         current = current.getCause()) {
       if (!output.isEmpty()) {
         output.append(" caused by ");
       }
       output.append(current.getClass().getSimpleName());
-      final var message = current.getMessage();
+      final String message = current.getMessage();
       if (message != null && !message.isBlank()) {
         output.append(": ").append(flattenMessage(message));
       }
