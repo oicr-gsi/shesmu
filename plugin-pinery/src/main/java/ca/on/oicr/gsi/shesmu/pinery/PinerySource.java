@@ -65,7 +65,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       final Map<String, RunDto> allRuns;
       // Collecting can fail on its own, on a run with no name, so the response body is closed
       // explicitly rather than relying on reaching the end of the array to do it
-      try (final var runs =
+      try (final Stream<RunDto> runs =
           HTTP_CLIENT
               .send(
                   httpGet(cfg.getUrl() + "/sequencerruns", Optional.of(cfg.getTimeout())),
@@ -82,8 +82,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     (a, b) -> a));
       }
       final Set<Pair<String, String>> validLanes = new HashSet<>();
-      // The samples must be read after the lanes, which populate validLanes, so the request for
-      // them is deferred rather than left waiting on an idle connection
+      // Requesting samples eagerly leaves their response body unread until after the lanes are
+      // consumed, and the proxy drops an idle connection, so the samples request is deferred until
+      // the lanes are exhausted
       return Stream.concat(
               lanes(
                   cfg.getUrl(),
@@ -365,7 +366,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       final Map<String, RunDto> allRuns;
       // Collecting can fail on its own, on a run with no name, so the response body is closed
       // explicitly rather than relying on reaching the end of the array to do it
-      try (final var runs =
+      try (final Stream<RunDto> runs =
           HTTP_CLIENT
               .send(
                   httpGet(cfg.getUrl() + "/sequencerruns", Optional.of(cfg.getTimeout())),
@@ -382,8 +383,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     (a, b) -> a));
       }
       final Set<Pair<String, String>> validLanes = new HashSet<>();
-      // The samples must be read after the lanes, which populate validLanes, so the request for
-      // them is deferred rather than left waiting on an idle connection
+      // Requesting samples eagerly leaves their response body unread until after the lanes are
+      // consumed, and the proxy drops an idle connection, so the samples request is deferred until
+      // the lanes are exhausted
       return Stream.concat(
               lanes(
                   cfg.getUrl(),
@@ -759,22 +761,31 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     return run != null && run.getCreatedDate() != null;
   }
 
-  /** A batch of provenance that has to be requested over HTTP before it can be read */
-  interface ProvenanceSource<T> {
-    Stream<T> get() throws IOException, InterruptedException;
+  /**
+   * A {@link Supplier} whose value has to be requested, and whose request can fail the way an HTTP
+   * request fails
+   *
+   * <p>{@link Supplier} itself will not do: a lambda may throw only what its target interface
+   * declares, and {@link Supplier#get()} declares nothing checked, so every lambda wrapping a
+   * request would need its own {@code try}/{@code catch}. Declaring the checked exceptions here
+   * lets {@link #lazily(ThrowingSupplier)} translate them into unchecked ones in one place, keeping
+   * that translation, and the interrupt flag it has to restore, out of the call sites.
+   */
+  interface ThrowingSupplier<T> {
+    T get() throws IOException, InterruptedException;
   }
 
   /**
-   * Defer requesting a batch of provenance until it is about to be read
+   * Defer requesting a batch of provenance until it is about to be read.
    *
    * <p>Both arguments to {@link Stream#concat(Stream, Stream)} are evaluated before anything is
-   * read from either, so requesting a batch eagerly leaves its response body unread, and its
-   * connection idle, for as long as the preceding batch takes to consume. Pinery is behind a proxy
-   * that will eventually give up on a connection nobody is reading.
+   * read from either, so requesting the second batch eagerly leaves its response body unread, and
+   * its connection idle, for as long as the preceding batch takes to consume. Pinery is behind a
+   * proxy that will eventually give up on a connection nobody is reading.
    *
    * <p>Package-private so that it can be tested.
    */
-  static <T> Stream<T> lazily(ProvenanceSource<T> source) {
+  static <T> Stream<T> lazily(ThrowingSupplier<Stream<T>> source) {
     return Stream.of(source)
         .flatMap(
             deferred -> {
