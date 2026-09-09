@@ -244,7 +244,6 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   public Optional<JsonNode> ultima_workflowfiles(
       @ShesmuParameter(description = "name of run") String run,
       @ShesmuParameter(description = "barcode, formatted like ATCGATCGATCGATCG") String barcode,
-      @ShesmuParameter(description = "library") String library,
       @ShesmuParameter(description = "workflow name, one of: CRAMGeneration, EmSeq")
           String workflow) {
     try {
@@ -258,7 +257,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
       UltimaWorkflowRun workflowRun = ultimaPipelineRun.get(workflow);
       if (workflowRun != null) {
         for (UltimaAnalysisUnit unit : workflowRun.getAnalysisOutputs()) {
-          if (unit.getBarcode().equals(barcode) && unit.getLibrary().equals(library)) {
+          if (unit.getBarcode().equals(barcode)) {
             return Optional.ofNullable(MAPPER.valueToTree(unit.getFiles()));
           }
         }
