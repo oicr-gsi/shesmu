@@ -6,6 +6,9 @@ import ca.on.oicr.gsi.runscanner.dto.dragen.DragenAnalysisUnit;
 import ca.on.oicr.gsi.runscanner.dto.dragen.DragenPipelineRun;
 import ca.on.oicr.gsi.runscanner.dto.dragen.DragenWorkflowRun;
 import ca.on.oicr.gsi.runscanner.dto.type.IlluminaChemistry;
+import ca.on.oicr.gsi.runscanner.dto.ultima.UltimaAnalysisUnit;
+import ca.on.oicr.gsi.runscanner.dto.ultima.UltimaPipelineRun;
+import ca.on.oicr.gsi.runscanner.dto.ultima.UltimaWorkflowRun;
 import ca.on.oicr.gsi.shesmu.plugin.cache.InitialCachePopulationException;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
@@ -79,14 +82,9 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
               : Optional.empty();
 
       if (run instanceof IlluminaNotificationDto) {
-        List<PipelineRun> sortedPipelineRuns = ((IlluminaNotificationDto) run).getPipelineRuns();
-        if (sortedPipelineRuns.isEmpty()) {
-          pipelineRun = Optional.empty();
-        } else {
-          // Plugin only serves the latest analysis
-          sortedPipelineRuns.sort(Comparator.comparingInt(PipelineRun::getAttempt));
-          pipelineRun = Optional.of(sortedPipelineRuns.get(sortedPipelineRuns.size() - 1));
-        }
+        pipelineRun = latestPipelineRun(((IlluminaNotificationDto) run).getPipelineRuns());
+      } else if (run instanceof UltimaNotificationDto) {
+        pipelineRun = latestPipelineRun(((UltimaNotificationDto) run).getPipelineRuns());
       } else {
         pipelineRun = Optional.empty();
       }
@@ -159,6 +157,19 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
     return RunScannerPluginType.getFlowcellLayout(run.getLaneCount(), isJoined);
   }
 
+  /**
+   * Plugin only serves the latest analysis attempt
+   *
+   * @param pipelineRuns the pipeline run attempts for a run
+   */
+  private static Optional<PipelineRun> latestPipelineRun(List<PipelineRun> pipelineRuns) {
+    if (pipelineRuns.isEmpty()) {
+      return Optional.empty();
+    }
+    pipelineRuns.sort(Comparator.comparingInt(PipelineRun::getAttempt));
+    return Optional.of(pipelineRuns.get(pipelineRuns.size() - 1));
+  }
+
   private Instant lastUpdate = Instant.EPOCH;
   private final ProgressiveRequestDto request = new ProgressiveRequestDto();
   private final Map<String, RunInformation> runCache = new ConcurrentHashMap<>();
@@ -220,6 +231,34 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
                 && unit.getIndex2().equals(barcodes[1])) {
               return Optional.ofNullable(MAPPER.valueToTree(unit.getFiles()));
             }
+          }
+        }
+      }
+      return Optional.empty();
+    } catch (ClassCastException | InitialCachePopulationException e) {
+      return Optional.empty();
+    }
+  }
+
+  @ShesmuMethod(description = "Get the analysis files for an Ultima run")
+  public Optional<JsonNode> ultima_workflowfiles(
+      @ShesmuParameter(description = "name of run") String run,
+      @ShesmuParameter(description = "barcode, formatted like ATCGATCGATCGATCG") String barcode,
+      @ShesmuParameter(description = "workflow name, one of: CRAMGeneration, EmSeq")
+          String workflow) {
+    try {
+      // Get the analysis for this run. If there is no run, or no analysis for this run, return
+      Optional<RunInformation> theRun = getRun(run);
+      if (theRun.isEmpty()) return Optional.empty();
+      RunInformation runInfo = theRun.get();
+      if (runInfo.pipelineRun().isEmpty()) return Optional.empty();
+
+      UltimaPipelineRun ultimaPipelineRun = (UltimaPipelineRun) runInfo.pipelineRun().get();
+      UltimaWorkflowRun workflowRun = ultimaPipelineRun.get(workflow);
+      if (workflowRun != null) {
+        for (UltimaAnalysisUnit unit : workflowRun.getAnalysisOutputs()) {
+          if (unit.getBarcode().equals(barcode)) {
+            return Optional.ofNullable(MAPPER.valueToTree(unit.getFiles()));
           }
         }
       }
