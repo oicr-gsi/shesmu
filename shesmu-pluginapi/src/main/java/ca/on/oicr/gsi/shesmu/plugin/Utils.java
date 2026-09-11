@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -92,5 +93,36 @@ public class Utils {
     HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(uri));
     if (timeout.isPresent()) builder.timeout(Duration.ofMinutes(timeout.get()));
     return builder.GET().build();
+  }
+
+  private static final Pattern WHITESPACE_RUN = Pattern.compile("\\s+");
+
+  /**
+   * Describe an exception and all of its causes on a single line
+   *
+   * <p>The message on the outermost exception is frequently useless on its own; a truncated HTTP
+   * response, for instance, arrives as a bare <code>closed</code> with the real explanation buried
+   * several causes down.
+   *
+   * <p>The result goes into a log line and into the text shown for an unusable input format, so
+   * each message is flattened onto one line.
+   */
+  public static String describeCauseChain(Throwable throwable) {
+    final StringBuilder output = new StringBuilder();
+    // Cause chains are allowed to be cyclic, so track what has already been printed
+    final Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+    for (Throwable current = throwable;
+        current != null && seen.add(current);
+        current = current.getCause()) {
+      if (!output.isEmpty()) {
+        output.append(" caused by ");
+      }
+      output.append(current.getClass().getSimpleName());
+      final String message = current.getMessage();
+      if (message != null && !message.isBlank()) {
+        output.append(": ").append(WHITESPACE_RUN.matcher(message).replaceAll(" ").trim());
+      }
+    }
+    return output.toString();
   }
 }

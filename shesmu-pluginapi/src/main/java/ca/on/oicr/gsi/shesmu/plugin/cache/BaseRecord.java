@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.cache;
 
+import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -76,7 +77,9 @@ public abstract class BaseRecord<V, S> implements Record<V> {
           shouldThrow = false;
         }
       } catch (final Exception e) {
-        context += " " + e.getMessage();
+        // The outermost message is often meaningless on its own, so include the whole cause chain;
+        // this text is what ends up in InitialCachePopulationException and thus in front of a user
+        context += " " + Utils.describeCauseChain(e);
         System.err.printf("Exception occurred while refreshing cache %s is as follows:\n", context);
         e.printStackTrace();
         staleRefreshError.labels(fetcher.owner().name()).inc();

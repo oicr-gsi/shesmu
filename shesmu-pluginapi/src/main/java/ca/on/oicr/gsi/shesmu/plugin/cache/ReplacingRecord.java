@@ -28,13 +28,10 @@ public final class ReplacingRecord<V> extends BaseRecord<Stream<V>, List<V>> {
 
   @Override
   protected List<V> update(List<V> oldstate, Instant fetchTime) throws Exception {
-    final ErrorableStream<V> stream = new ErrorableStream<>(fetcher.update(fetchTime));
-    if (stream.isOk()) {
-      final List<V> result = stream.collect(Collectors.toList());
-      stream.close();
-      return result;
-    } else {
-      return null;
+    // The stream must be closed even when collecting it fails, since it may be holding an HTTP
+    // connection open
+    try (final ErrorableStream<V> stream = new ErrorableStream<>(fetcher.update(fetchTime))) {
+      return stream.isOk() ? stream.collect(Collectors.toList()) : null;
     }
   }
 
