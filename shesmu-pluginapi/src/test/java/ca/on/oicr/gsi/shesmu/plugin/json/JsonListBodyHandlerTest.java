@@ -241,18 +241,6 @@ public class JsonListBodyHandlerTest {
     assertTrue(described.contains("was expecting double-quote"), described);
   }
 
-  /** A single enormous message must not swamp the rest of the chain */
-  @Test
-  public void testLongCauseMessageIsAbbreviated() {
-    final String described =
-        Utils.describeCauseChain(
-            new IllegalStateException(
-                "x".repeat(5000), new IllegalStateException("the real cause")));
-    assertTrue(described.length() < 400, "was " + described.length() + " characters");
-    assertTrue(described.contains("..."), described);
-    assertTrue(described.endsWith("caused by IllegalStateException: the real cause"), described);
-  }
-
   /** An exception with no message contributes only its name */
   @Test
   public void testMissingCauseMessageIsOmitted() {

@@ -95,23 +95,7 @@ public class Utils {
     return builder.GET().build();
   }
 
-  /** The longest any one exception's message may be before it gets abbreviated */
-  private static final int MAX_CAUSE_MESSAGE_LENGTH = 200;
-
   private static final Pattern WHITESPACE_RUN = Pattern.compile("\\s+");
-
-  /**
-   * Flatten an exception message to a single bounded line
-   *
-   * <p>Jackson's messages are the reason this is necessary: they run to several lines and tack on a
-   * source location full of the names of the features that were switched off while producing it.
-   */
-  private static String flattenMessage(String message) {
-    final String flattened = WHITESPACE_RUN.matcher(message).replaceAll(" ").trim();
-    return flattened.length() <= MAX_CAUSE_MESSAGE_LENGTH
-        ? flattened
-        : flattened.substring(0, MAX_CAUSE_MESSAGE_LENGTH) + "...";
-  }
 
   /**
    * Describe an exception and all of its causes on a single line
@@ -121,7 +105,7 @@ public class Utils {
    * several causes down.
    *
    * <p>The result goes into a log line and into the text shown for an unusable input format, so
-   * each message is flattened onto one line and abbreviated rather than being used verbatim.
+   * each message is flattened onto one line.
    */
   public static String describeCauseChain(Throwable throwable) {
     final StringBuilder output = new StringBuilder();
@@ -136,7 +120,7 @@ public class Utils {
       output.append(current.getClass().getSimpleName());
       final String message = current.getMessage();
       if (message != null && !message.isBlank()) {
-        output.append(": ").append(flattenMessage(message));
+        output.append(": ").append(WHITESPACE_RUN.matcher(message).replaceAll(" ").trim());
       }
     }
     return output.toString();
