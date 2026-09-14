@@ -90,6 +90,22 @@ public abstract class ExpressionNode implements Renderable {
               false)
           .map(p -> new Pair<>(p.second() ? ("(" + p.first() + ")?") : (p.first() + "?"), false));
     }
+    if (acceptable instanceof Imyhat.OptionalImyhat
+        && ((Imyhat.OptionalImyhat) acceptable).inner().isAssignableFrom(found)) {
+      return Optional.of(
+          new Pair<>(
+              String.format(
+                  "Expected %s, but got %s - missing backticks?", acceptable.name(), found.name()),
+              true));
+    }
+    if (found instanceof Imyhat.OptionalImyhat
+        && acceptable.isAssignableFrom(((Imyhat.OptionalImyhat) found).inner())) {
+      return Optional.of(
+          new Pair<>(
+              String.format(
+                  "Expected %s, but got %s - extra backticks?", acceptable.name(), found.name()),
+              true));
+    }
     if (acceptable instanceof Imyhat.TupleImyhat && found instanceof Imyhat.TupleImyhat) {
       final List<Imyhat> acceptableElements = ((Imyhat.TupleImyhat) acceptable).inner().toList();
       final List<Imyhat> foundElements = ((Imyhat.TupleImyhat) found).inner().toList();
