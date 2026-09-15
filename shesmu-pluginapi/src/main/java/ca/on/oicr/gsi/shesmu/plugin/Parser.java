@@ -158,7 +158,7 @@ public abstract class Parser {
     public Parser keyword(String keyword) {
       return symbol(keyword)
           .lookAhead(
-              c -> !Character.isAlphabetic(c),
+              c -> !Character.isLetterOrDigit(c) && c != '_',
               String.format("Expected “%s”, but got junk after.", keyword),
               true);
     }
