@@ -29,8 +29,8 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
         @Override
         public ActionFilter added(Optional<Instant> start, Optional<Instant> end) {
           final var result = new ActionFilterAdded();
-          result.setStart(start.map(Instant::getEpochSecond).orElse(null));
-          result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
+          result.setStart(start.map(Instant::toEpochMilli).orElse(null));
+          result.setEnd(end.map(Instant::toEpochMilli).orElse(null));
           return result;
         }
 
@@ -51,8 +51,8 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
         @Override
         public ActionFilter checked(Optional<Instant> start, Optional<Instant> end) {
           final var result = new ActionFilterChecked();
-          result.setStart(start.map(Instant::getEpochSecond).orElse(null));
-          result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
+          result.setStart(start.map(Instant::toEpochMilli).orElse(null));
+          result.setEnd(end.map(Instant::toEpochMilli).orElse(null));
           return result;
         }
 
@@ -66,8 +66,8 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
         @Override
         public ActionFilter created(Optional<Instant> start, Optional<Instant> end) {
           final var result = new ActionFilterCreated();
-          result.setStart(start.map(Instant::getEpochSecond).orElse(null));
-          result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
+          result.setStart(start.map(Instant::toEpochMilli).orElse(null));
+          result.setEnd(end.map(Instant::toEpochMilli).orElse(null));
           return result;
         }
 
@@ -81,8 +81,8 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
         @Override
         public ActionFilter external(Optional<Instant> start, Optional<Instant> end) {
           final var result = new ActionFilterExternal();
-          result.setStart(start.map(Instant::getEpochSecond).orElse(null));
-          result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
+          result.setStart(start.map(Instant::toEpochMilli).orElse(null));
+          result.setEnd(end.map(Instant::toEpochMilli).orElse(null));
           return result;
         }
 
@@ -153,8 +153,8 @@ public interface ActionFilterBuilder<F, T, S, I, O> {
         @Override
         public ActionFilter statusChanged(Optional<Instant> start, Optional<Instant> end) {
           final var result = new ActionFilterStatusChanged();
-          result.setStart(start.map(Instant::getEpochSecond).orElse(null));
-          result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
+          result.setStart(start.map(Instant::toEpochMilli).orElse(null));
+          result.setEnd(end.map(Instant::toEpochMilli).orElse(null));
           return result;
         }
 

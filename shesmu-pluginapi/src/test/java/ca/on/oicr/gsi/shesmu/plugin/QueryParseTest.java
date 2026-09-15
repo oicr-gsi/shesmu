@@ -2,6 +2,9 @@ package ca.on.oicr.gsi.shesmu.plugin;
 
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
+import ca.on.oicr.gsi.shesmu.plugin.filter.BaseRangeActionFilter;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -45,6 +48,32 @@ public class QueryParseTest {
         new String[] {"generated", "checked", "created", "external", "status_changed"}) {
       final String query = variable + " last 2hours";
       Assertions.assertEquals(query, roundTrip(query));
+    }
+  }
+
+  /**
+   * {@link BaseRangeActionFilter} reads its endpoints as epoch milliseconds, so the parser has to
+   * write them in the same units or an absolute date lands in 1970.
+   */
+  @Test
+  public void testAbsoluteTimeIsInMilliseconds() {
+    final long expected =
+        LocalDateTime.of(2024, 1, 1, 12, 34, 56)
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli();
+    for (final String variable :
+        new String[] {"generated", "checked", "created", "external", "status_changed"}) {
+      final Optional<ActionFilter> filter =
+          ActionFilter.parseQuery(
+              variable + " after 2024-01-01T12:34:56",
+              name -> Optional.empty(),
+              (line, column, message) -> Assertions.fail(line + ":" + column + ": " + message));
+      Assertions.assertEquals(
+          expected,
+          filter
+              .map(f -> ((BaseRangeActionFilter) f).getStart())
+              .orElseThrow(() -> new AssertionError("failed to parse " + variable)));
     }
   }
 }
