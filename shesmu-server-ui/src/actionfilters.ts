@@ -1051,6 +1051,7 @@ export function renderFilters(
     switch (f.type) {
       case "addedago":
       case "checkedago":
+      case "createdago":
       case "externalago":
       case "statuschangedago":
         return tile(
@@ -1058,10 +1059,11 @@ export function renderFilters(
           nameForBin(f.type),
           br(),
           { type: "icon", icon: "clock-history" },
-          (f.negate ? "In Last " : "Before Last ") + formatTimeSpan(f.offset)
+          (f.negate ? "Before Last " : "In Last ") + formatTimeSpan(f.offset)
         );
       case "added":
       case "checked":
+      case "created":
       case "external":
       case "statuschanged":
         return tile(
