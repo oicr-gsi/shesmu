@@ -128,6 +128,8 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   private static final JsonMapper MAPPER =
       JsonMapper.builder()
           .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+          .configure(DateTimeFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS, false)
+          .configure(DateTimeFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS, false)
           .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
           .build();
   private static final Gauge fetchOk =
