@@ -264,9 +264,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
         }
       }
       return Optional.empty();
-    } catch (ClassCastException | InitialCachePopulationException e) {
-      return Optional.empty();
-    } catch (JacksonException e) {
+    } catch (ClassCastException | InitialCachePopulationException | JacksonException e) {
       e.printStackTrace();
       return Optional.empty();
     }
