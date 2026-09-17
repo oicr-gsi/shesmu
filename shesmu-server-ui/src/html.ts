@@ -1732,6 +1732,20 @@ export function createUiFromTag<K extends keyof HTMLElementTagNameMap>(
 }
 
 /**
+ * Convert a value to JSON containing only ASCII characters
+ *
+ * `btoa` throws "String contains an invalid character" for any code unit above
+ * U+00FF, so anything outside ASCII is written as a JSON `\uXXXX` escape first.
+ * The result is still valid JSON and is unambiguously UTF-8, so the server can
+ * decode the Base64 bytes directly.
+ */
+export function asciiJson(value: unknown): string {
+  return JSON.stringify(value).replace(/[\u007F-\uFFFF]/g, (chr) => {
+    const padded = "0000" + chr.charCodeAt(0).toString(16);
+    return "\\u" + padded.substring(padded.length - 4);
+  });
+}
+/**
  * Add a blank UI element
  *
  * This isn't very useful, but simplifies some code paths in the action tile building.
@@ -3136,7 +3150,7 @@ export function makeUrl<R extends keyof ShesmuLinks>(
         ([key, value]) =>
           key +
           "=" +
-          btoa(JSON.stringify(value))
+          btoa(asciiJson(value))
             .replace(/=/g, "")
             .replace(/\+/g, "-")
             .replace(/\//g, "_")
