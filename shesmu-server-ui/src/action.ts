@@ -2,6 +2,7 @@ import {
   ClickHandler,
   IconName,
   UIElement,
+  asciiJson,
   blank,
   br,
   butter,
@@ -760,15 +761,7 @@ function defaultRenderer(action: Action): UIElement {
   return title(action, `Unknown Action: ${action.type}`);
 }
 export function encodeSearch(filters: ActionFilter[]): string {
-  return (
-    "shesmusearch:" +
-    btoa(
-      JSON.stringify(filters).replace(/[\u007F-\uFFFF]/g, (chr) => {
-        const padded = "0000" + chr.charCodeAt(0).toString(16);
-        return "\\u" + padded.substring(padded.length - 4);
-      })
-    )
-  );
+  return "shesmusearch:" + btoa(asciiJson(filters));
 }
 
 export function exportSearchDialog(
