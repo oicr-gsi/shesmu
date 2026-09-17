@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.cfg.DateTimeFeature;
@@ -263,7 +264,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
         }
       }
       return Optional.empty();
-    } catch (ClassCastException | InitialCachePopulationException e) {
+    } catch (ClassCastException | InitialCachePopulationException | JacksonException e) {
       return Optional.empty();
     }
   }
