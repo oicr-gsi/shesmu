@@ -7,6 +7,30 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.62.0] - 2026-09-18
+
+### Added
+
+* `runscanner::miso::ultima_workflowfiles` function to get the analysis output files for an Ultima run,
+  barcode, and workflow
+
+### Changed
+
+* Olive language errors now advise on missing or extra backticks when reporting an Optional type mismatch.
+
+### Fixed
+
+* Issue where run scanner timestamps were deserialized as nanoseconds
+* Time filter tiles in the action dashboard no longer reverse "In Last" and "Before Last", and creation time filters are no longer shown as "Unknown filter."
+* Jira ticket actions with empty optional values and no default value configured no longer throw errors
+* Text queries using absolute times (`after`, `before`, `between`) now filter on the date given rather than one in 1970
+* Text queries using `status_changed` no longer fail to parse as `status` followed by unexpected text
+* Uninformative error messages when a cache failed to refresh
+  Improved Pinery fetch performance
+* Error when accessing the `/drain` endpoint
+* Issue where a search containing non-ASCII text would return a "String contains an invalid character" error in the actions and olive dashboards
+
+
 ## [1.61.4] - 2026-09-08
 
 ### Fixed
