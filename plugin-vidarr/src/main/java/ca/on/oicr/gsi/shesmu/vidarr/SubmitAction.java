@@ -24,8 +24,8 @@ import tools.jackson.databind.node.ObjectNode;
 public final class SubmitAction extends VidarrAction {
 
   final SubmitWorkflowRequest request = new SubmitWorkflowRequest();
-  RunState state = new RunStateAttemptSubmit();
-  private SubmissionPolicy submissionPolicy;
+  RunState state;
+  public SubmissionPolicy submissionPolicy;
 
   public SubmitAction(
       Supplier<VidarrPlugin> owner,
@@ -104,6 +104,14 @@ public final class SubmitAction extends VidarrAction {
   @Override
   public synchronized ActionState perform(
       ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
+    // TODO don't love testing this every cycle! It will only be relevant once.
+    if (state == null) {
+      if (submissionPolicy == SubmissionPolicy.UPDATE) {
+        state = new RunStateUpdate();
+      } else {
+        state = new RunStateAttemptSubmit();
+      }
+    }
     if (stale) {
       return ActionState.ZOMBIE;
     }
@@ -185,7 +193,7 @@ public final class SubmitAction extends VidarrAction {
   @ActionParameter(
       name = "submission_policy",
       required = false,
-      type = "u4ALWAYS$t0DRY_RUN$t0IS_LIVE$t0MAX_DELAY$t1i")
+      type = "u5ALWAYS$t0DRY_RUN$t0IS_LIVE$t0MAX_DELAY$t1iUPDATE$t0")
   public void submissionPolicy(AlgebraicValue policy) {
     submissionPolicy =
         switch (policy.name()) {
@@ -193,6 +201,7 @@ public final class SubmitAction extends VidarrAction {
           case "DRY_RUN" -> SubmissionPolicy.DRY_RUN;
           case "IS_LIVE" -> SubmissionPolicy.IS_LIVE;
           case "MAX_DELAY" -> SubmissionPolicy.maxDelay((Long) policy.get(0));
+          case "UPDATE" -> SubmissionPolicy.UPDATE;
           default -> throw new IllegalStateException("Unexpected value: " + policy.name());
         };
 
