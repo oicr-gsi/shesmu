@@ -171,6 +171,7 @@ const vidarrStateRenderer = {
       )
     ),
   ],
+  update: (a) => "Write me!"
 };
 
 actionRender.set("vidarr-run", (a) => [
