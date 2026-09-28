@@ -24,7 +24,7 @@ import tools.jackson.databind.node.ObjectNode;
 public final class SubmitAction extends VidarrAction {
 
   final SubmitWorkflowRequest request = new SubmitWorkflowRequest();
-  RunState state;
+  RunState state = new RunStateAttemptSubmit();
   public SubmissionPolicy submissionPolicy;
 
   public SubmitAction(
@@ -105,12 +105,9 @@ public final class SubmitAction extends VidarrAction {
   public synchronized ActionState perform(
       ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
     // TODO don't love testing this every cycle! It will only be relevant once.
-    if (state == null) {
-      if (submissionPolicy == SubmissionPolicy.UPDATE) {
-        state = new RunStateUpdate();
-      } else {
-        state = new RunStateAttemptSubmit();
-      }
+    // But adding a determinatory state in front adds too much overhead
+    if (!(state instanceof RunStateUpdate) && submissionPolicy == SubmissionPolicy.UPDATE) {
+      state = new RunStateUpdate();
     }
     if (stale) {
       return ActionState.ZOMBIE;
@@ -212,7 +209,7 @@ public final class SubmitAction extends VidarrAction {
 
   @Override
   public Stream<String> tags() {
-    return Stream.concat(super.tags(), state.tags());
+    return Stream.concat(super.tags(), null != state ? state.tags() : Stream.empty()); // TODO no
   }
 
   @Override
