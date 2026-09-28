@@ -161,5 +161,8 @@ public class RunStateUpdate extends RunState {
   }
 
   @Override
-  public void writeJson(JsonMapper mapper, ObjectNode node) {}
+  public void writeJson(JsonMapper mapper, ObjectNode node) {
+    node.put("runState", "update");
+    node.put("unknown", unknown);
+  }
 }
