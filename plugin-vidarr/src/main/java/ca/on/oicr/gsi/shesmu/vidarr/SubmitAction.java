@@ -7,6 +7,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.vidarr.api.ExternalKey;
+import ca.on.oicr.gsi.vidarr.api.SubmitMode;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
 import java.io.IOException;
 import java.time.Duration;
@@ -23,7 +24,7 @@ import tools.jackson.databind.node.ObjectNode;
 
 public final class SubmitAction extends VidarrAction {
 
-  final SubmitWorkflowRequest request = new SubmitWorkflowRequest();
+  final SubmitWorkflowRequest request = new SubmitWorkflowRequest(); // Mode is RUN by default
   RunState state = new RunStateAttemptSubmit();
   public SubmissionPolicy submissionPolicy;
 
@@ -107,6 +108,7 @@ public final class SubmitAction extends VidarrAction {
     // TODO don't love testing this every cycle! It will only be relevant once.
     // But adding a determinatory state in front adds too much overhead
     if (!(state instanceof RunStateUpdate) && submissionPolicy == SubmissionPolicy.UPDATE) {
+      request.setMode(SubmitMode.UPDATE);
       state = new RunStateUpdate();
     }
     if (stale) {
@@ -209,7 +211,9 @@ public final class SubmitAction extends VidarrAction {
 
   @Override
   public Stream<String> tags() {
-    return Stream.concat(super.tags(), null != state ? state.tags() : Stream.empty()); // TODO no
+    // TODO revert hashcode addition
+    return Stream.concat(
+        super.tags(), Stream.concat(state.tags(), Stream.of("hashCode:" + hashCode())));
   }
 
   @Override
