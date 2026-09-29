@@ -75,7 +75,7 @@ public class RunStateUpdate extends RunState {
         {
           SubmitWorkflowResponse body = response.body().get();
           if (body instanceof SubmitWorkflowResponseSuccess) { // Keys updated
-            unknown = true;
+            unknown = false;
             return new PerformResult(List.of(), ActionState.SUCCEEDED, this);
 
           } else if (body instanceof SubmitWorkflowResponseDryRun) { // Nothing done
@@ -142,7 +142,7 @@ public class RunStateUpdate extends RunState {
 
   @Override
   public long retryMinutes() {
-    return 0;
+    return retryMinutes;
   }
 
   @Override
@@ -157,7 +157,7 @@ public class RunStateUpdate extends RunState {
 
   @Override
   public Stream<String> tags() {
-    return Stream.empty();
+    return Stream.of("vidarr-state:update");
   }
 
   @Override
