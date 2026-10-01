@@ -195,6 +195,10 @@ public final class SubmitAction extends VidarrAction {
           case "MAX_DELAY" -> SubmissionPolicy.maxDelay((Long) policy.get(0));
           default -> throw new IllegalStateException("Unexpected value: " + policy.name());
         };
+
+    // Should not break the IS_LIVE mode, because it'll get re-evaluated later in perform(),
+    // and right now, it's gotta be live or it wouldn't be generating
+    request.setMode(submissionPolicy.mode(Duration.ZERO, true));
   }
 
   @Override
