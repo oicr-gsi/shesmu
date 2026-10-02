@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.63.1] - 2026-10-02
+
+### Fixed
+
+* Vidarr actions with a submission policy other than ALWAYS not properly deduplicating.
+
+
 ## [1.63.0] - 2026-10-02
 
 ### Changed
