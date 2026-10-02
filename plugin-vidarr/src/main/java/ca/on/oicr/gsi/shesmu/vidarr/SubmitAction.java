@@ -7,7 +7,6 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.vidarr.api.ExternalKey;
-import ca.on.oicr.gsi.vidarr.api.SubmitMode;
 import ca.on.oicr.gsi.vidarr.api.SubmitWorkflowRequest;
 import java.io.IOException;
 import java.time.Duration;
@@ -108,7 +107,6 @@ public final class SubmitAction extends VidarrAction {
     // TODO don't love testing this every cycle! It will only be relevant once.
     // But adding a determinatory state in front adds too much overhead
     if (!(state instanceof RunStateUpdate) && submissionPolicy == SubmissionPolicy.UPDATE) {
-      request.setMode(SubmitMode.UPDATE);
       state = new RunStateUpdate();
     }
     if (stale) {

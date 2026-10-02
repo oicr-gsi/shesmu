@@ -57,9 +57,6 @@ public class RunStateUpdate extends RunState {
       Duration lastGeneratedByOlive,
       boolean isOliveLive)
       throws IOException, InterruptedException {
-    // TODO redundant? maybe?
-    request.setMode(SubmitMode.UPDATE);
-
     final HttpResponse<Supplier<SubmitWorkflowResponse>> response =
         VidarrPlugin.CLIENT.send(
             HttpRequest.newBuilder(vidarrUrl.resolve("/api/submit"))
