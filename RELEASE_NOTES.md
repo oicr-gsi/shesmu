@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.63.0] - 2026-10-02
+
+### Changed
+
+* Updated Runscanner to 2.9.0
+
+
 ## [1.62.0] - 2026-09-18
 
 ### Added
