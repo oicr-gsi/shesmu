@@ -73,7 +73,8 @@ public class RunStateUpdate extends RunState {
           SubmitWorkflowResponse body = response.body().get();
           if (body instanceof SubmitWorkflowResponseSuccess) { // Keys updated
             unknown = false;
-            return new PerformResult(List.of(), ActionState.SUCCEEDED, this);
+            return RunStateMonitor.create(
+                vidarrUrl, ((SubmitWorkflowResponseSuccess) body).getId());
 
           } else if (body instanceof SubmitWorkflowResponseDryRun) { // Nothing done
             return new PerformResult(
