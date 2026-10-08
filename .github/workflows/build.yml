@@ -11,13 +11,13 @@ jobs:
       uses: actions/setup-java@v6
       with:
         java-version: 21
-        distribution: adopt
+        distribution: temurin
     - name: Install NodeJS
       uses: actions/setup-node@v7
       with:
         node-version: latest
     - name: Setup Repo credentials
-      uses: s4u/maven-settings-action@v4
+      uses: s4u/maven-settings-action@v4.0.0
     - name: Build Shesmu with Maven
       run: mvn -B package --file pom.xml
     - name: Validate code formatting
