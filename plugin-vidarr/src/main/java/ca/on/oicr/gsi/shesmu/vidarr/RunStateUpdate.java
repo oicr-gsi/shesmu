@@ -71,8 +71,9 @@ public class RunStateUpdate extends RunState {
       case 200:
         {
           SubmitWorkflowResponse body = response.body().get();
-          if (body instanceof SubmitWorkflowResponseSuccess) { // Keys updated
+          if (body instanceof SubmitWorkflowResponseSuccess) { // Keys updated, switch to RUN
             unknown = false;
+            request.setMode(SubmitMode.RUN); // TODO this will probably break deduping
             return RunStateMonitor.create(
                 vidarrUrl, ((SubmitWorkflowResponseSuccess) body).getId());
 

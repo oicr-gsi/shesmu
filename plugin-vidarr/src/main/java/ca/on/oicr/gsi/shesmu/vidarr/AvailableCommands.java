@@ -48,7 +48,7 @@ public enum AvailableCommands {
               : Response.IGNORED;
         }
       };
-  static final ActionCommand<VidarrAction> REATTEMPT =
+  static final ActionCommand<VidarrAction> REATTEMPT = // TODO: Showing up on WAITING actions?
       new ActionCommand<>(
           VidarrAction.class,
           "VIDARR-REATTEMPT",
@@ -129,7 +129,6 @@ public enum AvailableCommands {
           }
           if (action.request.getMode() == SubmitMode.UPDATE
               && ((RunStateUpdate) action.state).unknown) {
-            // TODO all these things are `final` - can I even change these?
             action.submissionPolicy = SubmissionPolicy.ALWAYS;
             action.request.setMode(SubmitMode.RUN); // Maybe redundant?
             action.state = new RunStateAttemptSubmit();

@@ -171,7 +171,18 @@ const vidarrStateRenderer = {
       )
     ),
   ],
-  update: (a) => "Write me!"
+  update: (a) => [
+                     table(
+                       [
+                         a.info? ["Vidarr ID", link(
+                 		(a.info.completed ? a.workflowRunUrl.replace("status", "run") : a.workflowRunUrl),
+                 		a.info.id)]: ["Nothing yet", "sorry"],
+                       ]
+                         .filter((x) => x),
+                       ["Existing Workflow Information", (x) => x[0]],
+                       ["Value", (x) => x[1]]
+                     ),
+                   ]
 };
 
 actionRender.set("vidarr-run", (a) => [
