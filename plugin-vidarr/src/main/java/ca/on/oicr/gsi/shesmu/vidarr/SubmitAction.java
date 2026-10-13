@@ -105,8 +105,7 @@ public final class SubmitAction extends VidarrAction {
   public synchronized ActionState perform(
       ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
     // TODO don't love testing this every cycle! It will only be relevant once.
-    // But adding a determinatory state in front adds too much overhead
-    if (!(state instanceof RunStateUpdate) && submissionPolicy == SubmissionPolicy.UPDATE) {
+    if (submissionPolicy == SubmissionPolicy.UPDATE && !(state instanceof RunStateUpdate)) {
       state = new RunStateUpdate();
     }
     if (stale) {
