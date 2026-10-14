@@ -61,7 +61,7 @@ public final class SubmitAction extends VidarrAction {
       return false;
     }
     SubmitAction that = (SubmitAction) o;
-    return stale == that.stale && request.equalsIgnoreAttempt(that.request);
+    return stale == that.stale && request.equalsIgnoreAttemptAndMode(that.request);
   }
 
   @SuppressWarnings("unchecked")
@@ -98,7 +98,7 @@ public final class SubmitAction extends VidarrAction {
 
   @Override
   public int hashCode() {
-    return request.hashCodeIgnoreAttempt() * 31 + Boolean.hashCode(stale);
+    return request.hashCodeIgnoreAttemptAndMode() * 31 + Boolean.hashCode(stale);
   }
 
   @Override
