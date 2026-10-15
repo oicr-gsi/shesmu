@@ -642,6 +642,86 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                                 .map(
                                                     a ->
                                                         (CustomActionParameter<ImportAction>) a))));
+
+                // Create load actions
+                InputParameterConverter.createParam(
+                        workflow.getParameters(),
+                        target.getValue(),
+                        (action, object) ->
+                            ((LoadAction) action).request.getWorkflowRun().setArguments(object))
+                    .ifPresent(
+                        inputParameters ->
+                            MetadataParameterConverter.createParam(
+                                    workflow.getMetadata(),
+                                    target.getValue(),
+                                    (action, object) ->
+                                        ((LoadAction) action)
+                                            .request
+                                            .getWorkflowRun()
+                                            .setMetadata(object))
+                                .ifPresent(
+                                    metadataParameters ->
+                                        definer.defineAction(
+                                            String.format(
+                                                "%s%sload::%s",
+                                                sanitise(target.getKey()),
+                                                Parser.NAMESPACE_SEPARATOR,
+                                                sanitise(
+                                                    workflow.getName()
+                                                        + "_"
+                                                        + workflow.getVersion())),
+                                            String.format(
+                                                "Load workflow run of workflow %s version %s into Vidarr instance %s without reprovisioning",
+                                                workflow.getName(),
+                                                workflow.getVersion(),
+                                                value.getUrl()),
+                                            LoadAction.class,
+                                            new Supplier<LoadAction>() {
+                                              private final Supplier<VidarrPlugin> supplier =
+                                                  definer;
+
+                                              @Override
+                                              public LoadAction get() {
+                                                return new LoadAction(supplier, workflow);
+                                              }
+                                            },
+                                            Stream.concat(
+                                                    Stream.of(inputParameters, metadataParameters),
+                                                    workflow.getLabels() == null
+                                                        ? Stream
+                                                            .<CustomActionParameter<LoadAction>>
+                                                                empty()
+                                                        : workflow.getLabels().entrySet().stream()
+                                                            .<CustomActionParameter<LoadAction>>map(
+                                                                entry ->
+                                                                    new CustomActionParameter<>(
+                                                                        sanitise(
+                                                                            "label_"
+                                                                                + entry.getKey()),
+                                                                        true,
+                                                                        entry
+                                                                            .getValue()
+                                                                            .apply(
+                                                                                SIMPLE_TO_IMYHAT)) {
+                                                                      private final String label =
+                                                                          entry.getKey();
+
+                                                                      @Override
+                                                                      public void store(
+                                                                          LoadAction action,
+                                                                          Object value) {
+                                                                        type()
+                                                                            .accept(
+                                                                                new PackJsonObject(
+                                                                                    action
+                                                                                        .request
+                                                                                        .getWorkflowRun()
+                                                                                        .getLabels(),
+                                                                                    label),
+                                                                                value);
+                                                                      }
+                                                                    }))
+                                                .map(a -> (CustomActionParameter<LoadAction>) a))));
               }
             }
           }

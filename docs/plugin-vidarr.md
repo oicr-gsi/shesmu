@@ -45,3 +45,15 @@ The `"versionTypes"` specifies
 the [version keys](https://github.com/oicr-gsi/vidarr/blob/master/architecture.md#external-identifier-versions)
 that should be returned; if empty,
 all version keys are allowed.
+
+## Actions
+For every target and workflow version, the plugin defines these actions:
+
+- `target::workflow_version` submits a new workflow run.
+- `target::import::workflow_version` loads an existing workflow run into Vidarr and
+  then reprovisions its files with an output provisioner (`output_provisioner`
+  and `new_output_dir`).
+- `target::load::workflow_version` loads an existing workflow run into Vidarr
+  (via `/api/load-injected`) and leaves its files where they are. Vidarr
+  does not return the ID of the loaded run, so the action succeeds as soon
+  as Vidarr accepts it.

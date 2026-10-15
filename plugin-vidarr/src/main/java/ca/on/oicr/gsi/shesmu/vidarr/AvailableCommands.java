@@ -82,6 +82,9 @@ public enum AvailableCommands {
             case ImportAction importAction:
               importAction.state = new ImportStateAttemptSubmit();
               yield Response.RESET;
+            case LoadAction loadAction:
+              loadAction.reset();
+              yield Response.RESET;
             default:
               yield Response.RESET;
           };
