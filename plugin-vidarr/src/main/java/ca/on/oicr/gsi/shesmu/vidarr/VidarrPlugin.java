@@ -33,6 +33,7 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -559,89 +560,28 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                             })));
 
                 // Create import actions
-                InputParameterConverter.createParam(
-                        workflow.getParameters(),
-                        target.getValue(),
-                        (action, object) ->
-                            ((ImportAction) action).request.getWorkflowRun().setArguments(object))
-                    .ifPresent(
-                        inputParameters ->
-                            MetadataParameterConverter.createParam(
-                                    workflow.getMetadata(),
-                                    target.getValue(),
-                                    (action, object) ->
-                                        ((ImportAction) action)
-                                            .request
-                                            .getWorkflowRun()
-                                            .setMetadata(object))
-                                .ifPresent(
-                                    metadataParameters ->
-                                        definer.defineAction(
-                                            String.format(
-                                                "%s%simport::%s",
-                                                sanitise(target.getKey()),
-                                                Parser.NAMESPACE_SEPARATOR,
-                                                sanitise(
-                                                    workflow.getName()
-                                                        + "_"
-                                                        + workflow.getVersion())),
-                                            String.format(
-                                                "Import workflow run of workflow %s version %s on Vidarr instance %s",
-                                                workflow.getName(),
-                                                workflow.getVersion(),
-                                                value.getUrl()),
-                                            ImportAction.class,
-                                            new Supplier<ImportAction>() {
-                                              private final Supplier<VidarrPlugin> supplier =
-                                                  definer;
+                defineLoadingAction(
+                    target.getKey(),
+                    target.getValue(),
+                    workflow,
+                    "import",
+                    String.format(
+                        "Import workflow run of workflow %s version %s on Vidarr instance %s",
+                        workflow.getName(), workflow.getVersion(), value.getUrl()),
+                    ImportAction.class,
+                    ImportAction::new);
 
-                                              @Override
-                                              public ImportAction get() {
-                                                return new ImportAction(supplier, workflow);
-                                              }
-                                            },
-                                            Stream.concat(
-                                                    Stream.of(inputParameters, metadataParameters),
-                                                    workflow.getLabels() == null
-                                                        ? Stream
-                                                            .<CustomActionParameter<ImportAction>>
-                                                                empty()
-                                                        : workflow.getLabels().entrySet().stream()
-                                                            .<CustomActionParameter<ImportAction>>
-                                                                map(
-                                                                    entry ->
-                                                                        new CustomActionParameter<>(
-                                                                            sanitise(
-                                                                                "label_"
-                                                                                    + entry
-                                                                                        .getKey()),
-                                                                            true,
-                                                                            entry
-                                                                                .getValue()
-                                                                                .apply(
-                                                                                    SIMPLE_TO_IMYHAT)) {
-                                                                          private final String
-                                                                              label =
-                                                                                  entry.getKey();
-
-                                                                          @Override
-                                                                          public void store(
-                                                                              ImportAction action,
-                                                                              Object value) {
-                                                                            type()
-                                                                                .accept(
-                                                                                    new PackJsonObject(
-                                                                                        action
-                                                                                            .request
-                                                                                            .getWorkflowRun()
-                                                                                            .getLabels(),
-                                                                                        label),
-                                                                                    value);
-                                                                          }
-                                                                        }))
-                                                .map(
-                                                    a ->
-                                                        (CustomActionParameter<ImportAction>) a))));
+                // Create load actions
+                defineLoadingAction(
+                    target.getKey(),
+                    target.getValue(),
+                    workflow,
+                    "load",
+                    String.format(
+                        "Load workflow run of workflow %s version %s into Vidarr instance %s",
+                        workflow.getName(), workflow.getVersion(), value.getUrl()),
+                    LoadAction.class,
+                    LoadAction::new);
               }
             }
           }
@@ -660,6 +600,78 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
       e.printStackTrace();
       return Optional.of(2);
     }
+  }
+
+  /**
+   * Define an action that loads an existing workflow run into Vidarr for a target and workflow
+   * version
+   *
+   * @param namespace the namespace inserted between the target and workflow in the action name
+   * @param description the action's description
+   */
+  private <T extends BaseLoadAction> void defineLoadingAction(
+      String targetName,
+      TargetDeclaration target,
+      WorkflowDeclaration workflow,
+      String namespace,
+      String description,
+      Class<T> actionClass,
+      BiFunction<Supplier<VidarrPlugin>, WorkflowDeclaration, T> constructor) {
+    InputParameterConverter.createParam(
+            workflow.getParameters(),
+            target,
+            (action, object) ->
+                ((BaseLoadAction) action).request.getWorkflowRun().setArguments(object))
+        .ifPresent(
+            inputParameters ->
+                MetadataParameterConverter.createParam(
+                        workflow.getMetadata(),
+                        target,
+                        (action, object) ->
+                            ((BaseLoadAction) action).request.getWorkflowRun().setMetadata(object))
+                    .ifPresent(
+                        metadataParameters ->
+                            definer.defineAction(
+                                String.format(
+                                    "%s%s%s::%s",
+                                    sanitise(targetName),
+                                    Parser.NAMESPACE_SEPARATOR,
+                                    namespace,
+                                    sanitise(workflow.getName() + "_" + workflow.getVersion())),
+                                description,
+                                actionClass,
+                                () -> constructor.apply(definer, workflow),
+                                Stream.concat(
+                                        Stream.of(inputParameters, metadataParameters),
+                                        workflow.getLabels() == null
+                                            ? Stream.<CustomActionParameter<T>>empty()
+                                            : workflow.getLabels().entrySet().stream()
+                                                .<CustomActionParameter<T>>map(
+                                                    entry ->
+                                                        new CustomActionParameter<>(
+                                                            sanitise("label_" + entry.getKey()),
+                                                            true,
+                                                            entry
+                                                                .getValue()
+                                                                .apply(SIMPLE_TO_IMYHAT)) {
+                                                          private final String label =
+                                                              entry.getKey();
+
+                                                          @Override
+                                                          public void store(
+                                                              T action, Object value) {
+                                                            type()
+                                                                .accept(
+                                                                    new PackJsonObject(
+                                                                        action
+                                                                            .request
+                                                                            .getWorkflowRun()
+                                                                            .getLabels(),
+                                                                        label),
+                                                                    value);
+                                                          }
+                                                        }))
+                                    .map(a -> (CustomActionParameter<T>) a))));
   }
 
   public Optional<URI> url() {

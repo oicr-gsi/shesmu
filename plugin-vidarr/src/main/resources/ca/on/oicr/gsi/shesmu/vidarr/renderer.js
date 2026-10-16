@@ -252,6 +252,35 @@ actionRender.set("vidarr-import", (a) => [
   vidarrStateRenderer[a.importState](a),
 ]);
 
+actionRender.set("vidarr-load", (a) => [
+  title(a, `Load run of ${a.request.workflow.name} (${a.request.workflowVersion.version})`),
+  table(
+    a.services.map((s) => ["Required Service", s]),
+    ["Workflow Information", (x) => x[0]],
+    ["Value", (x) => x[1]]
+  ),
+  collapsible(
+    "LIMS Keys",
+    table(
+      a.request.workflowRun.externalKeys,
+      ...[
+        ["Provider", (k) => k.provider],
+        ["ID", (k) => k.id],
+      ].concat(
+        a.request.workflowRun.externalKeys.length == 0
+          ? []
+          : Object.keys(a.request.workflowRun.externalKeys[0].versions).map((key) => [
+              key,
+              (lims) => lims.versions[key] || "Missing!",
+            ])
+      )
+    )
+  ),
+  a.loadState == "loaded"
+    ? "Workflow run has been loaded into Vidarr."
+    : "Workflow run has not yet been loaded into Vidarr.",
+]);
+
 [
   {
     type: "runs",
