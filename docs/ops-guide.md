@@ -340,8 +340,12 @@ command line:
 
 The Vidarr actions also generates some useful tags:
 - `vidarr-target:`_name_: The _target_ on the Vidarr instance.
-- `vidarr-workflow:`_name_[`/`_version_`]: The workflow that this action will
-  run, both with and without the version.
+- `vidarr-workflow:`_name_: The _name_ of the Vidarr workflow.
+- `vidarr-workflow-version-submitted:`_name_[`/`_version_`]: The workflow name and 
+  version specified by the current action.
+- `vidarr-workflow-version-completed:`_name_[`/`_version_`]: The workflow name and
+  version from the workflow run in Vidarr. (This may or may not match the workflow
+  version submitted by the action.)
 - `vidarr-state:`[`active`|`attempt`|`conflict`|`dead`|`finished`|`missing`]:
 	The action uses a state machine while it's communicating with Vidarr. This is
   the current state of that machine.
