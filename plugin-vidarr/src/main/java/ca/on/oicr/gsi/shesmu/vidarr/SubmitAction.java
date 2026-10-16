@@ -43,7 +43,8 @@ public final class SubmitAction extends VidarrAction {
         List.of(
             "vidarr-target:" + targetName,
             "vidarr-workflow:" + workflowName,
-            "vidarr-workflow:" + workflowName + "/" + workflowVersion);
+            String.format(
+                "vidarr-workflow-version-submitted:%s/%s", workflowName, workflowVersion));
     priority = workflowName.hashCode() % 100;
   }
 
