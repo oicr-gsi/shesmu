@@ -24,6 +24,10 @@ import tools.jackson.databind.node.ObjectNode;
  * computes the hash IDs), such as {@link LoadAction} and {@link ImportAction}.
  */
 public abstract class BaseLoadAction extends VidarrAction {
+  /*
+  The single workflow run this action describes. It is held as an ImportRequest because that holds
+  everything both actions need; each subclass sends whatever form its Vidarr endpoint expects.
+   */
   final ImportRequest request;
 
   public BaseLoadAction(String type, Supplier<VidarrPlugin> owner, WorkflowDeclaration workflow) {
@@ -159,10 +163,6 @@ public abstract class BaseLoadAction extends VidarrAction {
     if (stale) {
       return ActionState.ZOMBIE;
     }
-    final Optional<ActionState> settled = settledState();
-    if (settled.isPresent()) {
-      return settled.get();
-    }
     final Set<String> throttled = services.isOverloaded(this.services);
     if (!throttled.isEmpty()) {
       errors = List.of("Services are unavailable: ", String.join(", ", throttled));
@@ -216,15 +216,6 @@ public abstract class BaseLoadAction extends VidarrAction {
   /** Check whether any action-specific state matches a search query */
   protected boolean searchState(Pattern query) {
     return false;
-  }
-
-  /**
-   * Get the action's state if it is already settled and Vidarr does not need to be contacted
-   *
-   * <p>This is checked before throttling, so a settled action never waits on the Vidarr service.
-   */
-  protected Optional<ActionState> settledState() {
-    return Optional.empty();
   }
 
   @Override

@@ -13,6 +13,13 @@ import java.util.stream.Stream;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 
+/**
+ * Import a workflow run into Vidarr: load it using injection mode (Vidarr computes the hash IDs),
+ * then reprovision its files with an output provisioner
+ *
+ * <p>The {@link ImportRequest} is sent to Vidarr as-is, and the import is then monitored until it
+ * completes.
+ */
 public class ImportAction extends BaseLoadAction {
   ImportState state = new ImportStateAttemptSubmit();
 

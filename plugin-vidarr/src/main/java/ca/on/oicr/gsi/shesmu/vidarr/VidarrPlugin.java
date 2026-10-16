@@ -564,9 +564,10 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                     target.getKey(),
                     target.getValue(),
                     workflow,
-                    value.getUrl(),
                     "import",
-                    "Import workflow run of workflow %s version %s on Vidarr instance %s",
+                    String.format(
+                        "Import workflow run of workflow %s version %s on Vidarr instance %s",
+                        workflow.getName(), workflow.getVersion(), value.getUrl()),
                     ImportAction.class,
                     ImportAction::new);
 
@@ -575,10 +576,10 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                     target.getKey(),
                     target.getValue(),
                     workflow,
-                    value.getUrl(),
                     "load",
-                    "Load workflow run of workflow %s version %s into Vidarr instance %s without"
-                        + " reprovisioning",
+                    String.format(
+                        "Load workflow run of workflow %s version %s into Vidarr instance %s",
+                        workflow.getName(), workflow.getVersion(), value.getUrl()),
                     LoadAction.class,
                     LoadAction::new);
               }
@@ -606,16 +607,14 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
    * version
    *
    * @param namespace the namespace inserted between the target and workflow in the action name
-   * @param descriptionFormat the format string for the action's description; it receives the
-   *     workflow name, workflow version, and Vidarr URL
+   * @param description the action's description
    */
   private <T extends BaseLoadAction> void defineLoadingAction(
       String targetName,
       TargetDeclaration target,
       WorkflowDeclaration workflow,
-      String vidarrUrl,
       String namespace,
-      String descriptionFormat,
+      String description,
       Class<T> actionClass,
       BiFunction<Supplier<VidarrPlugin>, WorkflowDeclaration, T> constructor) {
     InputParameterConverter.createParam(
@@ -639,11 +638,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                     Parser.NAMESPACE_SEPARATOR,
                                     namespace,
                                     sanitise(workflow.getName() + "_" + workflow.getVersion())),
-                                String.format(
-                                    descriptionFormat,
-                                    workflow.getName(),
-                                    workflow.getVersion(),
-                                    vidarrUrl),
+                                description,
                                 actionClass,
                                 () -> constructor.apply(definer, workflow),
                                 Stream.concat(

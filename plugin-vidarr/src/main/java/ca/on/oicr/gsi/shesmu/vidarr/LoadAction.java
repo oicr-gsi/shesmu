@@ -16,18 +16,19 @@ import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
- * Load a workflow run into Vidarr using injection mode (Vidarr computes the hash IDs) without
- * reprovisioning any of its files.
+ * Load a workflow run into Vidarr using injection mode (Vidarr computes the hash IDs)
  *
  * <p>Vidarr does not return the ID of the loaded workflow run, so there is nothing to monitor; once
  * Vidarr accepts the load, the action is complete. Loading is idempotent in Vidarr, so resubmitting
  * an already-loaded workflow run is harmless.
+ *
+ * <p>The load endpoint takes an {@link UnloadedData} rather than an {@link ImportRequest}, so the
+ * request is converted with {@link ImportRequest#load()} when it is sent. The import-only fields
+ * (attempt, output provisioner, and output path) are never set or used.
  */
 public class LoadAction extends BaseLoadAction {
   boolean loaded;
   private Instant loadedTime;
-  // Vidarr refused the request (400); resending it unchanged won't help, so wait for a reset
-  private boolean rejected;
   private int retryMinutes = 5;
 
   public LoadAction(Supplier<VidarrPlugin> owner, WorkflowDeclaration workflow) {
@@ -42,17 +43,6 @@ public class LoadAction extends BaseLoadAction {
   @Override
   public Optional<Instant> externalTimestamp() {
     return Optional.ofNullable(loadedTime);
-  }
-
-  @Override
-  protected Optional<ActionState> settledState() {
-    if (loaded) {
-      return Optional.of(ActionState.SUCCEEDED);
-    }
-    if (rejected) {
-      return Optional.of(ActionState.HALP);
-    }
-    return Optional.empty();
   }
 
   @Override
@@ -73,13 +63,9 @@ public class LoadAction extends BaseLoadAction {
       case 200:
         loaded = true;
         loadedTime = Instant.now();
-        retryMinutes = 5;
         errors = List.of();
         return ActionState.SUCCEEDED;
       case 400: // Malformed or invalid request
-        errors = List.of(response.body());
-        rejected = true;
-        return ActionState.HALP;
       case 409: // Conflicts with an existing workflow run
       case 500: // Internal Server Error
         retryMinutes = Math.min(retryMinutes * 2, 60);
@@ -99,7 +85,6 @@ public class LoadAction extends BaseLoadAction {
   void reset() {
     loaded = false;
     loadedTime = null;
-    rejected = false;
     retryMinutes = 5;
     errors = List.of();
   }
