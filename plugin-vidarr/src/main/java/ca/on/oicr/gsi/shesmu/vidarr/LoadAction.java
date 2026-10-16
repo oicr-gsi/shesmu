@@ -26,7 +26,7 @@ import tools.jackson.databind.node.ObjectNode;
 public class LoadAction extends BaseLoadAction {
   boolean loaded;
   private Instant loadedTime;
-  // Vidarr refused the request (400/409); resending it unchanged won't help, so wait for a reset
+  // Vidarr refused the request (400); resending it unchanged won't help, so wait for a reset
   private boolean rejected;
   private int retryMinutes = 5;
 
@@ -81,10 +81,7 @@ public class LoadAction extends BaseLoadAction {
         rejected = true;
         return ActionState.HALP;
       case 409: // Conflicts with an existing workflow run
-        errors = List.of("Conflict with existing workflow run in Vidarr: " + response.body());
-        rejected = true;
-        return ActionState.HALP;
-      case 500:
+      case 500: // Internal Server Error
         retryMinutes = Math.min(retryMinutes * 2, 60);
         errors = List.of(response.body());
         return ActionState.FAILED;
@@ -92,7 +89,6 @@ public class LoadAction extends BaseLoadAction {
         errors = List.of(response.body());
         return ActionState.THROTTLED;
       default:
-        retryMinutes = Math.min(retryMinutes * 2, 60);
         errors =
             List.of(
                 String.format("Unexpected HTTP response %d from server.", response.statusCode()));

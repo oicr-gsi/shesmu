@@ -559,6 +559,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                               }
                                             })));
 
+                // Create import actions
                 defineLoadingAction(
                     target.getKey(),
                     target.getValue(),
@@ -568,6 +569,8 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                     "Import workflow run of workflow %s version %s on Vidarr instance %s",
                     ImportAction.class,
                     ImportAction::new);
+
+                // Create load actions
                 defineLoadingAction(
                     target.getKey(),
                     target.getValue(),
