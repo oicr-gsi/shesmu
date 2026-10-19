@@ -8,7 +8,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -28,7 +27,6 @@ import tools.jackson.databind.node.ObjectNode;
  */
 public class LoadAction extends BaseLoadAction {
   boolean loaded;
-  private Instant loadedTime;
   private int retryMinutes = 5;
 
   public LoadAction(Supplier<VidarrPlugin> owner, WorkflowDeclaration workflow) {
@@ -38,11 +36,6 @@ public class LoadAction extends BaseLoadAction {
   @Override
   public Stream<ActionCommand<?>> commands() {
     return AvailableCommands.RESET_ONLY.commands();
-  }
-
-  @Override
-  public Optional<Instant> externalTimestamp() {
-    return Optional.ofNullable(loadedTime);
   }
 
   @Override
@@ -62,11 +55,9 @@ public class LoadAction extends BaseLoadAction {
     switch (response.statusCode()) {
       case 200:
         loaded = true;
-        loadedTime = Instant.now();
         errors = List.of();
         return ActionState.SUCCEEDED;
       case 400: // Malformed or invalid request
-      case 409: // Conflicts with an existing workflow run
       case 500: // Internal Server Error
         retryMinutes = Math.min(retryMinutes * 2, 60);
         errors = List.of(response.body());
@@ -84,7 +75,6 @@ public class LoadAction extends BaseLoadAction {
 
   void reset() {
     loaded = false;
-    loadedTime = null;
     retryMinutes = 5;
     errors = List.of();
   }
