@@ -18,8 +18,11 @@ import tools.jackson.databind.node.ObjectNode;
  * Load a workflow run into Vidarr using injection mode (Vidarr computes the hash IDs)
  *
  * <p>Vidarr does not return the ID of the loaded workflow run, so there is nothing to monitor; once
- * Vidarr accepts the load, the action is complete. Loading is idempotent in Vidarr, so resubmitting
- * an already-loaded workflow run is harmless.
+ * Vidarr accepts the load, the action is complete. Submitting an already-loaded workflow run will
+ * not change the database state, even if the new submission differs from the initial submission
+ * (e.g., different external key versions). Vidarr still responds with 200 OK and gives no
+ * indication of the mismatch, so this action will report success even though the changes were not
+ * applied. To change a workflow run, it must be unloaded from Vidarr first.
  *
  * <p>The load endpoint takes an {@link UnloadedData} rather than an {@link ImportRequest}, so the
  * request is converted with {@link ImportRequest#load()} when it is sent. The import-only fields
