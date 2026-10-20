@@ -40,9 +40,9 @@ public final class UnloadExternalIdentifiersAction extends BaseUnloadAction {
         externalIds.entrySet().stream()
             .map(
                 entry -> {
-                  final var providerFilter = new UnloadFilterExternalId();
-                  providerFilter.setProvider(entry.getKey());
-                  providerFilter.setId(UnloadTextSelector.of(entry.getValue()));
+                  final var providerFilter =
+                      new UnloadFilterExternalId(
+                          entry.getKey(), UnloadTextSelector.of(entry.getValue()));
                   return providerFilter;
                 })
             .collect(Collectors.toList()));
