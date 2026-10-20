@@ -105,7 +105,10 @@ public final class SubmitAction extends VidarrAction {
   public synchronized ActionState perform(
       ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
     // TODO don't love testing this every cycle! It will only be relevant once.
-    if (submissionPolicy == SubmissionPolicy.UPDATE && !(state instanceof RunStateUpdate)) {
+    if (submissionPolicy == SubmissionPolicy.UPDATE
+        && !(state instanceof RunStateUpdate)
+        && (state instanceof RunStateAttemptSubmit
+            && ((RunStateAttemptSubmit) state).getAttempt().getAsInt() == 0)) {
       state = new RunStateUpdate();
     }
     if (stale) {
