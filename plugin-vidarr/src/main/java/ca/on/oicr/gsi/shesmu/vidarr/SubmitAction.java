@@ -107,10 +107,10 @@ public final class SubmitAction extends VidarrAction {
     // TODO don't love testing this every cycle! It will only be relevant once.
     if (submissionPolicy == SubmissionPolicy.UPDATE
         && !(state instanceof RunStateUpdate)
-        && (state instanceof RunStateAttemptSubmit
+        && (state instanceof RunStateAttemptSubmit // TODO && might be the wrong move
             && ((RunStateAttemptSubmit) state).getAttempt().getAsInt() == 0)) {
       state = new RunStateUpdate();
-    }
+    } // But the mode is still UPDATE at this point
     if (stale) {
       return ActionState.ZOMBIE;
     }
