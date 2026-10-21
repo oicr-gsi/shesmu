@@ -63,6 +63,12 @@ public enum AvailableCommands {
             case SubmitAction submitAction:
               final Optional<RunState> submitReattempt = submitAction.state.reattempt();
               submitReattempt.ifPresent(s -> submitAction.state = s);
+              submitReattempt.ifPresent(
+                  s -> {
+                    if (submitAction.submissionPolicy == SubmissionPolicy.UPDATE) {
+                      submitAction.submissionPolicy = SubmissionPolicy.ALWAYS;
+                    }
+                  });
               yield submitReattempt.isPresent() ? Response.RESET : Response.IGNORED;
             case ImportAction importAction:
               final Optional<ImportState> importReattempt = importAction.state.reattempt();
