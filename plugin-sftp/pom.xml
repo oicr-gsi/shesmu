@@ -12,6 +12,7 @@
   <url>https://github.com/oicr-gsi/shesmu</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <bouncycastle-java-version>1.85</bouncycastle-java-version>
   </properties>
   <dependencies>
     <dependency>
@@ -31,12 +32,12 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk18on</artifactId>
-      <version>1.85</version>
+      <version>${bouncycastle-java-version}</version>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk18on</artifactId>
-      <version>1.84</version>
+      <version>${bouncycastle-java-version}</version>
     </dependency>
     <dependency>
       <groupId>tools.jackson.core</groupId>
