@@ -7,6 +7,16 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.64.0] - 2026-10-23
+
+### Added
+
+* Vidarr plugin `load` action that loads an existing workflow run into Vidarr without reprovisioning its files
+* Updated vidarr workflow version tags on `vidarr-run` actions:
+  * `vidarr-workflow-version-submitted` lists the workflow version submitted by the current action
+  * `vidarr-workflow-version-completed` lists the workflow version on the workflow run from Vidarr
+
+
 ## [1.63.1] - 2026-10-02
 
 ### Fixed
