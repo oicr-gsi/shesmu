@@ -52,10 +52,9 @@ public abstract class BaseLoadAction extends VidarrAction {
     tags =
         List.of(
             "vidarr-workflow:" + request.getWorkflow().getName(),
-            "vidarr-workflow:"
-                + request.getWorkflow().getName()
-                + "/"
-                + request.getWorkflowVersion().getVersion());
+            String.format(
+                "vidarr-workflow-version-submitted:%s/%s",
+                request.getWorkflow().getName(), request.getWorkflowVersion().getVersion()));
   }
 
   @ActionParameter
