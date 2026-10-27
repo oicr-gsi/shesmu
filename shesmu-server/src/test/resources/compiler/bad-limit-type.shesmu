@@ -1,0 +1,4 @@
+Version 1;
+Input test;
+
+Olive Run ok With ok = (For x In [1]: Sort x Limit (1 + "a") All x == 1);
