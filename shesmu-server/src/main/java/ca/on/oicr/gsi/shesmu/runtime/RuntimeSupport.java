@@ -749,7 +749,7 @@ public final class RuntimeSupport {
         return input.substring(0, (int) maxLength - startEllipsis.length()) + startEllipsis;
       case "MIDDLE":
         return input.substring(0, (int) (maxLength / 2))
-            + input.substring((int) (input.length() - maxLength / 2));
+            + input.substring((int) (input.length() - (maxLength - maxLength / 2)));
       case "MIDDLE_ELLIPSIS":
         final var middleEllipsis = (String) where.get(0);
         if (middleEllipsis.length() >= maxLength) {
