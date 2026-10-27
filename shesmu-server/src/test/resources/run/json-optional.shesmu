@@ -1,0 +1,8 @@
+Version 1;
+Input test;
+
+Olive Run ok With ok = Begin
+  numbers = [`1`, ` `];
+  object = {a = `1`};
+  Return ((numbers As json) As [integer?]) == `numbers` && ((object As json) As {a = integer?}) == `object`;
+  End;

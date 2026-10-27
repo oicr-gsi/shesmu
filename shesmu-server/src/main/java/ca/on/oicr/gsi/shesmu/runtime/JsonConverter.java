@@ -177,7 +177,7 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
 
   @Override
   public Optional<Object> optional(Imyhat inner) {
-    return input.isNumber() ? Optional.empty() : inner.apply(this);
+    return input.isNull() ? Optional.of(Optional.empty()) : inner.apply(this).map(Optional::of);
   }
 
   @Override
