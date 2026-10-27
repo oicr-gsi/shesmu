@@ -208,7 +208,7 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
 
           @Override
           public boolean test(Imyhat imyhat) {
-            if (input.size() >= index) {
+            if (index >= input.size()) {
               return false;
             }
             final var element = imyhat.apply(new JsonConverter(input.get(index)));
