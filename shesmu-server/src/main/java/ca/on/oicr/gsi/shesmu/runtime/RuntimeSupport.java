@@ -790,7 +790,11 @@ public final class RuntimeSupport {
 
   @RuntimeInterop
   public static Optional<String> urlDecode(String input) {
-    return Optional.of(URLDecoder.decode(input, StandardCharsets.UTF_8));
+    try {
+      return Optional.of(URLDecoder.decode(input, StandardCharsets.UTF_8));
+    } catch (IllegalArgumentException e) {
+      return Optional.empty();
+    }
   }
 
   @RuntimeInterop
