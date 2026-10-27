@@ -155,21 +155,24 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
       contents.close();
       return Optional.empty();
     }
-    final var output = new Object[input.size()];
-    if (contents.allMatch(
-        new Predicate<>() {
-          private int index;
+    final List<Pair<String, Imyhat>> fields = contents.toList();
+    final Object[] output = new Object[fields.size()];
+    if (fields.stream()
+        .allMatch(
+            new Predicate<>() {
+              private int index;
 
-          @Override
-          public boolean test(Pair<String, Imyhat> field) {
-            if (!input.has(field.first())) {
-              return false;
-            }
-            final var element = field.second().apply(new JsonConverter(input.get(field.first())));
-            element.ifPresent(v -> output[index++] = v);
-            return element.isPresent();
-          }
-        })) {
+              @Override
+              public boolean test(Pair<String, Imyhat> field) {
+                if (!input.has(field.first())) {
+                  return false;
+                }
+                final var element =
+                    field.second().apply(new JsonConverter(input.get(field.first())));
+                element.ifPresent(v -> output[index++] = v);
+                return element.isPresent();
+              }
+            })) {
       return Optional.of(constructor.apply(output));
     }
     return Optional.empty();
@@ -201,22 +204,24 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
       contents.close();
       return Optional.empty();
     }
-    final var output = new Object[input.size()];
-    if (contents.allMatch(
-        new Predicate<>() {
-          private int index;
+    final List<Imyhat> elements = contents.toList();
+    final Object[] output = new Object[elements.size()];
+    if (elements.stream()
+        .allMatch(
+            new Predicate<>() {
+              private int index;
 
-          @Override
-          public boolean test(Imyhat imyhat) {
-            if (index >= input.size()) {
-              return false;
-            }
-            final var element = imyhat.apply(new JsonConverter(input.get(index)));
-            element.ifPresent(v -> output[index] = v);
-            index++;
-            return element.isPresent();
-          }
-        })) {
+              @Override
+              public boolean test(Imyhat imyhat) {
+                if (index >= input.size()) {
+                  return false;
+                }
+                final var element = imyhat.apply(new JsonConverter(input.get(index)));
+                element.ifPresent(v -> output[index] = v);
+                index++;
+                return element.isPresent();
+              }
+            })) {
       return Optional.of(constructor.apply(output));
     }
     return Optional.empty();
