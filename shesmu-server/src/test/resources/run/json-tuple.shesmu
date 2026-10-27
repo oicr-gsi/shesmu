@@ -1,0 +1,4 @@
+Version 1;
+Input test;
+
+Olive Run ok With ok = (({1, "a"} As json) As {integer, string}) == `{1, "a"}`;
