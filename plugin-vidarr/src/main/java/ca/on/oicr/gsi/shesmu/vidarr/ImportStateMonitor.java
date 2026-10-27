@@ -118,7 +118,10 @@ public class ImportStateMonitor extends ImportState {
   @Override
   public Stream<String> tags() {
     return Stream.of(
-        status.getCompleted() == null ? "vidarr-state:active" : "vidarr-state:finished");
+        status.getCompleted() == null ? "vidarr-state:active" : "vidarr-state:finished",
+        String.format(
+            "vidarr-workflow-version-completed:%s/%s",
+            status.getWorkflowName(), status.getWorkflowVersion()));
   }
 
   @Override
