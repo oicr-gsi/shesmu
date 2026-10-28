@@ -526,8 +526,57 @@ export function stringHash(input: string): number {
   }
   return hash;
 }
-export function stringTruncate(input: string, length: number): string {
-  return input.substring(0, Math.min(input.length, length));
+export function stringTruncate(
+  input: string,
+  maxLength: number,
+  where: { type: string; contents: any[] }
+): string {
+  if (input.length < maxLength) {
+    return input;
+  }
+  switch (where.type) {
+    case "START":
+      return input.substring(0, maxLength);
+    case "START_ELLIPSIS": {
+      const ellipsis: string = where.contents[0];
+      if (ellipsis.length >= maxLength) {
+        return ellipsis;
+      }
+      return input.substring(0, maxLength - ellipsis.length) + ellipsis;
+    }
+    case "MIDDLE":
+      return (
+        input.substring(0, Math.floor(maxLength / 2)) +
+        input.substring(input.length - (maxLength - Math.floor(maxLength / 2)))
+      );
+    case "MIDDLE_ELLIPSIS": {
+      const ellipsis: string = where.contents[0];
+      if (ellipsis.length >= maxLength) {
+        return ellipsis;
+      }
+      const firstLength = Math.ceil(maxLength / 2 - ellipsis.length / 2);
+      return (
+        input.substring(0, firstLength) +
+        ellipsis +
+        input.substring(
+          input.length - maxLength + firstLength + ellipsis.length
+        )
+      );
+    }
+    case "END":
+      return input.substring(input.length - maxLength);
+    case "END_ELLIPSIS": {
+      const ellipsis: string = where.contents[0];
+      if (ellipsis.length >= maxLength) {
+        return ellipsis;
+      }
+      return (
+        ellipsis + input.substring(input.length - maxLength + ellipsis.length)
+      );
+    }
+    default:
+      throw new Error(`Invalid truncation method ${where.type}.`);
+  }
 }
 type SubSampler<T> = (input: T[], output: T[]) => number;
 
