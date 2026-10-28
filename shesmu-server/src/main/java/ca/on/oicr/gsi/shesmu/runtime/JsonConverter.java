@@ -165,6 +165,10 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
               @Override
               public boolean test(Pair<String, Imyhat> field) {
                 if (!input.has(field.first())) {
+                  if (field.second() instanceof Imyhat.OptionalImyhat) {
+                    output[index++] = Optional.empty();
+                    return true;
+                  }
                   return false;
                 }
                 final var element =

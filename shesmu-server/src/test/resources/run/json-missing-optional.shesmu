@@ -1,0 +1,9 @@
+Version 1;
+Input test;
+
+Olive Run ok With ok = Begin
+  j = {a = 1} As json;
+  missing = j As {a = integer, b = integer?};
+  required = j As {a = integer, b = integer};
+  Return (For r In missing: Where r.b == ` ` Count) == 1 && (For r In required: Count) == 0;
+  End;
