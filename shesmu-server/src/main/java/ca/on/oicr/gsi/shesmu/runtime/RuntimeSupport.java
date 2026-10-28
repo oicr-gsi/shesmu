@@ -150,9 +150,13 @@ public final class RuntimeSupport {
    */
   @RuntimeInterop
   public static StringBuilder appendFormatted(StringBuilder builder, long value, int width) {
-    final var result = Long.toString(value);
-    builder.append("0".repeat(Math.max(0, width - result.length())));
-    return builder.append(result);
+    String digits = Long.toString(value);
+    if (value < 0) {
+      builder.append('-');
+      digits = digits.substring(1);
+    }
+    builder.append("0".repeat(Math.max(0, width - digits.length())));
+    return builder.append(digits);
   }
 
   /**

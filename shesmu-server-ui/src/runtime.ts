@@ -103,8 +103,12 @@ export function floatParse(value: string): number | null {
 }
 
 export function formatNumber(value: number, width: number) {
-  const result = value.toString();
-  return "0".repeat(Math.max(0, width - result.length)) + result;
+  const digits = Math.abs(value).toString();
+  return (
+    (value < 0 ? "-" : "") +
+    "0".repeat(Math.max(0, width - digits.length)) +
+    digits
+  );
 }
 export function intParse(value: string): number | null {
   const result = parseInt(value);
