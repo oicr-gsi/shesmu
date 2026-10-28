@@ -512,7 +512,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "truncate",
             "Truncates a string to a maximum length.",
-            "$runtime.stringTruncate(%s)",
+            "$runtime.stringTruncate(%s, %s, %s)",
             Imyhat.STRING,
             new FunctionParameter("input string", Imyhat.STRING),
             new FunctionParameter("maximum length", Imyhat.INTEGER),
