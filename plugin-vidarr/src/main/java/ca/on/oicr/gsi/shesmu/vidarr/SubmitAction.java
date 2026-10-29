@@ -105,12 +105,17 @@ public final class SubmitAction extends VidarrAction {
   public synchronized ActionState perform(
       ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
     // TODO don't love testing this every cycle! It will only be relevant once.
-    if (submissionPolicy == SubmissionPolicy.UPDATE
-        && !(state instanceof RunStateUpdate)
-        && (state instanceof RunStateAttemptSubmit // TODO && might be the wrong move
-            && ((RunStateAttemptSubmit) state).getAttempt().getAsInt() == 0)) {
-      state = new RunStateUpdate();
-    } // But the mode is still UPDATE at this point
+    if (submissionPolicy == SubmissionPolicy.UPDATE && !(state instanceof RunStateUpdate)) {
+      // If state is RunStateAttemptSubmit, only switch to RunStateUpdate if we're NOT reattempting
+      if (state instanceof RunStateAttemptSubmit) {
+        if (((RunStateAttemptSubmit) state).getAttempt().getAsInt() == 0) {
+          state = new RunStateUpdate();
+        }
+      } else { // state is neither RunStateUpdate nor RunStateAttemptSubmit
+        state = new RunStateUpdate();
+      }
+    }
+
     if (stale) {
       return ActionState.ZOMBIE;
     }
