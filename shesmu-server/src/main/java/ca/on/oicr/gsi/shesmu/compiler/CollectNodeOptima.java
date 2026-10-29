@@ -63,7 +63,8 @@ public final class CollectNodeOptima extends CollectNodeOptional {
     }
     errorHandler.accept(
         String.format(
-            "%d:%d: Expected orderable type, but got %s.", line(), column(), type().name()));
+            "%d:%d: Expected orderable type, but got %s.",
+            line(), column(), selector.type().name()));
     return false;
   }
 }

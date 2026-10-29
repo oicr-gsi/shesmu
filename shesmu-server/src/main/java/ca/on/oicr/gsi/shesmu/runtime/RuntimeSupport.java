@@ -150,9 +150,13 @@ public final class RuntimeSupport {
    */
   @RuntimeInterop
   public static StringBuilder appendFormatted(StringBuilder builder, long value, int width) {
-    final var result = Long.toString(value);
-    builder.append("0".repeat(Math.max(0, width - result.length())));
-    return builder.append(result);
+    String digits = Long.toString(value);
+    if (value < 0) {
+      builder.append('-');
+      digits = digits.substring(1);
+    }
+    builder.append("0".repeat(Math.max(0, width - digits.length())));
+    return builder.append(digits);
   }
 
   /**
@@ -749,7 +753,7 @@ public final class RuntimeSupport {
         return input.substring(0, (int) maxLength - startEllipsis.length()) + startEllipsis;
       case "MIDDLE":
         return input.substring(0, (int) (maxLength / 2))
-            + input.substring((int) (input.length() - maxLength / 2));
+            + input.substring((int) (input.length() - (maxLength - maxLength / 2)));
       case "MIDDLE_ELLIPSIS":
         final var middleEllipsis = (String) where.get(0);
         if (middleEllipsis.length() >= maxLength) {
@@ -790,7 +794,11 @@ public final class RuntimeSupport {
 
   @RuntimeInterop
   public static Optional<String> urlDecode(String input) {
-    return Optional.of(URLDecoder.decode(input, StandardCharsets.UTF_8));
+    try {
+      return Optional.of(URLDecoder.decode(input, StandardCharsets.UTF_8));
+    } catch (IllegalArgumentException e) {
+      return Optional.empty();
+    }
   }
 
   @RuntimeInterop

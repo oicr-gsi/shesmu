@@ -1,0 +1,4 @@
+Version 1;
+Input test;
+
+Olive Run ok With ok = (({a = 1, b = 2} As json) As {a = integer}) == `{a = 1}` && (({1, 2, 3} As json) As {integer, integer}) == `{1, 2}`;
