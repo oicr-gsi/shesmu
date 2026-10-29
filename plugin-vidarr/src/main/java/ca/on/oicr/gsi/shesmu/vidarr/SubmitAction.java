@@ -211,9 +211,7 @@ public final class SubmitAction extends VidarrAction {
 
   @Override
   public Stream<String> tags() {
-    // TODO revert hashcode addition
-    return Stream.concat(
-        super.tags(), Stream.concat(state.tags(), Stream.of("hashCode:" + hashCode())));
+    return Stream.concat(super.tags(), state.tags());
   }
 
   @Override
