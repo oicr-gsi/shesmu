@@ -48,7 +48,7 @@ public enum AvailableCommands {
               : Response.IGNORED;
         }
       };
-  static final ActionCommand<VidarrAction> REATTEMPT = // TODO: Showing up on WAITING actions?
+  static final ActionCommand<VidarrAction> REATTEMPT =
       new ActionCommand<>(
           VidarrAction.class,
           "VIDARR-REATTEMPT",
