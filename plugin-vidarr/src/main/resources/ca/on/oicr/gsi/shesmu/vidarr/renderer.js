@@ -176,7 +176,7 @@ const vidarrStateRenderer = {
                        [
                          a.info? ["Vidarr ID", link(
                  		(a.info.completed ? a.workflowRunUrl.replace("status", "run") : a.workflowRunUrl),
-                 		a.info.id)]: ["Nothing yet", "sorry"],
+                 		a.info.id)]: null,
                        ]
                          .filter((x) => x),
                        ["Existing Workflow Information", (x) => x[0]],
