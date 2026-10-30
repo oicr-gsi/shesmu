@@ -24,7 +24,7 @@ import tools.jackson.databind.node.ObjectNode;
 public final class SubmitAction extends VidarrAction {
 
   final SubmitWorkflowRequest request = new SubmitWorkflowRequest(); // Mode is RUN by default
-  RunState state = new RunStateAttemptSubmit();
+  RunState state = new RunStateStart();
   public SubmissionPolicy submissionPolicy;
 
   public SubmitAction(
@@ -104,18 +104,6 @@ public final class SubmitAction extends VidarrAction {
   @Override
   public synchronized ActionState perform(
       ActionServices services, Duration lastGeneratedByOlive, boolean isOliveLive) {
-    // TODO don't love testing this every cycle! It will only be relevant once.
-    if (submissionPolicy == SubmissionPolicy.UPDATE && !(state instanceof RunStateUpdate)) {
-      // If state is RunStateAttemptSubmit, only switch to RunStateUpdate if we're NOT reattempting
-      if (state instanceof RunStateAttemptSubmit) {
-        if (((RunStateAttemptSubmit) state).getAttempt().getAsInt() == 0) {
-          state = new RunStateUpdate();
-        }
-      } else { // state is neither RunStateUpdate nor RunStateAttemptSubmit
-        state = new RunStateUpdate();
-      }
-    }
-
     if (stale) {
       return ActionState.ZOMBIE;
     }
@@ -212,6 +200,12 @@ public final class SubmitAction extends VidarrAction {
     // Should not break the IS_LIVE mode, because it'll get re-evaluated later in perform(),
     // and right now, it's gotta be live or it wouldn't be generating
     request.setMode(submissionPolicy.mode(Duration.ZERO, true));
+
+    if (submissionPolicy == SubmissionPolicy.UPDATE) {
+      state = new RunStateUpdate();
+    } else {
+      state = new RunStateAttemptSubmit();
+    }
   }
 
   @Override
