@@ -22,7 +22,7 @@ import tools.jackson.databind.node.ObjectNode;
 
 public class RunStateUpdate extends RunState {
   private int retryMinutes = 5;
-  public boolean unknown = true;
+  public boolean unknown = false;
 
   @Override
   public boolean search(Pattern query) {
@@ -72,12 +72,12 @@ public class RunStateUpdate extends RunState {
         {
           SubmitWorkflowResponse body = response.body().get();
           if (body instanceof SubmitWorkflowResponseSuccess) { // Keys updated, switch to RUN
-            unknown = false;
             request.setMode(SubmitMode.RUN);
             return RunStateMonitor.create(
                 vidarrUrl, ((SubmitWorkflowResponseSuccess) body).getId());
 
           } else if (body instanceof SubmitWorkflowResponseDryRun) { // Nothing done
+            unknown = true;
             return new PerformResult(
                 List.of("Vidarr doesn't know this run. You can launch it though!"),
                 ActionState.HALP,
