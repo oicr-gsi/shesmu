@@ -276,7 +276,7 @@ public final class Server implements ServerConfig, ActionServices {
 
   public final String build;
   public final Instant buildTime;
-  private final CompiledGenerator compiler;
+  public final CompiledGenerator compiler;
   private final Map<String, ConstantLoader> constantLoaders = new HashMap<>();
   private final DefinitionRepository definitionRepository;
   private volatile boolean emergencyStop;
@@ -336,7 +336,7 @@ public final class Server implements ServerConfig, ActionServices {
     server.setExecutor(wwwExecutor);
     definitionRepository = DefinitionRepository.concat(new StandardDefinitions(), pluginManager);
     processor = new ActionProcessor(localname().resolve("/alerts"), pluginManager, this);
-    compiler = new CompiledGenerator(executor, definitionRepository, processor::isPaused);
+    compiler = new CompiledGenerator(this, executor, definitionRepository, processor::isPaused);
     staticActions = new StaticActions(processor, definitionRepository);
     guidedMeditations =
         new AutoUpdatingDirectory<>(
