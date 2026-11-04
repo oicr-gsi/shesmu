@@ -1032,12 +1032,11 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
         scripts().flatMap(Script::functions),
         Stream.of(
             FunctionDefinition.staticMethod(
-                "std::olive::something_calls",
+                "compiler::something_calls",
                 CompiledGenerator.class,
                 "something_calls",
                 "Check whether an olive exists which calls the named action.",
-                "$runtime.mySpecialFunction(%s)", // TODO no. but also how are we doing this with
-                // javascript
+                null, // Not supported in the Guided Meditation language
                 Imyhat.BOOLEAN,
                 new FunctionParameter("action", Imyhat.STRING))));
   }
