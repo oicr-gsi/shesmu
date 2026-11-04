@@ -24,7 +24,7 @@ import tools.jackson.databind.node.ObjectNode;
 public final class SubmitAction extends VidarrAction {
 
   final SubmitWorkflowRequest request = new SubmitWorkflowRequest(); // Mode is RUN by default
-  RunState state = new RunStateStart();
+  RunState state = new RunStateAttemptSubmit();
   public SubmissionPolicy submissionPolicy;
 
   public SubmitAction(
@@ -203,9 +203,7 @@ public final class SubmitAction extends VidarrAction {
 
     if (submissionPolicy == SubmissionPolicy.UPDATE) {
       state = new RunStateUpdate();
-    } else {
-      state = new RunStateAttemptSubmit();
-    }
+    } // else keep the initial RunStateAttemptSubmit
   }
 
   @Override
