@@ -45,6 +45,7 @@ import java.util.function.Consumer;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Handle;
@@ -1038,16 +1039,17 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
                 "Check whether an olive exists which calls the named action.",
                 null, // Not supported in the Guided Meditation language
                 Imyhat.BOOLEAN,
-                new FunctionParameter("action", Imyhat.STRING))));
+                new FunctionParameter("Regex to match the Run line", Imyhat.STRING))));
   }
 
   @RuntimeInterop
   public static boolean something_calls(String action) {
+    Pattern regex = Pattern.compile("Run " + action);
     return owner
         .compiler
         .dashboard()
         .flatMap(p -> p.second().olives())
-        .anyMatch(o -> o.syntax().equals("Run " + action));
+        .anyMatch(o -> regex.matcher(o.syntax()).matches());
   }
 
   @Override
