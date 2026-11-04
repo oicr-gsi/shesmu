@@ -186,7 +186,7 @@ const vidarrStateRenderer = {
 };
 
 actionRender.set("vidarr-run", (a) => [
-  title(a, `${a.request.mode[0].toUpperCase() + a.request.mode.substr(1).toLowerCase()} Workflow ${a.request.workflow} (${a.request.workflowVersion})`),
+  title(a, `${a.request.mode[0].toUpperCase() + a.request.mode.substring(1).toLowerCase()} Workflow ${a.request.workflow} (${a.request.workflowVersion})`),
   table(
     [
       ["Priority", a.priority.toString()],
