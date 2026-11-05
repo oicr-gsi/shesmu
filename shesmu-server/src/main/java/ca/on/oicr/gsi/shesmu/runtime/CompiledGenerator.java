@@ -1033,9 +1033,9 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
         scripts().flatMap(Script::functions),
         Stream.of(
             FunctionDefinition.staticMethod(
-                "compiler::something_calls",
+                "compiler::any_olive_calls",
                 CompiledGenerator.class,
-                "something_calls",
+                "any_olive_calls",
                 "Check whether an olive exists which calls the named action.",
                 null, // Not supported in the Guided Meditation language
                 Imyhat.BOOLEAN,
@@ -1043,7 +1043,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
   }
 
   @RuntimeInterop
-  public static boolean something_calls(String action) {
+  public static boolean any_olive_calls(String action) {
     Pattern regex = Pattern.compile("Run " + action);
     return owner
         .compiler
