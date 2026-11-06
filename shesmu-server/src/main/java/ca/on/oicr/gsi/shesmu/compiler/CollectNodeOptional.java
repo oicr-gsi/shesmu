@@ -107,7 +107,7 @@ public abstract class CollectNodeOptional extends CollectNode {
   public final boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
     if (selector.typeCheck(errorHandler)) {
       returnType = returnType(incoming, selector.type());
-      return true;
+      return typeCheckExtra(errorHandler);
     }
     return false;
   }
