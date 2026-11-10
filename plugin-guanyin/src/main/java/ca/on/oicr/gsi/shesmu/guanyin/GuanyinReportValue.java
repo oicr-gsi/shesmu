@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.guanyin;
 
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
+import ca.on.oicr.gsi.shesmu.plugin.types.PathParser;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,7 +27,7 @@ public class GuanyinReportValue {
     filesIn =
         recordDto.getFilesIn() == null
             ? Set.of()
-            : recordDto.getFilesIn().stream().map(Paths::get).collect(Collectors.toSet());
+            : recordDto.getFilesIn().stream().map(PathParser::parse).collect(Collectors.toSet());
     finished = recordDto.isFinished();
     freshestInputDate = Optional.ofNullable(recordDto.getFreshestInputDate()).map(Instant::parse);
     generated = Optional.ofNullable(recordDto.getGenerated()).map(Instant::parse);
@@ -36,7 +36,7 @@ public class GuanyinReportValue {
     parameters = recordDto.getParameters();
     reportId = reportDto.getId();
     reportName = reportDto.getName();
-    reportPath = Optional.ofNullable(recordDto.getReportPath()).map(Paths::get);
+    reportPath = Optional.ofNullable(recordDto.getReportPath()).map(PathParser::parse);
     version = reportDto.getVersion();
   }
 

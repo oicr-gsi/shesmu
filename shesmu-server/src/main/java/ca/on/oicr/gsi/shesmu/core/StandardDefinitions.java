@@ -21,12 +21,12 @@ import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.PathParser;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import java.io.PrintStream;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.Month;
@@ -105,11 +105,11 @@ public final class StandardDefinitions implements DefinitionRepository {
   private static final Type A_JSON_SIGNATURE_TYPE = Type.getType(JsonSigner.class);
   private static final Type A_MAP_TYPE = Type.getType(Map.class);
   private static final Type A_NOTHING_ACTION_TYPE = Type.getType(NothingAction.class);
-  private static final Type A_PATHS_TYPE = Type.getType(Paths.class);
   private static final Type A_PATH_TYPE = Type.getType(Path.class);
   private static final Type A_SHA1_SIGNATURE_TYPE = Type.getType(SHA1DigestSigner.class);
   protected static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
   protected static final Type A_STRING_TYPE = Type.getType(String.class);
+  private static final Type A_PATH_PARSER_TYPE = Type.getType(PathParser.class);
   private static final Method DEFAULT_CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {});
   private static final FunctionDefinition[] FUNCTIONS =
       new FunctionDefinition[] {
@@ -459,9 +459,11 @@ public final class StandardDefinitions implements DefinitionRepository {
             "$runtime.pathNormalize(%s)",
             Imyhat.PATH,
             new FunctionParameter("input path", Imyhat.PATH)),
-        FunctionDefinition.virtualMethod(
+        // Use a helper rather than Path.relativize so mixing local and URL paths doesn't throw
+        FunctionDefinition.staticMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "relativize"),
-            "relativize",
+            RuntimeSupport.class,
+            "relativizePath",
             "Creates a new path of relativize one path as if in the directory of the other.",
             "$runtime.pathRelativize(%s, %s)",
             Imyhat.PATH,
@@ -707,11 +709,8 @@ public final class StandardDefinitions implements DefinitionRepository {
 
           @Override
           public void render(GeneratorAdapter methodGen) {
-            methodGen.push(0);
-            methodGen.newArray(A_STRING_TYPE);
             methodGen.invokeStatic(
-                A_PATHS_TYPE,
-                new Method("get", A_PATH_TYPE, new Type[] {A_STRING_TYPE, A_STRING_ARRAY_TYPE}));
+                A_PATH_PARSER_TYPE, new Method("parse", A_PATH_TYPE, new Type[] {A_STRING_TYPE}));
           }
 
           @Override

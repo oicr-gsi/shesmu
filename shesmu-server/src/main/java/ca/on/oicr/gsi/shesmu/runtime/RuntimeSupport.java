@@ -12,6 +12,8 @@ import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.PathParser;
+import ca.on.oicr.gsi.shesmu.plugin.types.UrlPath;
 import ca.on.oicr.gsi.shesmu.server.plugins.BaseInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicActionParameterDescriptor;
 import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicRefillerParameterDescriptor;
@@ -42,6 +44,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -715,9 +718,42 @@ public final class RuntimeSupport {
     return result;
   }
 
+  /**
+   * Resolve a string against a path
+   *
+   * <p>The string is parsed with {@link PathParser} so a URL string (ex. gs://) is treated the same
+   * as a URL path; {@link Path#resolve(String)} on a local path would collapse its "//".
+   */
   @RuntimeInterop
   public static Path resolvePath(Path path, String str) {
-    return path.resolve(str);
+    return resolvePath(path, PathParser.parse(str));
+  }
+
+  /**
+   * Resolve one path against another
+   *
+   * <p>A local path's {@link Path#resolve(Path)} throws if given a URL path (ex. gs://) since it
+   * can only handle paths from its own file system. A URL path is always absolute
+   */
+  @RuntimeInterop
+  public static Path resolvePath(Path path, Path other) {
+    return other instanceof UrlPath ? other : path.resolve(other);
+  }
+
+  /**
+   * Create a relative path from a directory to a target
+   *
+   * <p>A local path and a URL path (ex. gs://), or URL paths in different buckets, have no common
+   * root so no relative path exists between them {@link Path#relativize(Path)} throws and the
+   * target is returned unchanged.
+   */
+  @RuntimeInterop
+  public static Path relativizePath(Path directory, Path target) {
+    if ((directory instanceof UrlPath || target instanceof UrlPath)
+        && !Objects.equals(directory.getRoot(), target.getRoot())) {
+      return target;
+    }
+    return directory.relativize(target);
   }
 
   public static <T> Stream<T> reverse(Stream<T> input) {

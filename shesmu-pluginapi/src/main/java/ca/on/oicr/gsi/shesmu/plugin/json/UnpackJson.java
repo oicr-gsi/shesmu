@@ -6,7 +6,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.TimeFormat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
-import java.nio.file.Paths;
+import ca.on.oicr.gsi.shesmu.plugin.types.PathParser;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -153,7 +153,7 @@ public class UnpackJson implements ImyhatTransformer<Object> {
 
   @Override
   public Object path() {
-    return Paths.get(value.asString());
+    return PathParser.parse(value.asString());
   }
 
   @Override

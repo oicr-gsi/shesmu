@@ -1539,7 +1539,7 @@ public abstract class Imyhat {
 
         @Override
         public Comparator<?> comparator() {
-          return Comparator.naturalOrder();
+          return PathParser.COMPARATOR;
         }
 
         @Override
@@ -1574,7 +1574,7 @@ public abstract class Imyhat {
 
         @Override
         public Object parse(String s) {
-          return Paths.get(s);
+          return PathParser.parse(s);
         }
       };
   public static final BaseImyhat STRING =
