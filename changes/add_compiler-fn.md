@@ -1,1 +1,1 @@
-compiler::something_calls function for introspecting compiled olives
+compiler::any_olive_runs function for introspecting compiled olives
