@@ -270,7 +270,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
       return findUltimaAnalysisUnit(run, barcode, workflow)
           .flatMap(
               unit -> {
-                final var crams =
+                final List<CramAnalysisFile> crams =
                     unit.getFiles().stream()
                         .filter(CramAnalysisFile.class::isInstance)
                         .map(CramAnalysisFile.class::cast)
@@ -294,7 +294,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   private Optional<UltimaAnalysisUnit> findUltimaAnalysisUnit(
       String run, String barcode, String workflow) {
     // Get the analysis for this run. If there is no run, or no analysis for this run, return
-    final var pipelineRun = getRun(run).flatMap(RunInformation::pipelineRun);
+    final Optional<PipelineRun> pipelineRun = getRun(run).flatMap(RunInformation::pipelineRun);
     if (pipelineRun.isEmpty()) return Optional.empty();
 
     final UltimaWorkflowRun workflowRun = ((UltimaPipelineRun) pipelineRun.get()).get(workflow);
