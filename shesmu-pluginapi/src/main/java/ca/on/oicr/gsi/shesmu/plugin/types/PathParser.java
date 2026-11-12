@@ -11,6 +11,10 @@ import java.util.regex.Pattern;
  * <p>Paths with a scheme become {@link UrlPath}, since the default file system would collapse the
  * "//" after the scheme. Local paths (without a scheme) are left as ordinary paths on the default
  * file system, so they are not given a file:// prefix.
+ *
+ * <p>Plugins must use {@link #parse(String)} instead of {@link Paths#get(String, String...)} or
+ * {@link Path#of(String, String...)} whenever they create a Shesmu <code>path</code> value from a
+ * string.
  */
 public final class PathParser {
   /**
