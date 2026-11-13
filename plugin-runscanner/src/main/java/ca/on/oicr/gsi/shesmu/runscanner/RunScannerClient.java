@@ -260,14 +260,12 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
 
   @ShesmuMethod(
       description =
-          "Get the read count of the CRAM file produced by an Ultima workflow for a barcode, as detected by the Run Scanner defined in {file}. Empty if there is no CRAM file or its read count is not known.")
+          "Get the read count of the CRAM file produced by the Ultima CRAMGeneration workflow for a barcode, as detected by the Run Scanner defined in {file}. Empty if there is no CRAM file or its read count is not known.")
   public Optional<Long> ultima_cram_read_count(
       @ShesmuParameter(description = "name of run") String run,
-      @ShesmuParameter(description = "barcode, formatted like ATCGATCGATCGATCG") String barcode,
-      @ShesmuParameter(description = "workflow name, one of: CRAMGeneration, EmSeq")
-          String workflow) {
+      @ShesmuParameter(description = "barcode, formatted like ATCGATCGATCGATCG") String barcode) {
     try {
-      return findUltimaAnalysisUnit(run, barcode, workflow)
+      return findUltimaAnalysisUnit(run, barcode, "CRAMGeneration")
           .flatMap(
               unit -> {
                 final List<CramAnalysisFile> crams =
