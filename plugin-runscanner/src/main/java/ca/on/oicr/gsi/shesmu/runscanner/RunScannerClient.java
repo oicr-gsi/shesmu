@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.runscanner.dto.dragen.DragenAnalysisUnit;
 import ca.on.oicr.gsi.runscanner.dto.dragen.DragenPipelineRun;
 import ca.on.oicr.gsi.runscanner.dto.dragen.DragenWorkflowRun;
 import ca.on.oicr.gsi.runscanner.dto.type.IlluminaChemistry;
+import ca.on.oicr.gsi.runscanner.dto.ultima.CramAnalysisFile;
 import ca.on.oicr.gsi.runscanner.dto.ultima.UltimaAnalysisUnit;
 import ca.on.oicr.gsi.runscanner.dto.ultima.UltimaPipelineRun;
 import ca.on.oicr.gsi.runscanner.dto.ultima.UltimaWorkflowRun;
