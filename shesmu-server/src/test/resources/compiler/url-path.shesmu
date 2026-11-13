@@ -1,0 +1,11 @@
+Version 1;
+Input test;
+
+Olive
+  Run ok
+    With
+      ok = 'gs://bucket/a/b.bam' + "c" == std::string::to_path("gs://bucket/a/b.bam/c")
+        && '/scratch' + 'gs://bucket/a' == 'gs://bucket/a'
+        && '/scratch' + "s3://bucket/a" == 's3://bucket/a'
+        && std::path::relativize('/scratch', 'gs://bucket/a') == 'gs://bucket/a'
+        && std::path::dir('gs://bucket/a/b.bam') == 'gs://bucket/a';

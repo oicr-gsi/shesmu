@@ -12,6 +12,11 @@ import java.lang.annotation.Target;
  * {@link InputFormat}
  *
  * <p>The name of the method must be a valid Shesmu identifier
+ *
+ * <p>If the method returns a path (or a value containing paths) built from a string, the path must
+ * be created with {@link ca.on.oicr.gsi.shesmu.plugin.types.PathParser#parse(String)} rather than
+ * {@link java.nio.file.Paths#get(String, String...)} or {@link java.nio.file.Path#of(String,
+ * String...)}
  */
 @Retention(RUNTIME)
 @Target(METHOD)

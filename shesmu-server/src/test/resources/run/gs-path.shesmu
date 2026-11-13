@@ -1,0 +1,18 @@
+Version 1;
+Input test;
+
+Olive Run ok With ok = Begin
+  literal = 'gs://bucket/a/b.bam';
+  converted = std::string::to_path("gs://bucket/a/b.bam");
+  parent = std::path::dir(literal);
+  child = literal + "c";
+  Return "{literal}" == "gs://bucket/a/b.bam" && literal == converted
+    && "{parent}" == "gs://bucket/a" && "{child}" == "gs://bucket/a/b.bam/c"
+    && '/scratch' + literal == literal && literal + 'c' == child
+    && '/scratch' + "gs://bucket/a/b.bam" == literal && '/a' + "b" == '/a/b'
+    && std::path::relativize('/scratch', literal) == literal
+    && std::path::relativize(literal, '/scratch') == '/scratch'
+    && std::path::relativize('gs://other/a', literal) == literal
+    && std::path::relativize(parent, literal) == 'b.bam'
+    && std::path::relativize('/a', '/a/b') == 'b' && '/a' + 'b' == '/a/b';
+  End;

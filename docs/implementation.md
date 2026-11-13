@@ -82,6 +82,7 @@ olives cannot handle null values. If you need nullable values, use
 | String     | `java.lang.String`                         | `string`                 | `s`        |
 | Boolean    | `boolean` / `z`                            | `boolean`                | `b`        |
 | Date       | `java.time.Instant`                        | `date`                   | `d`        |
+| Path       | `java.nio.file.Path`                       | `path`                   | `p`        |
 | JSON       | `tools.jackson.databind.JsonNode`  | `json`                   | `j`        |
 | List       | `java.lang.Set`                            | `[`_inner_`]`            | `a`_inner_ |
 | Empty List | `java.lang.Set`                            | `[]`                     | `A`        |
@@ -109,11 +110,30 @@ necessary to convert a JSON document back into an interpretable format.
 | String    | string                             |
 | Boolean   | boolean                            |
 | Date      | number of milliseconds since epoch |
+| Path      | string                             |
 | List      | array                              |
 | Tuple     | array                              |
 | Object    | object                             |
 | Algebraic | object; see [Algebraic Values without Algebra](algebraicguide.md) |
 | Dict      | object (if key is a string) or array of arrays containing key-value pairs |
+
+<a name="paths"></a>
+### Paths
+A `path` may be a local path (_e.g._, `/data/run1/file.bam`) or a URL with a
+scheme (_e.g._, `gs://bucket/file.bam`). Java's default file system collapses
+the `//` after the scheme, so `Paths.get("gs://bucket/file.bam")` or
+`Path.of(...)` silently produces `gs:/bucket/file.bam`
+
+Whenever a plugin converts a string into a `path` value (_e.g._, for an input
+format variable, a function's return value, or a constant), it must use
+[`PathParser.parse`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/types/PathParser.html)
+instead of `Paths.get` or `Path.of`. Local paths are returned as ordinary
+`Path` objects (with no scheme or `file://` prefix), and URLs keep their scheme and
+bucket. Paths a plugin receives from olives, such as action parameters, have
+already been parsed and can be used as-is. If paths are stored in a sorted
+collection, use `PathParser.COMPARATOR`, since local and URL paths cannot be
+compared to each other directly.
+`Paths.get` and `Path.of` remain appropriate for paths that can never be URLs.
 
 ## Writing an Input Format Plugin
 Creating a new source format is meant to be easy, but convoluted in order to be
@@ -126,8 +146,9 @@ method names must be valid Shesmu names (lowercase with underscores) and
 decorated with
 [`@ShesmuVariable`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/input/ShesmuVariable.html)
 annotations with the correct type descriptor. All methods must return
-`boolean`, `long`, `String`, `Instant`, `Set`, or `Tuple` (and `Set` and
-`Tuple` may only contain more of the same).
+`boolean`, `long`, `String`, `Instant`, `Path`, `Set`, or `Tuple` (and `Set` and
+`Tuple` may only contain more of the same). Create `Path` values from strings
+using `PathParser.parse`; see [Paths](#paths).
 1. Create a new _F_ class that extends
 [`InputFormat<`_V_`>`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/input/InputFormat.html)
 and provides the types to the constructor as well as a name that will be used

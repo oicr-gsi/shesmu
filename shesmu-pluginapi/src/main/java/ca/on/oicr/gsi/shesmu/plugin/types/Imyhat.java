@@ -1519,6 +1519,14 @@ public abstract class Imyhat {
           return other.unify(this);
         }
       };
+
+  /**
+   * The path type, backed by {@link Path}
+   *
+   * <p>Values may be local paths or URL paths (ex. gs://bucket/file). Paths created from strings
+   * must use {@link PathParser#parse(String)} rather than {@link Paths#get(String, String...)} or
+   * {@link Path#of(String, String...)}, which would mangle URL paths.
+   */
   public static final BaseImyhat PATH =
       new BaseImyhat() {
 
@@ -1539,7 +1547,7 @@ public abstract class Imyhat {
 
         @Override
         public Comparator<?> comparator() {
-          return Comparator.naturalOrder();
+          return PathParser.COMPARATOR;
         }
 
         @Override
@@ -1574,9 +1582,10 @@ public abstract class Imyhat {
 
         @Override
         public Object parse(String s) {
-          return Paths.get(s);
+          return PathParser.parse(s);
         }
       };
+
   public static final BaseImyhat STRING =
       new BaseImyhat() {
         @Override

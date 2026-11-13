@@ -2,9 +2,9 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.PathParser;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -14,14 +14,9 @@ import tools.jackson.core.JacksonException;
 
 public class ExpressionNodePathLiteral extends ExpressionNode {
   private final String path;
-  private static final Type A_RUNTIME_SUPPORT = Type.getType(RuntimeSupport.class);
-  private static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
-  private static final Type A_PATHS_TYPE = Type.getType(Paths.class);
-  private static final Method METHOD_PATHS__GET =
-      new Method(
-          "get",
-          Type.getType(Path.class),
-          new Type[] {Type.getType(String.class), A_STRING_ARRAY_TYPE});
+  private static final Type A_PATH_PARSER_TYPE = Type.getType(PathParser.class);
+  private static final Method METHOD_PATH_PARSER__PARSE =
+      new Method("parse", Type.getType(Path.class), new Type[] {Type.getType(String.class)});
 
   public ExpressionNodePathLiteral(int line, int column, String path) {
     super(line, column);
@@ -50,8 +45,7 @@ public class ExpressionNodePathLiteral extends ExpressionNode {
   @Override
   public void render(Renderer renderer) {
     renderer.methodGen().push(path);
-    renderer.methodGen().getStatic(A_RUNTIME_SUPPORT, "EMPTY", A_STRING_ARRAY_TYPE);
-    renderer.methodGen().invokeStatic(A_PATHS_TYPE, METHOD_PATHS__GET);
+    renderer.methodGen().invokeStatic(A_PATH_PARSER_TYPE, METHOD_PATH_PARSER__PARSE);
   }
 
   @Override

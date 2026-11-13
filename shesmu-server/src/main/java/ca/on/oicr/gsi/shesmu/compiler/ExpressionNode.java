@@ -608,8 +608,15 @@ public abstract class ExpressionNode implements Renderable {
             BinaryOperation.primitiveMathUpgrading(GeneratorAdapter.ADD),
             BinaryOperation.virtualMethod(
                 Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "plusSeconds", "datePlusSeconds"),
-            BinaryOperation.virtualMethod(
-                Imyhat.PATH, Imyhat.PATH, Imyhat.PATH, "resolve", "pathResolve"),
+            // Use a helper rather than Path.resolve so a local path can be joined with a URL path
+            // (seems wrong but we allowed it before)
+            BinaryOperation.staticMethod(
+                Imyhat.PATH,
+                Imyhat.PATH,
+                Imyhat.PATH,
+                A_RUNTIME_SUPPORT_TYPE,
+                "resolvePath",
+                "pathResolve"),
             BinaryOperation::stringConcat,
             BinaryOperation.staticMethod(
                 Imyhat.PATH,
