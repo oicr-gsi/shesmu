@@ -23,9 +23,9 @@ import tools.jackson.databind.node.ObjectNode;
 
 public final class SubmitAction extends VidarrAction {
 
-  final SubmitWorkflowRequest request = new SubmitWorkflowRequest();
+  final SubmitWorkflowRequest request = new SubmitWorkflowRequest(); // Mode is RUN by default
   RunState state = new RunStateAttemptSubmit();
-  private SubmissionPolicy submissionPolicy;
+  public SubmissionPolicy submissionPolicy;
 
   public SubmitAction(
       Supplier<VidarrPlugin> owner,
@@ -62,7 +62,7 @@ public final class SubmitAction extends VidarrAction {
       return false;
     }
     SubmitAction that = (SubmitAction) o;
-    return stale == that.stale && request.equalsIgnoreAttempt(that.request);
+    return stale == that.stale && request.equalsIgnoreAttemptAndMode(that.request);
   }
 
   @SuppressWarnings("unchecked")
@@ -99,7 +99,7 @@ public final class SubmitAction extends VidarrAction {
 
   @Override
   public int hashCode() {
-    return request.hashCodeIgnoreAttempt() * 31 + Boolean.hashCode(stale);
+    return request.hashCodeIgnoreAttemptAndMode() * 31 + Boolean.hashCode(stale);
   }
 
   @Override
@@ -186,7 +186,7 @@ public final class SubmitAction extends VidarrAction {
   @ActionParameter(
       name = "submission_policy",
       required = false,
-      type = "u4ALWAYS$t0DRY_RUN$t0IS_LIVE$t0MAX_DELAY$t1i")
+      type = "u5ALWAYS$t0DRY_RUN$t0IS_LIVE$t0MAX_DELAY$t1iUPDATE$t0")
   public void submissionPolicy(AlgebraicValue policy) {
     submissionPolicy =
         switch (policy.name()) {
@@ -194,12 +194,17 @@ public final class SubmitAction extends VidarrAction {
           case "DRY_RUN" -> SubmissionPolicy.DRY_RUN;
           case "IS_LIVE" -> SubmissionPolicy.IS_LIVE;
           case "MAX_DELAY" -> SubmissionPolicy.maxDelay((Long) policy.get(0));
+          case "UPDATE" -> SubmissionPolicy.UPDATE;
           default -> throw new IllegalStateException("Unexpected value: " + policy.name());
         };
 
     // Should not break the IS_LIVE mode, because it'll get re-evaluated later in perform(),
     // and right now, it's gotta be live or it wouldn't be generating
     request.setMode(submissionPolicy.mode(Duration.ZERO, true));
+
+    if (submissionPolicy == SubmissionPolicy.UPDATE) {
+      state = new RunStateUpdate();
+    } // else keep the initial RunStateAttemptSubmit
   }
 
   @Override
