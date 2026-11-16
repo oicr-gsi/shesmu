@@ -1,0 +1,9 @@
+Version 1;
+Input test;
+
+Olive
+ Let project, stuff
+ LeftIntersectionJoin stuff To Prefix fp_ inner_test [fp_s]
+    sigs = List std::signature::sha1
+ Where Count sigs > 0
+ Run std::nothing With value = project;
