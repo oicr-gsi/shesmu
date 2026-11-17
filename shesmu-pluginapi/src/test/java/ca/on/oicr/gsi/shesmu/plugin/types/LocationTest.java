@@ -43,6 +43,13 @@ public class LocationTest {
   }
 
   @Test
+  public void testFormat() {
+    Assertions.assertEquals("/data/a/b.bam", Location.format(Location.parse("/data/a/b.bam")));
+    Assertions.assertEquals(
+        "gs://bucket/a/b.bam", Location.format(Location.parse("gs://bucket/a/b.bam")));
+  }
+
+  @Test
   public void testUnescaped() {
     final AlgebraicValue value = Location.parse("gs://bucket/a b.bam");
     assertUri("gs://bucket/a%20b.bam", value);

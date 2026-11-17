@@ -57,6 +57,19 @@ public final class Location {
   }
 
   /**
+   * Convert a location back to a string
+   *
+   * <p>This is the inverse of {@link #parse(String)}: local paths are returned as-is and URIs keep
+   * their scheme (ex. gs://bucket/file)
+   *
+   * @param location a <code>PATH{path} | URI{uri}</code> value
+   * @return the string form of the path or URI
+   */
+  public static String format(AlgebraicValue location) {
+    return location.get(0).toString();
+  }
+
+  /**
    * Create a local location
    *
    * @param path the local path

@@ -1,6 +1,8 @@
 package ca.on.oicr.gsi.shesmu.guanyin;
 
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
+import ca.on.oicr.gsi.shesmu.plugin.types.Location;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -15,6 +17,7 @@ public class GuanyinReportValue {
   private final Optional<Instant> freshestInputDate;
   private final Optional<Instant> generated;
   private final long id;
+  private final Set<AlgebraicValue> locationsIn;
   private final boolean notificationDone;
   private final JsonNode parameters;
   private final long reportId;
@@ -32,6 +35,10 @@ public class GuanyinReportValue {
     freshestInputDate = Optional.ofNullable(recordDto.getFreshestInputDate()).map(Instant::parse);
     generated = Optional.ofNullable(recordDto.getGenerated()).map(Instant::parse);
     id = recordDto.getId();
+    locationsIn =
+        recordDto.getFilesIn() == null
+            ? Set.of()
+            : recordDto.getFilesIn().stream().map(Location::parse).collect(Collectors.toSet());
     notificationDone = recordDto.isNotificationDone();
     parameters = recordDto.getParameters();
     reportId = reportDto.getId();
@@ -45,6 +52,12 @@ public class GuanyinReportValue {
     return category;
   }
 
+  /**
+   * The paths of the report's input files
+   *
+   * <p>This is only meaningful for local files; remote files (ex. gs://bucket/file) cannot be
+   * represented as paths, so use {@link #locations_in()} instead.
+   */
   @ShesmuVariable
   public Set<Path> files_in() {
     return filesIn;
@@ -63,6 +76,17 @@ public class GuanyinReportValue {
   @ShesmuVariable
   public boolean is_finished() {
     return finished;
+  }
+
+  /**
+   * The locations of the report's input files
+   *
+   * <p>Files may be stored locally or remotely (ex. gs://bucket/file), so each is <code>
+   * PATH{path} | URI{uri}</code>
+   */
+  @ShesmuVariable(type = "a" + Location.DESCRIPTOR)
+  public Set<AlgebraicValue> locations_in() {
+    return locationsIn;
   }
 
   @ShesmuVariable

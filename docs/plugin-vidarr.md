@@ -32,7 +32,9 @@ If this field is not provided, Shesmu will by default build all actions and
 caches for this Vidarr instance.
 
 The Vidarr plugin provides an input format: `vidarr_analysis` which provides the analysis
-provenance data. To use this input format add the fields to the configuration file as follows:
+provenance data. Each file in `output_files` has both a `path` and a
+`location`; use `location` for files that may be remote (_e.g._,
+`gs://bucket/file`). To use this input format add the fields to the configuration file as follows:
 
       "analysisTypes": ["FILE"],
       "versionTypes": []
@@ -57,6 +59,17 @@ For every target and workflow version, the plugin defines these actions:
   Vidarr (via `/api/import`). An import is a load followed by a reprovision:
   the workflow run is loaded, then its files are reprovisioned with an output
   provisioner (`output_provisioner` and `new_output_dir`).
+
+The load and import actions send each file in `analysis` to Vidarr using its
+`path`. Remote files (_e.g._, `gs://bucket/file`) cannot be represented as
+paths, so the optional `analysis_locations` parameter, a dictionary from a
+file's `path` to its `location` (`PATH{path} | URI{uri}`), replaces the path
+sent for any file it contains. For example, when building `analysis` from
+`vidarr_analysis` or `cerberus_fp` records, also set:
+
+    analysis_locations = For f In output_files: Dict f.path = f.location
+
+Files that are not in the dictionary are sent with their `path`, as before.
 
 For more information on loading and importing, see the
 [Vidarr load/unload documentation](https://github.com/oicr-gsi/vidarr/blob/master/load-unload.md).
