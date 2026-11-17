@@ -12,6 +12,7 @@ import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Location;
 import ca.on.oicr.gsi.shesmu.server.plugins.BaseInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicActionParameterDescriptor;
 import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicRefillerParameterDescriptor;
@@ -792,6 +793,20 @@ public final class RuntimeSupport {
   @RuntimeInterop
   public static <T> Optional<T> unnest(Optional<Optional<T>> input) {
     return input.orElse(Optional.empty());
+  }
+
+  /**
+   * Convert a string to a local path or a URI
+   *
+   * @see Location#parse(String)
+   */
+  @RuntimeInterop
+  public static Optional<AlgebraicValue> stringToPathOrUri(String input) {
+    try {
+      return Optional.of(Location.parse(input));
+    } catch (IllegalArgumentException e) {
+      return Optional.empty();
+    }
   }
 
   /**

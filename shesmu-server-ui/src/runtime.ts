@@ -232,6 +232,23 @@ export function pathEndsWith(check: string, suffix: string): boolean {
   }
   return true;
 }
+export function stringToPathOrUri(
+  input: string
+): { type: string; contents: string[] } | null {
+  const match = input.match(/^([A-Za-z][A-Za-z0-9+.-]*):\/\/([^/?#]*)(.*)$/);
+  if (!match) {
+    return { type: "PATH", contents: [input] };
+  }
+  if (match[1].toLowerCase() == "file") {
+    return { type: "PATH", contents: [decodeURI(match[3])] };
+  }
+  try {
+    new URL(input);
+    return { type: "URI", contents: [input] };
+  } catch (e) {
+    return null;
+  }
+}
 function uriParts(uri: string): URL | null {
   try {
     return new URL(uri);

@@ -1,0 +1,1 @@
+The `vidarr_analysis` `output_files` object type has a new `location` field. Olives that write out this object type by hand (_e.g._, in a `Function` parameter) must add `location = PATH{path} | URI{uri}`; olives that only access its fields are unaffected.

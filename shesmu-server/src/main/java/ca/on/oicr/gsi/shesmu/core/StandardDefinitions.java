@@ -21,6 +21,7 @@ import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Location;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.status.ConfigurationSection;
@@ -578,6 +579,14 @@ public final class StandardDefinitions implements DefinitionRepository {
             "$runtime.jsonParse(%s)",
             Imyhat.JSON.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "to_path_or_uri"),
+            RuntimeSupport.class,
+            "stringToPathOrUri",
+            "Converts a string to a local path or a URI. Strings with a scheme (e.g., gs://bucket/file) become URIs, except file:// which becomes a path; everything else becomes a path. Empty if the string has a scheme but cannot be made into a valid URI.",
+            "$runtime.stringToPathOrUri(%s)",
+            Location.TYPE.asOptional(),
+            new FunctionParameter("input to convert", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "uri", "from_path"),
             RuntimeSupport.class,
