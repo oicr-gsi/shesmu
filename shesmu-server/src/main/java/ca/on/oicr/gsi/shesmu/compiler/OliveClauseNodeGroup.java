@@ -215,10 +215,14 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
             && children.stream()
                 .noneMatch(
                     group -> {
-                      final var isDuplicate =
-                          defs.get(group.name())
-                              .filter(variable -> !variable.flavour().isStream())
-                              .isPresent();
+                      // Search the defined names directly rather than using get(), which would
+                      // let a wildcard destructuring (*) claim the collector's name as a field
+                      final boolean isDuplicate =
+                          defs.stream()
+                              .anyMatch(
+                                  variable ->
+                                      variable.name().equals(group.name())
+                                          && !variable.flavour().isStream());
                       if (isDuplicate) {
                         errorHandler.accept(
                             String.format(
