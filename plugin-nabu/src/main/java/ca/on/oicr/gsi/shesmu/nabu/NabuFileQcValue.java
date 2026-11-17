@@ -36,8 +36,10 @@ public class NabuFileQcValue {
     this.fileqc_id = fileqc_id;
     this.comment = comment;
     this.file_id = file_id;
-    this.file_location = Location.parse(file_path);
-    this.file_path = Path.of(file_path);
+    // Nabu may return a record without a file path; leave it null (as Jackson did when this was a
+    // Path) rather than failing to load every record
+    this.file_location = file_path == null ? null : Location.parseOrPath(file_path);
+    this.file_path = file_path == null ? null : Path.of(file_path);
     this.file_swid = file_swid;
     this.project = project;
     this.qc_date = qc_date;

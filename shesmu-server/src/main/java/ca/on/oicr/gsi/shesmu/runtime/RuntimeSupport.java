@@ -813,15 +813,14 @@ public final class RuntimeSupport {
    * Convert a local path to a URI
    *
    * <p>Absolute paths become file:// URIs; relative paths become relative URI references, rather
-   * than being resolved against the server's working directory
+   * than being resolved against the server's working directory. This does not use {@link
+   * Path#toUri()}, which checks the file system and adds a trailing slash to existing directories.
    */
   @RuntimeInterop
   public static URI uriFromPath(Path path) {
-    if (path.isAbsolute()) {
-      return path.toUri();
-    }
+    final String escaped = Location.escapePath(path.toString());
     try {
-      return new URI(null, null, path.toString(), null);
+      return new URI(path.isAbsolute() ? "file://" + escaped : escaped);
     } catch (URISyntaxException e) {
       throw new IllegalArgumentException(e);
     }

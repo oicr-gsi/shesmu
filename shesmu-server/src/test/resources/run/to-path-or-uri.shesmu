@@ -1,0 +1,13 @@
+Version 1;
+Input test;
+
+Olive Run ok With ok =
+  std::string::to_path_or_uri("gs://bucket/a/b.bam") == `URI {std::uri::parse("gs://bucket/a/b.bam")?}`
+  && std::string::to_path_or_uri("gs://bucket/a b.bam") == `URI {std::uri::parse("gs://bucket/a%20b.bam")?}`
+  && std::string::to_path_or_uri("/data/a/b.bam") == `PATH {'/data/a/b.bam'}`
+  && std::string::to_path_or_uri("file:///data/a/b.bam") == `PATH {'/data/a/b.bam'}`
+  && std::string::to_path_or_uri("relative/x") == `PATH {'relative/x'}`
+  && std::string::to_path_or_uri("gs://bucket/a#1.bam") == `URI {std::uri::parse("gs://bucket/a%231.bam")?}`
+  && std::string::to_path_or_uri("gs://bucket/a%20b") == `URI {std::uri::parse("gs://bucket/a%2520b")?}`
+  && `std::uri::from_path('/tmp')` == std::uri::parse("file:///tmp")
+  && `std::uri::from_path('a:b/c')` == std::uri::parse("a%3Ab/c");

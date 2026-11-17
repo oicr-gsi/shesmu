@@ -38,7 +38,9 @@ public class GuanyinReportValue {
     locationsIn =
         recordDto.getFilesIn() == null
             ? Set.of()
-            : recordDto.getFilesIn().stream().map(Location::parse).collect(Collectors.toSet());
+            : recordDto.getFilesIn().stream()
+                .map(Location::parseOrPath)
+                .collect(Collectors.toSet());
     notificationDone = recordDto.isNotificationDone();
     parameters = recordDto.getParameters();
     reportId = reportDto.getId();

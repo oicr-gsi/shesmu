@@ -126,7 +126,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                               ca.getInstanceName(), analysisRecord.getId()),
                                           // Must match the alphabetical field order of the
                                           // output_files type in VidarrAnalysisValue
-                                          Location.parse(analysisRecord.getPath()),
+                                          Location.parseOrPath(analysisRecord.getPath()),
                                           analysisRecord.getMetatype(),
                                           Path.of(analysisRecord.getPath())))
                               .collect(Collectors.toSet()),

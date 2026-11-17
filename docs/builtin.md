@@ -33,7 +33,7 @@ These functions are available on any instance:
 - `std::path::replace_home`: Replace any path that starts with `$HOME` or `~` with the provided home directory.
 - `std::string::eq`: Compares two strings ignoring case.
 - `std::string::lower`: Convert a string to lower case.
-- `std::string::to_path_or_uri`: Converts a string to `PATH{path} | URI{uri}`. Strings with a scheme (_e.g._, `gs://bucket/file`) become `URI`, except `file://` which becomes `PATH`; everything else becomes `PATH`. Empty if the string has a scheme but cannot be made into a valid URI.
+- `std::string::to_path_or_uri`: Converts a string to `PATH{path} | URI{uri}`. Strings with a scheme (_e.g._, `gs://bucket/file`) become `URI`, except `file://` which becomes `PATH`; everything else becomes `PATH`. Everything after the host is taken literally, as a file or object name: characters such as spaces, `%`, `?`, and `#` are escaped rather than interpreted, so `gs://bucket/a#1.bam` names the object `a#1.bam`. Empty if the string has a scheme but cannot be made into a valid URI.
 - `std::string::trim`: Remove white space from a string.
 - `std::string::upper`: Convert a string to upper case.
 - `std::uri::from_path`: Converts a path to a URI. Absolute paths become `file://` URIs; relative paths become relative URIs.
