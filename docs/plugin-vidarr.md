@@ -65,9 +65,13 @@ The load and import actions send each file in `analysis` to Vidarr using its
 paths, so the optional `analysis_locations` parameter, a dictionary from a
 file's `path` to its `location` (`PATH{path} | URI{uri}`), replaces the path
 sent for any file it contains. For example, when building `analysis` from
-`vidarr_analysis` or `cerberus_fp` records, also set:
+`vidarr_analysis` records, also set:
 
     analysis_locations = For f In output_files: Dict f.path = f.location
+
+When grouping `cerberus_fp` records, collect it the same way:
+
+    analysis_locations = Dict path = location
 
 Files that are not in the dictionary are sent with their `path`, as before.
 

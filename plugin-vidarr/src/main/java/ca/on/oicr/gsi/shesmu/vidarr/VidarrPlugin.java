@@ -109,26 +109,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                           : ca.getAnalysis().stream()
                               .map(
                                   analysisRecord ->
-                                      new Tuple(
-                                          analysisRecord.getChecksum(),
-                                          analysisRecord.getChecksumType(),
-                                          analysisRecord.getExternalKeys().stream()
-                                              .map(
-                                                  externalId ->
-                                                      new Tuple(
-                                                          externalId.getId(),
-                                                          externalId.getProvider()))
-                                              .collect(Collectors.toSet()),
-                                          analysisRecord.getLabels(),
-                                          analysisRecord.getSize(),
-                                          String.format(
-                                              "vidarr:%s/file/%s",
-                                              ca.getInstanceName(), analysisRecord.getId()),
-                                          // Must match the alphabetical field order of the
-                                          // output_files type in VidarrAnalysisValue
-                                          Location.parseOrPath(analysisRecord.getPath()),
-                                          analysisRecord.getMetatype(),
-                                          Path.of(analysisRecord.getPath())))
+                                      outputFile(ca.getInstanceName(), analysisRecord))
                               .collect(Collectors.toSet()),
                       ca.getExternalKeys().stream()
                           .map(
@@ -232,6 +213,26 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
       }
       return Optional.empty();
     }
+  }
+
+  /** Create an entry in the output_files of a vidarr_analysis record */
+  private static Tuple outputFile(
+      String instanceName, ProvenanceAnalysisRecord<ExternalId> analysisRecord) {
+    final Path path = Path.of(analysisRecord.getPath());
+    return new Tuple(
+        analysisRecord.getChecksum(),
+        analysisRecord.getChecksumType(),
+        analysisRecord.getExternalKeys().stream()
+            .map(externalId -> new Tuple(externalId.getId(), externalId.getProvider()))
+            .collect(Collectors.toSet()),
+        analysisRecord.getLabels(),
+        analysisRecord.getSize(),
+        String.format("vidarr:%s/file/%s", instanceName, analysisRecord.getId()),
+        // Must match the alphabetical field order of the output_files type in
+        // VidarrAnalysisValue. Local files share the path, to avoid storing it twice.
+        Location.parseOrPath(analysisRecord.getPath(), path),
+        analysisRecord.getMetatype(),
+        path);
   }
 
   private static final Imyhat EXTERNAL_KEY_TYPE =

@@ -11,7 +11,7 @@ public class NabuFileQcValue {
 
   private final Optional<String> comment;
   private final String file_id;
-  private final AlgebraicValue file_location;
+  private final Optional<AlgebraicValue> file_location;
   private final Path file_path;
   private final Optional<String> file_swid;
   private final long fileqc_id;
@@ -36,10 +36,15 @@ public class NabuFileQcValue {
     this.fileqc_id = fileqc_id;
     this.comment = comment;
     this.file_id = file_id;
-    // Nabu may return a record without a file path; leave it null (as Jackson did when this was a
-    // Path) rather than failing to load every record
-    this.file_location = file_path == null ? null : Location.parseOrPath(file_path);
-    this.file_path = file_path == null ? null : Path.of(file_path);
+    // Nabu may return a record without a file path; leave the path null (as Jackson did when this
+    // was a Path) rather than failing to load every record
+    this.file_location = Optional.ofNullable(file_path).map(Location::parseOrPath);
+    // A local file URI (ex. file:///data/a.bam) becomes the path it names, as Jackson did when this
+    // was a Path; a remote file cannot be a path, so it gets Path.of's best effort
+    this.file_path =
+        file_location
+            .map(location -> location.get(0) instanceof Path path ? path : Path.of(file_path))
+            .orElse(null);
     this.file_swid = file_swid;
     this.project = project;
     this.qc_date = qc_date;
@@ -62,10 +67,10 @@ public class NabuFileQcValue {
    * The file's location
    *
    * <p>Files may be stored locally or remotely (ex. gs://bucket/file), so this is <code>
-   * PATH{path} | URI{uri}</code>
+   * PATH{path} | URI{uri}</code>. Nabu may return a record without a file, so this is optional.
    */
-  @ShesmuVariable(type = Location.DESCRIPTOR)
-  public AlgebraicValue file_location() {
+  @ShesmuVariable(type = "q" + Location.DESCRIPTOR)
+  public Optional<AlgebraicValue> file_location() {
     return file_location;
   }
 

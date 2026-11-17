@@ -28,6 +28,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -826,9 +827,14 @@ public final class RuntimeSupport {
     }
   }
 
+  /**
+   * Get the host of a URI, without any user information or port
+   *
+   * @see Location#host(URI)
+   */
   @RuntimeInterop
   public static Optional<String> uriHost(URI uri) {
-    return Optional.ofNullable(uri.getAuthority());
+    return Location.host(uri);
   }
 
   @RuntimeInterop
@@ -843,7 +849,15 @@ public final class RuntimeSupport {
   @RuntimeInterop
   public static Optional<Path> uriPath(URI uri) {
     final String path = uri.getPath();
-    return path == null || path.isEmpty() ? Optional.empty() : Optional.of(Path.of(path));
+    if (path == null || path.isEmpty()) {
+      return Optional.empty();
+    }
+    try {
+      return Optional.of(Path.of(path));
+    } catch (InvalidPathException e) {
+      // The decoded path may contain characters a path cannot (ex. %00)
+      return Optional.empty();
+    }
   }
 
   @RuntimeInterop

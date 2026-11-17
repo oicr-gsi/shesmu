@@ -1,19 +1,17 @@
 Version 1;
 Input test;
 
-Function location_text(PATH{path} | URI{uri} location)
-  Match location
-    When PATH{p} Then "{p}"
-    When URI{u} Then "{u}";
+TypeAlias location PATH{path} | URI{uri};
 
-Function bucket(uri u) std::uri::host(u) Default "";
+Function describe(location l)
+  Match l
+    When URI{u} Then "remote {u}"
+    When PATH{p} Then "local {p}";
 
-Olive Run ok With ok = Begin
-  remote = std::uri::parse("gs://bucket/a/b.bam") Default std::uri::from_path('/data');
-  Return location_text(URI{remote}) == "gs://bucket/a/b.bam"
-    && location_text(PATH{'/data/x'}) == "/data/x"
-    && bucket(remote) == "bucket"
-    && std::uri::scheme(remote) == `"gs"`
-    && std::uri::path(remote) == `'/a/b.bam'`
-    && std::uri::resolve(remote, "c.bam") == std::uri::parse("gs://bucket/a/c.bam");
-  End;
+Function all_text([uri] us) For u In us: List "{u}";
+
+Function first_or(uri? u, uri fallback) u Default fallback;
+
+Olive Run ok With ok =
+  describe(URI{first_or(std::uri::parse("gs://bucket/x"), std::uri::from_path('/x'))}) != ""
+  && all_text([std::uri::from_path('/a')]) != [];

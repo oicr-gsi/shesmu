@@ -1634,7 +1634,8 @@ public abstract class Imyhat {
 
         @Override
         public Object parse(String s) {
-          return java.net.URI.create(s);
+          // Don't fail on a malformed value; see Location.parseUriLeniently
+          return Location.parseUriLeniently(s);
         }
       };
 

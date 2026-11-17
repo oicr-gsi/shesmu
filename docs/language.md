@@ -833,6 +833,7 @@ Adds two values.
 | `string` | `float`  | `string` | Concatenate a string and a floating-point value by first converting it |
 | `string` | `date`   | `string` | Concatenate a string and a date value by first converting it           |
 | `string` | `path`   | `string` | Concatenate a string and a path value by first converting it           |
+| `string` | `uri`    | `string` | Concatenate a string and a URI value by first converting it (escaped)  |
 | `[`x`]`  | `[`x`]`  | `[`x`]`  | Union of two lists (removing duplicates)                               |
 | `[`x`]`  | x        | `[`x`]`  | Add item to list (removing duplicates)                                 |
 | `{`a1`,`...`,` an`}`              | `{`b1`,`...`,` bn`}`             | `{`a1`,`...`,` an`,`b1`,`...`,` bn`}`                         | Concatenate two tuples                       |
@@ -1091,6 +1092,11 @@ There is no literal syntax for URIs (_e.g._, `gs://bucket/file`). Use
 `std::uri::parse` to create a `uri` from a string, or `std::uri::from_path` to
 create one from a path. A path literal must not be used for a URI, since the
 `//` after the scheme is collapsed.
+
+When a `uri` is converted to a string (in string interpolation, `+`
+concatenation, `As string` destructuring, or any output format), it is in its
+escaped form (_e.g._, `gs://bucket/a%20b.bam`), which `std::uri::parse` converts
+back to the same `uri`.
 
 #### String Literal
 - `"`parts`"`

@@ -1,0 +1,9 @@
+{
+  "inputFormat": "test",
+  "outputFormat": "TSV",
+  "preparedColumns": {
+    "foo": "u=std::uri::parse(\"gs://bucket/a%20b\") Default std::uri::from_path('/x'), maybe=std::uri::parse(\"gs://bucket/c%20d\"), none=std::uri::parse(\"gs://\")"
+  },
+  "query": "{project, $foo}",
+  "readStale": true
+}

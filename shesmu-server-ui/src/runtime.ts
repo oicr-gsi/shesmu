@@ -290,7 +290,9 @@ function uriValidComponent(text: string, extra: string): boolean {
       }
       i += 2;
     } else if (code > 0x7f) {
-      if (/[\s\p{Cc}]/u.test(c)) {
+      // Java rejects space separators and control characters (but not, for
+      // example, U+FEFF, which JavaScript's \s includes)
+      if (/[\p{Zs}\p{Zl}\p{Zp}\p{Cc}]/u.test(c)) {
         return false;
       }
     } else if (
@@ -395,16 +397,51 @@ function uriNormalizePath(path: string): string {
   }
   return result;
 }
+// Mirrors java.nio.file.Path.of, which collapses repeated slashes, drops a
+// trailing slash, and rejects NUL
+function pathOf(path: string): string | null {
+  if (path.indexOf("\0") != -1) {
+    return null;
+  }
+  const collapsed = path.replace(/\/+/g, "/");
+  return collapsed.length > 1 && collapsed.endsWith("/")
+    ? collapsed.slice(0, -1)
+    : collapsed;
+}
+function pathOrUriPath(
+  path: string
+): { type: string; contents: string[] } | null {
+  const normalized = pathOf(path);
+  return normalized === null ? null : { type: "PATH", contents: [normalized] };
+}
+// Must match Location.filePath: a valid file URI is escaped, so decode its
+// path; otherwise, take everything after the authority (or "file:") literally
+function localFilePath(input: string, rest: string): string {
+  const parts = uriParse(input) === null ? null : uriSplit(input);
+  return parts && parts.query === null && parts.fragment === null
+    ? uriDecode(parts.path)
+    : rest;
+}
 export function stringToPathOrUri(
   input: string
 ): { type: string; contents: string[] } | null {
   // Must match Location.parse: everything after the authority is a raw name
-  const match = input.match(/^([A-Za-z][A-Za-z0-9+.-]*):\/\/([^/?#]*)(.*)$/);
+  const match = input.match(/^([A-Za-z][A-Za-z0-9+.-]*):\/\/([^/?#]*)(.*)$/s);
   if (!match) {
-    return { type: "PATH", contents: [input] };
+    // A local file URI with no authority (ex. file:/data/a.bam)
+    const file = input.match(/^file:(\/(?!\/).*)$/is);
+    return pathOrUriPath(file ? localFilePath(input, file[1]) : input);
   }
   if (match[1].toLowerCase() == "file") {
-    return { type: "PATH", contents: [match[3]] };
+    const host = match[2].toLowerCase();
+    if (host == "" || host == "localhost") {
+      return pathOrUriPath(localFilePath(input, match[3]));
+    }
+    // A file on another host is not local
+    const remote = uriParse(input);
+    if (remote !== null) {
+      return { type: "URI", contents: [remote] };
+    }
   }
   const uri = uriParse(match[1] + "://" + match[2] + uriEscapePath(match[3]));
   return uri === null ? null : { type: "URI", contents: [uri] };
@@ -414,8 +451,16 @@ export function uriFromPath(path: string): string {
   return path.startsWith("/") ? "file://" + escaped : escaped;
 }
 export function uriHost(uri: string): string | null {
+  // Must match Location.host: the authority without user info or port; split
+  // before decoding, so an escaped @ or : is part of the host
   const authority = uriSplit(uri)?.authority;
-  return authority ? uriDecode(authority) : null;
+  if (!authority) {
+    return null;
+  }
+  const host = authority
+    .substring(authority.lastIndexOf("@") + 1)
+    .replace(/:[0-9]*$/, "");
+  return host ? uriDecode(host) : null;
 }
 export function uriParse(input: string): string | null {
   const parts = uriSplit(input);
@@ -431,10 +476,7 @@ export function uriPath(uri: string): string | null {
   ) {
     return null;
   }
-  // Match java.nio.file.Path, which collapses repeated slashes and drops a
-  // trailing slash
-  const path = uriDecode(parts.path).replace(/\/+/g, "/");
-  return path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path;
+  return pathOf(uriDecode(parts.path));
 }
 function uriOpaque(parts: UriComponents): boolean {
   return (

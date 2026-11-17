@@ -186,7 +186,7 @@ const exampleForType: TypeTransformer<string> = {
 
   p: "'/foo'",
   q: (inner: UIElement) => `\`${inner}\``,
-  r: "std::uri::from_path('/foo')",
+  r: '"gs://bucket/file"',
   s: '"stuff"',
   t: (inner: string[]) => "{" + inner.join(", ") + "}",
   u: (unionTypes: { [type: string]: string | null }) => {

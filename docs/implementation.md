@@ -129,9 +129,16 @@ scheme, so `Path.of("gs://bucket/file.bam")` produces `gs:/bucket/file.bam`.
 If a value may be either a local file or a remote one, expose it as the
 algebraic type `PATH{path} | URI{uri}` (signature `u2PATH$t1pURI$t1r`).
 [`Location.parse`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/types/Location.html)
-converts a string into this type: strings with a scheme (other than `file://`)
-become `URI`, and everything else becomes `PATH`. `Location.TYPE` is the
-matching `Imyhat`.
+converts a string into this type: strings with a scheme (other than a local
+`file://` or `file:/`) become `URI`, and everything else becomes `PATH`. `Location.TYPE` is
+the matching `Imyhat`. In an input format, return an `AlgebraicValue` from a
+method annotated with `@ShesmuVariable(type = Location.DESCRIPTOR)`. When
+reading data from an external system, use `Location.parseOrPath` so that one
+malformed record does not stop every record from loading, and
+`Location.parseUriLeniently` for a value that must be a `uri`. To send a
+location back to an external system, use `Location.format`, which keeps the
+scheme and `//` of a URI and unescapes its path, so it returns the string
+`Location.parse` was given (except for `file:` URIs, whose paths are decoded).
 
 ## Writing an Input Format Plugin
 Creating a new source format is meant to be easy, but convoluted in order to be
