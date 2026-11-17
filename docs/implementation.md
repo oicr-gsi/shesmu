@@ -82,7 +82,6 @@ olives cannot handle null values. If you need nullable values, use
 | String     | `java.lang.String`                         | `string`                 | `s`        |
 | Boolean    | `boolean` / `z`                            | `boolean`                | `b`        |
 | Date       | `java.time.Instant`                        | `date`                   | `d`        |
-| Path       | `java.nio.file.Path`                       | `path`                   | `p`        |
 | URI        | `java.net.URI`                             | `uri`                    | `r`        |
 | JSON       | `tools.jackson.databind.JsonNode`  | `json`                   | `j`        |
 | List       | `java.lang.Set`                            | `[`_inner_`]`            | `a`_inner_ |
@@ -111,7 +110,6 @@ necessary to convert a JSON document back into an interpretable format.
 | String    | string                             |
 | Boolean   | boolean                            |
 | Date      | number of milliseconds since epoch |
-| Path      | string                             |
 | URI       | string                             |
 | List      | array                              |
 | Tuple     | array                              |
@@ -119,26 +117,14 @@ necessary to convert a JSON document back into an interpretable format.
 | Algebraic | object; see [Algebraic Values without Algebra](algebraicguide.md) |
 | Dict      | object (if key is a string) or array of arrays containing key-value pairs |
 
-<a name="locations"></a>
 ### Paths and URIs
-A `path` is a file on the local file system and a `uri` is a resource
-identified by a URI (_e.g._, `gs://bucket/file.bam`). Do not create a `path`
-from a URI string: Java's default file system collapses the `//` after the
-scheme, so `Path.of("gs://bucket/file.bam")` produces `gs:/bucket/file.bam`.
-
-If a value may be either a local file or a remote one, expose it as the
-algebraic type `PATH{path} | URI{uri}` (signature `u2PATH$t1pURI$t1r`).
-[`Location.parse`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/types/Location.html)
-converts a string into this type: strings with a scheme (other than a local
-`file://` or `file:/`) become `URI`, and everything else becomes `PATH`. `Location.TYPE` is
-the matching `Imyhat`. In an input format, return an `AlgebraicValue` from a
-method annotated with `@ShesmuVariable(type = Location.DESCRIPTOR)`. When
-reading data from an external system, use `Location.parseOrPath` so that one
-malformed record does not stop every record from loading, and
-`Location.parseUriLeniently` for a value that must be a `uri`. To send a
-location back to an external system, use `Location.format`, which keeps the
-scheme and `//` of a URI and unescapes its path, so it returns the string
-`Location.parse` was given (except for `file:` URIs, whose paths are decoded).
+Files that may be remote (_e.g._, `gs://bucket/file`) should have the type
+`PATH{path} | URI{uri}` rather than `path`, since `Path.of` collapses the `//`
+after the scheme. Annotate the method with
+`@ShesmuVariable(type = PathOrUri.DESCRIPTOR)`, return an `AlgebraicValue`
+created by
+[`PathOrUri.parse`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/types/PathOrUri.html),
+and use `PathOrUri.format` to convert a value back to a string.
 
 ## Writing an Input Format Plugin
 Creating a new source format is meant to be easy, but convoluted in order to be
@@ -151,9 +137,8 @@ method names must be valid Shesmu names (lowercase with underscores) and
 decorated with
 [`@ShesmuVariable`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/input/ShesmuVariable.html)
 annotations with the correct type descriptor. All methods must return
-`boolean`, `long`, `String`, `Instant`, `Path`, `URI`, `Set`, or `Tuple` (and
-`Set` and `Tuple` may only contain more of the same). For values that may be
-remote, see [Paths and URIs](#locations).
+`boolean`, `long`, `String`, `Instant`, `Set`, or `Tuple` (and `Set` and
+`Tuple` may only contain more of the same).
 1. Create a new _F_ class that extends
 [`InputFormat<`_V_`>`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/input/InputFormat.html)
 and provides the types to the constructor as well as a name that will be used

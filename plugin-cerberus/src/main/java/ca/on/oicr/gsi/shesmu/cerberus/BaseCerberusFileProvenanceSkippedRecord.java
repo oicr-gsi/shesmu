@@ -6,9 +6,8 @@ import ca.on.oicr.gsi.shesmu.gsicommon.CerberusFileProvenanceSkippedValue;
 import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
-import ca.on.oicr.gsi.shesmu.plugin.types.Location;
+import ca.on.oicr.gsi.shesmu.plugin.types.PathOrUri;
 import ca.on.oicr.gsi.vidarr.api.ProvenanceWorkflowRun;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
@@ -30,10 +29,6 @@ abstract class BaseCerberusFileProvenanceSkippedRecord<T extends LimsProvenance>
     return workflowRunLabels;
   }
 
-  // Parsed on first use and cached: olives may read this for every record on every round, but
-  // parsing eagerly would cost memory for every record even when no olive uses it. Races only
-  // cause a redundant parse, since the result is the same.
-  private AlgebraicValue location;
   protected final ProvenanceRecord<T> provenanceRecord;
   private final boolean stale;
   protected final Map<String, JsonNode> workflowRunLabels;
@@ -110,18 +105,8 @@ abstract class BaseCerberusFileProvenanceSkippedRecord<T extends LimsProvenance>
   }
 
   @Override
-  public final AlgebraicValue location() {
-    AlgebraicValue result = location;
-    if (result == null) {
-      result = Location.parseOrPath(provenanceRecord.record().getPath());
-      location = result;
-    }
-    return result;
-  }
-
-  @Override
-  public final Path path() {
-    return Path.of(provenanceRecord.record().getPath());
+  public final AlgebraicValue path() {
+    return PathOrUri.parse(provenanceRecord.record().getPath());
   }
 
   @Override

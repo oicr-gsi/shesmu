@@ -3,11 +3,10 @@ package ca.on.oicr.gsi.shesmu.vidarr;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
-import ca.on.oicr.gsi.shesmu.plugin.types.Location;
+import ca.on.oicr.gsi.shesmu.plugin.types.PathOrUri;
 import ca.on.oicr.gsi.vidarr.api.*;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -31,11 +30,6 @@ public abstract class BaseLoadAction extends VidarrAction {
   everything both actions need; each subclass sends whatever form its Vidarr endpoint expects.
    */
   final ImportRequest request;
-  /*
-  Optional replacement locations for analysis records. This allows olives to opt in to sending full URIs (ex. gs://bucket/file),
-  which cannot be represented as paths, without changing the analysis parameter's type.
-   */
-  private Map<Path, AlgebraicValue> analysisLocations = Map.of();
 
   public BaseLoadAction(String type, Supplier<VidarrPlugin> owner, WorkflowDeclaration workflow) {
     super(type, owner);
@@ -82,34 +76,12 @@ public abstract class BaseLoadAction extends VidarrAction {
     request.getWorkflowRun().setStarted(zdt);
   }
 
-  /**
-   * Replace the paths of analysis records with locations
-   *
-   * <p>A record whose path is a key in this dictionary is sent to Vidarr with the corresponding
-   * location instead of its path. This is how olives send remote files (ex. gs://bucket/file),
-   * whose paths would otherwise be sent as gs:/bucket/file. Records not in the dictionary are sent
-   * with their path, as usual.
-   */
-  @ActionParameter(name = "analysis_locations", required = false, type = "mp" + Location.DESCRIPTOR)
-  public void analysisLocations(Map<Path, AlgebraicValue> locations) {
-    analysisLocations = locations;
-    // Parameters may be set in any order, so update any analysis records that are already set
-    final List<ProvenanceAnalysisRecord<ExternalId>> records =
-        request.getWorkflowRun().getAnalysis();
-    if (records != null) {
-      for (final ProvenanceAnalysisRecord<ExternalId> record : records) {
-        final AlgebraicValue location = locations.get(Path.of(record.getPath()));
-        if (location != null) {
-          record.setPath(Location.format(location));
-        }
-      }
-    }
-  }
-
   @SuppressWarnings("unchecked")
   @ActionParameter(
       type =
-          "ao9checksum$schecksumType$screated$dexternalKeys$ao2id$sprovider$slabels$mssmetatype$smodified$dpath$psize$i")
+          "ao9checksum$schecksumType$screated$dexternalKeys$ao2id$sprovider$slabels$mssmetatype$smodified$dpath$"
+              + PathOrUri.DESCRIPTOR
+              + "size$i")
   public void analysis(Set<Tuple> analysis) {
     List<ProvenanceAnalysisRecord<ExternalId>> list = new LinkedList<>();
     for (Tuple a : analysis) {
@@ -126,9 +98,7 @@ public abstract class BaseLoadAction extends VidarrAction {
       record.setLabels((Map<String, String>) a.get(4));
       record.setMetatype((String) a.get(5));
       record.setModified(ZonedDateTime.ofInstant((Instant) a.get(6), ZoneId.of("UTC")));
-      final Path path = (Path) a.get(7);
-      final AlgebraicValue location = analysisLocations.get(path);
-      record.setPath(location == null ? path.toString() : Location.format(location));
+      record.setPath(PathOrUri.format((AlgebraicValue) a.get(7)));
       record.setSize((long) a.get(8));
       record.setType("file");
       list.add(record);

@@ -232,307 +232,6 @@ export function pathEndsWith(check: string, suffix: string): boolean {
   }
   return true;
 }
-/*
- * URIs are represented as strings in the same form as Java's URI.toString().
- * These functions mirror RuntimeSupport and Location on the server, using
- * java.net.URI's rules rather than the browser's URL class (which normalizes,
- * accepts unescaped characters, and cannot handle relative URIs).
- */
-interface UriComponents {
-  scheme: string | null;
-  authority: string | null;
-  path: string;
-  query: string | null;
-  fragment: string | null;
-}
-function uriSplit(uri: string): UriComponents | null {
-  // RFC 3986, appendix B
-  const match = uri.match(
-    /^(?:([^:/?#]+):)?(?:\/\/([^/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?$/
-  );
-  if (!match) {
-    return null;
-  }
-  return {
-    scheme: match[1] ?? null,
-    authority: match[2] ?? null,
-    path: match[3],
-    query: match[4] ?? null,
-    fragment: match[5] ?? null,
-  };
-}
-function uriJoin(parts: UriComponents): string {
-  let result = "";
-  if (parts.scheme !== null) {
-    result += parts.scheme + ":";
-  }
-  if (parts.authority !== null) {
-    result += "//" + parts.authority;
-  }
-  result += parts.path;
-  if (parts.query !== null) {
-    result += "?" + parts.query;
-  }
-  if (parts.fragment !== null) {
-    result += "#" + parts.fragment;
-  }
-  return result;
-}
-// Characters java.net.URI accepts unescaped in a component, besides
-// non-ASCII, non-space, non-control characters
-function uriValidComponent(text: string, extra: string): boolean {
-  for (let i = 0; i < text.length; i++) {
-    const c = text.charAt(i);
-    const code = text.charCodeAt(i);
-    if (c == "%") {
-      if (!/^[0-9A-Fa-f]{2}$/.test(text.substring(i + 1, i + 3))) {
-        return false;
-      }
-      i += 2;
-    } else if (code > 0x7f) {
-      // Java rejects space separators and control characters (but not, for
-      // example, U+FEFF, which JavaScript's \s includes)
-      if (/[\p{Zs}\p{Zl}\p{Zp}\p{Cc}]/u.test(c)) {
-        return false;
-      }
-    } else if (
-      !/[A-Za-z0-9\-_.!~*'();/?:@&=+$,]/.test(c) &&
-      extra.indexOf(c) == -1
-    ) {
-      return false;
-    }
-  }
-  return true;
-}
-function uriValidAuthority(authority: string): boolean {
-  // Brackets are only allowed around an IPv6 address
-  const ipv6 = authority.match(/^([^@]*@)?\[[0-9A-Fa-f:.]+\](:[0-9]*)?$/);
-  return ipv6
-    ? uriValidComponent(ipv6[1] ?? "", "")
-    : uriValidComponent(authority, "");
-}
-function uriValid(parts: UriComponents): boolean {
-  if (parts.scheme !== null) {
-    if (!/^[A-Za-z][A-Za-z0-9+.-]*$/.test(parts.scheme)) {
-      return false;
-    }
-    // An absolute URI must have something other than a fragment after the
-    // scheme (ex. "gs:", "gs://", or "gs:#x")
-    if (!parts.authority && !parts.path && parts.query === null) {
-      return false;
-    }
-  } else if (
-    (parts.authority === "" &&
-      !parts.path &&
-      parts.query === null &&
-      parts.fragment === null) ||
-    // An empty scheme (ex. ":x")
-    (parts.authority === null && parts.path.startsWith(":"))
-  ) {
-    return false;
-  }
-  // Java allows brackets everywhere except a hierarchical path
-  return (
-    (parts.authority === null || uriValidAuthority(parts.authority)) &&
-    uriValidComponent(parts.path, uriOpaque(parts) ? "[]" : "") &&
-    (parts.query === null || uriValidComponent(parts.query, "[]")) &&
-    (parts.fragment === null || uriValidComponent(parts.fragment, "[]"))
-  );
-}
-function uriDecode(text: string): string {
-  try {
-    return decodeURIComponent(text);
-  } catch (e) {
-    // Not valid UTF-8 after decoding; leave it as-is rather than failing
-    return text;
-  }
-}
-function uriEscapePath(path: string): string {
-  // Must match Location.escapePath
-  let result = "";
-  for (const b of new TextEncoder().encode(path)) {
-    const c = String.fromCharCode(b);
-    if (/[A-Za-z0-9\-._~!$&'()*+,;=@/]/.test(c)) {
-      result += c;
-    } else {
-      result += "%" + b.toString(16).toUpperCase().padStart(2, "0");
-    }
-  }
-  return result;
-}
-function uriNormalizePath(path: string): string {
-  // Mirrors java.net.URI's path normalization (RFC 2396): collapse redundant
-  // slashes, drop "." segments, and cancel "segment/.." pairs; ".." segments
-  // that cannot be cancelled are kept, even at the root
-  const absolute = path.startsWith("/");
-  const segments = path.split("/").filter((s) => s !== "");
-  const output: string[] = [];
-  // Whether the last segment was removed, which leaves a trailing slash
-  let removedLast = false;
-  for (const segment of segments) {
-    removedLast = true;
-    if (segment == ".") {
-      continue;
-    }
-    if (
-      segment == ".." &&
-      output.length > 0 &&
-      output[output.length - 1] != ".."
-    ) {
-      output.pop();
-      continue;
-    }
-    output.push(segment);
-    removedLast = false;
-  }
-  let result = output.join("/");
-  if (output.length > 0 && (path.endsWith("/") || removedLast)) {
-    result += "/";
-  }
-  if (absolute) {
-    result = "/" + result;
-  } else if (output.length > 0 && output[0].indexOf(":") != -1) {
-    // Keep a relative path like a:b from being read as a scheme
-    result = "./" + result;
-  }
-  return result;
-}
-// Mirrors java.nio.file.Path.of, which collapses repeated slashes, drops a
-// trailing slash, and rejects NUL
-function pathOf(path: string): string | null {
-  if (path.indexOf("\0") != -1) {
-    return null;
-  }
-  const collapsed = path.replace(/\/+/g, "/");
-  return collapsed.length > 1 && collapsed.endsWith("/")
-    ? collapsed.slice(0, -1)
-    : collapsed;
-}
-function pathOrUriPath(
-  path: string
-): { type: string; contents: string[] } | null {
-  const normalized = pathOf(path);
-  return normalized === null ? null : { type: "PATH", contents: [normalized] };
-}
-// Must match Location.filePath: a valid file URI is escaped, so decode its
-// path; otherwise, take everything after the authority (or "file:") literally
-function localFilePath(input: string, rest: string): string {
-  const parts = uriParse(input) === null ? null : uriSplit(input);
-  return parts && parts.query === null && parts.fragment === null
-    ? uriDecode(parts.path)
-    : rest;
-}
-export function stringToPathOrUri(
-  input: string
-): { type: string; contents: string[] } | null {
-  // Must match Location.parse: everything after the authority is a raw name
-  const match = input.match(/^([A-Za-z][A-Za-z0-9+.-]*):\/\/([^/?#]*)(.*)$/s);
-  if (!match) {
-    // A local file URI with no authority (ex. file:/data/a.bam)
-    const file = input.match(/^file:(\/(?!\/).*)$/is);
-    return pathOrUriPath(file ? localFilePath(input, file[1]) : input);
-  }
-  if (match[1].toLowerCase() == "file") {
-    const host = match[2].toLowerCase();
-    if (host == "" || host == "localhost") {
-      return pathOrUriPath(localFilePath(input, match[3]));
-    }
-    // A file on another host is not local
-    const remote = uriParse(input);
-    if (remote !== null) {
-      return { type: "URI", contents: [remote] };
-    }
-  }
-  const uri = uriParse(match[1] + "://" + match[2] + uriEscapePath(match[3]));
-  return uri === null ? null : { type: "URI", contents: [uri] };
-}
-export function uriFromPath(path: string): string {
-  const escaped = uriEscapePath(path);
-  return path.startsWith("/") ? "file://" + escaped : escaped;
-}
-export function uriHost(uri: string): string | null {
-  // Must match Location.host: the authority without user info or port; split
-  // before decoding, so an escaped @ or : is part of the host
-  const authority = uriSplit(uri)?.authority;
-  if (!authority) {
-    return null;
-  }
-  const host = authority
-    .substring(authority.lastIndexOf("@") + 1)
-    .replace(/:[0-9]*$/, "");
-  return host ? uriDecode(host) : null;
-}
-export function uriParse(input: string): string | null {
-  const parts = uriSplit(input);
-  return parts && uriValid(parts) ? input : null;
-}
-export function uriPath(uri: string): string | null {
-  const parts = uriSplit(uri);
-  if (
-    !parts ||
-    !parts.path ||
-    // Opaque URIs (ex. mailto:x) have no path
-    (parts.scheme !== null && !parts.path.startsWith("/"))
-  ) {
-    return null;
-  }
-  return pathOf(uriDecode(parts.path));
-}
-function uriOpaque(parts: UriComponents): boolean {
-  return (
-    parts.scheme !== null &&
-    parts.authority === null &&
-    !parts.path.startsWith("/")
-  );
-}
-export function uriResolve(uri: string, other: string): string | null {
-  // Mirrors java.net.URI.resolve (RFC 2396, section 5.2), including where it
-  // differs from RFC 3986, so the server and UI agree
-  const base = uriSplit(uri);
-  const reference = uriParse(other) === null ? null : uriSplit(other);
-  if (!base || !reference) {
-    return null;
-  }
-  // Java treats an empty authority (ex. gs:///x) as no authority
-  if (base.authority === "") {
-    base.authority = null;
-  }
-  if (uriOpaque(base) || uriOpaque(reference) || reference.scheme !== null) {
-    return other;
-  }
-  if (
-    reference.authority === null &&
-    !reference.path &&
-    reference.query === null &&
-    reference.fragment !== null
-  ) {
-    // A fragment-only reference replaces the base's fragment
-    return uriJoin({ ...base, fragment: reference.fragment });
-  }
-  if (reference.authority !== null) {
-    return uriJoin({ ...reference, scheme: base.scheme });
-  }
-  let path: string;
-  if (reference.path.startsWith("/")) {
-    path = reference.path;
-  } else {
-    const basePath =
-      base.authority !== null && !base.path && reference.path ? "/" : base.path;
-    path = uriNormalizePath(
-      basePath.substring(0, basePath.lastIndexOf("/") + 1) + reference.path
-    );
-  }
-  return uriJoin({
-    scheme: base.scheme,
-    authority: base.authority,
-    path: path,
-    query: reference.query,
-    fragment: reference.fragment,
-  });
-}
-export function uriScheme(uri: string): string | null {
-  return uriSplit(uri)?.scheme ?? null;
-}
 export function pathFileName(path: string): string {
   const pathParts = path.split("/");
   return pathParts[pathParts.length - 1];
@@ -605,6 +304,34 @@ export function pathResolve(root: string, child: string): string {
     return child;
   }
   return `${root}/${child}`;
+}
+export function pathOrUriToString(value: {
+  type: string;
+  contents: string[];
+}): string {
+  // A URI keeps its scheme and host; the file or object name is unescaped
+  const match =
+    value.type == "URI"
+      ? value.contents[0].match(/^([^:/?#]+:\/\/[^/?#]*)([\s\S]*)$/)
+      : null;
+  return match ? match[1] + decodeURIComponent(match[2]) : value.contents[0];
+}
+export function stringToPathOrUri(input: string): {
+  type: string;
+  contents: string[];
+} {
+  // Everything after the host is taken literally as the file or object name
+  const match = input.match(/^([A-Za-z][A-Za-z0-9+.-]*:\/\/)([^/]*)([\s\S]*)$/);
+  return match && (match[2] || match[3])
+    ? {
+        type: "URI",
+        contents: [
+          match[1] +
+            match[2] +
+            match[3].split("/").map(encodeURIComponent).join("/"),
+        ],
+      }
+    : { type: "PATH", contents: [input] };
 }
 export function pathStartsWith(check: string, prefix: string): boolean {
   return pathStartsWithArray(check.split("/"), prefix.split("/"));

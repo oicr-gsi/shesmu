@@ -1,1 +1,1 @@
-A `uri` type for remote resources (_e.g._, `gs://bucket/file`), `std::uri` functions to create and inspect URIs, and `std::string::to_path_or_uri` to convert a string to `PATH{path} | URI{uri}`
+A `uri` type, with `std::string::to_path_or_uri` and `std::path_or_uri::to_string` to convert between strings and `PATH{path} | URI{uri}`

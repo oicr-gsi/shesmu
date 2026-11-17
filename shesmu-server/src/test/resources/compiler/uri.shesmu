@@ -1,17 +1,15 @@
 Version 1;
 Input test;
 
-TypeAlias location PATH{path} | URI{uri};
+TypeAlias file PATH{path} | URI{uri};
 
-Function describe(location l)
-  Match l
-    When URI{u} Then "remote {u}"
-    When PATH{p} Then "local {p}";
+Export Function describe(file f)
+  Match f
+    When PATH{p} Then "local {p}"
+    When URI{u} Then "remote {u}";
 
-Function all_text([uri] us) For u In us: List "{u}";
-
-Function first_or(uri? u, uri fallback) u Default fallback;
+Export Function remote_text([uri] us) For u In us: List "{u}";
 
 Olive Run ok With ok =
-  describe(URI{first_or(std::uri::parse("gs://bucket/x"), std::uri::from_path('/x'))}) != ""
-  && all_text([std::uri::from_path('/a')]) != [];
+  describe(std::string::to_path_or_uri("gs://bucket/x")) != ""
+  && std::path_or_uri::to_string(PATH{'/a'}) == "/a";

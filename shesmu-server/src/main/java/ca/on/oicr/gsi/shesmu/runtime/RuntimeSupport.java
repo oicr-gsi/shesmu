@@ -12,7 +12,6 @@ import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.plugin.types.Location;
 import ca.on.oicr.gsi.shesmu.server.plugins.BaseInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicActionParameterDescriptor;
 import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicRefillerParameterDescriptor;
@@ -23,12 +22,9 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -794,84 +790,6 @@ public final class RuntimeSupport {
   @RuntimeInterop
   public static <T> Optional<T> unnest(Optional<Optional<T>> input) {
     return input.orElse(Optional.empty());
-  }
-
-  /**
-   * Convert a string to a local path or a URI
-   *
-   * @see Location#parse(String)
-   */
-  @RuntimeInterop
-  public static Optional<AlgebraicValue> stringToPathOrUri(String input) {
-    try {
-      return Optional.of(Location.parse(input));
-    } catch (IllegalArgumentException e) {
-      return Optional.empty();
-    }
-  }
-
-  /**
-   * Convert a local path to a URI
-   *
-   * <p>Absolute paths become file:// URIs; relative paths become relative URI references, rather
-   * than being resolved against the server's working directory. This does not use {@link
-   * Path#toUri()}, which checks the file system and adds a trailing slash to existing directories.
-   */
-  @RuntimeInterop
-  public static URI uriFromPath(Path path) {
-    final String escaped = Location.escapePath(path.toString());
-    try {
-      return new URI(path.isAbsolute() ? "file://" + escaped : escaped);
-    } catch (URISyntaxException e) {
-      throw new IllegalArgumentException(e);
-    }
-  }
-
-  /**
-   * Get the host of a URI, without any user information or port
-   *
-   * @see Location#host(URI)
-   */
-  @RuntimeInterop
-  public static Optional<String> uriHost(URI uri) {
-    return Location.host(uri);
-  }
-
-  @RuntimeInterop
-  public static Optional<URI> uriParse(String input) {
-    try {
-      return Optional.of(new URI(input));
-    } catch (URISyntaxException e) {
-      return Optional.empty();
-    }
-  }
-
-  @RuntimeInterop
-  public static Optional<Path> uriPath(URI uri) {
-    final String path = uri.getPath();
-    if (path == null || path.isEmpty()) {
-      return Optional.empty();
-    }
-    try {
-      return Optional.of(Path.of(path));
-    } catch (InvalidPathException e) {
-      // The decoded path may contain characters a path cannot (ex. %00)
-      return Optional.empty();
-    }
-  }
-
-  @RuntimeInterop
-  public static Optional<URI> uriResolve(URI uri, String other) {
-    try {
-      return Optional.of(uri.resolve(new URI(other)));
-    } catch (URISyntaxException | IllegalArgumentException e) {
-      return Optional.empty();
-    }
-  }
-
-  @RuntimeInterop
-  public static Optional<String> uriScheme(URI uri) {
-    return Optional.ofNullable(uri.getScheme());
   }
 
   @RuntimeInterop

@@ -22,7 +22,7 @@ Olive
 
   # get bcl2barcode counts for all lanes and samples
   LeftJoin {lane_or_sample_ius[0], lane_or_sample_ius[1]} To cerberus_fp{ius[0], ius[1]}
-    bcl2barcode_paths = Where workflow == "bcl2barcode" List path
+    bcl2barcode_paths = Where workflow == "bcl2barcode" List std::path_or_uri::to_string(path)
 
   # group by lane to check bcl2barcode file count
   Group

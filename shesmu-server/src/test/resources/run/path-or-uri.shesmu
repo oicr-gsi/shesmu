@@ -1,0 +1,19 @@
+Version 1;
+Input test;
+
+Function describe(PATH{path} | URI{uri} f)
+  Match f
+    When PATH{p} Then "local {p}"
+    When URI{u} Then "remote {u}";
+
+Function round_trip(string s) std::path_or_uri::to_string(std::string::to_path_or_uri(s)) == s;
+
+Olive Run ok With ok =
+  describe(std::string::to_path_or_uri("gs://bucket/a/b.bam")) == "remote gs://bucket/a/b.bam"
+  && describe(std::string::to_path_or_uri("gs://bucket/a b#1.bam")) == "remote gs://bucket/a%20b%231.bam"
+  && describe(std::string::to_path_or_uri("/data/a/b.bam")) == "local /data/a/b.bam"
+  && std::string::to_path_or_uri("relative/x") == PATH{'relative/x'}
+  && std::string::to_path_or_uri("gs://") == PATH{'gs:'}
+  && round_trip("gs://bucket/a b#1?x%20.bam")
+  && round_trip("s3://bucket//a/dir/")
+  && round_trip("/data/a/b.bam");

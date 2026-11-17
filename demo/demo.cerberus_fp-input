@@ -48,7 +48,12 @@
     "checksum_type":"md5sum",
     "metatype": "chemical/seq-na-fastq-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15580425",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15580425"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -124,7 +129,12 @@
     "checksum_type":"md5sum",
     "metatype": "chemical/seq-na-fastq-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15580416",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15580416"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -207,7 +217,12 @@
     "checksum_type":"md5sum",
     "metatype": "chemical/seq-na-fastq-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15580423",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15580423"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -290,7 +305,12 @@
     "checksum_type":"md5sum",
     "metatype": "chemical/seq-na-fastq-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15580449",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15580449"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -376,7 +396,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15580794",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15580794"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -459,7 +484,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15580805",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15580805"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -542,7 +572,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam-index",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15580831",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15580831"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -632,7 +667,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15580795",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15580795"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -722,7 +762,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15580771",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15580771"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -805,7 +850,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam-index",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15580825",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15580825"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -895,7 +945,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15580769",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15580769"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -978,7 +1033,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15580778",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15580778"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -1060,7 +1120,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581166",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581166"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -1142,7 +1207,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581161",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581161"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -1225,7 +1295,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/seg",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581293",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581293"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -1317,7 +1392,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/tar-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581285",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581285"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -1409,7 +1489,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/seg",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581287",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581287"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -1501,7 +1586,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581291",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581291"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -1593,7 +1683,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/rdata",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581289",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581289"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -1685,7 +1780,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581281",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581281"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -1777,7 +1877,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581283",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581283"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -1869,7 +1974,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/rdata",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581306",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581306"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -1961,7 +2071,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581308",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581308"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -2053,7 +2168,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581300",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581300"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -2145,7 +2265,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/seg",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581310",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581310"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -2237,7 +2362,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581298",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581298"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -2329,7 +2459,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/tar-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581302",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581302"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -2421,7 +2556,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/seg",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581304",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581304"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -2512,7 +2652,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581296",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581296"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -2600,7 +2745,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581312",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581312"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -2692,7 +2842,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/tbi",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581489",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581489"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -2778,7 +2933,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581453",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581453"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -2864,7 +3024,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/vcf-4-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581490",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581490"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -2950,7 +3115,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/vcf-4-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581471",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581471"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -3036,7 +3206,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/tbi",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581472",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581472"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -3122,7 +3297,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15581428",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15581428"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -3209,7 +3389,12 @@
     "checksum_type":"md5sum",
     "metatype": "chemical/seq-na-fastq-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15619392",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15619392"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -3292,7 +3477,12 @@
     "checksum_type":"md5sum",
     "metatype": "chemical/seq-na-fastq-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15619184",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15619184"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -3375,7 +3565,12 @@
     "checksum_type":"md5sum",
     "metatype": "chemical/seq-na-fastq-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15619330",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15619330"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -3458,7 +3653,12 @@
     "checksum_type":"md5sum",
     "metatype": "chemical/seq-na-fastq-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15619115",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15619115"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -3537,7 +3737,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15642115",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15642115"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -3627,7 +3832,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15641648",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15641648"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -3710,7 +3920,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam-index",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15642125",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15642125"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -3800,7 +4015,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15641646",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15641646"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -3883,7 +4103,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15642510",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15642510"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -3966,7 +4191,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam-index",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15642527",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15642527"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -4056,7 +4286,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15642014",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15642014"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -4146,7 +4381,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15642015",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15642015"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -4228,7 +4468,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15645759",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15645759"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -4314,7 +4559,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15642790",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15642790"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -4400,7 +4650,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/vcf-4-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15642798",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15642798"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -4486,7 +4741,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/tbi",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15642797",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15642797"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -4575,7 +4835,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15654980",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15654980"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -4661,7 +4926,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15647495",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15647495"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -4747,7 +5017,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam-index",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15653034",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15653034"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -4833,7 +5108,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/pdf",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15651640",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15651640"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -4919,7 +5199,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15650442",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15650442"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -5001,7 +5286,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15646155",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15646155"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -5087,7 +5377,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/vcf-4-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643168",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643168"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -5173,7 +5468,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643165",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643165"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -5259,7 +5559,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/tbi",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643169",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643169"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -5342,7 +5647,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/rdata",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643251",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643251"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -5434,7 +5744,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643253",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643253"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -5526,7 +5841,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/seg",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643255",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643255"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -5618,7 +5938,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/tar-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643247",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643247"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -5710,7 +6035,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/seg",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643249",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643249"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -5802,7 +6132,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643245",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643245"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -5894,7 +6229,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643243",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643243"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -5986,7 +6326,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/rdata",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643266",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643266"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -6078,7 +6423,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643258",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643258"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -6170,7 +6520,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/seg",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643264",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643264"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -6262,7 +6617,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643268",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643268"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -6354,7 +6714,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/seg",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643270",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643270"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -6446,7 +6811,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643260",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643260"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -6538,7 +6908,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/tar-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15643262",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15643262"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -6634,7 +7009,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15655821",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15655821"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -6721,7 +7101,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15655821",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15655821"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -6811,7 +7196,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15661038",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15661038"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -6898,7 +7288,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15648236",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15648236"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -6985,7 +7380,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15648235",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15648235"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -7072,7 +7472,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam-index",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15660008",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15660008"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -7159,7 +7564,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam-index",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15660009",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15660009"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -7246,7 +7656,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/pdf",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15657408",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15657408"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -7333,7 +7748,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/pdf",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15657408",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15657408"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -7423,7 +7843,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15661030",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15661030"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -7505,7 +7930,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15649673",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15649673"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -7593,7 +8023,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15648738",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15648738"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -7682,7 +8117,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/zip-report-bundle",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15725001",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15725001"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -7768,7 +8208,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/zip-report-bundle",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15725005",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15725005"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -7854,7 +8299,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/html",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15725003",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15725003"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -7940,7 +8390,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/html",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15724999",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15724999"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -8026,7 +8481,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/html",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15730550",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15730550"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -8112,7 +8572,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/zip-report-bundle",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15730548",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15730548"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -8198,7 +8663,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/html",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15730554",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15730554"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -8284,7 +8754,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/zip-report-bundle",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15730552",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15730552"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -8370,7 +8845,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/zip-report-bundle",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15731478",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15731478"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -8456,7 +8936,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/zip-report-bundle",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15731475",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15731475"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -8542,7 +9027,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/html",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15731486",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15731486"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -8628,7 +9118,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/html",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15731482",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15731482"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -8714,7 +9209,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/zip-report-bundle",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15738326",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15738326"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -8800,7 +9300,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/zip-report-bundle",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15738324",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15738324"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -8886,7 +9391,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/html",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15738328",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15738328"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -8972,7 +9482,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/html",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15738330",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15738330"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -9058,7 +9573,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15789540",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15789540"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -9150,7 +9670,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/seg",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15789536",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15789536"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -9242,7 +9767,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/tar-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15789534",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15789534"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -9334,7 +9864,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15789531",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15789531"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -9426,7 +9961,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/rdata",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15789538",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15789538"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -9518,7 +10058,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/seg",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15789542",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15789542"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -9610,7 +10155,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15789526",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15789526"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -9701,7 +10251,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15852309",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15852309"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -9792,7 +10347,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15855044",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15855044"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -9883,7 +10443,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15863575",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15863575"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -9974,7 +10539,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/pdf",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15863578",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15863578"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -10065,7 +10635,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/pdf",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15866695",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15866695"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -10156,7 +10731,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15866698",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15866698"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -10248,7 +10828,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/seg",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15872613",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15872613"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -10340,7 +10925,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15872603",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15872603"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -10432,7 +11022,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15872611",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15872611"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -10524,7 +11119,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/seg",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15872607",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15872607"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -10616,7 +11216,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/tar-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15872605",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15872605"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -10708,7 +11313,12 @@
     "checksum_type":"md5sum",
     "metatype": "txt/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15872601",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15872601"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -10800,7 +11410,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/rdata",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15872609",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15872609"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -10905,7 +11520,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15887100",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15887100"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -11007,7 +11627,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15887100",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15887100"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -11109,7 +11734,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/vcf-4-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15887096",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15887096"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -11211,7 +11841,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/vcf-4-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15887096",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15887096"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -11300,7 +11935,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15887068",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15887068"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -11389,7 +12029,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15887068",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15887068"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -11477,7 +12122,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/15989156",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/15989156"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -11565,7 +12215,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16013353",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16013353"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -11654,7 +12309,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16019427",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16019427"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -11743,7 +12403,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16026290",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16026290"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -11836,7 +12501,12 @@
     "checksum_type":"md5sum",
     "metatype": "chemical/seq-na-fastq-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16854228",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16854228"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -11919,7 +12589,12 @@
     "checksum_type":"md5sum",
     "metatype": "chemical/seq-na-fastq-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16854264",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16854264"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -12002,7 +12677,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16862152",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16862152"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -12089,7 +12769,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16862215",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16862215"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -12176,7 +12861,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam-index",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16862277",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16862277"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -12263,7 +12953,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16862274",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16862274"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -12346,7 +13041,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/html",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16890574",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16890574"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -12432,7 +13132,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/zip-report-bundle",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16890601",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16890601"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -12518,7 +13223,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/zip-report-bundle",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16890583",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16890583"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -12604,7 +13314,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/html",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16890592",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16890592"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -12694,7 +13409,12 @@
     "checksum_type":"md5sum",
     "metatype": "chemical/seq-na-fastq-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16920575",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16920575"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -12777,7 +13497,12 @@
     "checksum_type":"md5sum",
     "metatype": "chemical/seq-na-fastq-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16920452",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16920452"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -12860,7 +13585,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16927189",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16927189"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -12947,7 +13677,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16927188",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16927188"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -13034,7 +13769,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam-index",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16927212",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16927212"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -13121,7 +13861,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16927190",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16927190"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -13203,7 +13948,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16936934",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16936934"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -13294,7 +14044,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16953301",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16953301"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -13386,7 +14141,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/html",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16952378",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16952378"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -13472,7 +14232,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/html",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16952334",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16952334"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -13558,7 +14323,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/zip-report-bundle",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16952358",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16952358"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -13644,7 +14414,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/zip-report-bundle",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16952308",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16952308"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -13734,7 +14509,12 @@
     "checksum_type":"md5sum",
     "metatype": "chemical/seq-na-fastq-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16985434",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16985434"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -13817,7 +14597,12 @@
     "checksum_type":"md5sum",
     "metatype": "chemical/seq-na-fastq-gzip",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16985427",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16985427"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -13900,7 +14685,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16989841",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16989841"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -13987,7 +14777,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16989842",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16989842"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -14074,7 +14869,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/bam-index",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16990046",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16990046"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -14161,7 +14961,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/plain",
     "organism": "Homo sapiens",
-    "path": "/srv/data/16989834",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/16989834"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -14244,7 +15049,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/zip-report-bundle",
     "organism": "Homo sapiens",
-    "path": "/srv/data/17003337",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/17003337"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -14330,7 +15140,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/html",
     "organism": "Homo sapiens",
-    "path": "/srv/data/17003386",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/17003386"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -14416,7 +15231,12 @@
     "checksum_type":"md5sum",
     "metatype": "application/zip-report-bundle",
     "organism": "Homo sapiens",
-    "path": "/srv/data/17003356",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/17003356"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -14502,7 +15322,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/html",
     "organism": "Homo sapiens",
-    "path": "/srv/data/17003373",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/17003373"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",
@@ -14587,7 +15412,12 @@
     "checksum_type":"md5sum",
     "metatype": "text/json",
     "organism": "Homo sapiens",
-    "path": "/srv/data/17020322",
+    "path": {
+      "type": "PATH",
+      "contents": [
+        "/srv/data/17020322"
+      ]
+    },
     "project": "ABC",
     "reference_slide_id": null,
     "sequencing_control_type": "",

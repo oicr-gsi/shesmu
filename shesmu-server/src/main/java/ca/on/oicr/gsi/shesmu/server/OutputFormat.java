@@ -37,13 +37,7 @@ public enum OutputFormat {
 
   static boolean isStringable(Imyhat type) {
     return Stream.of(
-            Imyhat.FLOAT,
-            Imyhat.INTEGER,
-            Imyhat.DATE,
-            Imyhat.JSON,
-            Imyhat.PATH,
-            Imyhat.STRING,
-            Imyhat.URI)
+            Imyhat.FLOAT, Imyhat.INTEGER, Imyhat.DATE, Imyhat.JSON, Imyhat.PATH, Imyhat.STRING)
         .anyMatch((type instanceof OptionalImyhat optional ? optional.inner() : type)::isSame);
   }
 

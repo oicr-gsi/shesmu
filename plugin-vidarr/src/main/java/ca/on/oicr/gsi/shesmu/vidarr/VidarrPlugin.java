@@ -17,7 +17,7 @@ import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.OptionalImyhat;
-import ca.on.oicr.gsi.shesmu.plugin.types.Location;
+import ca.on.oicr.gsi.shesmu.plugin.types.PathOrUri;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.gsi.vidarr.BasicType;
 import ca.on.oicr.gsi.vidarr.BasicType.Visitor;
@@ -109,7 +109,23 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                           : ca.getAnalysis().stream()
                               .map(
                                   analysisRecord ->
-                                      outputFile(ca.getInstanceName(), analysisRecord))
+                                      new Tuple(
+                                          analysisRecord.getChecksum(),
+                                          analysisRecord.getChecksumType(),
+                                          analysisRecord.getExternalKeys().stream()
+                                              .map(
+                                                  externalId ->
+                                                      new Tuple(
+                                                          externalId.getId(),
+                                                          externalId.getProvider()))
+                                              .collect(Collectors.toSet()),
+                                          analysisRecord.getLabels(),
+                                          analysisRecord.getSize(),
+                                          String.format(
+                                              "vidarr:%s/file/%s",
+                                              ca.getInstanceName(), analysisRecord.getId()),
+                                          analysisRecord.getMetatype(),
+                                          PathOrUri.parse(analysisRecord.getPath())))
                               .collect(Collectors.toSet()),
                       ca.getExternalKeys().stream()
                           .map(
@@ -213,26 +229,6 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
       }
       return Optional.empty();
     }
-  }
-
-  /** Create an entry in the output_files of a vidarr_analysis record */
-  private static Tuple outputFile(
-      String instanceName, ProvenanceAnalysisRecord<ExternalId> analysisRecord) {
-    final Path path = Path.of(analysisRecord.getPath());
-    return new Tuple(
-        analysisRecord.getChecksum(),
-        analysisRecord.getChecksumType(),
-        analysisRecord.getExternalKeys().stream()
-            .map(externalId -> new Tuple(externalId.getId(), externalId.getProvider()))
-            .collect(Collectors.toSet()),
-        analysisRecord.getLabels(),
-        analysisRecord.getSize(),
-        String.format("vidarr:%s/file/%s", instanceName, analysisRecord.getId()),
-        // Must match the alphabetical field order of the output_files type in
-        // VidarrAnalysisValue. Local files share the path, to avoid storing it twice.
-        Location.parseOrPath(analysisRecord.getPath(), path),
-        analysisRecord.getMetatype(),
-        path);
   }
 
   private static final Imyhat EXTERNAL_KEY_TYPE =
