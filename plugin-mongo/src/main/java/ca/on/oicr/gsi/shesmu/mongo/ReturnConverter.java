@@ -3,7 +3,7 @@ package ca.on.oicr.gsi.shesmu.mongo;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.plugin.types.PathParser;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.bson.Document;
@@ -220,7 +220,7 @@ public abstract class ReturnConverter {
         @Override
         Object unpack(Document document, String name) {
           final var path = document.getString(name);
-          return path == null ? null : PathParser.parse(path);
+          return path == null ? null : Paths.get(path);
         }
       };
   public static final ReturnConverter STRING =

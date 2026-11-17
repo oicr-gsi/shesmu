@@ -17,7 +17,6 @@ import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.OptionalImyhat;
-import ca.on.oicr.gsi.shesmu.plugin.types.PathParser;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.gsi.vidarr.BasicType;
 import ca.on.oicr.gsi.vidarr.BasicType.Visitor;
@@ -125,7 +124,7 @@ public class VidarrPlugin extends JsonPluginFile<Configuration> {
                                               "vidarr:%s/file/%s",
                                               ca.getInstanceName(), analysisRecord.getId()),
                                           analysisRecord.getMetatype(),
-                                          PathParser.parse(analysisRecord.getPath())))
+                                          Path.of(analysisRecord.getPath())))
                               .collect(Collectors.toSet()),
                       ca.getExternalKeys().stream()
                           .map(

@@ -21,12 +21,12 @@ import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.plugin.types.PathParser;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import java.io.PrintStream;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.Month;
@@ -105,11 +105,11 @@ public final class StandardDefinitions implements DefinitionRepository {
   private static final Type A_JSON_SIGNATURE_TYPE = Type.getType(JsonSigner.class);
   private static final Type A_MAP_TYPE = Type.getType(Map.class);
   private static final Type A_NOTHING_ACTION_TYPE = Type.getType(NothingAction.class);
+  private static final Type A_PATHS_TYPE = Type.getType(Paths.class);
   private static final Type A_PATH_TYPE = Type.getType(Path.class);
   private static final Type A_SHA1_SIGNATURE_TYPE = Type.getType(SHA1DigestSigner.class);
   protected static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
   protected static final Type A_STRING_TYPE = Type.getType(String.class);
-  private static final Type A_PATH_PARSER_TYPE = Type.getType(PathParser.class);
   private static final Method DEFAULT_CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {});
   private static final FunctionDefinition[] FUNCTIONS =
       new FunctionDefinition[] {
@@ -459,11 +459,9 @@ public final class StandardDefinitions implements DefinitionRepository {
             "$runtime.pathNormalize(%s)",
             Imyhat.PATH,
             new FunctionParameter("input path", Imyhat.PATH)),
-        // Use a helper rather than Path.relativize so mixing local and URL paths doesn't throw
-        FunctionDefinition.staticMethod(
+        FunctionDefinition.virtualMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "relativize"),
-            RuntimeSupport.class,
-            "relativizePath",
+            "relativize",
             "Creates a new path of relativize one path as if in the directory of the other.",
             "$runtime.pathRelativize(%s, %s)",
             Imyhat.PATH,
@@ -580,6 +578,55 @@ public final class StandardDefinitions implements DefinitionRepository {
             "$runtime.jsonParse(%s)",
             Imyhat.JSON.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "uri", "from_path"),
+            RuntimeSupport.class,
+            "uriFromPath",
+            "Converts a path to a URI. Absolute paths become file:// URIs; relative paths become relative URIs.",
+            "$runtime.uriFromPath(%s)",
+            Imyhat.URI,
+            new FunctionParameter("path to convert", Imyhat.PATH)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "uri", "host"),
+            RuntimeSupport.class,
+            "uriHost",
+            "Gets the host (authority) of a URI (e.g., the bucket in gs://bucket/file), if it has one.",
+            "$runtime.uriHost(%s)",
+            Imyhat.STRING.asOptional(),
+            new FunctionParameter("URI to examine", Imyhat.URI)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "uri", "parse"),
+            RuntimeSupport.class,
+            "uriParse",
+            "Converts a string to a URI, if it is valid.",
+            "$runtime.uriParse(%s)",
+            Imyhat.URI.asOptional(),
+            new FunctionParameter("string to parse", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "uri", "path"),
+            RuntimeSupport.class,
+            "uriPath",
+            "Gets the path portion of a URI (e.g., /file in gs://bucket/file), if it has one.",
+            "$runtime.uriPath(%s)",
+            Imyhat.PATH.asOptional(),
+            new FunctionParameter("URI to examine", Imyhat.URI)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "uri", "resolve"),
+            RuntimeSupport.class,
+            "uriResolve",
+            "Resolves a relative or absolute reference against a URI, if the reference is a valid URI.",
+            "$runtime.uriResolve(%s, %s)",
+            Imyhat.URI.asOptional(),
+            new FunctionParameter("base URI", Imyhat.URI),
+            new FunctionParameter("reference to resolve", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "uri", "scheme"),
+            RuntimeSupport.class,
+            "uriScheme",
+            "Gets the scheme of a URI (e.g., gs in gs://bucket/file), if it has one.",
+            "$runtime.uriScheme(%s)",
+            Imyhat.STRING.asOptional(),
+            new FunctionParameter("URI to examine", Imyhat.URI)),
         FunctionDefinition.staticMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "url", "decode"),
             RuntimeSupport.class,
@@ -709,8 +756,11 @@ public final class StandardDefinitions implements DefinitionRepository {
 
           @Override
           public void render(GeneratorAdapter methodGen) {
+            methodGen.push(0);
+            methodGen.newArray(A_STRING_TYPE);
             methodGen.invokeStatic(
-                A_PATH_PARSER_TYPE, new Method("parse", A_PATH_TYPE, new Type[] {A_STRING_TYPE}));
+                A_PATHS_TYPE,
+                new Method("get", A_PATH_TYPE, new Type[] {A_STRING_TYPE, A_STRING_ARRAY_TYPE}));
           }
 
           @Override

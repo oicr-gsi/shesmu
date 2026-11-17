@@ -1519,14 +1519,6 @@ public abstract class Imyhat {
           return other.unify(this);
         }
       };
-
-  /**
-   * The path type, backed by {@link Path}
-   *
-   * <p>Values may be local paths or URL paths (ex. gs://bucket/file). Paths created from strings
-   * must use {@link PathParser#parse(String)} rather than {@link Paths#get(String, String...)} or
-   * {@link Path#of(String, String...)}, which would mangle URL paths.
-   */
   public static final BaseImyhat PATH =
       new BaseImyhat() {
 
@@ -1547,7 +1539,7 @@ public abstract class Imyhat {
 
         @Override
         public Comparator<?> comparator() {
-          return PathParser.COMPARATOR;
+          return Comparator.naturalOrder();
         }
 
         @Override
@@ -1582,7 +1574,67 @@ public abstract class Imyhat {
 
         @Override
         public Object parse(String s) {
-          return PathParser.parse(s);
+          return Paths.get(s);
+        }
+      };
+
+  /** The URI type, backed by {@link java.net.URI} */
+  public static final BaseImyhat URI =
+      new BaseImyhat() {
+
+        @Override
+        public void accept(ImyhatConsumer dispatcher, Object value) {
+          dispatcher.accept((java.net.URI) value);
+        }
+
+        @Override
+        public <R> R apply(ImyhatFunction<R> dispatcher, Object value) {
+          return dispatcher.apply((java.net.URI) value);
+        }
+
+        @Override
+        public <R> R apply(ImyhatTransformer<R> transformer) {
+          return transformer.uri();
+        }
+
+        @Override
+        public Comparator<?> comparator() {
+          return Comparator.naturalOrder();
+        }
+
+        @Override
+        public Object defaultValue() {
+          return java.net.URI.create("");
+        }
+
+        @Override
+        public String descriptor() {
+          return "r";
+        }
+
+        @Override
+        public boolean isOrderable() {
+          return false;
+        }
+
+        @Override
+        public Class<?> javaType() {
+          return java.net.URI.class;
+        }
+
+        @Override
+        public Class<?> javaWrapperType() {
+          return java.net.URI.class;
+        }
+
+        @Override
+        public String name() {
+          return "uri";
+        }
+
+        @Override
+        public Object parse(String s) {
+          return java.net.URI.create(s);
         }
       };
 
@@ -1654,7 +1706,7 @@ public abstract class Imyhat {
   }
 
   public static Stream<BaseImyhat> baseTypes() {
-    return Stream.of(BOOLEAN, DATE, FLOAT, INTEGER, JSON, PATH, STRING);
+    return Stream.of(BOOLEAN, DATE, FLOAT, INTEGER, JSON, PATH, STRING, URI);
   }
 
   /**
@@ -1830,6 +1882,9 @@ public abstract class Imyhat {
       case 's':
         output.set(input.subSequence(1, input.length()));
         return STRING;
+      case 'r':
+        output.set(input.subSequence(1, input.length()));
+        return URI;
       case 'a':
         return parse(input.subSequence(1, input.length()), output, allowEmpty).asList();
       case 'm':

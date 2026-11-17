@@ -12,8 +12,6 @@ import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.plugin.types.PathParser;
-import ca.on.oicr.gsi.shesmu.plugin.types.UrlPath;
 import ca.on.oicr.gsi.shesmu.server.plugins.BaseInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicActionParameterDescriptor;
 import ca.on.oicr.gsi.shesmu.server.plugins.InvokeDynamicRefillerParameterDescriptor;
@@ -24,6 +22,8 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -44,7 +44,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -718,42 +717,9 @@ public final class RuntimeSupport {
     return result;
   }
 
-  /**
-   * Resolve a string against a path
-   *
-   * <p>The string is parsed with {@link PathParser} so a URL string (ex. gs://) is treated the same
-   * as a URL path; {@link Path#resolve(String)} on a local path would collapse its "//".
-   */
   @RuntimeInterop
   public static Path resolvePath(Path path, String str) {
-    return resolvePath(path, PathParser.parse(str));
-  }
-
-  /**
-   * Resolve one path against another
-   *
-   * <p>A local path's {@link Path#resolve(Path)} throws if given a URL path (ex. gs://) since it
-   * can only handle paths from its own file system. A URL path is always absolute
-   */
-  @RuntimeInterop
-  public static Path resolvePath(Path path, Path other) {
-    return other instanceof UrlPath ? other : path.resolve(other);
-  }
-
-  /**
-   * Create a relative path from a directory to a target
-   *
-   * <p>A local path and a URL path (ex. gs://), or URL paths in different buckets, have no common
-   * root so no relative path exists between them {@link Path#relativize(Path)} throws and the
-   * target is returned unchanged.
-   */
-  @RuntimeInterop
-  public static Path relativizePath(Path directory, Path target) {
-    if ((directory instanceof UrlPath || target instanceof UrlPath)
-        && !Objects.equals(directory.getRoot(), target.getRoot())) {
-      return target;
-    }
-    return directory.relativize(target);
+    return path.resolve(str);
   }
 
   public static <T> Stream<T> reverse(Stream<T> input) {
@@ -826,6 +792,58 @@ public final class RuntimeSupport {
   @RuntimeInterop
   public static <T> Optional<T> unnest(Optional<Optional<T>> input) {
     return input.orElse(Optional.empty());
+  }
+
+  /**
+   * Convert a local path to a URI
+   *
+   * <p>Absolute paths become file:// URIs; relative paths become relative URI references, rather
+   * than being resolved against the server's working directory
+   */
+  @RuntimeInterop
+  public static URI uriFromPath(Path path) {
+    if (path.isAbsolute()) {
+      return path.toUri();
+    }
+    try {
+      return new URI(null, null, path.toString(), null);
+    } catch (URISyntaxException e) {
+      throw new IllegalArgumentException(e);
+    }
+  }
+
+  @RuntimeInterop
+  public static Optional<String> uriHost(URI uri) {
+    return Optional.ofNullable(uri.getAuthority());
+  }
+
+  @RuntimeInterop
+  public static Optional<URI> uriParse(String input) {
+    try {
+      return Optional.of(new URI(input));
+    } catch (URISyntaxException e) {
+      return Optional.empty();
+    }
+  }
+
+  @RuntimeInterop
+  public static Optional<Path> uriPath(URI uri) {
+    final String path = uri.getPath();
+    return path == null || path.isEmpty() ? Optional.empty() : Optional.of(Path.of(path));
+  }
+
+  @RuntimeInterop
+  public static Optional<URI> uriResolve(URI uri, String other) {
+    try {
+      return Optional.of(uri.resolve(new URI(other)));
+    } catch (URISyntaxException | IllegalArgumentException e) {
+      return Optional.empty();
+    }
+  }
+
+  @RuntimeInterop
+  public static Optional<String> uriScheme(URI uri) {
+    return Optional.ofNullable(uri.getScheme());
   }
 
   @RuntimeInterop

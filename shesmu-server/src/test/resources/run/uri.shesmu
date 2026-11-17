@@ -1,0 +1,19 @@
+Version 1;
+Input test;
+
+Function location_text(PATH{path} | URI{uri} location)
+  Match location
+    When PATH{p} Then "{p}"
+    When URI{u} Then "{u}";
+
+Function bucket(uri u) std::uri::host(u) Default "";
+
+Olive Run ok With ok = Begin
+  remote = std::uri::parse("gs://bucket/a/b.bam") Default std::uri::from_path('/data');
+  Return location_text(URI{remote}) == "gs://bucket/a/b.bam"
+    && location_text(PATH{'/data/x'}) == "/data/x"
+    && bucket(remote) == "bucket"
+    && std::uri::scheme(remote) == `"gs"`
+    && std::uri::path(remote) == `'/a/b.bam'`
+    && std::uri::resolve(remote, "c.bam") == std::uri::parse("gs://bucket/a/c.bam");
+  End;

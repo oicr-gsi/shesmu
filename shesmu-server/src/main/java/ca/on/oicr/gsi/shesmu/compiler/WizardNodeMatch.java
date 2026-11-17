@@ -195,6 +195,12 @@ public class WizardNodeMatch extends WizardNode {
                     }
 
                     @Override
+                    public Map<String, Imyhat> uri() {
+                      test.typeError("algebraic type", test.type(), errorHandler);
+                      return null;
+                    }
+
+                    @Override
                     public Map<String, Imyhat> string() {
                       test.typeError("algebraic type", test.type(), errorHandler);
                       return null;

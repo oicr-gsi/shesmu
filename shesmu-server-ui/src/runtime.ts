@@ -232,6 +232,43 @@ export function pathEndsWith(check: string, suffix: string): boolean {
   }
   return true;
 }
+function uriParts(uri: string): URL | null {
+  try {
+    return new URL(uri);
+  } catch (e) {
+    return null;
+  }
+}
+export function uriFromPath(path: string): string {
+  return path.startsWith("/") ? "file://" + encodeURI(path) : encodeURI(path);
+}
+export function uriHost(uri: string): string | null {
+  return uriParts(uri)?.host || null;
+}
+export function uriParse(input: string): string | null {
+  try {
+    // Relative URIs are valid, so resolve against a placeholder to check syntax
+    new URL(input, "shesmu://placeholder/");
+    return input;
+  } catch (e) {
+    return null;
+  }
+}
+export function uriPath(uri: string): string | null {
+  const parts = uriParts(uri);
+  return parts ? decodeURIComponent(parts.pathname) || null : null;
+}
+export function uriResolve(uri: string, other: string): string | null {
+  try {
+    return new URL(other, uri).toString();
+  } catch (e) {
+    return null;
+  }
+}
+export function uriScheme(uri: string): string | null {
+  const parts = uriParts(uri);
+  return parts ? parts.protocol.replace(/:$/, "") : null;
+}
 export function pathFileName(path: string): string {
   const pathParts = path.split("/");
   return pathParts[pathParts.length - 1];

@@ -199,6 +199,11 @@ public class MatchAlternativeNodeRemainder extends MatchAlternativeNode {
                               }
 
                               @Override
+                              public Imyhat uri() {
+                                throw new IllegalStateException();
+                              }
+
+                              @Override
                               public Imyhat string() {
                                 throw new IllegalStateException();
                               }

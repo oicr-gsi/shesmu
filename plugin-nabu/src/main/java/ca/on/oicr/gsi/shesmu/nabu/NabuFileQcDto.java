@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.nabu;
 
-import ca.on.oicr.gsi.shesmu.plugin.types.PathParser;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.nio.file.Path;
@@ -15,7 +14,7 @@ public class NabuFileQcDto {
   private String fileId;
 
   @JsonProperty("filepath")
-  private String filePath;
+  private Path filePath;
 
   @JsonProperty("fileqcid")
   private long fileQcId;
@@ -43,7 +42,7 @@ public class NabuFileQcDto {
   }
 
   public Path getFilePath() {
-    return filePath == null ? null : PathParser.parse(filePath);
+    return filePath;
   }
 
   public long getFileQcId() {
@@ -82,7 +81,7 @@ public class NabuFileQcDto {
     this.fileId = fileId;
   }
 
-  public void setFilePath(String filePath) {
+  public void setFilePath(Path filePath) {
     this.filePath = filePath;
   }
 

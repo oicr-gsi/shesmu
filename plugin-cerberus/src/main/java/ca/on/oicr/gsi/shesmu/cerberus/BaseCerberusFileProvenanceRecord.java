@@ -6,7 +6,7 @@ import ca.on.oicr.gsi.shesmu.gsicommon.CerberusFileProvenanceValue;
 import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
-import ca.on.oicr.gsi.shesmu.plugin.types.PathParser;
+import ca.on.oicr.gsi.shesmu.plugin.types.Location;
 import ca.on.oicr.gsi.vidarr.api.ProvenanceWorkflowRun;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -108,8 +108,13 @@ abstract class BaseCerberusFileProvenanceRecord<T extends LimsProvenance>
   }
 
   @Override
+  public final AlgebraicValue location() {
+    return Location.parse(provenanceRecord.record().getPath());
+  }
+
+  @Override
   public final Path path() {
-    return PathParser.parse(provenanceRecord.record().getPath());
+    return Path.of(provenanceRecord.record().getPath());
   }
 
   @Override

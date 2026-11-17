@@ -35,6 +35,12 @@ These functions are available on any instance:
 - `std::string::lower`: Convert a string to lower case.
 - `std::string::trim`: Remove white space from a string.
 - `std::string::upper`: Convert a string to upper case.
+- `std::uri::from_path`: Converts a path to a URI. Absolute paths become `file://` URIs; relative paths become relative URIs.
+- `std::uri::host`: Gets the host (authority) of a URI (_i.e._, the `bucket` in `gs://bucket/file`), if it has one.
+- `std::uri::parse`: Converts a string to a URI, if it is valid.
+- `std::uri::path`: Gets the path portion of a URI (_i.e._, `/file` in `gs://bucket/file`), if it has one.
+- `std::uri::resolve`: Resolves a relative or absolute reference against a URI, if the reference is a valid URI.
+- `std::uri::scheme`: Gets the scheme of a URI (_i.e._, `gs` in `gs://bucket/file`), if it has one.
 - `std::url::decode`: Convert a URL-encoded string back to a normal string.
 - `std::url::encode`: Convert a string to a URL-encoded string (also escaping `*`, even though that is not standard).
 - `std::version_at_least`: Checks whether the supplied version tuple is the same or greater than version numbers provided.

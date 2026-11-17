@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.plugin.types;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -437,6 +438,18 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
         @Override
         public String unpack(Object object) {
           return (String) object;
+        }
+      };
+  public static final TypeGuarantee<URI> URI =
+      new TypeGuarantee<>() {
+        @Override
+        public Imyhat type() {
+          return Imyhat.URI;
+        }
+
+        @Override
+        public java.net.URI unpack(Object object) {
+          return (java.net.URI) object;
         }
       };
 
