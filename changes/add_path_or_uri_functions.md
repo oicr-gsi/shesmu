@@ -1,0 +1,1 @@
+`std::string::to_path_or_uri` and `std::path_or_uri::to_string` to convert between strings and `PATH{path} | URI{host = string, name = string, scheme = string}`, the type of files that may be remote (_e.g._, `gs://bucket/file`)

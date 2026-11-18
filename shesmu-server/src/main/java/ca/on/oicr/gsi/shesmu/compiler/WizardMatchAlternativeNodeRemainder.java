@@ -159,11 +159,6 @@ public class WizardMatchAlternativeNodeRemainder extends WizardMatchAlternativeN
                               }
 
                               @Override
-                              public Imyhat uri() {
-                                throw new IllegalStateException();
-                              }
-
-                              @Override
                               public Imyhat string() {
                                 throw new IllegalStateException();
                               }

@@ -1,6 +1,0 @@
-Version 1;
-Input test;
-
-Export Function file_of(uri u) std::path::file(u);
-
-Olive Run ok With ok = True;

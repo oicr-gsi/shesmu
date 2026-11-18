@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
-import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
@@ -31,9 +30,6 @@ public interface ImyhatConsumer {
 
   /** Collect a path value */
   void accept(Path value);
-
-  /** Collect a URI value */
-  void accept(URI value);
 
   /**
    * Collect items in a list

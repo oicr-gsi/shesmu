@@ -112,11 +112,6 @@ public enum Comparison {
         }
 
         @Override
-        public String uri() {
-          return "!" + isEqual.uri();
-        }
-
-        @Override
         public String string() {
           return "!" + isEqual.string();
         }
@@ -192,11 +187,6 @@ public enum Comparison {
 
     @Override
     public String path() {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String uri() {
       throw new UnsupportedOperationException();
     }
 

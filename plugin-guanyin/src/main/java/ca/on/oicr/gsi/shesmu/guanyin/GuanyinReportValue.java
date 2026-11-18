@@ -50,7 +50,7 @@ public class GuanyinReportValue {
   /**
    * The paths or, for remote files (ex. gs://bucket/file), URIs of the report's input files
    *
-   * <p>Each is <code>PATH{path} | URI{uri}</code>
+   * <p>Each is <code>PATH{path} | URI{host = string, name = string, scheme = string}</code>
    */
   @ShesmuVariable(type = "a" + PathOrUri.DESCRIPTOR)
   public Set<AlgebraicValue> files_in() {

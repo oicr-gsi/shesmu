@@ -134,11 +134,6 @@ public final class EcmaScriptRenderer {
     }
 
     @Override
-    public String uri() {
-      return String.format("%s.localeCompare(%s)", left, right);
-    }
-
-    @Override
     public String string() {
       return String.format("%s.localeCompare(%s)", left, right);
     }
@@ -288,11 +283,6 @@ public final class EcmaScriptRenderer {
 
       @Override
       public String path() {
-        return String.format("(%s == %s)", left, right);
-      }
-
-      @Override
-      public String uri() {
         return String.format("(%s == %s)", left, right);
       }
 

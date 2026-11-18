@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.plugin.json;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
-import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
@@ -62,11 +61,6 @@ public class PackJsonArray implements ImyhatConsumer {
 
   @Override
   public void accept(Path value) {
-    node.add(value.toString());
-  }
-
-  @Override
-  public void accept(URI value) {
     node.add(value.toString());
   }
 

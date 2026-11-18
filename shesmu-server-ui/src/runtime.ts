@@ -305,33 +305,43 @@ export function pathResolve(root: string, child: string): string {
   }
   return `${root}/${child}`;
 }
-export function pathOrUriToString(value: {
-  type: string;
-  contents: string[];
-}): string {
-  // A URI keeps its scheme and host; the file or object name is unescaped
-  const match =
-    value.type == "URI"
-      ? value.contents[0].match(/^([^:/?#]+:\/\/[^/?#]*)([\s\S]*)$/)
-      : null;
-  return match ? match[1] + decodeURIComponent(match[2]) : value.contents[0];
+type PathOrUri =
+  | { type: "PATH"; contents: [string] }
+  | { type: "URI"; contents: { host: string; name: string; scheme: string } };
+export function pathOrUriToString(value: PathOrUri): string {
+  return value.type == "URI"
+    ? `${value.contents.scheme}://${value.contents.host}${value.contents.name}`
+    : value.contents[0];
 }
-export function stringToPathOrUri(input: string): {
-  type: string;
-  contents: string[];
-} {
-  // Everything after the host is taken literally as the file or object name
-  const match = input.match(/^([A-Za-z][A-Za-z0-9+.-]*:\/\/)([^/]*)([\s\S]*)$/);
-  return match && (match[2] || match[3])
-    ? {
-        type: "URI",
-        contents: [
-          match[1] +
-            match[2] +
-            match[3].split("/").map(encodeURIComponent).join("/"),
-        ],
+export function stringToPathOrUri(input: string): PathOrUri {
+  // The host stops at the first /, ?, or #
+  const match = input.match(
+    /^([A-Za-z][A-Za-z0-9+.-]*):\/\/([^/?#]*)([\s\S]*)$/
+  );
+  if (!match) {
+    return { type: "PATH", contents: [input] };
+  }
+  const [, scheme, host, name] = match;
+  if (
+    scheme.toLowerCase() == "file" &&
+    (host == "" || host.toLowerCase() == "localhost")
+  ) {
+    // A local file URI is a path, decoded if it is validly escaped with no query or fragment
+    let decoded = name;
+    if (/^[A-Za-z0-9\-._~!$&'()*+,;=:@\/%\u0080-\uffff]*$/.test(name)) {
+      try {
+        decoded = decodeURIComponent(name);
+      } catch (e) {
+        // Invalid escape; take it literally
       }
-    : { type: "PATH", contents: [input] };
+      if (decoded.includes("\0")) {
+        // Not a valid path, as on the server; take it literally
+        decoded = name;
+      }
+    }
+    return { type: "PATH", contents: [decoded || "/"] };
+  }
+  return { type: "URI", contents: { host: host, name: name, scheme: scheme } };
 }
 export function pathStartsWith(check: string, prefix: string): boolean {
   return pathStartsWithArray(check.split("/"), prefix.split("/"));

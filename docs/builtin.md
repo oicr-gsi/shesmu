@@ -31,10 +31,10 @@ These functions are available on any instance:
 - `std::path::normalize`: Normalize a path (_i.e._, remove any `./` and `../` in the path).
 - `std::path::relativize`: Creates a new path of relativize one path as if in the directory of the other.
 - `std::path::replace_home`: Replace any path that starts with `$HOME` or `~` with the provided home directory.
-- `std::path_or_uri::to_string`: Converts a path or URI back to the string it was created from (the inverse of `std::string::to_path_or_uri`).
+- `std::path_or_uri::to_string`: Converts a path or URI to a string. A URI gives back the string it was created from; a path is normalized as paths always are (_e.g._, a trailing `/` is removed).
 - `std::string::eq`: Compares two strings ignoring case.
 - `std::string::lower`: Convert a string to lower case.
-- `std::string::to_path_or_uri`: Converts a string to `PATH{path} | URI{uri}`. Strings with a scheme (_e.g._, `gs://bucket/file`) become `URI`; everything else becomes `PATH`.
+- `std::string::to_path_or_uri`: Converts a string to `PATH{path} | URI{host = string, name = string, scheme = string}`. Strings with a scheme (_e.g._, `gs://bucket/a/b.bam`) become `URI`, with the host `bucket` and the name `/a/b.bam`. Everything else becomes `PATH`, including local file URIs (`file:///data/x.bam` or `file://localhost/data/x.bam`).
 - `std::string::trim`: Remove white space from a string.
 - `std::string::upper`: Convert a string to upper case.
 - `std::url::decode`: Convert a URL-encoded string back to a normal string.

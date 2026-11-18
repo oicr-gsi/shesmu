@@ -164,11 +164,4 @@ public interface ImyhatTransformer<R> {
    * @return the transformed result
    */
   R tuple(Stream<Imyhat> contents);
-
-  /**
-   * Convert a <code>uri</code> type
-   *
-   * @return the transformed result
-   */
-  R uri();
 }

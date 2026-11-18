@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
-import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
@@ -93,11 +92,6 @@ public class PackWdlVariables implements ImyhatConsumer {
 
   @Override
   public void accept(Path value) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public void accept(URI value) {
     throw new UnsupportedOperationException();
   }
 

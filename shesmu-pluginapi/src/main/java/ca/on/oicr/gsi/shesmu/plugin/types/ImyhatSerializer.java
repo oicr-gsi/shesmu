@@ -161,11 +161,6 @@ public class ImyhatSerializer extends ValueSerializer<Imyhat> {
                   return just(Imyhat.PATH);
                 }
 
-                @Override
-                public Generator uri() {
-                  return just(Imyhat.URI);
-                }
-
                 private Generator single(Imyhat inner, String name, Imyhat whenNull) {
                   if (inner == null) return just(whenNull);
                   final var generator = inner.apply(this);

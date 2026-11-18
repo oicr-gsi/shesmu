@@ -391,13 +391,6 @@ export function q(inner: Parser): Parser {
     }
   };
 }
-export function r(input: string): ParseResult {
-  // There is no URI literal, so accept a string
-  const result = s(input);
-  return result.good
-    ? result
-    : { good: false, input: input, error: "Expected URI as a string." };
-}
 export function s(input: string): ParseResult {
   let match = input.match(/^\s*"(([^"\\]|\\")*)"/);
   if (match) {

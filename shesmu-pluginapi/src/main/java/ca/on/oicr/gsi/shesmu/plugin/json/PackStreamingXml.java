@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.shesmu.plugin.input.TimeFormat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
-import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
@@ -75,15 +74,6 @@ public class PackStreamingXml implements ImyhatConsumer {
 
   @Override
   public void accept(Path value) {
-    try {
-      writer.writeCharacters(value.toString());
-    } catch (XMLStreamException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  public void accept(URI value) {
     try {
       writer.writeCharacters(value.toString());
     } catch (XMLStreamException e) {

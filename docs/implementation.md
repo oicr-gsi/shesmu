@@ -82,7 +82,6 @@ olives cannot handle null values. If you need nullable values, use
 | String     | `java.lang.String`                         | `string`                 | `s`        |
 | Boolean    | `boolean` / `z`                            | `boolean`                | `b`        |
 | Date       | `java.time.Instant`                        | `date`                   | `d`        |
-| URI        | `java.net.URI`                             | `uri`                    | `r`        |
 | JSON       | `tools.jackson.databind.JsonNode`  | `json`                   | `j`        |
 | List       | `java.lang.Set`                            | `[`_inner_`]`            | `a`_inner_ |
 | Empty List | `java.lang.Set`                            | `[]`                     | `A`        |
@@ -110,7 +109,6 @@ necessary to convert a JSON document back into an interpretable format.
 | String    | string                             |
 | Boolean   | boolean                            |
 | Date      | number of milliseconds since epoch |
-| URI       | string                             |
 | List      | array                              |
 | Tuple     | array                              |
 | Object    | object                             |
@@ -119,8 +117,8 @@ necessary to convert a JSON document back into an interpretable format.
 
 ### Paths and URIs
 Files that may be remote (_e.g._, `gs://bucket/file`) should have the type
-`PATH{path} | URI{uri}` rather than `path`, since `Path.of` collapses the `//`
-after the scheme. Annotate the method with
+`PATH{path} | URI{host = string, name = string, scheme = string}` rather than `path`, since
+`Path.of` collapses the `//` after the scheme. Annotate the method with
 `@ShesmuVariable(type = PathOrUri.DESCRIPTOR)`, return an `AlgebraicValue`
 created by
 [`PathOrUri.parse`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/types/PathOrUri.html),

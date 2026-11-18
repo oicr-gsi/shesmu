@@ -1,6 +1,0 @@
-Version 1;
-Input test;
-
-TypeAlias uri string;
-
-Olive Run ok With ok = True;

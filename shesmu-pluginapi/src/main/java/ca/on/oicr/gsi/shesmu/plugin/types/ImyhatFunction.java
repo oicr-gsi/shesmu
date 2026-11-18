@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
-import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
@@ -89,14 +88,6 @@ public interface ImyhatFunction<R> {
    * @return the converted value
    */
   R apply(Path value);
-
-  /**
-   * Convert a URI value
-   *
-   * @param value the URI to convert
-   * @return the converted value
-   */
-  R apply(URI value);
 
   /**
    * Convert an empty optional

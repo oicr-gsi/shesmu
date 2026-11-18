@@ -5,7 +5,6 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
@@ -53,11 +52,6 @@ public class PackStreaming implements ImyhatConsumer {
 
   @Override
   public void accept(Path value) {
-    generator.writeString(value.toString());
-  }
-
-  @Override
-  public void accept(URI value) {
     generator.writeString(value.toString());
   }
 

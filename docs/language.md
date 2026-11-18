@@ -1087,9 +1087,12 @@ dictionary.
 
 Paths are UNIX-like paths that can be manipulated. They may contain `\'` if necessary.
 
-There is no literal syntax for URIs (_e.g._, `gs://bucket/file`). Files that
-may be remote have the type `PATH{path} | URI{uri}`; use
-`std::string::to_path_or_uri` to create one from a string.
+A path literal must not be used for a URI (_e.g._, `gs://bucket/file`), since
+the `//` after the scheme is collapsed. Files that may be remote have the type
+`PATH{path} | URI{host = string, name = string, scheme = string}` (_e.g._,
+`URI{host = "bucket", name = "/file", scheme = "gs"}`); use
+`std::string::to_path_or_uri` to create one from a string. In a `URI`, `name` is
+everything after the host, so it starts with `/` unless it is empty.
 
 #### String Literal
 - `"`parts`"`
@@ -1398,7 +1401,6 @@ machine-to-machine communication.
 | Object     | `{`_field1_` = `_t1_`,`_field2_` = `_t2_`,` ...`}` | `o` _n_ _field1_`$`_t1_ _field2_`$`_t2_ Where _n_ is the number of elements in the tuple. |
 | Optional   | _inner_`?`                                         | `q`_inner_ or `Q` |
 | Path       | `path`                                             | `p`         |
-| URI        | `uri`                                              | `r`         |
 | JSON       | `json`                                             | `j`         |
 | Algebraic  | _NAME_                                             | `u1`_NAME_`$t01` |
 | Algebraic  | _NAME_ `{`_t1_`, `_t2_`, `...`}`                   | `u1`_NAME_`$t`_n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
