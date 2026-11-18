@@ -1,0 +1,10 @@
+Version 1;
+Input test;
+
+Define foo()
+ LeftJoin library_size To Prefix foo_ inner_test foo_l
+    ls = Where project != "" List foo_l;
+
+Olive
+ foo()
+ Run ok With ok = (For l In ls: Count) == 1;

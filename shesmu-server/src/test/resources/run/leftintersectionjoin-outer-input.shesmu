@@ -1,0 +1,7 @@
+Version 1;
+Input test;
+
+Olive
+ LeftIntersectionJoin [True] To Prefix i_ inner_test [True, False]
+    ls = Where project != "" List i_l
+ Run ok With ok = (For l In ls: Count) == 2;
