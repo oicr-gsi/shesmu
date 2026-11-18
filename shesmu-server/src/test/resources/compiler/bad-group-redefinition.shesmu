@@ -1,0 +1,12 @@
+Version 1;
+Input test;
+
+Define foo(integer a)
+ Group By project Into a = Count;
+
+Define bar(integer a)
+ Flatten * In [{ x = 1, q = 3 }]
+ Group By x Into a = List q;
+
+Olive
+ Run ok With ok = True;
