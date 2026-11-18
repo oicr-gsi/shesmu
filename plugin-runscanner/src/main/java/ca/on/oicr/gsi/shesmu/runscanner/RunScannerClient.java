@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.runscanner.dto.dragen.DragenAnalysisUnit;
 import ca.on.oicr.gsi.runscanner.dto.dragen.DragenPipelineRun;
 import ca.on.oicr.gsi.runscanner.dto.dragen.DragenWorkflowRun;
 import ca.on.oicr.gsi.runscanner.dto.type.IlluminaChemistry;
+import ca.on.oicr.gsi.runscanner.dto.ultima.CramAnalysisFile;
 import ca.on.oicr.gsi.runscanner.dto.ultima.UltimaAnalysisUnit;
 import ca.on.oicr.gsi.runscanner.dto.ultima.UltimaPipelineRun;
 import ca.on.oicr.gsi.runscanner.dto.ultima.UltimaWorkflowRun;
@@ -250,26 +251,56 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
       @ShesmuParameter(description = "workflow name, one of: CRAMGeneration, EmSeq")
           String workflow) {
     try {
-      // Get the analysis for this run. If there is no run, or no analysis for this run, return
-      Optional<RunInformation> theRun = getRun(run);
-      if (theRun.isEmpty()) return Optional.empty();
-      RunInformation runInfo = theRun.get();
-      if (runInfo.pipelineRun().isEmpty()) return Optional.empty();
-
-      UltimaPipelineRun ultimaPipelineRun = (UltimaPipelineRun) runInfo.pipelineRun().get();
-      UltimaWorkflowRun workflowRun = ultimaPipelineRun.get(workflow);
-      if (workflowRun != null) {
-        for (UltimaAnalysisUnit unit : workflowRun.getAnalysisOutputs()) {
-          if (unit.getBarcode().equals(barcode)) {
-            return Optional.ofNullable(MAPPER.valueToTree(unit.getFiles()));
-          }
-        }
-      }
-      return Optional.empty();
+      return findUltimaAnalysisUnit(run, barcode, workflow)
+          .map(unit -> MAPPER.valueToTree(unit.getFiles()));
     } catch (ClassCastException | InitialCachePopulationException | JacksonException e) {
       e.printStackTrace();
       return Optional.empty();
     }
+  }
+
+  @ShesmuMethod(
+      description =
+          "Get the read count of the CRAM file produced by the Ultima CRAMGeneration workflow for a barcode, as detected by the Run Scanner defined in {file}. Empty if there is no CRAM file or its read count is not known.")
+  public Optional<Long> ultima_cram_read_count(
+      @ShesmuParameter(description = "name of run") String run,
+      @ShesmuParameter(description = "barcode, formatted like ATCGATCGATCGATCG") String barcode) {
+    try {
+      return findUltimaAnalysisUnit(run, barcode, "CRAMGeneration")
+          .flatMap(
+              unit -> {
+                final List<CramAnalysisFile> crams =
+                    unit.getFiles().stream()
+                        .filter(CramAnalysisFile.class::isInstance)
+                        .map(CramAnalysisFile.class::cast)
+                        .toList();
+                // Refuse to guess if a barcode somehow has several CRAMs
+                return crams.size() == 1
+                    ? Optional.ofNullable(crams.get(0).getReadCount())
+                    : Optional.empty();
+              });
+    } catch (ClassCastException | InitialCachePopulationException e) {
+      e.printStackTrace();
+      return Optional.empty();
+    }
+  }
+
+  /**
+   * Find the analysis output for a barcode in the latest pipeline run of an Ultima run
+   *
+   * @throws ClassCastException if the run's pipeline run is not an Ultima pipeline run
+   */
+  private Optional<UltimaAnalysisUnit> findUltimaAnalysisUnit(
+      String run, String barcode, String workflow) {
+    // Get the analysis for this run. If there is no run, or no analysis for this run, return
+    final Optional<PipelineRun> pipelineRun = getRun(run).flatMap(RunInformation::pipelineRun);
+    if (pipelineRun.isEmpty()) return Optional.empty();
+
+    final UltimaWorkflowRun workflowRun = ((UltimaPipelineRun) pipelineRun.get()).get(workflow);
+    if (workflowRun == null) return Optional.empty();
+    return workflowRun.getAnalysisOutputs().stream()
+        .filter(unit -> barcode.equals(unit.getBarcode()))
+        .findFirst();
   }
 
   @ShesmuMethod(
