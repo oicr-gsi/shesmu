@@ -1,1 +1,0 @@
-Fix olive flow diagrams (and simulations) failing with `Cannot read field "title"` when a signature is used after a clause that replaces the stream, such as `Group`, `LeftJoin`, `Let`, or a call to a `Define` olive containing one.

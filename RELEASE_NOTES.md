@@ -7,6 +7,32 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.65.0] - 2026-11-19
+
+### Added
+
+* Vidarr SubmitAction UPDATE submission policy to correspond to the UPDATE SubmitMode in Vidarr
+  * If successfully updates keys, displays the status of the matched Vidarr workflow run
+* compiler::any_olive_runs function for introspecting compiled olives
+
+### Fixed
+
+* `std::url::decode` now returns an empty optional for malformed input instead of failing the olive
+* Fix converting JSON arrays to tuples with `As`, which always produced an empty result
+* `std::string::truncate` with `MIDDLE` no longer returns one character too few for an odd maximum length
+* `Group` after `Flatten *` no longer reports its collector names as fields missing from the wildcard
+* Zero-padded integer interpolation now puts the minus sign before the padding, in both olives and guided meditations, so `{-5:3}` produces `-005` instead of `0-5`
+* Converting JSON to an object with `As` now treats a missing field as empty when the field has an optional type
+* Fix olive flow diagrams (and simulations) failing with `Cannot read field "title"` when a signature is used after a clause that replaces the stream, such as `Group`, `LeftJoin`, `Let`, or a call to a `Define` olive containing one.
+* `vidarr-load` and `vidarr-import` actions also get `vidarr-workflow-version-submitted` and `vidarr-workflow-version-completed` tags
+* Fix converting JSON to optional types with `As`, which rejected numbers, rejected `null`, and could cause a `ClassCastException` inside objects and tuples
+* `Max` and `Min` in `For` expressions now report a compile error for non-orderable selectors instead of failing at runtime
+* Fix converting JSON to objects or tuples with `As` when the JSON has more fields or elements than the target type
+* Fix the compiler crashing when the argument to `Limit` or `Skip` has a type error
+* Fix a `ClassCastException` when a `LeftJoin` or `LeftIntersectionJoin` collector or `Where` uses a variable from the input format or from a `Define` olive call before the join
+* `std::string::truncate` now works in guided meditations; it previously returned an empty string in the browser and ignored the truncation method
+
+
 ## [1.64.0] - 2026-10-23
 
 ### Added
