@@ -7,6 +7,13 @@ For unreleased changes, see [changes](changes).
 
 -----------------------------------------------------------------------------
 
+## [1.65.1] - 2026-11-19
+
+### Fixed
+
+* Run Scanner library updated to 2.11.0
+
+
 ## [1.65.0] - 2026-11-19
 
 ### Added
