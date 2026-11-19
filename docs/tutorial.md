@@ -330,7 +330,7 @@ Any kind of normal manipulation can be done in a `Define` olive:
       Where metatype == "x-chemical/fastq-gzip" && workflow == "CASAVA 1.8"
       Let
        path = path,
-       is_read_two = path ~ /.*_2\.fastq/,
+       is_read_two = std::path_or_uri::to_string(path) ~ /.*_2\.fastq/,
        timestamp = timestamp,
        donor = donor
       Max timestamp By donor, is_read_two
@@ -407,7 +407,7 @@ monitoring or dumping. The `Reject` clause does this:
                  "The number of bad BamQC results in production"
                  {}
          Dump ius, path To junk_bamqc_results
-         Alert alertname = "BadFile", path = "{path}" For 30mins
+         Alert alertname = "BadFile", path = std::path_or_uri::to_string(path) For 30mins
        Resume
       Run fastqc With
         memory = 4Gi,

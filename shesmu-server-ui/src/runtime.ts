@@ -305,6 +305,44 @@ export function pathResolve(root: string, child: string): string {
   }
   return `${root}/${child}`;
 }
+type PathOrUri =
+  | { type: "PATH"; contents: [string] }
+  | { type: "URI"; contents: { host: string; name: string; scheme: string } };
+export function pathOrUriToString(value: PathOrUri): string {
+  return value.type == "URI"
+    ? `${value.contents.scheme}://${value.contents.host}${value.contents.name}`
+    : value.contents[0];
+}
+export function stringToPathOrUri(input: string): PathOrUri {
+  // The host stops at the first /, ?, or #
+  const match = input.match(
+    /^([A-Za-z][A-Za-z0-9+.-]*):\/\/([^/?#]*)([\s\S]*)$/
+  );
+  if (!match) {
+    return { type: "PATH", contents: [input] };
+  }
+  const [, scheme, host, name] = match;
+  if (
+    scheme.toLowerCase() == "file" &&
+    (host == "" || host.toLowerCase() == "localhost")
+  ) {
+    // A local file URI is a path, decoded if it is validly escaped with no query or fragment
+    let decoded = name;
+    if (/^[A-Za-z0-9\-._~!$&'()*+,;=:@\/%\u0080-\uffff]*$/.test(name)) {
+      try {
+        decoded = decodeURIComponent(name);
+      } catch (e) {
+        // Invalid escape; take it literally
+      }
+      if (decoded.includes("\0")) {
+        // Not a valid path, as on the server; take it literally
+        decoded = name;
+      }
+    }
+    return { type: "PATH", contents: [decoded || "/"] };
+  }
+  return { type: "URI", contents: { host: host, name: name, scheme: scheme } };
+}
 export function pathStartsWith(check: string, prefix: string): boolean {
   return pathStartsWithArray(check.split("/"), prefix.split("/"));
 }

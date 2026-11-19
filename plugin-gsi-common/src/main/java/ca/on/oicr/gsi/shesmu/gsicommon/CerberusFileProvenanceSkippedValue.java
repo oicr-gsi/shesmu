@@ -4,7 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.Gang;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
-import java.nio.file.Path;
+import ca.on.oicr.gsi.shesmu.plugin.types.PathOrUri;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -107,8 +107,13 @@ public interface CerberusFileProvenanceSkippedValue {
   @ShesmuVariable(signable = true)
   String organism();
 
-  @ShesmuVariable
-  Path path();
+  /**
+   * The file's path or, for remote files (ex. gs://bucket/file), its URI
+   *
+   * <p>The type is <code>PATH{path} | URI{host = string, name = string, scheme = string}</code>
+   */
+  @ShesmuVariable(type = PathOrUri.DESCRIPTOR)
+  AlgebraicValue path();
 
   @ShesmuVariable(
       signable = true,

@@ -1,0 +1,18 @@
+Version 1;
+Input test;
+
+Function describe(PATH{path} | URI{host = string, name = string, scheme = string} f)
+  Match f
+    When PATH{p} Then "local {p}"
+    When URI * Then "{scheme} bucket {host} object {name}";
+
+Function round_trip(string s) std::path_or_uri::to_string(std::string::to_path_or_uri(s)) == s;
+
+Olive Run ok With ok =
+  describe(std::string::to_path_or_uri("gs://bucket/a/b.bam")) == "gs bucket bucket object /a/b.bam"
+  && std::string::to_path_or_uri("gs://bucket/a b#1.bam") == URI{host = "bucket", name = "/a b#1.bam", scheme = "gs"}
+  && describe(std::string::to_path_or_uri("/data/a/b.bam")) == "local /data/a/b.bam"
+  && std::string::to_path_or_uri("relative/x") == PATH{'relative/x'}
+  && round_trip("gs://bucket/a b#1?x%20.bam")
+  && round_trip("s3://bucket//a/dir/")
+  && round_trip("/data/a/b.bam");

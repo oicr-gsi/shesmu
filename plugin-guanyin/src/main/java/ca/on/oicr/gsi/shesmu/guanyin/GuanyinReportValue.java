@@ -1,6 +1,8 @@
 package ca.on.oicr.gsi.shesmu.guanyin;
 
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
+import ca.on.oicr.gsi.shesmu.plugin.types.PathOrUri;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -10,7 +12,7 @@ import tools.jackson.databind.JsonNode;
 
 public class GuanyinReportValue {
   private final String category;
-  private final Set<Path> filesIn;
+  private final Set<AlgebraicValue> filesIn;
   private final boolean finished;
   private final Optional<Instant> freshestInputDate;
   private final Optional<Instant> generated;
@@ -27,7 +29,7 @@ public class GuanyinReportValue {
     filesIn =
         recordDto.getFilesIn() == null
             ? Set.of()
-            : recordDto.getFilesIn().stream().map(Paths::get).collect(Collectors.toSet());
+            : recordDto.getFilesIn().stream().map(PathOrUri::parse).collect(Collectors.toSet());
     finished = recordDto.isFinished();
     freshestInputDate = Optional.ofNullable(recordDto.getFreshestInputDate()).map(Instant::parse);
     generated = Optional.ofNullable(recordDto.getGenerated()).map(Instant::parse);
@@ -45,8 +47,13 @@ public class GuanyinReportValue {
     return category;
   }
 
-  @ShesmuVariable
-  public Set<Path> files_in() {
+  /**
+   * The paths or, for remote files (ex. gs://bucket/file), URIs of the report's input files
+   *
+   * <p>Each is <code>PATH{path} | URI{host = string, name = string, scheme = string}</code>
+   */
+  @ShesmuVariable(type = "a" + PathOrUri.DESCRIPTOR)
+  public Set<AlgebraicValue> files_in() {
     return filesIn;
   }
 

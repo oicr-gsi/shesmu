@@ -88,7 +88,7 @@ This allows building a small library of reusable columns.
 
 Usually, only some records are needed, so a filter can be included in a rule:
 
-    shawk -i cerberus_fp -f TSV 'file_size == 0 {library_name, path}'
+    shawk -i cerberus_fp -f TSV 'file_size == 0 {library_name, path = std::path_or_uri::to_string(path)}'
 
 A query can also include multiple rules:
 

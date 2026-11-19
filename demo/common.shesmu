@@ -14,10 +14,10 @@ Export Function is_single_lane(workflow_run_attributes_type workflow_run_attribu
 Export Function extract_read_count(file_attributes_type file_attributes)
  For value In file_attributes["read_count"]: Univalued std::integer::parse(value);
 
-Export Function extract_read_number(path path, file_attributes_type file_attributes)
+Export Function extract_read_number(PATH{path} | URI{host = string, name = string, scheme = string} path, file_attributes_type file_attributes)
   (For value In file_attributes["read_number"]: Univalued std::integer::parse(value)) ||
-  (If "{path}" ~ /.*(_R1[_.]|\.1\.fastq).*/ Then `1`
-  Else If "{path}" ~ /.*(_R2[_.]|\.2\.fastq).*/ Then `2`
+  (If std::path_or_uri::to_string(path) ~ /.*(_R1[_.]|\.1\.fastq).*/ Then `1`
+  Else If std::path_or_uri::to_string(path) ~ /.*(_R2[_.]|\.2\.fastq).*/ Then `2`
   Else ``);
 
 # Find optical distance parameter for Picard MarkDuplicates

@@ -1,11 +1,12 @@
 package ca.on.oicr.gsi.shesmu.vidarr;
 
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
+import ca.on.oicr.gsi.shesmu.plugin.types.PathOrUri;
 import ca.on.oicr.gsi.vidarr.api.*;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -78,7 +79,9 @@ public abstract class BaseLoadAction extends VidarrAction {
   @SuppressWarnings("unchecked")
   @ActionParameter(
       type =
-          "ao9checksum$schecksumType$screated$dexternalKeys$ao2id$sprovider$slabels$mssmetatype$smodified$dpath$psize$i")
+          "ao9checksum$schecksumType$screated$dexternalKeys$ao2id$sprovider$slabels$mssmetatype$smodified$dpath$"
+              + PathOrUri.DESCRIPTOR
+              + "size$i")
   public void analysis(Set<Tuple> analysis) {
     List<ProvenanceAnalysisRecord<ExternalId>> list = new LinkedList<>();
     for (Tuple a : analysis) {
@@ -95,7 +98,7 @@ public abstract class BaseLoadAction extends VidarrAction {
       record.setLabels((Map<String, String>) a.get(4));
       record.setMetatype((String) a.get(5));
       record.setModified(ZonedDateTime.ofInstant((Instant) a.get(6), ZoneId.of("UTC")));
-      record.setPath(((Path) a.get(7)).toString());
+      record.setPath(PathOrUri.format((AlgebraicValue) a.get(7)));
       record.setSize((long) a.get(8));
       record.setType("file");
       list.add(record);

@@ -159,7 +159,7 @@ Since `Switch` works on tuples, it is possible to create decision-making flow th
           When {"BamMergePreprocessing", "application/bam-index"} Then True
           When {"Manta", "text/vcf"} Then True
           When {"StructuralVariation", "text/vcf"} Then True
-          When {"StarFusion", "text/plain"} Then "{path}" ~ /\.abridged\.tsv$/
+          When {"StarFusion", "text/plain"} Then std::path_or_uri::to_string(path) ~ /\.abridged\.tsv$/
           Else False)
 
 This initial selection on `project`, `library_design`, and `tissue_type` is
@@ -176,7 +176,7 @@ expression and refactor it into the above:
           metatype == "text/vcf" && (workflow == "Manta"  ||
                                      workflow == "StructuralVariation") ||
           worfklow == "StarFusion" && metatype == "text/plain"
-            && "{path}" ~ /\.abridged\.tsv$/)
+            && std::path_or_uri::to_string(path) ~ /\.abridged\.tsv$/)
 
 This check is very ragged: in the case of `BamMergePreprocessing`, we care
 about different metatypes while for the metatype `text/vcf`, we care about
@@ -193,7 +193,7 @@ redundant checks, but it will be clearer what the combinations are:
           workflow == "Manta" && metatype == "text/vcf" ||
           workflow == "StructuralVariation" && metatype ==  "text/vcf" ||
           worfklow == "StarFusion" && metatype == "text/plain"
-            && "{path}" ~ /\.abridged\.tsv$/)
+            && std::path_or_uri::to_string(path) ~ /\.abridged\.tsv$/)
 
 Now, all of our conditions have a check for `workflow` and `metatype` where the
 last one has an extra check. Rather than compare two things, lets put them into
@@ -209,7 +209,7 @@ tuples and compare the tuples:
           {workflow, metatype} == {"Manta", "text/vcf"} ||
           {workflow, metatype} == {"StructuralVariation", "text/vcf"} ||
           {worfklow, metatype} == {"StarFusion", "text/plain"}
-            && "{path}" ~ /\.abridged\.tsv$/)
+            && std::path_or_uri::to_string(path) ~ /\.abridged\.tsv$/)
 
 Since `{workflow, metatype}` is now in every condition, we can factor it out into the `Switch`:
 
@@ -222,7 +222,7 @@ Since `{workflow, metatype}` is now in every condition, we can factor it out int
           When {"BamMergePreprocessing", "application/bam-index"} Then True
           When {"Manta", "text/vcf"} Then True
           When {"StructuralVariation", "text/vcf"} Then True
-          When {"StarFusion", "text/plain"} Then "{path}" ~ /\.abridged\.tsv$/
+          When {"StarFusion", "text/plain"} Then std::path_or_uri::to_string(path) ~ /\.abridged\.tsv$/
           Else False)
 
 For most of the conditions, everything is taken care of by the `Switch` to the
