@@ -228,6 +228,11 @@ public final class WdlInputType {
         }
 
         @Override
+        public String uri() {
+          return "String";
+        }
+
+        @Override
         public String string() {
           return "String";
         }

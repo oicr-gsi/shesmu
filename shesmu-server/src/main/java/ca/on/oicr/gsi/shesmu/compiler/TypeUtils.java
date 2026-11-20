@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.GangDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.*;
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -34,6 +35,7 @@ public class TypeUtils {
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Type A_PATH_TYPE = Type.getType(Path.class);
+  private static final Type A_URI_TYPE = Type.getType(URI.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
   private static final Type A_STRING_TYPE = Type.getType(String.class);
   private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
@@ -128,6 +130,11 @@ public class TypeUtils {
         }
 
         @Override
+        public Type uri() {
+          return A_URI_TYPE;
+        }
+
+        @Override
         public Type string() {
           return A_STRING_TYPE;
         }
@@ -195,6 +202,11 @@ public class TypeUtils {
         @Override
         public Type path() {
           return A_PATH_TYPE;
+        }
+
+        @Override
+        public Type uri() {
+          return A_URI_TYPE;
         }
 
         @Override
@@ -298,6 +310,11 @@ public class TypeUtils {
         @Override
         public String path() {
           return "parser.p";
+        }
+
+        @Override
+        public String uri() {
+          return "parser.r";
         }
 
         @Override

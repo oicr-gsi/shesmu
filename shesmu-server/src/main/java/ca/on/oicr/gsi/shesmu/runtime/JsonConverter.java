@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
+import ca.on.oicr.gsi.shesmu.plugin.types.Location;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
@@ -190,6 +191,14 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
   @Override
   public Optional<Object> path() {
     return input.isString() ? Optional.of(Paths.get(input.asString())) : Optional.empty();
+  }
+
+  @Override
+  public Optional<Object> uri() {
+    // Lenient, like input formats (UnpackJson), so the same JSON gives the same URI either way
+    return input.isString()
+        ? Optional.of(Location.parseUriLeniently(input.asString()))
+        : Optional.empty();
   }
 
   @Override

@@ -33,8 +33,15 @@ These functions are available on any instance:
 - `std::path::replace_home`: Replace any path that starts with `$HOME` or `~` with the provided home directory.
 - `std::string::eq`: Compares two strings ignoring case.
 - `std::string::lower`: Convert a string to lower case.
+- `std::string::to_path_or_uri`: Converts a string to `PATH{path} | URI{uri}`. Strings with a scheme (_e.g._, `gs://bucket/file`) become `URI`; everything else becomes `PATH`. `file://` with no host or `localhost`, and `file:/` with no host (_e.g._, `file:/data/a.bam`), become `PATH`: a valid file URI without a query or fragment has its path decoded (_e.g._, `file:///a%20b` becomes `/a b`), and anything else after the host is taken literally; `file://` with another host stays a `URI`, and a valid one is treated as an escaped URI in the same way (_e.g._, `file://host/a%20b` has the path `/a b`). For other schemes, everything after the host is taken literally, as a file or object name: characters such as spaces, `%`, `?`, and `#` are escaped rather than interpreted, so `gs://bucket/a#1.bam` names the object `a#1.bam`. Empty if the string has a scheme but cannot be made into a valid URI, or the path is not valid (_e.g._, it contains a NUL character).
 - `std::string::trim`: Remove white space from a string.
 - `std::string::upper`: Convert a string to upper case.
+- `std::uri::from_path`: Converts a path to a URI. Absolute paths become `file://` URIs; relative paths become relative URIs.
+- `std::uri::host`: Gets the host of a URI (_i.e._, the `bucket` in `gs://bucket/file`), without any user information or port, if it has one.
+- `std::uri::parse`: Converts a string to a URI, if it is valid.
+- `std::uri::path`: Gets the path portion of a URI (_i.e._, `/file` in `gs://bucket/file`), if it has one and it is a valid path (_e.g._, it does not contain `%00`).
+- `std::uri::resolve`: Resolves a relative or absolute reference against a URI, if the reference is a valid URI.
+- `std::uri::scheme`: Gets the scheme of a URI (_i.e._, `gs` in `gs://bucket/file`), if it has one.
 - `std::url::decode`: Convert a URL-encoded string back to a normal string.
 - `std::url::encode`: Convert a string to a URL-encoded string (also escaping `*`, even though that is not standard).
 - `std::version_at_least`: Checks whether the supplied version tuple is the same or greater than version numbers provided.

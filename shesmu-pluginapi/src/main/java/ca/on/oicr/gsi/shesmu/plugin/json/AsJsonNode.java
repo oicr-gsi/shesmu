@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.plugin.json;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatFunction;
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
@@ -70,6 +71,11 @@ public class AsJsonNode implements ImyhatFunction<JsonNode> {
 
   @Override
   public JsonNode apply(Path value) {
+    return FACTORY.textNode(value.toString());
+  }
+
+  @Override
+  public JsonNode apply(URI value) {
     return FACTORY.textNode(value.toString());
   }
 
