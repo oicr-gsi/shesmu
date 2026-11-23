@@ -308,6 +308,15 @@ export function pathResolve(root: string, child: string): string {
 type PathOrUri =
   | { type: "PATH"; contents: [string] }
   | { type: "URI"; contents: { host: string; name: string; scheme: string } };
+export function pathOrUriFileName(value: PathOrUri): string {
+  if (value.type == "URI") {
+    const name = value.contents.name;
+    return name.substring(name.lastIndexOf("/") + 1);
+  }
+  // Paths are normalized on the server, so ignore any trailing /, as Path.getFileName does
+  const path = value.contents[0].replace(/\/+$/, "");
+  return path.substring(path.lastIndexOf("/") + 1);
+}
 export function pathOrUriToString(value: PathOrUri): string {
   return value.type == "URI"
     ? `${value.contents.scheme}://${value.contents.host}${value.contents.name}`

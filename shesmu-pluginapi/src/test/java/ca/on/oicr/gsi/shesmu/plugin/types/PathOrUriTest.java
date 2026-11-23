@@ -59,6 +59,19 @@ public class PathOrUriTest {
   }
 
   @Test
+  public void testFileName() {
+    Assertions.assertEquals("b.bam", PathOrUri.fileName(PathOrUri.parse("/data/a/b.bam")));
+    Assertions.assertEquals("dir", PathOrUri.fileName(PathOrUri.parse("/data/dir/")));
+    Assertions.assertEquals("x", PathOrUri.fileName(PathOrUri.parse("x")));
+    Assertions.assertEquals("", PathOrUri.fileName(PathOrUri.parse("/")));
+    Assertions.assertEquals("b.bam", PathOrUri.fileName(PathOrUri.parse("gs://bucket/a/b.bam")));
+    Assertions.assertEquals(
+        "b#1?x.bam", PathOrUri.fileName(PathOrUri.parse("gs://bucket/a/b#1?x.bam")));
+    Assertions.assertEquals("", PathOrUri.fileName(PathOrUri.parse("s3://bucket//a/dir/")));
+    Assertions.assertEquals("", PathOrUri.fileName(PathOrUri.parse("gs://bucket")));
+  }
+
+  @Test
   public void testUri() {
     assertUri("gs://bucket/a/b.bam", "gs", "bucket", "/a/b.bam");
     assertUri("s3://bucket//a/dir/", "s3", "bucket", "//a/dir/");

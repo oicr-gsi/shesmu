@@ -105,5 +105,25 @@ public final class PathOrUri {
     return value.get(0).toString();
   }
 
+  /**
+   * Get the last element of a path or URI
+   *
+   * <p>For a path, this is {@link Path#getFileName()} (ex. b.bam for /data/a/b.bam), or an empty
+   * string if the path has no elements (ex. /). For a URI, this is everything in the name after the
+   * final / (ex. b.bam for gs://bucket/a/b.bam)
+   *
+   * @param value a <code>PATH{path} | URI{host = string, name = string, scheme = string}</code>
+   *     value
+   * @return the last element
+   */
+  public static String fileName(AlgebraicValue value) {
+    if (value.name().equals("URI")) {
+      final String name = (String) value.get(1);
+      return name.substring(name.lastIndexOf('/') + 1);
+    }
+    final Path fileName = ((Path) value.get(0)).getFileName();
+    return fileName == null ? "" : fileName.toString();
+  }
+
   private PathOrUri() {}
 }

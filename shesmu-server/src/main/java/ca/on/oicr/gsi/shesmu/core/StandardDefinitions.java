@@ -580,6 +580,14 @@ public final class StandardDefinitions implements DefinitionRepository {
             Imyhat.JSON.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "path_or_uri", "file"),
+            PathOrUri.class,
+            "fileName",
+            "Extracts the last element in a local path or a URI. For a URI, this is everything in the name after the final / (ex. b.bam for gs://bucket/a/b.bam), so it is empty if the name ends with /",
+            "$runtime.pathOrUriFileName(%s)",
+            Imyhat.STRING,
+            new FunctionParameter("path or URI", PathOrUri.TYPE)),
+        FunctionDefinition.staticMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "path_or_uri", "to_string"),
             PathOrUri.class,
             "format",

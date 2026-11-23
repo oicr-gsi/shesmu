@@ -31,6 +31,7 @@ These functions are available on any instance:
 - `std::path::normalize`: Normalize a path (_i.e._, remove any `./` and `../` in the path).
 - `std::path::relativize`: Creates a new path of relativize one path as if in the directory of the other.
 - `std::path::replace_home`: Replace any path that starts with `$HOME` or `~` with the provided home directory.
+- `std::path_or_uri::file`: Extracts the last element in a path or URI, as a string. For a URI, this is everything in the name after the final `/` (_e.g._, `b.bam` for `gs://bucket/a/b.bam`), so it is empty if the name ends with `/`.
 - `std::path_or_uri::to_string`: Converts a path or URI to a string. A URI gives back the string it was created from; a path is normalized as paths always are (_e.g._, a trailing `/` is removed).
 - `std::string::eq`: Compares two strings ignoring case.
 - `std::string::lower`: Convert a string to lower case.

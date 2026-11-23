@@ -15,4 +15,7 @@ Olive Run ok With ok =
   && std::string::to_path_or_uri("relative/x") == PATH{'relative/x'}
   && round_trip("gs://bucket/a b#1?x%20.bam")
   && round_trip("s3://bucket//a/dir/")
-  && round_trip("/data/a/b.bam");
+  && round_trip("/data/a/b.bam")
+  && std::path_or_uri::file(std::string::to_path_or_uri("gs://bucket/a/b.bam")) == "b.bam"
+  && std::path_or_uri::file(std::string::to_path_or_uri("gs://bucket/a/dir/")) == ""
+  && std::path_or_uri::file(PATH{'/data/a/b.bam'}) == "b.bam";
