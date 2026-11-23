@@ -13,9 +13,14 @@ public class PathOrUriTest {
   }
 
   private static void assertUri(String input, String scheme, String host, String name) {
+    assertUriFormat(input, scheme, host, name, input);
+  }
+
+  private static void assertUriFormat(
+      String input, String scheme, String host, String name, String formatted) {
     final AlgebraicValue value = PathOrUri.parse(input);
     Assertions.assertEquals(new AlgebraicValue("URI", host, name, scheme), value);
-    Assertions.assertEquals(input, PathOrUri.format(value));
+    Assertions.assertEquals(formatted, PathOrUri.format(value));
   }
 
   @Test
@@ -50,7 +55,7 @@ public class PathOrUriTest {
         new AlgebraicValue("PATH", Path.of("/données/a b")),
         PathOrUri.parse("file:///données/a%20b"));
     // Another host is not local
-    assertUri("file://server/data/x.bam", "file", "server", "/data/x.bam");
+    assertUri("file://server/data/x.bam", "file", "server", "data/x.bam");
   }
 
   @Test
@@ -73,12 +78,19 @@ public class PathOrUriTest {
 
   @Test
   public void testUri() {
-    assertUri("gs://bucket/a/b.bam", "gs", "bucket", "/a/b.bam");
-    assertUri("s3://bucket//a/dir/", "s3", "bucket", "//a/dir/");
-    assertUri("gs://bucket/a b#1?x%20.bam", "gs", "bucket", "/a b#1?x%20.bam");
-    assertUri("gs://bucket", "gs", "bucket", "");
-    assertUri("gs:///x", "gs", "", "/x");
-    assertUri("gs://bucket?generation=1", "gs", "bucket", "?generation=1");
-    assertUri("gs://bucket#x", "gs", "bucket", "#x");
+    assertUri("gs://bucket/a/b.bam", "gs", "bucket", "a/b.bam");
+    assertUri("s3://bucket//a/dir/", "s3", "bucket", "/a/dir/");
+    assertUri("gs://bucket/a b#1?x%20.bam", "gs", "bucket", "a b#1?x%20.bam");
+    assertUri("gs://bucket/", "gs", "bucket", "");
+    assertUri("gs:///x", "gs", "", "x");
+  }
+
+  @Test
+  public void testUriWithoutSlash() {
+    // A / is added after the host
+    assertUriFormat("gs://bucket", "gs", "bucket", "", "gs://bucket/");
+    assertUriFormat(
+        "gs://bucket?generation=1", "gs", "bucket", "?generation=1", "gs://bucket/?generation=1");
+    assertUriFormat("gs://bucket#x", "gs", "bucket", "#x", "gs://bucket/#x");
   }
 }

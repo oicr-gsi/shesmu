@@ -110,7 +110,7 @@ public interface CerberusFileProvenanceValue {
   /**
    * The file's path or, for remote files (ex. gs://bucket/file), its URI
    *
-   * <p>The type is <code>PATH{path} | URI{host = string, name = string, scheme = string}</code>
+   * <p>The type is <code>PATH{path} | URI{scheme = string, host = string, name = string}</code>
    */
   @ShesmuVariable(type = PathOrUri.DESCRIPTOR)
   AlgebraicValue path();

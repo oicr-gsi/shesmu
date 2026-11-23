@@ -1087,12 +1087,13 @@ dictionary.
 
 Paths are UNIX-like paths that can be manipulated. They may contain `\'` if necessary.
 
-A path literal must not be used for a URI (_e.g._, `gs://bucket/file`), since
+A path literal is not an appropriate type for a URI (_ex._, `gs://bucket/file`becomes gs:/bucket/file when converted to type path), since
 the `//` after the scheme is collapsed. Files that may be remote have the type
-`PATH{path} | URI{host = string, name = string, scheme = string}` (_e.g._,
-`URI{host = "bucket", name = "/file", scheme = "gs"}`); use
-`std::string::to_path_or_uri` to create one from a string. In a `URI`, `name` is
-everything after the host, so it starts with `/` unless it is empty.
+`PATH{path} | URI{scheme = string, host = string, name = string}` (_e.g._,
+`URI{scheme = "gs", host = "bucket", name = "dir/file"}` for
+`gs://bucket/dir/file`); use `std::string::to_path_or_uri` to create one from a
+string. In a `URI`, `name` is everything after the `/` that follows the host
+(_i.e._, the object name in a bucket), so it does not start with `/`.
 
 #### String Literal
 - `"`parts`"`

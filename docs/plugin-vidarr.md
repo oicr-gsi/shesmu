@@ -60,7 +60,7 @@ For every target and workflow version, the plugin defines these actions:
 
 Files may be remote (_e.g._, `gs://bucket/file`), so the `path` of each file in
 `vidarr_analysis` `output_files` and in the load and import actions' `analysis`
-parameter is `PATH{path} | URI{host = string, name = string, scheme = string}`.
+parameter is `PATH{path} | URI{scheme = string, host = string, name = string}`.
 
 For more information on loading and importing, see the
 [Vidarr load/unload documentation](https://github.com/oicr-gsi/vidarr/blob/master/load-unload.md).
