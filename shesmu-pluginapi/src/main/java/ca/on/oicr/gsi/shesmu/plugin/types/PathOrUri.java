@@ -41,9 +41,10 @@ public final class PathOrUri {
    * the host, as the name (a/b.bam), taken literally, so {@link #format(AlgebraicValue)} returns
    * the original string, except that a / is added after the host if there is none (ex. gs://bucket
    * becomes gs://bucket/ and gs://bucket?x becomes gs://bucket/?x). The exception is a local file
-   * URI (file:// with no host or localhost), which becomes <code>PATH</code>, with its path decoded
-   * if it is a valid URI with no query or fragment (ex. file:///a%20b becomes /a b). Anything else
-   * becomes <code>PATH</code>, exactly as {@link Path#of(String, String...)} parses it.
+   * URI (a file URI whose host is either empty or localhost, ex. file:///a or file://localhost/a),
+   * which becomes <code>PATH</code>, with its path decoded if it is a valid URI with no query or
+   * fragment (ex. file:///a%20b becomes /a b). Anything else becomes <code>PATH</code>, exactly as
+   * {@link Path#of(String, String...)} parses it.
    *
    * @param input the string to convert
    * @return the value as <code>PATH{path} | URI{scheme = string, host = string, name = string}
