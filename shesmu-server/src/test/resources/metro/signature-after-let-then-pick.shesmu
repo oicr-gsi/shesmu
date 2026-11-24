@@ -1,0 +1,9 @@
+Version 1;
+Input test;
+
+Olive
+ Let project, library_size
+ LeftJoin project To Prefix fp_ inner_test fp_s
+    sigs = List std::signature::sha1
+ Pick Max library_size By project
+ Run std::nothing With value = "{project}{Count sigs}";

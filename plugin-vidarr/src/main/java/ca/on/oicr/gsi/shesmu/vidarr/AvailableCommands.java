@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.vidarr;
 import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
+import ca.on.oicr.gsi.vidarr.api.SubmitMode;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -23,6 +24,12 @@ public enum AvailableCommands {
     @Override
     public Stream<ActionCommand<?>> commands() {
       return Stream.of(DELETE, REATTEMPT, RESET);
+    }
+  },
+  CAN_LAUNCH(false) {
+    @Override
+    public Stream<ActionCommand<?>> commands() {
+      return Stream.of(RESET, HUMAN_APPROVE_LAUNCH);
     }
   };
   static final ActionCommand<SubmitAction> DELETE =
@@ -56,6 +63,12 @@ public enum AvailableCommands {
             case SubmitAction submitAction:
               final Optional<RunState> submitReattempt = submitAction.state.reattempt();
               submitReattempt.ifPresent(s -> submitAction.state = s);
+              submitReattempt.ifPresent(
+                  s -> {
+                    if (submitAction.submissionPolicy == SubmissionPolicy.UPDATE) {
+                      submitAction.submissionPolicy = SubmissionPolicy.ALWAYS;
+                    }
+                  });
               yield submitReattempt.isPresent() ? Response.RESET : Response.IGNORED;
             case ImportAction importAction:
               final Optional<ImportState> importReattempt = importAction.state.reattempt();
@@ -105,6 +118,29 @@ public enum AvailableCommands {
           return action.owner.get().url().map(action.state::retry).orElse(false)
               ? Response.ACCEPTED
               : Response.IGNORED;
+        }
+      };
+
+  static final ActionCommand<SubmitAction> HUMAN_APPROVE_LAUNCH =
+      new ActionCommand<>(
+          SubmitAction.class,
+          "VIDARR-HUMAN-APPROVE-LAUNCH",
+          FrontEndIcon.HAND_THUMBS_UP,
+          "Launch",
+          Preference.PROMPT) {
+        @Override
+        protected Response execute(SubmitAction action, Optional<String> user) {
+          if (!(action.state instanceof RunStateUpdate)) {
+            throw new IllegalStateException("How did you approve a non-update run?");
+          }
+          if (action.request.getMode() == SubmitMode.UPDATE
+              && ((RunStateUpdate) action.state).unknown) {
+            action.submissionPolicy = SubmissionPolicy.ALWAYS;
+            action.request.setMode(SubmitMode.RUN);
+            action.state = new RunStateAttemptSubmit();
+            return Response.ACCEPTED;
+          }
+          return Response.IGNORED;
         }
       };
   private final boolean canRetry;

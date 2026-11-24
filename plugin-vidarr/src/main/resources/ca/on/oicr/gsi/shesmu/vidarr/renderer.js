@@ -171,10 +171,22 @@ const vidarrStateRenderer = {
       )
     ),
   ],
+  update: (a) => [
+                     table(
+                       [
+                         a.info? ["Vidarr ID", link(
+                 		(a.info.completed ? a.workflowRunUrl.replace("status", "run") : a.workflowRunUrl),
+                 		a.info.id)]: null,
+                       ]
+                         .filter((x) => x),
+                       ["Existing Workflow Information", (x) => x[0]],
+                       ["Value", (x) => x[1]]
+                     ),
+                   ]
 };
 
 actionRender.set("vidarr-run", (a) => [
-  title(a, `Workflow ${a.request.workflow} (${a.request.workflowVersion})`),
+  title(a, `${a.request.mode[0].toUpperCase() + a.request.mode.substring(1).toLowerCase()} Workflow ${a.request.workflow} (${a.request.workflowVersion})`),
   table(
     [
       ["Priority", a.priority.toString()],

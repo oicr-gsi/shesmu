@@ -372,7 +372,9 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
     final var joinedDefs =
         defs.replaceStream(
             Stream.concat(
-                discriminators.stream(),
+                // Outer variables must be read through the getters on the joined class, not
+                // extracted directly as input variables, since the stream value is the joined class
+                discriminators.stream().map(Target::wrapAsStreamPreservingFlavour),
                 this.innerVariables.stream()
                     .map(
                         v ->

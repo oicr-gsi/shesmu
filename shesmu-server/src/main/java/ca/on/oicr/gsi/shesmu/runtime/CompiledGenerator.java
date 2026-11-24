@@ -5,12 +5,8 @@ import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Server;
-import ca.on.oicr.gsi.shesmu.compiler.LiveExportConsumer;
+import ca.on.oicr.gsi.shesmu.compiler.*;
 import ca.on.oicr.gsi.shesmu.compiler.LiveExportConsumer.DefineVariableExport;
-import ca.on.oicr.gsi.shesmu.compiler.OliveCompilerServices;
-import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.SignableVariableCheck;
-import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
@@ -49,6 +45,7 @@ import java.util.function.Consumer;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Handle;
@@ -982,6 +979,7 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
     return SCRIPT_REGISTRY.get(fileName);
   }
 
+  private static Server owner = null;
   private final Predicate<String> checkPaused;
   private final DefinitionRepository definitionRepository;
   private final ScheduledExecutorService executor;
@@ -991,9 +989,11 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
           OLIVE_THREADS, new ShesmuThreadFactory("olive", Thread.MIN_PRIORITY));
 
   public CompiledGenerator(
+      Server owner,
       ScheduledExecutorService executor,
       DefinitionRepository definitionRepository,
       Predicate<String> checkPaused) {
+    this.owner = owner;
     this.executor = executor;
     this.definitionRepository = DefinitionRepository.concat(definitionRepository, this);
     this.checkPaused = checkPaused;
@@ -1029,7 +1029,27 @@ public class CompiledGenerator implements DefinitionRepository, Predicate<Source
 
   @Override
   public Stream<FunctionDefinition> functions() {
-    return scripts().flatMap(Script::functions);
+    return Stream.concat(
+        scripts().flatMap(Script::functions),
+        Stream.of(
+            FunctionDefinition.staticMethod(
+                "compiler::any_olive_runs",
+                CompiledGenerator.class,
+                "any_olive_runs",
+                "Check whether an olive exists which calls the named action.",
+                null, // Not supported in the Guided Meditation language
+                Imyhat.BOOLEAN,
+                new FunctionParameter("Regex to match the Run line", Imyhat.STRING))));
+  }
+
+  @RuntimeInterop
+  public static boolean any_olive_runs(String action) {
+    Pattern regex = Pattern.compile("Run " + action);
+    return owner
+        .compiler
+        .dashboard()
+        .flatMap(p -> p.second().olives())
+        .anyMatch(o -> regex.matcher(o.syntax()).matches());
   }
 
   @Override

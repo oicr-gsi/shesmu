@@ -120,17 +120,12 @@ public class MetroDiagram {
                         ::stringWidth)
                 .max()
                 .orElse(100);
-    final var liveVariableInfo =
-        new DeathChecker().liveVariables(olive).collect(Collectors.toList());
+    final Set<String> initialNames = initialVariableNames(olive);
     final var topPadding =
         (long)
             Math.max(
                 SVG_ROW_HEIGHT,
-                liveVariableInfo.stream()
-                        .flatMap(VariableInformation::inputs)
-                        .mapToInt(String::length)
-                        .max()
-                        .orElse(0)
+                initialNames.stream().mapToInt(String::length).max().orElse(0)
                     * AVG_SMALL_CHAR_WIDTH
                     * Math.sin(Math.toRadians(45)));
     final var height =
@@ -219,38 +214,34 @@ public class MetroDiagram {
     final List<DelayedXml> textLayerBuffer = new ArrayList<>();
 
     final Map<String, MetroDiagram> initialVariables = new HashMap<>();
-    liveVariableInfo.stream()
-        .flatMap(VariableInformation::inputs)
-        .distinct()
-        .sorted()
-        .forEach(
-            name -> {
-              final var colour = idGen.getAndIncrement();
-              try {
-                initialVariables.put(
+    initialNames.forEach(
+        name -> {
+          final var colour = idGen.getAndIncrement();
+          try {
+            initialVariables.put(
+                name,
+                new MetroDiagram(
+                    textLayerBuffer,
+                    writer,
+                    id,
                     name,
-                    new MetroDiagram(
-                        textLayerBuffer,
-                        writer,
-                        id,
-                        name,
-                        format
-                            .baseStreamVariables()
-                            .filter(var -> var.name().equals(name))
-                            .map(Target::type)
-                            .findFirst()
-                            .orElse(Imyhat.BAD),
-                        "",
-                        colour,
-                        0,
-                        colour,
-                        metroStart,
-                        topPadding,
-                        true));
-              } catch (XMLStreamException e) {
-                throw new RuntimeException(e);
-              }
-            });
+                    format
+                        .baseStreamVariables()
+                        .filter(var -> var.name().equals(name))
+                        .map(Target::type)
+                        .findFirst()
+                        .orElse(Imyhat.BAD),
+                    "",
+                    colour,
+                    0,
+                    colour,
+                    metroStart,
+                    topPadding,
+                    true));
+          } catch (XMLStreamException e) {
+            throw new RuntimeException(e);
+          }
+        });
 
     final var source = new SourceLocation(filename, olive.line(), olive.column(), hash);
     writeClause(writer, linker, topPadding, 0, "Input", inputCount, source);
@@ -422,6 +413,39 @@ public class MetroDiagram {
     }
 
     return outputVariables;
+  }
+
+  /**
+   * Find the variables that are drawn as coming from the input.
+   *
+   * <p>These are the variables read up to the first clause that replaces the stream, plus any
+   * variable read later that no earlier clause defines. Signatures are the usual example of the
+   * latter: they are read by clauses, but never defined by one.
+   */
+  private static Set<String> initialVariableNames(OliveTable olive) {
+    final Set<String> names =
+        new DeathChecker()
+            .liveVariables(olive)
+            .flatMap(VariableInformation::inputs)
+            .collect(Collectors.toCollection(TreeSet::new));
+    final Set<String> defined = new HashSet<>();
+    Stream.concat(
+            olive.clauses().map(clause -> clause.variables().collect(Collectors.toList())),
+            Stream.of(olive.variables().collect(Collectors.toList())))
+        .forEachOrdered(
+            layer -> {
+              for (final VariableInformation variable : layer) {
+                variable.inputs().filter(input -> !defined.contains(input)).forEach(names::add);
+              }
+              for (final VariableInformation variable : layer) {
+                switch (variable.behaviour()) {
+                  case DEFINITION, DEFINITION_BY -> defined.add(variable.name());
+                  case EPHEMERAL -> defined.add(variable.name() + " ");
+                  default -> {}
+                }
+              }
+            });
+    return names;
   }
 
   private static String from(VariableInformation variable, Map<String, MetroDiagram> variables) {

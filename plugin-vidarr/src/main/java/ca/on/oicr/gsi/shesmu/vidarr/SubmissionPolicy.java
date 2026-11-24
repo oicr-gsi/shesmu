@@ -9,6 +9,7 @@ public interface SubmissionPolicy {
   static SubmissionPolicy DRY_RUN = (lastGeneratedByAnOlive, isOliveLive) -> SubmitMode.DRY_RUN;
   static SubmissionPolicy IS_LIVE =
       (lastGeneratedByAnOlive, isOliveLive) -> isOliveLive ? SubmitMode.RUN : SubmitMode.DRY_RUN;
+  static SubmissionPolicy UPDATE = (lastGeneratedByAnOlive, isOliveLive) -> SubmitMode.UPDATE;
 
   static SubmissionPolicy maxDelay(long maximum) {
     return (lastGeneratedByAnOlive, isOliveLive) ->

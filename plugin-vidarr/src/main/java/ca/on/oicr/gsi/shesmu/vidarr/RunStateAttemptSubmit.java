@@ -73,6 +73,7 @@ final class RunStateAttemptSubmit extends RunState {
       boolean isOliveLive)
       throws IOException, InterruptedException {
     request.setAttempt(attempt);
+    // Needed for dynamic modes like IS_LIVE
     request.setMode(submissionPolicy.mode(lastGeneratedByOlive, isOliveLive));
     final HttpResponse<Supplier<SubmitWorkflowResponse>> response =
         VidarrPlugin.CLIENT.send(

@@ -1,0 +1,11 @@
+Version 1;
+Input test;
+
+Define g()
+ Group By project Into c = Count;
+
+Olive
+ g()
+ LeftJoin project To Prefix fp_ inner_test fp_s
+    sigs = List std::signature::sha1
+ Run std::nothing With value = "{project}{c}{Count sigs}";

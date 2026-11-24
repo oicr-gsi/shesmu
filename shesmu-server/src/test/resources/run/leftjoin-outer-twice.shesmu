@@ -1,0 +1,9 @@
+Version 1;
+Input test;
+
+Olive
+ LeftJoin library_size To Prefix a_ inner_test a_l
+    xs = List a_l
+ LeftJoin library_size To Prefix b_ inner_test b_l
+    ys = Where project != "" && (For x In xs: Count) == 1 List b_l
+ Run ok With ok = (For l In ys: Count) == 1;
