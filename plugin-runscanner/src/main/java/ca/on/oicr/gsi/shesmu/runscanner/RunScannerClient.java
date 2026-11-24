@@ -253,8 +253,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
     try {
       return findUltimaAnalysisUnit(run, barcode, workflow)
           .map(unit -> MAPPER.valueToTree(unit.getFiles()));
-    } catch (ClassCastException | InitialCachePopulationException | JacksonException e) {
-      e.printStackTrace();
+    } catch (InitialCachePopulationException | JacksonException e) {
       return Optional.empty();
     }
   }
@@ -279,8 +278,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
                     ? Optional.ofNullable(crams.get(0).getReadCount())
                     : Optional.empty();
               });
-    } catch (ClassCastException | InitialCachePopulationException e) {
-      e.printStackTrace();
+    } catch (InitialCachePopulationException e) {
       return Optional.empty();
     }
   }
@@ -288,15 +286,16 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   /**
    * Find the analysis output for a barcode in the latest pipeline run of an Ultima run
    *
-   * @throws ClassCastException if the run's pipeline run is not an Ultima pipeline run
+   * <p>Empty if there is no such run, it has no analysis yet, or it is not an Ultima run.
    */
   private Optional<UltimaAnalysisUnit> findUltimaAnalysisUnit(
       String run, String barcode, String workflow) {
-    // Get the analysis for this run. If there is no run, or no analysis for this run, return
     final Optional<PipelineRun> pipelineRun = getRun(run).flatMap(RunInformation::pipelineRun);
-    if (pipelineRun.isEmpty()) return Optional.empty();
+    if (pipelineRun.isEmpty() || !(pipelineRun.get() instanceof UltimaPipelineRun ultimaRun)) {
+      return Optional.empty();
+    }
 
-    final UltimaWorkflowRun workflowRun = ((UltimaPipelineRun) pipelineRun.get()).get(workflow);
+    final UltimaWorkflowRun workflowRun = ultimaRun.get(workflow);
     if (workflowRun == null) return Optional.empty();
     return workflowRun.getAnalysisOutputs().stream()
         .filter(unit -> barcode.equals(unit.getBarcode()))
