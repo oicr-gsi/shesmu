@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.Gang;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
+import ca.on.oicr.gsi.shesmu.plugin.types.Location;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
@@ -107,6 +108,21 @@ public interface CerberusFileProvenanceSkippedValue {
   @ShesmuVariable(signable = true)
   String organism();
 
+  /**
+   * The file's location
+   *
+   * <p>Files may be stored locally or remotely (ex. gs://bucket/file), so this is <code>
+   * PATH{path} | URI{uri}</code>
+   */
+  @ShesmuVariable(type = Location.DESCRIPTOR)
+  AlgebraicValue location();
+
+  /**
+   * The file's path
+   *
+   * <p>This is only meaningful for local files; remote files (ex. gs://bucket/file) cannot be
+   * represented as paths, so use {@link #location()} instead.
+   */
   @ShesmuVariable
   Path path();
 

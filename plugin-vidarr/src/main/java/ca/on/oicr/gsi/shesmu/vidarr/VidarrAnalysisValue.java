@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.vidarr;
 
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
+import ca.on.oicr.gsi.shesmu.plugin.types.Location;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -105,9 +106,19 @@ public class VidarrAnalysisValue {
     return workflow_version;
   }
 
+  /**
+   * The output files
+   *
+   * <p>Each file has both <code>location</code>, which keeps remote files' URIs intact (ex.
+   * gs://bucket/file), and <code>path</code>, which is only meaningful for local files. The {@link
+   * Tuple} elements are in alphabetical order by field name, so they must be created in the same
+   * order as this type.
+   */
   @ShesmuVariable(
       type =
-          "ao8checksum$schecksum_type$sexternal_keys$ao2id$sprovider$sfile_attributes$mssfile_size$iid$smetatype$spath$p")
+          "ao9checksum$schecksum_type$sexternal_keys$ao2id$sprovider$sfile_attributes$mssfile_size$iid$slocation$"
+              + Location.DESCRIPTOR
+              + "metatype$spath$p")
   public Set<Tuple> output_files() {
     return output_files;
   }

@@ -95,6 +95,11 @@ public abstract class GenericTypeGuarantee<T> {
               }
 
               @Override
+              public Boolean uri() {
+                return false;
+              }
+
+              @Override
               public Boolean string() {
                 return false;
               }

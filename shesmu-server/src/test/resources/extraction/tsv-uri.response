@@ -1,0 +1,4 @@
+text/tab-separated-values
+project	u	maybe	none
+the_foo_study	gs://bucket/a%20b	gs://bucket/c%20d	
+the_foo_study	gs://bucket/a%20b	gs://bucket/c%20d	

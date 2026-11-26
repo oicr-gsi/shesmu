@@ -21,6 +21,7 @@ import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Location;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.status.ConfigurationSection;
@@ -578,6 +579,63 @@ public final class StandardDefinitions implements DefinitionRepository {
             "$runtime.jsonParse(%s)",
             Imyhat.JSON.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "to_path_or_uri"),
+            RuntimeSupport.class,
+            "stringToPathOrUri",
+            "Converts a string to a local path or a URI. Strings with a scheme (e.g., gs://bucket/file) become URIs, except local files (file:///path, file://localhost/path, or file:/path), which become decoded paths; everything else becomes a path. Empty if the string has a scheme but cannot be made into a valid URI, or the path is not valid (e.g., it contains a NUL character).",
+            "$runtime.stringToPathOrUri(%s)",
+            Location.TYPE.asOptional(),
+            new FunctionParameter("input to convert", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "uri", "from_path"),
+            RuntimeSupport.class,
+            "uriFromPath",
+            "Converts a path to a URI. Absolute paths become file:// URIs; relative paths become relative URIs.",
+            "$runtime.uriFromPath(%s)",
+            Imyhat.URI,
+            new FunctionParameter("path to convert", Imyhat.PATH)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "uri", "host"),
+            RuntimeSupport.class,
+            "uriHost",
+            "Gets the host of a URI (e.g., the bucket in gs://bucket/file), without any user information or port, if it has one.",
+            "$runtime.uriHost(%s)",
+            Imyhat.STRING.asOptional(),
+            new FunctionParameter("URI to examine", Imyhat.URI)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "uri", "parse"),
+            RuntimeSupport.class,
+            "uriParse",
+            "Converts a string to a URI, if it is valid.",
+            "$runtime.uriParse(%s)",
+            Imyhat.URI.asOptional(),
+            new FunctionParameter("string to parse", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "uri", "path"),
+            RuntimeSupport.class,
+            "uriPath",
+            "Gets the path portion of a URI (e.g., /file in gs://bucket/file), if it has one.",
+            "$runtime.uriPath(%s)",
+            Imyhat.PATH.asOptional(),
+            new FunctionParameter("URI to examine", Imyhat.URI)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "uri", "resolve"),
+            RuntimeSupport.class,
+            "uriResolve",
+            "Resolves a relative or absolute reference against a URI, if the reference is a valid URI.",
+            "$runtime.uriResolve(%s, %s)",
+            Imyhat.URI.asOptional(),
+            new FunctionParameter("base URI", Imyhat.URI),
+            new FunctionParameter("reference to resolve", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "uri", "scheme"),
+            RuntimeSupport.class,
+            "uriScheme",
+            "Gets the scheme of a URI (e.g., gs in gs://bucket/file), if it has one.",
+            "$runtime.uriScheme(%s)",
+            Imyhat.STRING.asOptional(),
+            new FunctionParameter("URI to examine", Imyhat.URI)),
         FunctionDefinition.staticMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "url", "decode"),
             RuntimeSupport.class,

@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.shesmu.gsicommon.CerberusFileProvenanceValue;
 import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.types.Location;
 import ca.on.oicr.gsi.vidarr.api.ProvenanceWorkflowRun;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -29,6 +30,10 @@ abstract class BaseCerberusFileProvenanceRecord<T extends LimsProvenance>
     return workflowRunLabels;
   }
 
+  // Parsed on first use and cached: olives may read this for every record on every round, but
+  // parsing eagerly would cost memory for every record even when no olive uses it. Races only
+  // cause a redundant parse, since the result is the same.
+  private AlgebraicValue location;
   protected final ProvenanceRecord<T> provenanceRecord;
   private final boolean stale;
   private final Map<String, JsonNode> workflowRunLabels;
@@ -104,6 +109,16 @@ abstract class BaseCerberusFileProvenanceRecord<T extends LimsProvenance>
   @Override
   public final String metatype() {
     return provenanceRecord.record().getMetatype();
+  }
+
+  @Override
+  public final AlgebraicValue location() {
+    AlgebraicValue result = location;
+    if (result == null) {
+      result = Location.parseOrPath(provenanceRecord.record().getPath());
+      location = result;
+    }
+    return result;
   }
 
   @Override

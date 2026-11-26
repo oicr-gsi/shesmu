@@ -833,6 +833,7 @@ Adds two values.
 | `string` | `float`  | `string` | Concatenate a string and a floating-point value by first converting it |
 | `string` | `date`   | `string` | Concatenate a string and a date value by first converting it           |
 | `string` | `path`   | `string` | Concatenate a string and a path value by first converting it           |
+| `string` | `uri`    | `string` | Concatenate a string and a URI value by first converting it (escaped)  |
 | `[`x`]`  | `[`x`]`  | `[`x`]`  | Union of two lists (removing duplicates)                               |
 | `[`x`]`  | x        | `[`x`]`  | Add item to list (removing duplicates)                                 |
 | `{`a1`,`...`,` an`}`              | `{`b1`,`...`,` bn`}`             | `{`a1`,`...`,` an`,`b1`,`...`,` bn`}`                         | Concatenate two tuples                       |
@@ -1086,6 +1087,16 @@ dictionary.
 - `'`path`'`
 
 Paths are UNIX-like paths that can be manipulated. They may contain `\'` if necessary.
+
+There is no literal syntax for URIs (_e.g._, `gs://bucket/file`). Use
+`std::uri::parse` to create a `uri` from a string, or `std::uri::from_path` to
+create one from a path. A path literal must not be used for a URI, since the
+`//` after the scheme is collapsed.
+
+When a `uri` is converted to a string (in string interpolation, `+`
+concatenation, `As string` destructuring, or any output format), it is in its
+escaped form (_e.g._, `gs://bucket/a%20b.bam`), which `std::uri::parse` converts
+back to the same `uri`.
 
 #### String Literal
 - `"`parts`"`
@@ -1394,6 +1405,7 @@ machine-to-machine communication.
 | Object     | `{`_field1_` = `_t1_`,`_field2_` = `_t2_`,` ...`}` | `o` _n_ _field1_`$`_t1_ _field2_`$`_t2_ Where _n_ is the number of elements in the tuple. |
 | Optional   | _inner_`?`                                         | `q`_inner_ or `Q` |
 | Path       | `path`                                             | `p`         |
+| URI        | `uri`                                              | `r`         |
 | JSON       | `json`                                             | `j`         |
 | Algebraic  | _NAME_                                             | `u1`_NAME_`$t01` |
 | Algebraic  | _NAME_ `{`_t1_`, `_t2_`, `...`}`                   | `u1`_NAME_`$t`_n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |

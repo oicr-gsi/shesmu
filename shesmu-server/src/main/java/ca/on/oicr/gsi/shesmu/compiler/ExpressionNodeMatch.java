@@ -298,6 +298,12 @@ public class ExpressionNodeMatch extends ExpressionNode {
                     }
 
                     @Override
+                    public Pair<Unpack, Map<String, Imyhat>> uri() {
+                      test.typeError("algebraic or optional type", test.type(), errorHandler);
+                      return null;
+                    }
+
+                    @Override
                     public Pair<Unpack, Map<String, Imyhat>> string() {
                       test.typeError("algebraic or optional type", test.type(), errorHandler);
                       return null;

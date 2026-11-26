@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
@@ -81,6 +82,14 @@ public abstract class ReturnTypeGuarantee<T> extends GenericReturnTypeGuarantee<
         @Override
         public Imyhat type() {
           return Imyhat.STRING;
+        }
+      };
+  public static final ReturnTypeGuarantee<URI> URI =
+      new ReturnTypeGuarantee<>() {
+
+        @Override
+        public Imyhat type() {
+          return Imyhat.URI;
         }
       };
 

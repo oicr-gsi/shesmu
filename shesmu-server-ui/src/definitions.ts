@@ -100,6 +100,7 @@ interface TypeTransformer<T> {
   o: (fields: { [name: string]: T }) => T;
   p: T;
   q: (inner: T) => T;
+  r: T;
   s: T;
   t: (inner: T[]) => T;
   u: (unionTypes: { [type: string]: T | null }) => T;
@@ -148,6 +149,7 @@ const nameForType: TypeTransformer<UIElement> = {
 
   p: "path",
   q: (inner: UIElement) => [inner, "?"],
+  r: "uri",
   s: "string",
   t: (inner: UIElement[]) => [
     "{",
@@ -184,6 +186,7 @@ const exampleForType: TypeTransformer<string> = {
 
   p: "'/foo'",
   q: (inner: UIElement) => `\`${inner}\``,
+  r: '"gs://bucket/file"',
   s: '"stuff"',
   t: (inner: string[]) => "{" + inner.join(", ") + "}",
   u: (unionTypes: { [type: string]: string | null }) => {
@@ -593,6 +596,8 @@ export function parseDescriptor<T>(
       return [transformer.j, type.substring(1)];
     case "p":
       return [transformer.p, type.substring(1)];
+    case "r":
+      return [transformer.r, type.substring(1)];
     case "s":
       return [transformer.s, type.substring(1)];
     case "a": {

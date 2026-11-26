@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -45,6 +46,12 @@ public abstract class ToBytesConverter implements ImyhatConsumer {
   @Override
   public final void accept(Path value) {
     add(new byte[] {(byte) 42});
+    add(value.toString().getBytes(StandardCharsets.UTF_8));
+  }
+
+  @Override
+  public final void accept(URI value) {
+    add(new byte[] {(byte) 43});
     add(value.toString().getBytes(StandardCharsets.UTF_8));
   }
 

@@ -1,0 +1,1 @@
+The `cerberus_fp`, `cerberus_fp_skipped`, `vidarr_analysis`, and `guanyin_report` input formats have new location variables (`location`, the `location` field of `output_files`, and `locations_in`). Input data provided as JSON (_e.x._, `.cerberus_fp-input` files or JSON input sources) must include these fields, or it will fail to load.

@@ -1,0 +1,17 @@
+Version 1;
+Input test;
+
+TypeAlias location PATH{path} | URI{uri};
+
+Function describe(location l)
+  Match l
+    When URI{u} Then "remote {u}"
+    When PATH{p} Then "local {p}";
+
+Function all_text([uri] us) For u In us: List "{u}";
+
+Function first_or(uri? u, uri fallback) u Default fallback;
+
+Olive Run ok With ok =
+  describe(URI{first_or(std::uri::parse("gs://bucket/x"), std::uri::from_path('/x'))}) != ""
+  && all_text([std::uri::from_path('/a')]) != [];
