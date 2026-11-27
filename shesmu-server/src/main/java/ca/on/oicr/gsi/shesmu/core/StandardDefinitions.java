@@ -596,6 +596,22 @@ public final class StandardDefinitions implements DefinitionRepository {
             Imyhat.STRING,
             new FunctionParameter("path or URI to convert", PathOrUri.TYPE)),
         FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "path_or_uri", "to_path"),
+            PathOrUri.class,
+            "toPath",
+            "Gets the path of a local file, or nothing if it is a URI.",
+            "$runtime.pathOrUriToPath(%s)",
+            Imyhat.PATH.asOptional(),
+            new FunctionParameter("path or URI to convert", PathOrUri.TYPE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "path_or_uri", "to_uri"),
+            PathOrUri.class,
+            "toUri",
+            "Gets the scheme, host, and name of a URI, or nothing if it is a local path.",
+            "$runtime.pathOrUriToUri(%s)",
+            PathOrUri.URI_TYPE.asOptional(),
+            new FunctionParameter("path or URI to convert", PathOrUri.TYPE)),
+        FunctionDefinition.staticMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "to_path_or_uri"),
             PathOrUri.class,
             "parse",

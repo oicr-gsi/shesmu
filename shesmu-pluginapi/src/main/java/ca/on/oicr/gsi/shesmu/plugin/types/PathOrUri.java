@@ -1,10 +1,12 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,6 +29,12 @@ public final class PathOrUri {
    * The Shesmu type: <code>PATH{path} | URI{scheme = string, host = string, name = string}</code>
    */
   public static final Imyhat TYPE = Imyhat.parse(DESCRIPTOR);
+
+  /**
+   * The Shesmu type of the fields of a URI: <code>{scheme = string, host = string, name = string}
+   * </code>
+   */
+  public static final Imyhat URI_TYPE = Imyhat.parse("o3host$sname$sscheme$s");
 
   // The host stops at the first /, ?, or #; DOTALL, since an object name may contain any
   // character, including a newline
@@ -129,6 +137,32 @@ public final class PathOrUri {
     }
     final Path fileName = ((Path) value.get(0)).getFileName();
     return fileName == null ? "" : fileName.toString();
+  }
+
+  /**
+   * Get the path of a local file
+   *
+   * @param value a <code>PATH{path} | URI{scheme = string, host = string, name = string}</code>
+   *     value
+   * @return the path if the value is <code>PATH</code>; empty if it is <code>URI</code>
+   */
+  public static Optional<Path> toPath(AlgebraicValue value) {
+    return value.name().equals("PATH") ? Optional.of((Path) value.get(0)) : Optional.empty();
+  }
+
+  /**
+   * Get the parts of a remote URI
+   *
+   * @param value a <code>PATH{path} | URI{scheme = string, host = string, name = string}</code>
+   *     value
+   * @return the fields of the URI, as {@link #URI_TYPE}, if the value is <code>URI</code>; empty if
+   *     it is <code>PATH</code>
+   */
+  public static Optional<Tuple> toUri(AlgebraicValue value) {
+    // Both have the fields in alphabetical order: host, name, scheme
+    return value.name().equals("URI")
+        ? Optional.of(new Tuple(value.get(0), value.get(1), value.get(2)))
+        : Optional.empty();
   }
 
   private PathOrUri() {}

@@ -19,4 +19,8 @@ Olive Run ok With ok =
   && std::path_or_uri::file(std::string::to_path_or_uri("gs://bucket/a/b.bam")) == "b.bam"
   && std::path_or_uri::file(std::string::to_path_or_uri("gs://bucket/a/dir/")) == ""
   && std::path_or_uri::to_string(URI{scheme = "gs", host = "bucket", name = "a/b.bam"}) == "gs://bucket/a/b.bam"
-  && std::path_or_uri::file(PATH{'/data/a/b.bam'}) == "b.bam";
+  && std::path_or_uri::file(PATH{'/data/a/b.bam'}) == "b.bam"
+  && std::path_or_uri::to_path(PATH{'/data/a/b.bam'}) == `'/data/a/b.bam'`
+  && std::path_or_uri::to_path(std::string::to_path_or_uri("gs://bucket/a/b.bam")) == ``
+  && std::path_or_uri::to_uri(std::string::to_path_or_uri("gs://bucket/a/b.bam")) == `{scheme = "gs", host = "bucket", name = "a/b.bam"}`
+  && std::path_or_uri::to_uri(PATH{'/data/a/b.bam'}) == ``;

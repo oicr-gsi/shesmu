@@ -322,6 +322,14 @@ export function pathOrUriToString(value: PathOrUri): string {
     ? `${value.contents.scheme}://${value.contents.host}/${value.contents.name}`
     : value.contents[0];
 }
+export function pathOrUriToPath(value: PathOrUri): string | null {
+  return value.type == "PATH" ? value.contents[0] : null;
+}
+export function pathOrUriToUri(
+  value: PathOrUri
+): { host: string; name: string; scheme: string } | null {
+  return value.type == "URI" ? { ...value.contents } : null;
+}
 export function stringToPathOrUri(input: string): PathOrUri {
   // The host stops at the first /, ?, or #
   const match = input.match(
