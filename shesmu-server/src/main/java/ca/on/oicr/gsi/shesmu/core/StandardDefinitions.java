@@ -21,6 +21,7 @@ import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.PathOrUri;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.status.ConfigurationSection;
@@ -578,6 +579,46 @@ public final class StandardDefinitions implements DefinitionRepository {
             "$runtime.jsonParse(%s)",
             Imyhat.JSON.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "path_or_uri", "file"),
+            PathOrUri.class,
+            "fileName",
+            "Extracts the last element in a local path or a URI. For a URI, this is everything in the name after the final / (ex. b.bam for gs://bucket/a/b.bam), so it is empty if the name ends with /",
+            "$runtime.pathOrUriFileName(%s)",
+            Imyhat.STRING,
+            new FunctionParameter("path or URI", PathOrUri.TYPE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "path_or_uri", "to_string"),
+            PathOrUri.class,
+            "format",
+            "Converts a local path or a URI to a string. A URI becomes scheme://host/name, which is the string it was created from (e.g., gs://bucket/file), except that a / is added after the host if there was none; a path is normalized (e.g., a trailing / is removed).",
+            "$runtime.pathOrUriToString(%s)",
+            Imyhat.STRING,
+            new FunctionParameter("path or URI to convert", PathOrUri.TYPE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "path_or_uri", "to_path"),
+            PathOrUri.class,
+            "toPath",
+            "Gets the path of a local file, or nothing if it is a URI.",
+            "$runtime.pathOrUriToPath(%s)",
+            Imyhat.PATH.asOptional(),
+            new FunctionParameter("path or URI to convert", PathOrUri.TYPE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "path_or_uri", "to_uri"),
+            PathOrUri.class,
+            "toUri",
+            "Gets the scheme, host, and name of a URI, or nothing if it is a local path.",
+            "$runtime.pathOrUriToUri(%s)",
+            PathOrUri.URI_TYPE.asOptional(),
+            new FunctionParameter("path or URI to convert", PathOrUri.TYPE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "to_path_or_uri"),
+            PathOrUri.class,
+            "parse",
+            "Converts a string to a local path or a URI. Strings with a scheme (e.g., gs://bucket/a/b.bam) become URIs, with the scheme (gs), host (bucket), and everything after the / that follows the host as the name (a/b.bam), except local file URIs (file:///path), which become paths; everything else becomes a path.",
+            "$runtime.stringToPathOrUri(%s)",
+            PathOrUri.TYPE,
+            new FunctionParameter("input to convert", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "url", "decode"),
             RuntimeSupport.class,

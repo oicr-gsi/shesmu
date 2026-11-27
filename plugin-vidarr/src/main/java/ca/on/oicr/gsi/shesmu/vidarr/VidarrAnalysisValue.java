@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.vidarr;
 
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
+import ca.on.oicr.gsi.shesmu.plugin.types.PathOrUri;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -107,7 +108,8 @@ public class VidarrAnalysisValue {
 
   @ShesmuVariable(
       type =
-          "ao8checksum$schecksum_type$sexternal_keys$ao2id$sprovider$sfile_attributes$mssfile_size$iid$smetatype$spath$p")
+          "ao8checksum$schecksum_type$sexternal_keys$ao2id$sprovider$sfile_attributes$mssfile_size$iid$smetatype$spath$"
+              + PathOrUri.DESCRIPTOR)
   public Set<Tuple> output_files() {
     return output_files;
   }

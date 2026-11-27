@@ -115,6 +115,18 @@ necessary to convert a JSON document back into an interpretable format.
 | Algebraic | object; see [Algebraic Values without Algebra](algebraicguide.md) |
 | Dict      | object (if key is a string) or array of arrays containing key-value pairs |
 
+### Paths and URIs
+Files that may be remote (_e.g._, `gs://bucket/file`) should have the type
+`PATH{path} | URI{scheme = string, host = string, name = string}` rather than `path`, since
+`Path.of` collapses the `//` after the scheme. Annotate the method with
+`@ShesmuVariable(type = PathOrUri.DESCRIPTOR)`, return an `AlgebraicValue`
+created by
+[`PathOrUri.parse`](javadoc/ca.on.oicr.gsi.shesmu/ca/on/oicr/gsi/shesmu/plugin/types/PathOrUri.html),
+and use `PathOrUri.format` to convert a value back to a string. In an olive, the
+fields of `URI` may be written in any order, but an `AlgebraicValue` created in
+Java must have them in alphabetical order: `new AlgebraicValue("URI", host,
+name, scheme)`.
+
 ## Writing an Input Format Plugin
 Creating a new source format is meant to be easy, but convoluted in order to be
 type safe. To create a new source format:

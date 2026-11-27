@@ -2,7 +2,6 @@ package ca.on.oicr.gsi.shesmu.nabu;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.nio.file.Path;
 
 /** This class allows for proper deserialization of JSON data */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -13,8 +12,9 @@ public class NabuFileQcDto {
   @JsonProperty("fileid")
   private String fileId;
 
+  // A string rather than a path: Jackson rejects remote files (ex. gs://bucket/file) as paths
   @JsonProperty("filepath")
-  private Path filePath;
+  private String filePath;
 
   @JsonProperty("fileqcid")
   private long fileQcId;
@@ -41,7 +41,7 @@ public class NabuFileQcDto {
     return fileId;
   }
 
-  public Path getFilePath() {
+  public String getFilePath() {
     return filePath;
   }
 
@@ -81,7 +81,7 @@ public class NabuFileQcDto {
     this.fileId = fileId;
   }
 
-  public void setFilePath(Path filePath) {
+  public void setFilePath(String filePath) {
     this.filePath = filePath;
   }
 
